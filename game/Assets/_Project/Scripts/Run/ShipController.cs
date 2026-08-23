@@ -1,0 +1,315 @@
+using UnityEngine;
+using SalvageRun.Core;
+using SalvageRun.Data;
+using SalvageRun.Meta;
+
+namespace SalvageRun.Run
+{
+    /// <summary>
+    /// 마우스 조작. **누르고 있는 동안만** 커서를 향해 추진하고, 떼면 관성으로 미끄러진다.
+    /// Shift(또는 우클릭) = 대시 — 커서 방향으로 순간 가속. (2026-08-19 확정)
+    ///
+    /// 🔴 버튼을 안 누르면 연료를 쓰지 않는다.
+    ///    "가만히 생각하는 시간"에 벌을 주지 않는다는 원칙을 이 조작에서도 지킨다.
+    ///
+    /// ⚠️ 목표점은 카메라 기준이고 카메라는 배를 따라간다. 그래서 배와 목표점을 **둘 다**
+    ///    지역 경계 안에 가두지 않으면, 커서가 화면 가장자리에 있을 때 배가 목표를 영원히
+    ///    쫓아가며 무한 가속한다. (2026-08-19 실제로 발생한 버그)
+    /// </summary>
+    [RequireComponent(typeof(Rigidbody2D))]
+    public class ShipController : MonoBehaviour
+    {
+        public RunConfig config;
+        public RunStats stats;
+        public Camera cam;
+
+        /// <summary>지역 반경. (0,0)이면 제한 없음. RunDirector가 출항 때 넣는다.</summary>
+        public Vector2 boundsHalf;
+
+        public float Fuel { get; private set; }
+        public float FuelMax => stats != null ? stats.fuelMax : (config != null ? config.fuelMax : 100f);
+        public bool OutOfFuel => Fuel <= 0.001f;
+        public float ThrottleNow { get; private set; }
+        public bool ControlEnabled { get; set; } = true;
+        public Vector2 Velocity => rb != null ? rb.linearVelocity : Vector2.zero;
+
+        // ---------------------------------------------------------------- 배리어
+
+        /// <summary>
+        /// 🔴 **배리어** (2026-08-21 요청: *"우주선에 배리어가 있고, 1대 맞으면 사라지고,
+        ///    시간이 지나면 다시 생성되는 방식(5초 정도)"*).
+        ///
+        ///    피해량을 줄이는 게 아니라 **한 대를 통째로 없앤다.**
+        ///    그래서 "몇 대 맞았나"가 아니라 **"지금 배리어가 있나"**를 보게 된다 —
+        ///    수치가 아니라 상태라서 화면만 보고 판단할 수 있다.
+        ///
+        ///    5초는 짧지 않다. 배리어를 깨고 들어갔으면 **그 다음 5초는 진짜 위험**이어야
+        ///    붙었다 빠지는 리듬이 생긴다.
+        /// </summary>
+        /// <summary>드릴이 물고 있을 때의 속도 배율. 0이 아닌 이유는 위 주석 참고.</summary>
+        public static float DrillDragMul => Tuning.DrillDrag;
+
+        /// <summary>드릴이 무언가를 물고 있는가. `WeaponRig`이 매 프레임 넣어 준다.</summary>
+        public bool Drilling { get; set; }
+
+        /// <summary>
+        /// 🔴 **부활 무적 시간** (2026-08-23 플레이 피드백:
+        ///    *"이게 죽고 나면, 부활도 못하고 계속 죽여서 못 살아나"*).
+        ///
+        ///    부활 지점은 기지인데, **파손 로봇은 배를 쫓으므로 죽은 자리에 모여 있다.**
+        ///    그래서 나오자마자 두 대 맞고 다시 죽고, 5초 뒤 또 같은 자리에 나오고 —
+        ///    **빠져나올 수 없는 고리**가 된다. 플레이어가 할 수 있는 게 아무것도 없다.
+        ///
+        ///    무적 동안 배가 깜빡인다. 안 보이면 무적인 줄 모르고 도망만 친다.
+        /// </summary>
+        public float InvulnLeft { get; private set; }
+
+        public bool Invulnerable => InvulnLeft > 0f;
+
+        public void GrantInvuln(float seconds) => InvulnLeft = Mathf.Max(InvulnLeft, seconds);
+
+        public bool BarrierUp { get; private set; } = true;
+
+        /// <summary>남은 재생 시간. HUD가 링으로 그린다.</summary>
+        public float BarrierLeft { get; private set; }
+
+        public float BarrierSeconds = 5f;
+
+        /// <summary>배리어가 막았으면 true — 이 경우 피해는 0이다.</summary>
+        public bool AbsorbHit()
+        {
+            if (Invulnerable) return true;      // 무적 중에는 아예 없던 일이 된다
+            if (!BarrierUp) return false;
+
+            BarrierUp = false;
+            BarrierLeft = BarrierSeconds;
+            Juice.Contact();
+            return true;
+        }
+
+        void UpdateBarrier()
+        {
+            if (InvulnLeft > 0f) InvulnLeft = Mathf.Max(0f, InvulnLeft - Time.deltaTime);
+            if (BarrierUp) return;
+
+            BarrierLeft -= Time.deltaTime;
+            if (BarrierLeft > 0f) return;
+
+            BarrierUp = true;
+            BarrierLeft = 0f;
+            Juice.LevelUp();
+            if (Fx.Instance != null)
+                Fx.Shockwave(transform.position, 1.4f, new Color(0.5f, 0.9f, 1f, 0.9f), 0.25f);
+        }
+        public Vector2 AimPoint { get; private set; }
+
+        /// <summary>지역의 연료 소모 배수.</summary>
+        public float StageDrain { get; set; } = 1f;
+
+        /// <summary>
+        /// 마우스 대신 이 좌표를 목표로 삼는다. 헤드리스 시뮬레이션(봇 조종)에서 쓴다.
+        /// null이면 평소대로 커서를 따라간다.
+        /// </summary>
+        public Vector2? AimOverride { get; set; }
+
+        /// <summary>시뮬레이션이 버튼을 대신 눌러주는 훅. null이면 실제 입력을 본다.</summary>
+        public bool? ThrustOverride { get; set; }
+
+        public float DashCooldownLeft { get; private set; }
+        public bool DashReady => DashCooldownLeft <= 0f && !OutOfFuel;
+
+        Rigidbody2D rb;
+
+        void Awake()
+        {
+            rb = GetComponent<Rigidbody2D>();
+            rb.gravityScale = 0f;
+            rb.freezeRotation = true;
+        }
+
+        public void ResetShip(Vector2 pos, float fuel)
+        {
+            transform.position = pos;
+            if (rb != null) rb.linearVelocity = Vector2.zero;
+            Fuel = fuel;
+            ControlEnabled = true;
+            ThrottleNow = 0f;
+            AimPoint = pos;
+            DashCooldownLeft = 0f;
+
+            BarrierUp = true;
+            BarrierLeft = 0f;
+            InvulnLeft = 0f;
+        }
+
+        /// <summary>
+        /// ⚠️ 입력은 Update에서 읽는다. Input System은 기본이 Dynamic Update라
+        ///    FixedUpdate에서 읽으면 갱신 타이밍이 어긋날 수 있다.
+        /// </summary>
+        void Update()
+        {
+            if (RunDirector.WorldPaused) return;
+            if (DashCooldownLeft > 0f) DashCooldownLeft -= Time.deltaTime;
+            if (!ControlEnabled) return;
+
+            // 🔴 화면 흔들림이 조준을 흔들지 않게, 흔들리기 전 카메라 위치를 기준으로 계산한다
+            var follow = cam != null ? cam.GetComponent<CameraFollow>() : null;
+            Vector2 world = AimOverride ?? InputReader.WorldMouse(
+                cam, transform.position.z,
+                follow != null ? (Vector3?)follow.BasePosition : null);
+            AimPoint = ClampToBounds(world);
+
+            if (InputReader.DashPressed) TryDash();
+        }
+
+        /// <summary>커서 방향으로 순간 가속. 대시 자체는 방향만 주고 속도는 관성이 만든다.</summary>
+        public bool TryDash()
+        {
+            if (!ControlEnabled || !DashReady || config == null) return false;
+
+            Vector2 dir = AimPoint - (Vector2)transform.position;
+            if (dir.sqrMagnitude < 0.0001f) return false;
+
+            rb.AddForce(dir.normalized * config.dashImpulse, ForceMode2D.Impulse);
+            Fuel = Mathf.Max(0f, Fuel - config.dashFuelCost);
+            DashCooldownLeft = config.dashCooldown;
+            return true;
+        }
+
+        void FixedUpdate()
+        {
+            if (config == null) return;
+
+            // 🔴 카드를 고르는 동안은 배도 멈춘다. 관성으로 계속 미끄러지면 고르는 사이에 부딪힌다.
+            //    rb.simulated를 끄면 속도는 그대로 보존되므로 재개하면 자연스럽게 이어진다.
+            if (RunDirector.WorldPaused)
+            {
+                if (rb.simulated) rb.simulated = false;
+                ThrottleNow = 0f;
+                return;
+            }
+            if (!rb.simulated) rb.simulated = true;
+
+            rb.mass = config.mass;
+            rb.linearDamping = stats != null ? stats.damping : config.linearDamping;
+
+            UpdateBarrier();
+
+            if (!ControlEnabled) { ThrottleNow = 0f; return; }
+
+            // 🔴 누르고 있는 동안만 추진한다
+            bool held = ThrustOverride ?? InputReader.LeftHeld;
+
+            Vector2 toCursor = AimPoint - (Vector2)transform.position;
+            float dist = toCursor.magnitude;
+
+            // 🔴 **키보드 조작** (2026-08-21 요청). 봇이 조종 중일 때는 건드리지 않는다 —
+            //    시뮬과 화면 속 봇이 같은 경로를 타야 측정이 유효하다.
+            //
+            //    마우스는 "여기로 가라"(목적지)이고 키보드는 "이쪽으로 밀어라"(방향)다.
+            //    그래서 거리 기반 감속이 없다 — 누르면 최대 추력, 놓으면 관성으로 미끄러진다.
+            if (InputReader.UsingKeyboard && ThrustOverride == null && AimOverride == null)
+            {
+                Vector2 axis = InputReader.MoveAxis;
+                held = axis.sqrMagnitude > 0.0001f;
+
+                // 조준(무기 방향)은 미는 쪽을 본다. 안 그러면 배가 엉뚱한 데를 겨눈다
+                if (held) toCursor = axis;
+                dist = held ? config.fullThrustDistance : 0f;
+            }
+
+            // 🔴 2026-08-20 뱀서류 전환: 연료는 **순수 HP**다.
+            //    이동에 비용이 없다 — 뱀서에서 도망이 곧 생존인 것과 같다.
+            //    연료는 오직 '부딪힐 때' 줄어든다. 그래서 "가만히 있는 게 최적"이 성립할 수 없다.
+
+            if (!held || dist <= config.deadZone || OutOfFuel)
+            {
+                ThrottleNow = 0f;
+            }
+            else
+            {
+                // 멀수록 강하게, 가까울수록 약하게 = 커서 위에서 부드럽게 정지
+                ThrottleNow = Mathf.Clamp01(Mathf.InverseLerp(config.deadZone, config.fullThrustDistance, dist));
+
+                // 🔴 화물이 무거우면 느려진다. **욕심의 대가**가 조작감에 직접 실린다
+                float weight = RunDirector.Instance != null ? RunDirector.Instance.CargoWeightMul : 1f;
+
+                // 🔴 **드릴이 물고 있으면 배가 묶인다** (rev.10).
+                //    채굴 자체는 재미가 없다 — 재미는 "지금 캘까, 빼야 하나"에서 나오고,
+                //    그러려면 캐는 시간이 **무방비한 시간**이어야 한다.
+                //    완전히 0으로 묶지는 않는다: 조작이 먹통이 되면 버그로 느껴진다.
+                //    아주 느리게라도 움직이면 "무거운 것을 끌고 있다"로 읽힌다.
+                if (Drilling) weight *= DrillDragMul;
+
+                float force = (stats != null ? stats.thrustForce * stats.speedMul : config.thrustForce)
+                            * ThrottleNow * weight;
+                rb.AddForce(toCursor.normalized * force, ForceMode2D.Force);
+
+                // 🔴 **rev.10: 연료는 이동 비용이다** (더 이상 HP가 아니다).
+                //    (2026-08-21: *"플레이어는 연료로 이동하며, 연료가 모두 닳을 시 파괴"*)
+                //
+                //    이러면 보통 **가만히 있는 게 최적**이 되는데, 이 게임에서는 아니다 —
+                //    **기지 연료가 계속 닳으므로 멈춰 있으면 진다.**
+                //    즉 정지를 처벌하는 것은 기지 쪽 시계다.
+                //    🔴 그래서 `StageDef.baseDrainPerSecond`는 난이도 손잡이가 아니라
+                //       **이 구조를 지탱하는 기둥**이다. 0에 가깝게 낮추면 게임이 무너진다.
+                Fuel = Mathf.Max(0f, Fuel - config.thrustFuelPerSecond * Tuning.ThrustFuelMul
+                                          * ThrottleNow * Time.deltaTime);
+            }
+
+            float cap = config.maxSpeed * (stats != null ? stats.speedMul : 1f)
+                      * (RunDirector.Instance != null ? RunDirector.Instance.CargoWeightMul : 1f)
+                      * (Drilling ? DrillDragMul : 1f);
+            if (rb.linearVelocity.magnitude > cap)
+                rb.linearVelocity = rb.linearVelocity.normalized * cap;
+
+            ClampShipInsideBounds();
+        }
+
+        Vector2 ClampToBounds(Vector2 p)
+        {
+            if (boundsHalf.x <= 0f || boundsHalf.y <= 0f) return p;
+            p.x = Mathf.Clamp(p.x, -boundsHalf.x, boundsHalf.x);
+            p.y = Mathf.Clamp(p.y, -boundsHalf.y, boundsHalf.y);
+            return p;
+        }
+
+        /// <summary>경계에 부딪히면 그 축의 속도를 죽인다. 튕기면 조작이 어지럽다.</summary>
+        void ClampShipInsideBounds()
+        {
+            if (boundsHalf.x <= 0f || boundsHalf.y <= 0f) return;
+
+            Vector2 p = transform.position;
+            Vector2 v = rb.linearVelocity;
+
+            if (Mathf.Abs(p.x) > boundsHalf.x)
+            {
+                p.x = Mathf.Sign(p.x) * boundsHalf.x;
+                v.x = 0f;
+            }
+            if (Mathf.Abs(p.y) > boundsHalf.y)
+            {
+                p.y = Mathf.Sign(p.y) * boundsHalf.y;
+                v.y = 0f;
+            }
+
+            transform.position = p;
+            rb.linearVelocity = v;
+        }
+
+        /// <summary>
+        /// 보스 반발장 등 외부에서 미는 힘.
+        /// 🔴 **연료를 깎지 않는다** — 보스는 때리지 않고 방해만 한다
+        ///    (브리프 §10 "공격 패턴 안 함"). 플레이어가 잃는 건 체력이 아니라 자리와 시간이다.
+        /// </summary>
+        public void AddExternalForce(Vector2 f)
+        {
+            if (rb != null && rb.simulated) rb.AddForce(f, ForceMode2D.Force);
+        }
+
+        /// <summary>추진 외의 소모 — 위험물을 먹었을 때 등.</summary>
+        public void ConsumeFuel(float amount) => Fuel = Mathf.Max(0f, Fuel - amount);
+
+        public void Refuel(float amount) => Fuel = Mathf.Min(FuelMax, Fuel + amount);
+    }
+}

@@ -1,0 +1,5 @@
+﻿<Solution>
+  <Project Path="SalvageRun.Tests.csproj" />
+  <Project Path="SalvageRun.csproj" />
+  <Project Path="SalvageRun.Editor.csproj" />
+</Solution>

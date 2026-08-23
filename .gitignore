@@ -1,0 +1,56 @@
+# ---- Unity (프로젝트는 game/ 아래) ----
+game/[Ll]ibrary/
+game/[Tt]emp/
+game/[Oo]bj/
+game/[Bb]uild/
+game/[Bb]uilds/
+game/[Ll]ogs/
+game/[Uu]ser[Ss]ettings/
+game/[Mm]emoryCaptures/
+game/[Rr]ecordings/
+
+# Unity가 자동 생성하는 솔루션/프로젝트 파일
+game/*.csproj
+game/*.unityproj
+game/*.sln
+game/*.suo
+game/*.user
+game/*.userprefs
+game/*.pidb
+game/*.booproj
+game/*.svd
+game/*.pdb
+game/*.mdb
+game/*.opendb
+game/*.VC.db
+
+# 빌드 산출물
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# 크래시 리포트
+game/sysinfo.txt
+game/crashlytics-build.properties
+
+# Visual Studio / Rider / VS Code
+.vs/
+.idea/
+.vscode/
+*.swp
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# 도트 원본은 추적한다(art/src). 내보낸 임시 파일만 제외
+art/export/
+
+# 빌드 산출물 (루트) — zip 17MB가 매번 올라가면 안 된다
+/build/
+
+# 검사 로그
+tools/logs/

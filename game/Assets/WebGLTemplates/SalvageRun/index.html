@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <title>SALVAGE RUN</title>
+  <style>
+    /*
+      🔴 WebGL 로딩 화면.
+         유니티 기본 템플릿은 회색 배경에 진행 바 하나뿐이라, itch에서 그걸 본 사람은
+         "덜 만든 것"으로 읽고 닫는다. 로딩은 게임의 첫인상이다.
+
+         게임 안 색과 같은 색을 쓴다 (GameHud의 BgDeep / Accent).
+    */
+    :root {
+      --bg:     #070a0e;
+      --panel:  #131a26;
+      --edge:   #2c3a4d;
+      --accent: #73d9ff;
+      --dim:    #94a3b8;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0; padding: 0;
+      width: 100%; height: 100%;
+      background: var(--bg);
+      color: #e6edf6;
+      font-family: "Segoe UI", "Malgun Gothic", system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    #wrap { position: fixed; inset: 0; }
+
+    /* 유니티 캔버스 — 로딩이 끝나면 이 위의 커버가 사라진다 */
+    #unity-canvas {
+      width: 100%; height: 100%;
+      display: block;
+      background: var(--bg);
+    }
+
+    /* ---------------- 로딩 커버 ---------------- */
+    #cover {
+      position: fixed; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: var(--bg);
+      transition: opacity .45s ease;
+      z-index: 10;
+    }
+    #cover.done { opacity: 0; pointer-events: none; }
+
+    /* 흐르는 별 — 게임 타이틀 화면과 같은 연출 */
+    #stars { position: absolute; inset: 0; overflow: hidden; }
+    .star {
+      position: absolute;
+      background: #bcd6ff;
+      animation: drift linear infinite;
+    }
+    @keyframes drift {
+      from { transform: translateX(-6vw); }
+      to   { transform: translateX(106vw); }
+    }
+
+    #title {
+      position: relative;
+      font-size: clamp(28px, 6vw, 58px);
+      letter-spacing: .22em;
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: 0 0 18px rgba(115, 217, 255, .35);
+      margin: 0 0 10px;
+    }
+    #tagline {
+      position: relative;
+      color: var(--dim);
+      font-size: clamp(12px, 1.6vw, 16px);
+      letter-spacing: .1em;
+      margin: 0 0 34px;
+    }
+
+    /* 진행 바 — 각진 도트 느낌으로 (둥근 모서리 쓰지 않는다) */
+    #bar-outer {
+      position: relative;
+      width: min(360px, 68vw);
+      height: 14px;
+      background: var(--panel);
+      border: 2px solid var(--edge);
+    }
+    #bar-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width .2s ease;
+    }
+    #pct {
+      position: relative;
+      margin-top: 12px;
+      color: var(--dim);
+      font-size: 13px;
+      letter-spacing: .12em;
+    }
+
+    /* 🔴 로딩이 길면 팁을 보여준다 — 빈 화면을 보는 시간이 이탈 구간이다 */
+    #tip {
+      position: relative;
+      margin-top: 26px;
+      max-width: 420px;
+      text-align: center;
+      color: #6f7f93;
+      font-size: 13px;
+      line-height: 1.7;
+      padding: 0 16px;
+    }
+
+    #err {
+      position: relative;
+      margin-top: 20px;
+      color: #ff8a7a;
+      font-size: 13px;
+      max-width: 460px;
+      text-align: center;
+      display: none;
+      padding: 0 16px;
+    }
+
+    /* 전체화면 버튼 — 이 게임은 화면이 넓을수록 낫다 */
+    #full {
+      position: fixed; right: 10px; bottom: 10px;
+      z-index: 5;
+      background: rgba(19, 26, 38, .85);
+      border: 1px solid var(--edge);
+      color: var(--dim);
+      font-size: 12px;
+      padding: 6px 12px;
+      cursor: pointer;
+      letter-spacing: .08em;
+    }
+    #full:hover { color: #fff; border-color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="unity-canvas" tabindex="-1"></canvas>
+    <button id="full" type="button">전체화면</button>
+  </div>
+
+  <div id="cover">
+    <div id="stars"></div>
+    <h1 id="title">SALVAGE RUN</h1>
+    <p id="tagline">우주를 청소한다</p>
+
+    <div id="bar-outer"><div id="bar-fill"></div></div>
+    <div id="pct">0%</div>
+
+    <div id="tip">좌클릭을 누르고 있으면 커서 쪽으로 이동합니다.<br>무기는 자동으로 나갑니다 — 위치만 잡으세요.</div>
+    <div id="err"></div>
+  </div>
+
+  <script>
+    // ---- 배경 별 ----
+    (function () {
+      var box = document.getElementById('stars');
+      var html = '';
+      for (var i = 0; i < 70; i++) {
+        var size = (i % 7 === 0) ? 3 : 2;
+        var top = (i * 37 % 100);
+        var dur = 9 + (i % 6) * 5;
+        var delay = -(i * 1.7 % 20);
+        var op = 0.18 + (i % 5) * 0.13;
+        html += '<i class="star" style="' +
+          'width:' + size + 'px;height:' + size + 'px;' +
+          'top:' + top + '%;left:0;opacity:' + op + ';' +
+          'animation-duration:' + dur + 's;animation-delay:' + delay + 's"></i>';
+      }
+      box.innerHTML = html;
+    })();
+
+    // ---- 유니티 로더 ----
+    var canvas = document.querySelector("#unity-canvas");
+    var cover  = document.querySelector("#cover");
+    var fill   = document.querySelector("#bar-fill");
+    var pct    = document.querySelector("#pct");
+    var err    = document.querySelector("#err");
+
+    var buildUrl = "Build";
+    var config = {
+      dataUrl:      buildUrl + "/{{{ DATA_FILENAME }}}",
+      frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+      codeUrl:      buildUrl + "/{{{ CODE_FILENAME }}}",
+#if MEMORY_FILENAME
+      memoryUrl:    buildUrl + "/{{{ MEMORY_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+      symbolsUrl:   buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+#endif
+      streamingAssetsUrl: "StreamingAssets",
+      companyName:  "{{{ COMPANY_NAME }}}",
+      productName:  "{{{ PRODUCT_NAME }}}",
+      productVersion: "{{{ PRODUCT_VERSION }}}",
+      showBanner: function (msg, type) {
+        if (type === "error") {
+          err.style.display = "block";
+          err.textContent = msg;
+        }
+      }
+    };
+
+    var script = document.createElement("script");
+    script.src = buildUrl + "/{{{ LOADER_FILENAME }}}";
+
+    script.onload = function () {
+      createUnityInstance(canvas, config, function (p) {
+        var v = Math.round(p * 100);
+        fill.style.width = v + "%";
+        pct.textContent = v + "%";
+      }).then(function (instance) {
+        window.unityInstance = instance;
+        cover.classList.add("done");
+        setTimeout(function () { cover.style.display = "none"; }, 500);
+        canvas.focus();
+      }).catch(function (message) {
+        err.style.display = "block";
+        err.textContent = "실행에 실패했습니다: " + message;
+      });
+    };
+
+    script.onerror = function () {
+      err.style.display = "block";
+      err.textContent = "로더를 불러오지 못했습니다. 새로고침해 보세요.";
+    };
+
+    document.body.appendChild(script);
+
+    // ---- 전체화면 ----
+    document.querySelector("#full").onclick = function () {
+      if (window.unityInstance) window.unityInstance.SetFullscreen(1);
+    };
+
+    // 🔴 게임 안에서 스페이스·방향키를 쓰므로 브라우저 스크롤을 막는다
+    window.addEventListener("keydown", function (e) {
+      // 🔴 브라우저가 가로채는 키를 막는다. F1(도움말)·F3(찾기) 등은
+      //    preventDefault로도 막히지 않는 경우가 있어, **게임 키는 글자 키로 잡았다.**
+      //    여기서는 스크롤·검색만 막는다.
+      var block = [" ", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+                   "F1", "F3", "F5", "F7", "/", "'"];
+      if (block.indexOf(e.key) >= 0) e.preventDefault();
+    }, { passive: false });
+  </script>
+</body>
+</html>

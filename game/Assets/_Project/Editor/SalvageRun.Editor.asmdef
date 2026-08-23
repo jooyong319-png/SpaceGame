@@ -1,0 +1,18 @@
+{
+    "name": "SalvageRun.Editor",
+    "rootNamespace": "SalvageRun.EditorTools",
+    "references": [
+        "SalvageRun"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
