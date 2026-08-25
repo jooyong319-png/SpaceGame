@@ -456,15 +456,23 @@ namespace SalvageRun.Tests
         {
             var t = new StringBuilder();
             t.AppendLine();
-            t.AppendLine("=========== XP 곡선 · 재화 수입 ===========");
+            t.AppendLine("=========== 견인 리듬 · 재화 수입 ===========");
 
             yield return Warmup();
 
-            // 🔴 레벨업을 카드로 정상 진행시킨다. 무기를 미리 주지 않는다 —
-            //    "첫 레벨업까지 몇 초"가 이 측정의 핵심이기 때문이다.
+            // 🔴 2026-08-26: 여기는 원래 **레벨 곡선**을 쟀다. 레벨업이 없어진 뒤로는
+            //    `TowedCount`(지금 매달린 개수)를 `Lv`라고 찍고
+            //    *"첫 레벨업까지 5.9초"*라고 부르고 있었다 — **아무 뜻이 없는 문장**이다.
+            //
+            //    대신 **견인 리듬**을 잰다. 지금 게임의 심장이 거기다:
+            //      · 첫 하나를 매다는 데 몇 초 (초반 손맛)
+            //      · **6칸이 처음 꽉 차는 시각** — 이 순간부터 모든 획득이 맞바꾸기가 된다
+            //      · 꽉 찬 채로 보낸 시간 비율 — *"선택과 집중"이 실제로 얼마나 오래 켜져 있나*
+            //      · 밀려난 횟수 — 몇 번이나 버렸나
             director.StartRun(0);
             var marks = new List<(int level, float at)>();
-            int lastLevel = director.TowedCount;
+            int lastTow = director.TowedCount;
+            float firstPick = -1f, firstFull = -1f, fullSeconds = 0f;
 
             var f = director.field;
             for (int i = 0; i < f.MatsThisRun.Length; i++) f.MatsThisRun[i] = 0;
@@ -477,10 +485,20 @@ namespace SalvageRun.Tests
                 DriveBot(ship);
 
 
-                if (director.TowedCount != lastLevel)
+                int tow = director.TowedCount;
+                if (tow >= director.MaxTow) fullSeconds += StepSeconds;
+
+                if (tow != lastTow)
                 {
-                    lastLevel = director.TowedCount;
-                    if (marks.Count < 12) marks.Add((lastLevel, director.RunTime));
+                    // 🔴 **늘어난 순간만** 기록한다. 밀려나서 줄어드는 것도 여기로 오는데
+                    //    그걸 같이 세면 "몇 칸까지 갔나"가 왔다 갔다 하며 뭉개진다
+                    if (tow > lastTow)
+                    {
+                        if (firstPick < 0f) firstPick = director.RunTime;
+                        if (tow >= director.MaxTow && firstFull < 0f) firstFull = director.RunTime;
+                        if (marks.Count < 12) marks.Add((tow, director.RunTime));
+                    }
+                    lastTow = tow;
                 }
 
                 frames++;
@@ -489,16 +507,37 @@ namespace SalvageRun.Tests
             }
             ClearBot(ship);
 
-            t.AppendLine("레벨 도달 시각 (🔴 첫 레벨업이 30초를 넘으면 itch에서 닫힌다)");
+            // 🔴 **무기 레벨을 같이 찍는다.** 이 측정은 `StartRun`이 준 그대로(초반 무기)이고,
+            //    위의 조합 표는 `ComboLevel`(강화된 무기)로 돈다. 같은 `주움`인데
+            //    6과 74로 나온다 — 조건을 안 적어 두면 **다음에 표 둘을 나란히 놓고
+            //    "숫자가 안 맞는다"고 엉뚱한 데를 뒤지게 된다.**
+            var sSt = director.Stats;
+            int lvSum2 = 0, lvCnt = 0;
+            for (int i = 0; i < sSt.weaponLevel.Length; i++)
+                if (sSt.weaponLevel[i] > 0) { lvSum2 += sSt.weaponLevel[i]; lvCnt++; }
+            t.AppendLine($"⚠️ 조건: 무기 {lvCnt}종 · 평균 Lv.{(lvCnt > 0 ? lvSum2 / (float)lvCnt : 0f):0.0}" +
+                         "  (조합 표는 강화된 무기라 `주움`이 훨씬 크다 — 나란히 비교하지 말 것)");
+            t.AppendLine();
+            t.AppendLine($"견인 칸이 차는 시각 (칸 {director.MaxTow}개)");
             for (int i = 0; i < marks.Count; i++)
-                t.AppendLine($"  Lv.{marks[i].level,2}  {marks[i].at,6:0.0}s");
+                t.AppendLine($"  {marks[i].level,2}칸  {marks[i].at,6:0.0}s");
 
-            if (marks.Count > 0)
-                t.AppendLine($"  → 첫 레벨업까지 {marks[0].at:0.0}초");
+            float runTime = Mathf.Max(0.01f, director.RunTime);
+            int pushed = Mathf.Max(0, director.RunCollected - director.BankedCount);
+
+            t.AppendLine();
+            t.AppendLine($"  → 첫 획득까지        {(firstPick >= 0f ? firstPick : -1f),6:0.0}s" +
+                         "   🔴 여기가 길면 판의 첫인상이 비어 있다");
+            t.AppendLine($"  → 처음 꽉 차기까지    {(firstFull >= 0f ? firstFull : -1f),6:0.0}s" +
+                         "   🔴 이때부터 모든 획득이 맞바꾸기가 된다");
+            t.AppendLine($"  → 꽉 찬 채로 보낸 시간 {fullSeconds / runTime * 100f,5:0}%" +
+                         "    (= '버릴까 말까'가 켜져 있던 시간)");
+            t.AppendLine($"  → 밀려난 것          {pushed,6}개" +
+                         "   (주움 - 가져옴. 몇 번이나 버렸나)");
 
             t.AppendLine();
             t.AppendLine($"런 결과: {director.RunTime:0.0}초 · 가져옴 {director.BankedCount} · " +
-                         $"파편 {director.RunCollected} · 크레딧 {director.RunValue}");
+                         $"주움 {director.RunCollected} · 크레딧 {director.RunValue}");
 
             t.AppendLine();
             t.AppendLine("재화 수입 (🔴 테크 비용의 기준. 지금 노드 값은 전부 추측이다)");
