@@ -808,6 +808,108 @@ namespace SalvageRun.Tests
             Assert.Pass();
         }
 
+        /// <summary>
+        /// 🔴 **각 구역에서 실제로 살 수 있는 노드가 몇 개인가.**
+        ///
+        ///    재화는 구역 등급으로 잠겨 있다 (`Mats.FirstRank`: 고철 1 · 회로 2 · 코어 3 …).
+        ///    그래서 **1구역에서는 고철만 나온다.** 회로가 드는 노드는 전부 못 산다.
+        ///
+        ///    이건 선행조건 검사로는 절대 안 잡힌다 — `requires`는 전부 이어져 있고
+        ///    노드도 108개 다 도달 가능하다. **막는 것은 지갑이지 그래프가 아니다.**
+        ///
+        ///    🔴 여기가 너무 적으면 **첫 구역이 벽이 된다.** 살 게 없는데
+        ///       다음 구역은 보스로 잠겨 있으면 플레이어가 할 수 있는 일이 없어진다.
+        /// </summary>
+        [UnityTest, Timeout(600000)]
+        public IEnumerator EachStageHasSomethingToBuy()
+        {
+            var t = new StringBuilder();
+            t.AppendLine();
+            t.AppendLine("=========== 스모크: 구역마다 살 게 있는가 ===========");
+
+            var tree = director.content.techTree;
+            Assert.IsNotNull(tree, "테크트리가 비어 있다");
+
+            int worst = int.MaxValue;
+            string worstName = "";
+
+            for (int rank = 1; rank <= Mats.Count; rank++)
+            {
+                // 이 등급에서 나오는 재화만으로 살 수 있는 노드를 **선행조건까지 따라가며** 센다
+                var ok = new HashSet<string>();
+                bool changed = true;
+                while (changed)
+                {
+                    changed = false;
+                    for (int i = 0; i < tree.Length; i++)
+                    {
+                        var n = tree[i];
+                        if (n == null || ok.Contains(n.id)) continue;
+                        if (!Affordable(n, rank)) continue;
+
+                        bool reqOk = true;
+                        if (n.requires != null)
+                            for (int r = 0; r < n.requires.Length; r++)
+                                if (!ok.Contains(n.requires[r])) { reqOk = false; break; }
+
+                        if (reqOk) { ok.Add(n.id); changed = true; }
+                    }
+                }
+
+                // 그 노드들을 1랭크씩 사는 데 드는 고철 (= 그 구역에서 살 수 있는 성장의 크기)
+                int scrap = 0;
+                for (int i = 0; i < tree.Length; i++)
+                    if (ok.Contains(tree[i].id)) scrap += tree[i].costScrap;
+
+                t.AppendLine($"  {rank}구역 (등급 {rank} 재화까지)   {ok.Count,3}/{tree.Length} 노드" +
+                             $" · 1랭크 합계 고철 {scrap,6}");
+
+                if (ok.Count < worst) { worst = ok.Count; worstName = $"{rank}구역"; }
+            }
+
+            // 🔴 **떨어지기만 하고 쓸 곳이 없는 재화가 있는가.**
+            //    `TechNodeDef`의 비용 필드는 `costScrap`·`costCircuit`·`costCore` **셋뿐**이다.
+            //    재화를 6종으로 늘리면서 **버는 쪽만 만들고 쓰는 쪽을 안 만들면**
+            //    깊은 구역의 재화가 영원히 쌓이기만 한다 — 주워도 아무 일이 안 난다.
+            var sink = new HashSet<MatKind>();
+            for (int i = 0; i < tree.Length; i++)
+            {
+                if (tree[i].costScrap   > 0) sink.Add(MatKind.Scrap);
+                if (tree[i].costCircuit > 0) sink.Add(MatKind.Circuit);
+                if (tree[i].costCore    > 0) sink.Add(MatKind.Core);
+            }
+            var dead = new List<string>();
+            for (int m = 0; m < Mats.Count; m++)
+                if (!sink.Contains((MatKind)m)) dead.Add(Mats.Name((MatKind)m));
+
+            t.AppendLine();
+            t.AppendLine($"  쓸 곳이 있는 재화 {sink.Count}/{Mats.Count}종");
+            if (dead.Count > 0)
+                t.AppendLine($"  🔴 **떨어지기만 하고 쓸 데가 없는 재화: {string.Join(" · ", dead)}**");
+
+            t.AppendLine();
+            t.AppendLine($"  → 제일 좁은 곳: {worstName} · {worst}개");
+            t.AppendLine("  ⚠️ 1구역이 좁은 건 의도일 수 있다 — 다만 **다음 구역이 보스로 잠겨 있으므로**");
+            t.AppendLine("     보스를 못 깨면 플레이어는 여기서 영원히 멈춘다.");
+
+            Debug.Log("[SMOKE]" + t);
+
+            // 🔴 단언은 **0이 아닌가**만. 몇 개가 적당한지는 밸런스라 여기서 정하지 않는다
+            Assert.Greater(worst, 0,
+                $"🔴 {worstName}에서 살 수 있는 노드가 하나도 없다 — 그 구역은 벽이다");
+
+            yield return null;
+            Assert.Pass();
+        }
+
+        /// <summary>이 구역 등급에서 나오는 재화만으로 이 노드를 살 수 있는가.</summary>
+        static bool Affordable(TechNodeDef n, int rank)
+        {
+            if (n.costCircuit > 0 && rank < Mats.FirstRank(MatKind.Circuit)) return false;
+            if (n.costCore    > 0 && rank < Mats.FirstRank(MatKind.Core))    return false;
+            return true;
+        }
+
         /// <summary>밭(로봇·위험물 제외) 중 아무거나 하나. 없으면 null.</summary>
         static JunkPiece NearestFarmJunk(StageField field)
         {
