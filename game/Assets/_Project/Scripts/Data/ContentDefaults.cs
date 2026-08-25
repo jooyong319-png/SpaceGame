@@ -246,6 +246,7 @@ namespace SalvageRun.Data
 
                 new StageDef {
                     displayName="폐선 항로", rank=2, mapHalfSize=new Vector2(58f,38f), waveCount=7,  waveSeconds=50f, description="버려진 항로. 빠른 파편이 섞인다.",
+                    unlockScrap=800,
                     junkCount=150, initialFill=20, spawnPerSecond=3.2f, hazardRatio=0.10f,
                     baseDrainPerSecond=5.0f, travelFuelCost=260f,
                     minTier=0, maxTier=1,
@@ -255,6 +256,7 @@ namespace SalvageRun.Data
 
                 new StageDef {
                     displayName="잔해장", rank=3, mapHalfSize=new Vector2(64f,42f), waveCount=8,  waveSeconds=50f, description="함대가 침몰한 자리. 값나가는 것이 많다.",
+                    unlockScrap=2400, unlockCircuit=20,
                     junkCount=180, initialFill=22, spawnPerSecond=7.5f, hazardRatio=0.12f,
                     baseDrainPerSecond=6.5f, travelFuelCost=340f,
                     minTier=1, maxTier=1,
@@ -264,6 +266,7 @@ namespace SalvageRun.Data
 
                 new StageDef {
                     displayName="파괴된 정거장", rank=4, mapHalfSize=new Vector2(70f,46f), waveCount=9,  waveSeconds=50f, description="거대 구조물의 잔해. 절단 없이는 손대지 못하는 것들.",
+                    unlockScrap=6000, unlockCircuit=60, unlockCore=4,
                     junkCount=210, initialFill=24, spawnPerSecond=5.0f,  hazardRatio=0.13f,
                     baseDrainPerSecond=8.0f, travelFuelCost=430f,
                     minTier=1, maxTier=2,
@@ -273,6 +276,7 @@ namespace SalvageRun.Data
 
                 new StageDef {
                     displayName="심연", rank=5, mapHalfSize=new Vector2(76f,50f), waveCount=10, waveSeconds=50f, description="아무도 회수하러 오지 않는 곳.",
+                    unlockScrap=14000, unlockCircuit=140, unlockCore=14,
                     junkCount=240, initialFill=26, spawnPerSecond=6.0f,  hazardRatio=0.14f,
                     baseDrainPerSecond=9.5f, travelFuelCost=520f,
                     minTier=2, maxTier=2,
@@ -282,6 +286,7 @@ namespace SalvageRun.Data
 
                 new StageDef {
                     displayName="균열", rank=6, mapHalfSize=new Vector2(84f,56f), waveCount=12, waveSeconds=50f, description="여기까지 온 우주선은 거의 없다.",
+                    unlockScrap=32000, unlockCircuit=320, unlockCore=40,
                     junkCount=270, initialFill=28, spawnPerSecond=4.0f,  hazardRatio=0.16f,
                     baseDrainPerSecond=11.0f, travelFuelCost=620f,
                     minTier=2, maxTier=2,

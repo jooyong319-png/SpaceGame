@@ -1,4 +1,5 @@
 using UnityEngine;
+using SalvageRun.Data;
 
 namespace SalvageRun.Run
 {
@@ -17,7 +18,22 @@ namespace SalvageRun.Run
         Vector2 velocity;
         float life;
 
+        // 🔴 **지금 주워질 것**을 알려주는 테두리 (2026-08-26 사장님:
+        //    *"space 누르기 전에 어떤 게 먹어지는지 보여줘야 할 듯"*).
+        //    수집기는 **가장 가까운 하나**만 문다 — 어느 것인지 안 보이면
+        //    "고른다"가 사실상 운이 된다. 누르기 **전에** 보여야 고르는 것이다.
+        SpriteRenderer ring;
+
         public void Bind(SpriteRenderer sr) => this.sr = sr;
+
+        public void BindRing(SpriteRenderer ring)
+        {
+            this.ring = ring;
+            if (ring != null) ring.enabled = false;
+        }
+
+        /// <summary>이번 프레임에 이게 주워질 후보인가. `RunDirector`가 매 프레임 정한다.</summary>
+        public bool Marked { get; set; }
 
         /// <summary>
         /// 🔴 파편 색은 **쓰레기 색을 물려받지 않는다.**
@@ -32,21 +48,50 @@ namespace SalvageRun.Run
             return new Color(0.55f, 1.00f, 0.98f);                    // 청록 — 기본
         }
 
-        public void Spawn(Vector3 pos, Vector2 velocity, int value)
+        /// <summary>
+        /// 🔴 **이 덩어리가 무슨 재화인가** (2026-08-26 사장님 지시:
+        ///    *"자원을 직접 쓰레기를 잡으면 실제로 나오는 것처럼"*).
+        ///
+        ///    전에는 재화가 **눈에 안 보였다** — 쓰레기를 부수면 확률로 저장에 숫자만 올랐다.
+        ///    그러면 *"이걸 가져갈까 버릴까"*가 성립할 수 없다. 물건이 없으니까.
+        ///    이제 덩어리로 떨어지고, 주우면 배 뒤에 매달린다.
+        /// </summary>
+        public MatKind mat;
+
+        /// <summary>이 덩어리가 품은 재화 개수.</summary>
+        public int matAmount;
+
+        public void Spawn(Vector3 pos, Vector2 velocity, int value,
+                          MatKind mat = MatKind.Scrap, int matAmount = 1)
         {
             this.value = value;
+            this.mat = mat;
+            this.matAmount = Mathf.Max(1, matAmount);
             this.velocity = velocity;
-            life = 14f;                 // 너무 오래 떠다니면 화면이 지저분해진다
+            // 🔴 **14초 → 45초** (2026-08-26). 자석이 없어져 **직접 가서 주워야** 하는데
+            //    14초면 고르는 사이에 사라진다 — 그러면 "고를 수 있다"가 거짓말이 된다.
+            //    화면이 지저분해지는 건 감수한다. 널린 재화가 곧 "어디로 갈까"의 지도다.
+            life = 45f;
             Alive = true;
             rushing = false;
             Towed = false;
             TowLead = null;
             TowIndex = 0;
             pickupLock = 0f;
+            Marked = false;
+            if (ring != null) ring.enabled = false;
             spinAngle = 0f;
             pulse = 0f;
-            baseColor = ColorFor(value);
-            baseScale = value >= 45 ? 0.30f : value >= 18 ? 0.26f : 0.22f;
+            // 🔴 **색은 재화 종류를 말한다.** 값어치가 아니라 **무엇인가**가 먼저다 —
+            //    무엇을 가져갈지 고르는 게임이 되면 종류가 값보다 중요해진다.
+            baseColor = Mats.ColorOf(mat);
+            // 🔴 **크기를 두 배로** (2026-08-26 사장님: *"재화들의 크기를 좀 더 키우고"*).
+            //    자석이 없어져 **직접 가서 밟아야** 하는데, 작으면 조준이 신경질적이 된다.
+            //    그리고 멀리서 "저기 코어다"가 보여야 **어디로 갈지**를 고를 수 있다.
+            // 🔴 크기도 종류가 정한다 (`Mats.ScaleOf`). 값진 것일수록 크다 —
+            //    밟아서 줍는 게임이라 작으면 조준이 신경질적이고,
+            //    멀리서 "저기 코어다"가 보여야 어디로 갈지 고를 수 있다.
+            baseScale = Mats.ScaleOf(mat);
 
             transform.position = pos;
             transform.localScale = Vector3.one * baseScale;
@@ -61,6 +106,8 @@ namespace SalvageRun.Run
         public void Despawn()
         {
             Alive = false;
+            Marked = false;
+            if (ring != null) ring.enabled = false;   // 표시가 남은 채 풀로 돌아가면 다음 것이 켜진 채 나온다
             gameObject.SetActive(false);
         }
 
@@ -265,6 +312,38 @@ namespace SalvageRun.Run
                 float b = 0.82f + 0.18f * Mathf.Sin(pulse);
                 sr.color = new Color(baseColor.r * b, baseColor.g * b, baseColor.b * b, 1f);
             }
+
+            UpdateRing();
+        }
+
+        /// <summary>
+        /// 🔴 **다음에 주워질 것에 테두리를 두른다.**
+        ///    수집기를 켜기 **전에** 보여야 고르는 것이 된다 —
+        ///    켠 뒤에 알려주면 그건 통보지 선택이 아니다.
+        /// </summary>
+        void UpdateRing()
+        {
+            if (ring == null) return;
+
+            if (!Marked || Towed)
+            {
+                if (ring.enabled) ring.enabled = false;
+                return;
+            }
+
+            ring.enabled = true;
+
+            // 재화 색을 그대로 쓰되 더 밝게 — 무엇이 걸렸는지 색으로도 읽힌다
+            float b = 0.75f + 0.25f * Mathf.Sin(pulse * 0.8f);
+            ring.color = new Color(
+                Mathf.Min(1f, baseColor.r + 0.35f),
+                Mathf.Min(1f, baseColor.g + 0.35f),
+                Mathf.Min(1f, baseColor.b + 0.35f), b);
+
+            // 살짝 크게 돌면서 숨 쉰다. 정지한 테두리는 배경으로 묻힌다
+            float k = 1.9f + 0.18f * Mathf.Sin(pulse * 0.8f);
+            ring.transform.localScale = Vector3.one * k;
+            ring.transform.localRotation = Quaternion.Euler(0f, 0f, pulse * 22f);
         }
     }
 }

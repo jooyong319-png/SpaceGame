@@ -46,12 +46,22 @@ namespace SalvageRun.Run
         public float spawnRateMul = 1f;
         public int aliveCapOverride;
 
-        /// <summary>🔴 배 주변 이 반경(화면 밖)에서 생성된다. 뱀서식.</summary>
-        public float spawnRadius = 22f;
-        /// <summary>이 반경을 벗어나면 사라진다. 화면에서 한참 먼 것을 굴릴 이유가 없다.</summary>
-        public float cullRadius = 36f;
-        /// <summary>맵 경계 — 쓰레기도 이 밖으로는 안 나간다.</summary>
-        public Vector2 MapHalf { get; set; } = new Vector2(52f, 34f);
+        /// <summary>
+        /// 🔴 **맵 테두리 바깥 이만큼에서 생성된다** (rev.12 — 맵 = 화면 한 장).
+        ///
+        ///    예전에는 **배를 중심으로 한 원**에 뿌렸다. 맵이 화면보다 훨씬 넓을 때는
+        ///    그게 맞았지만, 맵이 화면 한 장이 된 지금은 **틀린다** —
+        ///    배가 구석에 있으면 원의 반대편이 **화면 안쪽에 떨어져서**
+        ///    쓰레기가 눈앞에 뿅 하고 나타난다.
+        ///    이제는 화면 테두리를 따라 뿌리므로 항상 **밖에서 들어온다.**
+        /// </summary>
+        public float spawnMargin = 3.5f;
+
+        /// <summary>맵 테두리에서 이만큼 밖으로 나가면 사라진다.</summary>
+        public float cullMargin = 14f;
+
+        /// <summary>맵 경계 = 화면 한 장. RunDirector가 카메라에서 뽑아 넣는다.</summary>
+        public Vector2 MapHalf { get; set; } = new Vector2(19f, 11f);
 
         /// <summary>
         /// 동시 생존 상한. 🔴 **풀 크기를 넘지 않는다** —
@@ -95,9 +105,6 @@ namespace SalvageRun.Run
 
             AliveCount = 0;
             SpawnedTotal = 0;
-            Anchors.Clear();
-            AnchorsAlive = 0;
-            AnchorsTotal = 0;
             ClearShots();
             EscapedTotal = 0;
             BrokenTotal = 0;
@@ -138,100 +145,7 @@ namespace SalvageRun.Run
 
         // ---------------------------------------------------------------- 계류 장치
 
-        /// <summary>지금 살아 있는 계류 장치 수. HUD와 기지가 읽는다.</summary>
-        public int AnchorsAlive { get; private set; }
-
-        /// <summary>이 지역에 심은 총 개수 (0이면 계류 지역이 아니다).</summary>
-        public int AnchorsTotal { get; private set; }
-
-        public readonly List<JunkPiece> Anchors = new List<JunkPiece>();
-
-        /// <summary>
-        /// 🔴 **최종 지역의 닻을 심는다.**
-        ///
-        ///    기지 앞이 아니라 **맵 곳곳에** 흩어 놓는다 —
-        ///    그래야 마지막 판도 *나가서 캐고 돌아오는* 이 게임의 리듬 그대로다.
-        ///    기지 앞 한 자리에서 끝나는 보스전은 20분 동안 가르친 것을 하나도 안 쓴다.
-        ///
-        ///    🔴 **가까운 것부터 약하게** 놓는다. 첫 닻이 쉽게 부서져야
-        ///       *"할 만하다"*를 먼저 배우고, 그 뒤에 어려워지는 게 느껴진다.
-        /// </summary>
-        public void PlantAnchors()
-        {
-            Anchors.Clear();
-            AnchorsAlive = 0;
-            AnchorsTotal = 0;
-            if (content.junk == null) return;
-
-            var kinds = new List<JunkType>();
-            for (int i = 0; i < content.junk.Length; i++)
-                if (content.junk[i].isAnchor) kinds.Add(content.junk[i]);
-            if (kinds.Count == 0) return;
-
-            EnsurePool(Pieces.Count + kinds.Count + 4);
-
-            for (int i = 0; i < kinds.Count; i++)
-            {
-                var p = FreePiece();
-                if (p == null) break;
-
-                // 네 방향으로 하나씩. 가까운 것부터 약한 순서다
-                float ang = (i / (float)kinds.Count) * Mathf.PI * 2f + 0.4f;
-                float dist = Mathf.Lerp(MapHalf.magnitude * 0.34f, MapHalf.magnitude * 0.78f,
-                                        i / Mathf.Max(1f, kinds.Count - 1f));
-
-                var pos = BaseCenter + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * dist;
-                pos.x = Mathf.Clamp(pos.x, -MapHalf.x + 4f, MapHalf.x - 4f);
-                pos.y = Mathf.Clamp(pos.y, -MapHalf.y + 4f, MapHalf.y - 4f);
-
-                p.Spawn(this, kinds[i], (Vector3)pos, Vector2.zero, 1f);
-                Anchors.Add(p);
-                AliveCount++;
-                SpawnedTotal++;
-            }
-
-            AnchorsTotal = Anchors.Count;
-            AnchorsAlive = AnchorsTotal;
-        }
-
-        /// <summary>부서진 닻을 센다. `BreakJunk`가 부른다.</summary>
-        void CountAnchor(JunkPiece j)
-        {
-            if (j.type == null || !j.type.isAnchor || AnchorsTotal <= 0) return;
-
-            // 🔴 **`Alive`만 보면 안 된다.** `Anchors`는 풀의 조각을 가리키는데,
-            //    계류 장치가 부서지면 그 슬롯이 **다른 쓰레기로 재사용**된다.
-            //    그러면 "살아 있는 다른 쓰레기"를 계류 장치로 세어
-            //    **다 끊었는데도 영영 안 풀린다** (2026-08-23 스모크가 잡았다).
-            //    지금도 계류 장치인지 **종류까지** 확인해야 한다.
-            AnchorsAlive = 0;
-            for (int i = 0; i < Anchors.Count; i++)
-            {
-                var a = Anchors[i];
-                if (a != null && a.Alive && a.type != null && a.type.isAnchor) AnchorsAlive++;
-            }
-
-            if (director != null) director.OnAnchorBroken(AnchorsAlive, AnchorsTotal);
-        }
-
-        /// <summary>
-        /// 🔴 **지역이 썩은 정도.** 정박 시간에 따라 1 → 최대 3배까지 오른다.
-        ///    로봇 비율에 곱해진다.
-        /// </summary>
-        public float RotRatio
-        {
-            get
-            {
-                if (director == null || !director.Docked) return 1f;
-                float mins = DockedSeconds / 60f;
-                return Mathf.Clamp(1f + mins * 0.9f, 1f, 3f);
-            }
-        }
-
-        /// <summary>이번 지역에 정박한 지 몇 초 됐나.</summary>
-        public float DockedSeconds { get; private set; }
-
-        public void ResetDockClock() => DockedSeconds = 0f;
+        public void ResetDockClock() { }
 
         /// <summary>가중치로 하나 고른다. 풀이 비면 null.</summary>
         JunkType PickFrom(System.Collections.Generic.List<JunkType> pool)
@@ -274,7 +188,6 @@ namespace SalvageRun.Run
 
                 // 🔴 로봇은 **별도 풀**이다. 밭과 섞으면 비율을 따로 조절할 수 없고,
                 //    그러면 "좋은 밭일수록 위험하다"를 배치로 만들 수 없다
-                if (t.isAnchor) continue;                                  // 최종 지역에서 직접 심는다
                 if (t.IsRobot) { hunterPool.Add(t); continue; }
 
                 normalPool.Add(t);
@@ -295,8 +208,6 @@ namespace SalvageRun.Run
         void Update()
         {
             if (Stage == null || RunDirector.WorldPaused) return;
-
-            if (director != null && director.Docked) DockedSeconds += Time.deltaTime;
 
             CullEscaped();
 
@@ -323,18 +234,15 @@ namespace SalvageRun.Run
         /// </summary>
         JunkType PickType()
         {
-            // 🔴 **로봇 비율을 먼저 굴린다** (rev.10). 위협의 총량이 여기서 정해진다 —
-            //    많으면 캘 틈이 없고, 적으면 밭이 그냥 정물이 된다.
-            //    `Tuning.HunterRatio`로 플레이 중에 돌릴 수 있다.
-            // 🔴 **정박이 길어질수록 로봇이 늘어난다** (rev.11 — 출발 압박).
+            // 🔴 **로봇은 기본적으로 안 나온다** (2026-08-23 사장님:
+            //    *"플레이어를 공격하는 것도 없애고, 플레이어는 무적이야"*).
             //
-            //    타이머를 박는 대신 **지역이 썩게** 만든다.
-            //    마감이 밖에서 주어지는 게 아니라 **내가 만든 상황**이 되고,
-            //    *"지금이 뜰 때다"*를 스스로 읽게 된다.
-            //
-            //    그리고 이게 견인·왕복과 맞물린다 — 두고 온 걸 주우러 돌아가면
-            //    그만큼 시간이 가고, 시간이 가면 로봇이 는다.
-            if (rng.NextDouble() < Tuning.HunterRatio * RotRatio)
+            //    `Tuning.HunterRatio` 기본값이 0이라 이 가지는 안 탄다.
+            //    코드를 지우지 않은 이유: 로봇 4종은 만들어 둔 내용물이고,
+            //    `K` 패널에서 비율을 올리면 **그 자리에서 되살아난다** —
+            //    "위협이 있는 편이 나은가"를 다시 판단할 때 빌드를 다시 안 해도 된다.
+            //    ⚠️ 지금 되살려도 **아프지는 않다.** 접촉 피해가 통째로 없다.
+            if (Tuning.HunterRatio > 0.0001f && rng.NextDouble() < Tuning.HunterRatio)
             {
                 var h = PickFrom(hunterPool);
                 if (h != null) return h;
@@ -375,10 +283,22 @@ namespace SalvageRun.Run
             var p = FreePiece();
             if (t == null || p == null) return;
 
-            // 🔴 시작할 때도 **밭으로** 깐다. 배 주변 링에 깔면 첫인상이
-            //    "몰려온다"가 되어 버린다 — 첫 화면이 장르를 말한다
-            p.Despawn();
-            SpawnCluster(t, PickFieldSpot());
+            // 🔴 화면 안 아무 곳. 단 **배 코앞은 피한다** — 시작하자마자 맞으면 억울하다
+            Vector2 c = target != null ? (Vector2)target.position : Vector2.zero;
+            Vector2 pos2 = c;
+            for (int tries = 0; tries < 8; tries++)
+            {
+                pos2 = new Vector2(RandRange(-MapHalf.x, MapHalf.x), RandRange(-MapHalf.y, MapHalf.y));
+                if ((pos2 - c).sqrMagnitude > 8f * 8f) break;
+            }
+            var pos = (Vector3)pos2;
+
+            float ang = (float)(rng.NextDouble() * Mathf.PI * 2);
+            var drift = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * JunkPiece.SpeedOf(t);
+
+            p.Spawn(this, t, pos, drift, hpMul);
+            AliveCount++;
+            SpawnedTotal++;
         }
 
         /// <summary>
@@ -398,120 +318,79 @@ namespace SalvageRun.Run
         ///    ⚠️ 이동을 바꿀 때는 **스폰 위치 · 스폰 속도 · 이동 패턴 셋을 다 봐야 한다.**
         ///       하나만 고치면 나머지 둘이 옛 동작을 그대로 되살린다.
         /// </summary>
+        /// <summary>
+        /// 🔴 **rev.12: 배 주변 화면 밖에서 배를 향해 밀려온다** (뱀서식).
+        ///    rev.9~11의 "밭" 방식(`PickFieldSpot`/`SpawnCluster`)은 지웠다.
+        ///    필요하면 `rev11-voyage` 브랜치에 그대로 있다.
+        /// </summary>
+        /// <summary>
+        /// 🔴 **화면 테두리 바로 바깥의 한 점.** 네 변 중 하나를 고르고 그 위 아무 데나.
+        ///    변을 먼저 고르므로 위·아래·좌·우가 **고르게** 나온다 —
+        ///    각도로 고르면 화면이 가로로 길 때 좌우에서만 몰려온다.
+        /// </summary>
+        Vector2 EdgeSpot()
+        {
+            float mx = MapHalf.x + spawnMargin;
+            float my = MapHalf.y + spawnMargin;
+
+            switch (rng.Next(4))
+            {
+                case 0:  return new Vector2(RandRange(-mx, mx), my);    // 위
+                case 1:  return new Vector2(RandRange(-mx, mx), -my);   // 아래
+                case 2:  return new Vector2(-mx, RandRange(-my, my));   // 왼쪽
+                default: return new Vector2(mx, RandRange(-my, my));    // 오른쪽
+            }
+        }
+
         void SpawnFromEdge()
         {
             var t = PickType();
-            if (t == null) return;
-
-            // 🔴 로봇은 밭이 아니다. **밭 근처에 붙어** 생긴다 (아래 SpawnHunter)
-            if (t.IsRobot) { SpawnHunter(t); return; }
-
-            Vector2 spot = PickFieldSpot();
-            SpawnCluster(t, spot);
-        }
-
-        /// <summary>
-        /// 밭이 생길 자리. **기지에서 멀고, 배 코앞이 아닌 곳**을 고른다.
-        /// 배 위에 그냥 튀어나오면 캐러 간다는 감각이 사라지고 그냥 몰려오는 것으로 보인다.
-        /// </summary>
-        Vector2 PickFieldSpot()
-        {
-            Vector2 ship = target != null ? (Vector2)target.position : Vector2.zero;
-
-            for (int tries = 0; tries < 12; tries++)
-            {
-                var pos = new Vector2(RandRange(-MapHalf.x, MapHalf.x),
-                                      RandRange(-MapHalf.y, MapHalf.y));
-
-                // 기지 안마당에는 밭이 안 생긴다 — 앉아서 캐면 루프가 사라진다
-                if ((pos - BaseCenter).sqrMagnitude < BaseClearRadius * BaseClearRadius) continue;
-
-                // 배 바로 옆에서 솟지 않는다
-                if ((pos - ship).sqrMagnitude < 14f * 14f) continue;
-
-                return pos;
-            }
-
-            // 자리를 못 찾으면 기지 반대편 어딘가
-            float ang = RandRange(0f, Mathf.PI * 2f);
-            return BaseCenter + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * (BaseClearRadius + 8f);
-        }
-
-        /// <summary>기지 주변 이 반경 안에는 밭이 생기지 않는다.</summary>
-        public float BaseClearRadius = 18f;
-
-        /// <summary>
-        /// 밭 하나. 한 자리에 여러 개가 **뭉쳐서** 뜬다 —
-        /// 흩어져 하나씩 있으면 "캐러 간다"가 아니라 "주우며 지나간다"가 된다.
-        /// </summary>
-        void SpawnCluster(JunkType t, Vector2 spot)
-        {
-            int n = Mathf.Max(1, t.groupSize) * RandInt(2, 5);
-            float spread = 2.2f + n * 0.35f;
-
-            for (int i = 0; i < n && AliveCount < AliveCap; i++)
-            {
-                var p = FreePiece();
-                if (p == null) break;
-
-                var off = new Vector2(RandRange(-spread, spread), RandRange(-spread, spread));
-                var pos = spot + off;
-                pos.x = Mathf.Clamp(pos.x, -MapHalf.x, MapHalf.x);
-                pos.y = Mathf.Clamp(pos.y, -MapHalf.y, MapHalf.y);
-
-                // 🔴 **거의 정지.** 방향도 무작위다 — 어디로도 향하지 않는다
-                float ang = RandRange(0f, Mathf.PI * 2f);
-                var drift = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * t.driftSpeed * 0.12f;
-
-                p.Spawn(this, t, (Vector3)pos, drift, hpMul);
-                AliveCount++;
-                SpawnedTotal++;
-            }
-        }
-
-        /// <summary>
-        /// 🔴 **파손 로봇은 밭을 지킨다.** 살아 있는 쓰레기 근처에 붙여 생성한다 —
-        ///    좋은 밭일수록 위험하다는 관계를 **수치가 아니라 배치로** 만드는 부분이다.
-        ///    밭이 하나도 없으면 배 쪽에서 다가온다 (그때는 로봇이 유일한 할 일이므로).
-        /// </summary>
-        void SpawnHunter(JunkType t)
-        {
             var p = FreePiece();
-            if (p == null) return;
+            if (t == null || p == null) return;
 
-            Vector2 spot;
-            var host = AnyAliveJunk();
+            Vector2 pos = EdgeSpot();
 
-            if (host != null)
-            {
-                float ang = RandRange(0f, Mathf.PI * 2f);
-                spot = (Vector2)host.transform.position
-                     + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * RandRange(3f, 9f);
-            }
-            else
-            {
-                Vector2 ship = target != null ? (Vector2)target.position : Vector2.zero;
-                float ang = RandRange(0f, Mathf.PI * 2f);
-                spot = ship + new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * spawnRadius;
-            }
+            // 🔴 **배를 겨누지 않는다** (2026-08-23 사장님:
+            //    *"쓰레기가 플레이어를 따라다니지 않게"*).
+            //
+            //    쫓지 않을 거면 **던지는 것도 겨누면 안 된다.** 겨눠서 뿌리면
+            //    쫓는 것과 그림이 똑같고, 다만 조준이 한 번뿐일 뿐이다.
+            //    대신 **맵 반대편 어딘가**를 향해 던진다 — 화면을 가로질러 흘러간다.
+            //
+            //    ⚠️ 완전 무작위 방향이면 절반이 화면 밖으로 나가 버려서
+            //       화면이 텅 빈다. 그래서 안쪽을 향하되 **넓게 흩는다.**
+            Vector2 inward = (-pos).normalized;
+            if (inward.sqrMagnitude < 0.01f) inward = Vector2.up;
 
-            spot.x = Mathf.Clamp(spot.x, -MapHalf.x, MapHalf.x);
-            spot.y = Mathf.Clamp(spot.y, -MapHalf.y, MapHalf.y);
+            float spread = RandRange(-0.85f, 0.85f);        // ±약 49°
+            float cs = Mathf.Cos(spread), sn = Mathf.Sin(spread);
+            Vector2 dir = new Vector2(inward.x * cs - inward.y * sn,
+                                      inward.x * sn + inward.y * cs);
 
-            p.Spawn(this, t, (Vector3)spot, Vector2.zero, hpMul);
+            // 🔴 웨이브 배수(`spawnRateMul`)를 속도에 곱하지 않는다.
+            //    후반에 40배가 되므로 그대로 곱하면 쓰레기가 **총알처럼 날아간다.**
+            //    거세지는 것은 **양**이지 속도가 아니다 (양은 `spawnPerSecond`가 맡는다).
+            float speed = JunkPiece.SpeedOf(t) * RandRange(0.75f, 1.35f);
+
+            p.Spawn(this, t, (Vector3)pos, dir * speed, hpMul);
             AliveCount++;
             SpawnedTotal++;
 
+            // 무리로 나오는 종류 — 뭉쳐서 같이 흘러간다
             for (int g = 1; g < t.groupSize && AliveCount < AliveCap; g++)
             {
                 var extra = FreePiece();
                 if (extra == null) break;
+
                 var off = new Vector2(RandRange(-2.5f, 2.5f), RandRange(-2.5f, 2.5f));
-                extra.Spawn(this, t, (Vector3)(spot + off), Vector2.zero, hpMul);
+                extra.Spawn(this, t, (Vector3)(pos + off), dir * speed * RandRange(0.9f, 1.1f), hpMul);
                 AliveCount++;
                 SpawnedTotal++;
             }
         }
+
+        /// <summary>모선 주변 이 반경. 지금은 스모크 테스트가 "배를 어디 세울까"에 쓴다.</summary>
+        public float BaseClearRadius = 8f;
 
         JunkPiece AnyAliveJunk()
         {
@@ -540,8 +419,8 @@ namespace SalvageRun.Run
         /// <summary>배에서 한참 멀어진 것은 사라진다. 맵 밖으로도 안 나간다.</summary>
         void CullEscaped()
         {
-            Vector2 center = target != null ? (Vector2)target.position : Vector2.zero;
-            float cull2 = cullRadius * cullRadius;
+            float cx = MapHalf.x + cullMargin;
+            float cy = MapHalf.y + cullMargin;
 
             for (int i = 0; i < Pieces.Count; i++)
             {
@@ -550,28 +429,16 @@ namespace SalvageRun.Run
 
                 var pos = (Vector2)p.transform.position;
 
-                // 맵 경계에 가둔다
-                pos.x = Mathf.Clamp(pos.x, -MapHalf.x, MapHalf.x);
-                pos.y = Mathf.Clamp(pos.y, -MapHalf.y, MapHalf.y);
-                p.transform.position = pos;
-
-                // 🔴 **rev.9: 밭은 사라지지 않는다.**
-                //
-                //    예전엔 배에서 36유닛만 멀어져도 지웠다 (뱀서식 — 화면 밖은 없는 셈).
-                //    그런데 쓰레기가 **찾아가서 캐는 밭**이 된 지금 그건 치명적이다:
-                //    밭을 떠나면 증발하고 배 근처에 다시 생겨서,
-                //    결국 **"쓰레기가 나를 따라다닌다"**로 보인다.
-                //    맵을 넓게 만든 이유 자체가 사라진다.
-                //
-                //    이제 맵 안에 있는 한 그대로 둔다. 개수는 `AliveCap`이 잡는다.
-                //    쫓아오는 로봇만, 너무 멀어지면 포기한 것으로 보고 지운다.
-                bool isHunter = p.type != null && p.type.IsRobot;
-                if (!isHunter) continue;
-                if ((pos - center).sqrMagnitude <= cull2 * 4f) continue;
-
-                p.Despawn();
-                AliveCount--;
-                EscapedTotal++;
+                // 🔴 **쓰레기는 맵 밖에서 들어온다.** 그래서 맵 경계로 가두면 안 된다 —
+                //    가두면 테두리에 딱 붙어서 생기고, 밖에서 들어오는 그림이 사라진다.
+                //    바깥 여유까지만 가두고, 그보다 멀면 지운다.
+                if (pos.x < -cx || pos.x > cx || pos.y < -cy || pos.y > cy)
+                {
+                    p.Despawn();
+                    AliveCount--;
+                    EscapedTotal++;
+                    continue;
+                }
             }
         }
 
@@ -644,24 +511,17 @@ namespace SalvageRun.Run
         public void BreakJunk(JunkPiece j)
         {
             BrokenTotal++;
-            bool wasAnchor = j.type != null && j.type.isAnchor;
             var t = j.type;
             int count = Mathf.Max(1, t.fragments);
             int per = t.fragmentValue > 0 ? t.fragmentValue : Mathf.Max(1, Mathf.RoundToInt(t.value / (float)count));
 
-            EnsureFragments(count);
+            EnsureFragments(count + 2);
             Vector3 center = j.transform.position;
 
-            for (int i = 0; i < count; i++)
-            {
-                var f = FreeFragment();
-                if (f == null) break;
-
-                float ang = (i / (float)count) * Mathf.PI * 2f + (SpawnedTotal * 0.13f);
-                var dir = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang));
-                // 세게 터뜨린다 — 흩어졌다가 빨려오는 그림이 있어야 '부쉈다'가 느껴진다
-                f.Spawn(center + (Vector3)(dir * 0.3f), dir * (6.5f + (i % 3)), per);
-            }
+            // ⬜ 예전에는 여기서 **값어치만 있는 파편**을 뿌렸다 (흡수하면 크레딧·경험치).
+            //    2026-08-26부터 쓰레기가 내놓는 것은 **재화 덩어리**뿐이다 —
+            //    무엇이 나왔는지가 색으로 보이고, 그걸 끌고 돌아와야 내 것이 된다.
+            //    (`RollMaterials`가 아래에서 뿌린다)
 
             Juice.Break();
 
@@ -683,7 +543,7 @@ namespace SalvageRun.Run
 
                         float a2 = (i / (float)Mathf.Max(1, t.splitCount)) * Mathf.PI * 2f;
                         var d2 = new Vector2(Mathf.Cos(a2), Mathf.Sin(a2));
-                        cp.Spawn(this, child, center + (Vector3)(d2 * 0.6f), d2 * child.driftSpeed, hpMul);
+                        cp.Spawn(this, child, center + (Vector3)(d2 * 0.6f), d2 * JunkPiece.SpeedOf(child), hpMul);
                         AliveCount++;
                         SpawnedTotal++;
                     }
@@ -695,7 +555,6 @@ namespace SalvageRun.Run
             AliveCount--;
 
             if (wasBossPart && director != null) director.OnBossPartBroken();
-            if (wasAnchor) CountAnchor(j);
         }
 
         public RunDirector director;
@@ -740,8 +599,16 @@ namespace SalvageRun.Run
                 sr.sprite = shardSprite != null ? shardSprite : sprite;
                 sr.sortingOrder = 8;
 
+                // 🔴 **수집 후보 테두리.** 어느 것이 주워질지 미리 보여준다 (2026-08-26)
+                var ringGo = new GameObject("Mark");
+                ringGo.transform.SetParent(go.transform, false);
+                var ringSr = ringGo.AddComponent<SpriteRenderer>();
+                ringSr.sprite = ringSprite != null ? ringSprite : sprite;
+                ringSr.sortingOrder = 7;          // 덩어리보다 뒤 — 가리면 무엇인지 안 보인다
+
                 var f = go.AddComponent<Fragment>();
                 f.Bind(sr);
+                f.BindRing(ringSr);
                 f.Despawn();
                 Fragments.Add(f);
                 free++;
@@ -827,39 +694,6 @@ namespace SalvageRun.Run
             ClearShots();
         }
 
-        /// <summary>
-        /// 🔴 **정면에서 밀려오는 잔해** (항행 국면).
-        ///
-        ///    기지가 우주를 가로지르니 앞에서 부딪혀 온다 — rev.7의 조류를 여기서 되살린다.
-        ///    다만 그때와 달리 **상시가 아니라 항행 중에만** 온다.
-        ///    조용한 구간(정박)이 있어야 이 구간이 무섭다.
-        /// </summary>
-        public void SpawnIncoming()
-        {
-            var t = PickIncomingType();
-            var p = FreePiece();
-            if (t == null || p == null) return;
-
-            // 화면 위쪽(진행 방향)에서 기지 쪽으로 내려온다
-            float x = RandRange(-MapHalf.x * 0.85f, MapHalf.x * 0.85f);
-            var pos = new Vector2(x, MapHalf.y * 0.95f);
-
-            Vector2 aim = BaseCenter + new Vector2(RandRange(-6f, 6f), 0f);
-            Vector2 dir = (aim - pos).normalized;
-            float speed = Mathf.Max(4f, t.driftSpeed) * RandRange(0.9f, 1.35f);
-
-            p.Spawn(this, t, (Vector3)pos, dir * speed, hpMul);
-            AliveCount++;
-            SpawnedTotal++;
-        }
-
-        /// <summary>항행에 나오는 것 — 밭(캐는 것)이 아니라 **부딪혀 오는 것**이다.</summary>
-        JunkType PickIncomingType()
-        {
-            var pick = PickFrom(normalPool);
-            return pick;
-        }
-
         public void SpawnHazardAt(Vector2 pos)
         {
             if (hazardPool.Count == 0) return;
@@ -869,7 +703,7 @@ namespace SalvageRun.Run
 
             var t = hazardPool[rng.Next(hazardPool.Count)];
             float a = (float)(rng.NextDouble() * Mathf.PI * 2);
-            var drift = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * t.driftSpeed;
+            var drift = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * JunkPiece.SpeedOf(t);
 
             p.Spawn(this, t, pos, drift, hpMul);
             AliveCount++;
@@ -939,7 +773,10 @@ namespace SalvageRun.Run
             Vector2 c = Vector2.zero;
             BossCenter = c;
 
-            float ring = 6f;
+            // 🔴 맵이 화면 한 장이 되면서 **고정값 6은 창 크기에 따라 어색해진다.**
+            //    짧은 쪽의 절반쯤에 두면 어느 창 크기에서도 화면을 채우는 그림이 된다.
+            //    모선(반경 4.5)을 **둘러싸는** 배치가 되어 그림도 맞는다.
+            float ring = Mathf.Max(5.5f, Mathf.Min(MapHalf.x, MapHalf.y) * 0.55f);
 
             int made = 0;
             for (int i = 0; i < parts; i++)
@@ -972,32 +809,68 @@ namespace SalvageRun.Run
         /// </summary>
         void RollMaterials(JunkType t, Vector3 at)
         {
-            // 티어 0 / 1 / 2 기준 확률
-            // 🔴 2026-08-22 실측으로 올렸다. 맵 1에서 분당 고철 18.5개였는데
-            //    테크트리 전체 완주에 216,000개가 필요해 **195시간**이 나왔다.
-            //    수입과 비용이 두 자릿수 배로 어긋나 있었다.
-            float pScrap   = (0.14f + t.tier * 0.10f) * scrapFind;
-            float pCircuit = (t.tier >= 1 ? 0.030f + (t.tier - 1) * 0.030f : 0.005f) * circuitFind;
+            // 🔴 **고철은 반드시 나온다** (2026-08-26).
+            //    확률로만 뿌리면 부수고도 아무것도 안 떨어지는 일이 잦고,
+            //    그러면 "부쉈다"와 "벌었다"가 따로 논다 — 인크리멘탈에서 그건 치명적이다.
+            //    큰 쓰레기일수록 여러 덩어리로 나온다.
+            int lumps = Mathf.Clamp(1 + t.tier + (t.fragments >= 4 ? 1 : 0), 1, 3);
+            int per = Mathf.Max(1, Mathf.RoundToInt((1 + t.tier) * scrapFind));
+            for (int i = 0; i < lumps; i++)
+                DropMat(MatKind.Scrap, per, at);
 
-            // 🔴 코어는 맵 1(티어 0)에서 **한 개도 안 나온다.** 그건 의도다 —
-            //    우주선 해금이 "깊은 맵까지 가라"는 뜻이어야 한다.
-            //    다만 아예 0이면 벽이라, 티어 1에서도 아주 낮은 확률로 나오게 뒀다.
-            float pCore    = (t.tier >= 2 ? 0.010f : t.tier >= 1 ? 0.0015f : 0f) * coreFind;
+            // 🔴 **구역마다 새 재화가 하나씩 열린다** (2026-08-26 · Space Rock Breaker 방향).
+            //
+            //    2구역=회로 · 3구역=코어 · 4구역=초합금 · 5구역=냉각결정 · 6구역=동위원소.
+            //    구역을 여는 이유가 *"더 빨리 번다"*가 아니라
+            //    **"여기서만 나오는 게 있다"**여야 한다 — 그래야 깊이가 곧 진행이 된다.
+            //
+            //    🔴 **바로 앞 구역 것이 제일 흔하다.** 그 구역의 대표 재화가 잘 나와야
+            //       "여기 온 보람"이 있고, 더 깊은 것은 아직 안 나오므로 다음 구역이 궁금해진다.
+            int rank = Stage != null ? Stage.rank : 1;
 
-            TryMat(MatKind.Scrap,   pScrap,   1 + t.tier, at);
-            TryMat(MatKind.Circuit, pCircuit, 1, at);
-            TryMat(MatKind.Core,    pCore,    1, at);
+            for (int i = 1; i < Mats.Count; i++)
+            {
+                var m = (MatKind)i;
+                int need = Mats.FirstRank(m);          // 이 재화가 처음 나오는 구역 등급
+                if (rank < need) continue;             // 아직 이 구역엔 없다
+
+                // 이 구역에서 얼마나 익었나 — 갓 열린 것은 드물고, 지나온 것은 흔해진다
+                int depth = rank - need;
+                float chance = (0.012f + depth * 0.022f) * (1f + t.tier * 0.6f);
+
+                chance *= m == MatKind.Circuit ? circuitFind
+                        : m == MatKind.Core    ? coreFind
+                                               : 1f;
+
+                TryMat(m, chance, 1, at);
+            }
         }
 
+        /// <summary>
+        /// 🔴 **재화는 이제 떨어진다** (2026-08-26).
+        ///    예전에는 여기서 저장에 숫자를 바로 더했다 — 눈에 안 보이고, 고를 수도 없었다.
+        ///    이제 덩어리를 하나 뿌린다. 주워서 **끌고 돌아와야** 내 것이 된다.
+        /// </summary>
         void TryMat(MatKind m, float chance, int amount, Vector3 at)
         {
             if (chance <= 0f || rng.NextDouble() >= chance) return;
+            DropMat(m, amount, at);
+        }
 
-            MatsThisRun[(int)m] += amount;
-            Meta.MetaSave.AddMaterial(m, amount);
+        /// <summary>재화 덩어리 하나를 그 자리에 떨어뜨린다.</summary>
+        void DropMat(MatKind m, int amount, Vector3 at)
+        {
+            var f = FreeFragment();
+            if (f == null) return;
 
-            if (director != null)
-                director.AddPopup(at, $"{Mats.Name(m)} +{amount}", Mats.ColorOf(m));
+            float a = (float)(rng.NextDouble() * Mathf.PI * 2);
+            var dir = new Vector2(Mathf.Cos(a), Mathf.Sin(a));
+
+            // 값어치는 종류가 정한다 (`Mats.WorthOf`) — 한 곳에서만 답하게 모아 뒀다
+            f.Spawn(at + (Vector3)(dir * 0.4f), dir * (4.5f + (float)rng.NextDouble() * 2f),
+                    Mats.WorthOf(m), m, amount);
+
+            // ⬜ 팝업은 안 띄운다. 떨어진 덩어리 자체가 눈에 보이므로 글씨는 소음이다
         }
 
         void DropItem(Vector3 center)

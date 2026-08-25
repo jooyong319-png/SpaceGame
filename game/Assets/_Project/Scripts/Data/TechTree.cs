@@ -17,11 +17,22 @@ namespace SalvageRun.Data
     ///    회로  = 갈림길을 여는 것 (중간 노드)
     ///    코어  = 판을 바꾸는 것 (끝 노드) — 큰 쓰레기와 보스에서만 나온다
     /// </summary>
+    /// <summary>
+    /// 🔴 **깊이 갈수록 새 재화가 나온다** (2026-08-26 · Space Rock Breaker 방향).
+    ///    스토어 문구가 *"깊이 들어갈수록 새롭고 값진 광석"*이고, 그게 그 게임 진행의 축이다.
+    ///    구역을 여는 이유가 "더 빨리 번다"가 아니라 **"여기서만 나오는 게 있다"**여야 한다.
+    ///
+    /// ⚠️ **기존 셋의 정수값을 절대 바꾸지 말 것.** 저장이 인덱스로 물려 있다
+    ///    (`MetaData.selectedWeapon`처럼 순서가 곧 뜻인 자리가 있다). 새 것은 **뒤에만** 붙인다.
+    /// </summary>
     public enum MatKind
     {
-        Scrap = 0,   // 고철
-        Circuit,     // 회로
-        Core         // 코어
+        Scrap = 0,   // 고철   — 어디서나
+        Circuit,     // 회로   — 2구역부터
+        Core,        // 코어   — 3구역부터
+        Alloy,       // 초합금 — 4구역부터
+        Crystal,     // 냉각결정 — 5구역부터
+        Isotope      // 동위원소 — 6구역
     }
 
     public static class Mats
@@ -37,17 +48,60 @@ namespace SalvageRun.Data
                 case MatKind.Scrap:   return "고철";
                 case MatKind.Circuit: return "회로";
                 case MatKind.Core:    return "코어";
+                case MatKind.Alloy:   return "초합금";
+                case MatKind.Crystal: return "냉각결정";
+                case MatKind.Isotope: return "동위원소";
             }
             return "?";
         }
+
+        /// <summary>
+        /// 🔴 한 덩어리의 값어치. **종류가 곧 값**이다.
+        ///    깊은 구역 재화일수록 한 덩어리가 크게 값나가야
+        ///    *"칸 하나를 무엇에 쓸까"*가 진짜 계산이 된다.
+        /// </summary>
+        public static int WorthOf(MatKind m)
+        {
+            switch (m)
+            {
+                case MatKind.Scrap:   return 8;
+                case MatKind.Circuit: return 24;
+                case MatKind.Core:    return 60;
+                case MatKind.Alloy:   return 140;
+                case MatKind.Crystal: return 320;
+                case MatKind.Isotope: return 700;
+            }
+            return 1;
+        }
+
+        /// <summary>덩어리 크기. 값진 것일수록 크게 — 멀리서 "저기 있다"가 보여야 한다.</summary>
+        public static float ScaleOf(MatKind m)
+        {
+            switch (m)
+            {
+                case MatKind.Scrap:   return 0.68f;
+                case MatKind.Circuit: return 0.84f;
+                case MatKind.Core:    return 1.05f;
+                case MatKind.Alloy:   return 1.20f;
+                case MatKind.Crystal: return 1.35f;
+                case MatKind.Isotope: return 1.55f;
+            }
+            return 0.7f;
+        }
+
+        /// <summary>이 재화가 처음 나오는 구역 등급(`StageDef.rank`).</summary>
+        public static int FirstRank(MatKind m) => (int)m + 1;
 
         public static Color ColorOf(MatKind m)
         {
             switch (m)
             {
-                case MatKind.Scrap:   return new Color(0.78f, 0.80f, 0.86f);
-                case MatKind.Circuit: return new Color(0.45f, 0.95f, 0.80f);
-                case MatKind.Core:    return new Color(1.00f, 0.55f, 0.95f);
+                case MatKind.Scrap:   return new Color(0.78f, 0.80f, 0.86f);   // 흐린 회색
+                case MatKind.Circuit: return new Color(0.45f, 0.95f, 0.80f);   // 청록
+                case MatKind.Core:    return new Color(1.00f, 0.55f, 0.95f);   // 분홍
+                case MatKind.Alloy:   return new Color(1.00f, 0.78f, 0.35f);   // 금색
+                case MatKind.Crystal: return new Color(0.55f, 0.75f, 1.00f);   // 얼음빛
+                case MatKind.Isotope: return new Color(0.70f, 1.00f, 0.35f);   // 형광 연두
             }
             return Color.white;
         }
@@ -86,17 +140,20 @@ namespace SalvageRun.Data
         WeaponCooldown,     // 쿨다운 -N%
         BossDamage,         // 보스에게 주는 피해 +N%
 
-        // ---- 무기 전용 (특색) ----
-        BladeCount,         // 절단날 +N개
-        BladeSpin,          // 절단날 회전 +N%
-        HarpoonCount,       // 작살 발사 수 +N
-        HarpoonPierce,      // 작살 관통 +N
-        VortexRadius,       // 소용돌이 반경 +N%
-        VortexDamage,       // 소용돌이 피해 +N%
-        BombCount,          // 폭탄 +N개
-        BombRadius,         // 폭발 반경 +N%
-        ArcTargets,         // 방전 대상 +N
-        ArcRange,           // 방전 사거리 +N%
+        // ---- 🔴 무기별 (2026-08-23) ----
+        //
+        // 🔴 사장님 지시: *"공용이 있고, 무기별로 따로 있는 방식."*
+        //    위의 `WeaponPower`·`WeaponRange`·`WeaponCooldown`이 **공용**이고,
+        //    아래는 **어느 무기 하나**에만 붙는다 — 어느 무기인지는 `TechNodeDef.weapon`.
+        //
+        //    ⚠️ 예전에는 이 자리에 `HarpoonCount` 같은 **패턴 단위** 효과가 있었다.
+        //       그건 같은 패턴을 쓰는 무기를 **같이** 올려서(작살 노드가 원반까지 키웠다)
+        //       "무기마다 다른 길"이 성립하지 않았다.
+        WeaponPowerOne,     // 이 무기 피해 +N%
+        WeaponRangeOne,     // 이 무기 사거리 +N%
+        WeaponCooldownOne,  // 이 무기 쿨다운 -N%
+        WeaponCountOne,     // 이 무기 발사 수 · 연쇄 대상 +N
+        WeaponPierceOne,    // 이 무기 관통 +N
 
         // ---- 수집 · 경제 ----
         IntakeRadius,       // 흡수 반경 +N%
@@ -112,8 +169,33 @@ namespace SalvageRun.Data
         CoreFind,           // 코어 드랍률 +N%
         MatFindAll,         // 전 재화 드랍률 +N%
 
+        /// <summary>
+        /// 🔴 **무기를 연다** (2026-08-23 사장님: *"테크트리 하나 안에 무기 종류를 넣어라"*).
+        ///    어느 무기인지는 `TechNodeDef.weapon`이 정한다.
+        ///    이미 연 노드를 다시 누르면 **그 무기를 골라 든다** (`MetaSave.SelectWeapon`).
+        ///
+        ///    ⚠️ 스탯을 안 바꾼다. 다른 효과와 달리 `BuildStats`에서 값을 더하지 않고,
+        ///       "무엇을 들고 시작하는가"를 정할 뿐이다.
+        /// </summary>
+        UnlockWeapon,
+
+        /// <summary>
+        /// 🔴 **끌 때 덜 무겁다** (2026-08-26). 값이 클수록 같은 개수를 끌어도 덜 느려진다.
+        ///    지금 판에서 제일 큰 결정이 *"얼마나 싣고 갈까"*라 여기가 그 손잡이다.
+        /// </summary>
+        TowWeight,
+
+        /// <summary>🔴 **끌 수 있는 개수 +N.** 무게 감소와 달리 **벽 자체를 밀어낸다.</summary>
+        TowCapacity,
+
+        /// <summary>
+        /// 🔴 **회수 드론 +N대.** 한 대가 배 옆에 떠서 제 줄을 끈다 (`RunDirector.DroneCarry`칸).
+        ///    칸 노드와 달리 **화면에 보인다** — 산 것이 눈에 보여야 강해진 게 남는다.
+        /// </summary>
+        CarrierDrone,
+
         // ---- 런 시작 상태 ----
-        StartLevel,         // 시작 레벨 +N
+        StartLevel,         // ⬜ 레벨업이 없다 (2026-08-26). 읽는 곳 없음
         StartWeaponLevel,   // 시작 무기 레벨 +N
         CardChoices,        // 카드 선택지 +N
         ComboLevelDown      // 조합 발동 요구 레벨 -N

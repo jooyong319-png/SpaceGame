@@ -44,6 +44,31 @@ namespace SalvageRun.Data
             return n;
         }
 
+        /// <summary>
+        /// 무기를 여는 노드. 효과는 스탯이 아니라 **해금**이라 값이 없다.
+        /// </summary>
+        static TechNodeDef Wep(string id, string title, WeaponKind k, string desc,
+                               int x, int y, int scrap, int circuit = 0, int core = 0,
+                               params string[] requires)
+        {
+            var n = N(id, title, desc, TechBranch.Weapon, x, y,
+                      TechEffect.UnlockWeapon, 0f, scrap, circuit, core, 1, 1f, requires);
+            n.weapon = k;
+            return n;
+        }
+
+        /// <summary>무기 **하나에만** 붙는 노드. 어느 무기인지는 `weapon`이 정한다.</summary>
+        static TechNodeDef Won(string id, string title, string desc, WeaponKind k,
+                               int x, int y, TechEffect effect, float value,
+                               int scrap, int circuit = 0, int core = 0,
+                               int maxRank = 1, float growth = 1.55f, params string[] requires)
+        {
+            var n = N(id, title, desc, TechBranch.Weapon, x, y,
+                      effect, value, scrap, circuit, core, maxRank, growth, requires);
+            n.weapon = k;
+            return n;
+        }
+
         public static void Fill(GameContent c)
         {
             buf.Clear();
@@ -55,13 +80,50 @@ namespace SalvageRun.Data
               TechBranch.Core, 0, 0, TechEffect.FuelMax, 20f, 0);
 
             // ==========================================================================
-            //  선체 — 버티는 쪽 (좌하)
+            //  무기 — 무엇을 들고 나가는가 (뿌리 바로 아래)
+            //
+            //  🔴 **무기를 테크트리 안에 넣었다** (2026-08-23 사장님 지시:
+            //     *"테크 트리 하나 안에 무기 종류를 넣어주면 됨"*).
+            //
+            //     전에는 준비 화면에서 배를 골랐고, 배가 무기를 정했다.
+            //     그러면 무기가 **영구 강화 바깥**에 있어서 "무엇을 살까"의 저울에 안 올랐다.
+            //     이제 노드 하나가 무기 하나다 — 강화를 살지 무기를 열지가 한 저울이 된다.
+            //
+            //  🔴 **첫 무기는 공짜다.** 무기가 하나도 없으면 판에서 아무것도 못 한다 —
+            //     테크트리를 한 번도 안 열어 본 사람도 반드시 하나는 들고 있어야 한다.
+            //     (`MetaSave.CurrentWeapon`이 열린 것 중 첫 번째로 되돌린다)
+            //
+            //  ⚠️ 연 무기를 **다시 누르면 그것을 골라 든다.** 여는 것과 고르는 것이
+            //     같은 노드에서 일어난다 — 화면을 하나 더 만들지 않으려는 것이다.
+            // ==========================================================================
+            Wep("wep_harpoon", "견인 작살", WeaponKind.Harpoon,
+                "곧게 쏴서 꿰뚫는다. 관통이 오르면 한 발이 여러 개를 지난다",
+                0, -3, 0);
+
+            Wep("wep_arc", "정전기 방출", WeaponKind.Arc,
+                "가까운 것들에게 옮겨붙는다. 한 방은 약하지만 쉴 새 없다",
+                -2, -3, 1000, 14, 0, "wep_harpoon");
+
+            Wep("wep_discus", "회수 원반", WeaponKind.Discus,
+                "던지면 돌아온다. 오가며 두 번 벤다",
+                2, -3, 1600, 24, 2, "wep_harpoon");
+
+            // ==========================================================================
+            //  선체 — **조업 시간**을 늘리는 쪽 (좌하)
+            //
+            //  🔴 2026-08-26: 원래 "버티는 쪽"이었다. 플레이어가 무적이 되면서
+            //     충돌 저항 노드가 **돈만 먹는 노드**가 됐고, 가지 전체가 죽어 있었다.
+            //
+            //  🔴 Space Rock Breaker에서 **연료는 성장을 체감시키는 장치**다 —
+            //     처음엔 30초라 답답하고, 강화할수록 길어지다가 결국 제약이 아니게 된다.
+            //     *"한 시간 안에 수백 개를 몇 초 만에 부수게 된다"*가 거기서 나온다.
+            //     그래서 이 가지를 통째로 **연료 = 조업 시간**으로 바꿨다.
             // ==========================================================================
             N("hull1", "보강 판재", "최대 연료 +25", TechBranch.Hull, -1, -1,
               TechEffect.FuelMax, 25f, 16, 0, 0, 5, 1.5f, "root");
 
-            N("hull2", "충격 흡수재", "충돌 피해 -4%", TechBranch.Hull, -2, -1,
-              TechEffect.ContactResist, 0.04f, 28, 0, 0, 5, 1.6f, "hull1");
+            N("hull2", "예비 연료통", "최대 연료 +40", TechBranch.Hull, -2, -1,
+              TechEffect.FuelMax, 40f, 28, 0, 0, 5, 1.6f, "hull1");
 
             N("hull3", "예열 연료", "시작 연료 +8%p", TechBranch.Hull, -2, -2,
               TechEffect.StartFuel, 0.08f, 36, 1, 0, 3, 1.7f, "hull1");
@@ -69,11 +131,12 @@ namespace SalvageRun.Data
             N("hull4", "이중 격벽", "최대 연료 +60", TechBranch.Hull, -3, -1,
               TechEffect.FuelMax, 60f, 64, 1, 0, 4, 1.6f, "hull2");
 
-            N("hull5", "복합 장갑", "충돌 피해 -7%", TechBranch.Hull, -3, -2,
-              TechEffect.ContactResist, 0.07f, 88, 2, 0, 3, 1.7f, "hull2", "hull3");
+            N("hull5", "정제 회로", "최대 연료 +90", TechBranch.Hull, -3, -2,
+              TechEffect.FuelMax, 90f, 88, 2, 0, 5, 1.7f, "hull2", "hull3");
 
-            N("hull6", "비상 전개 장치", "격침될 때 한 번 부활한다 (연료 절반)",
-              TechBranch.Hull, -4, -2, TechEffect.Revive, 1f, 240, 7, 2, 1, 1f, "hull5");
+            // 🔴 죽지 않는 게임에 부활이 있을 수 없다 — "연료통 회수량"으로 갈아끼웠다
+            N("hull6", "회수 자석", "떨어진 연료통 회복량 +25%",
+              TechBranch.Hull, -4, -2, TechEffect.FuelPickupBonus, 0.25f, 240, 7, 2, 4, 1.7f, "hull5");
 
             N("hull7", "정제 회수기", "파편마다 연료 +0.15", TechBranch.Hull, -4, -1,
               TechEffect.RefineOnCollect, 0.15f, 104, 2, 0, 4, 1.6f, "hull4");
@@ -138,20 +201,30 @@ namespace SalvageRun.Data
             N("sal2", "자동 분류기", "크레딧 +5%", TechBranch.Salvage, 2, -1,
               TechEffect.ValueMul, 0.05f, 30, 1, 0, 6, 1.55f, "sal1");
 
-            N("sal3", "분석 모듈", "경험치 +5%", TechBranch.Salvage, 2, -2,
-              TechEffect.XpMul, 0.05f, 34, 1, 0, 6, 1.55f, "sal1");
+            // 🔴 레벨업이 없어져(2026-08-26) 경험치 노드가 죽었다 — 견인 쪽으로 갈아끼웠다
+            N("sal3", "경량 견인줄", "짐이 덜 무겁다 (+8%)", TechBranch.Salvage, 2, -2,
+              TechEffect.TowWeight, 0.08f, 34, 1, 0, 6, 1.55f, "sal1");
 
-            N("sal4", "광역 회수기", "파편 흡수 반경 +14%", TechBranch.Salvage, 3, -1,
-              TechEffect.IntakeRadius, 0.14f, 88, 2, 0, 4, 1.65f, "sal2");
+            // 🔴 **끌 수 있는 칸 +1.** 지금 판에서 제일 크게 체감되는 강화다 —
+            //    무게 감소는 "덜 느려진다"지만 이건 **벽 자체를 민다.**
+            N("sal4", "확장 견인대", "끌 수 있는 칸 +1", TechBranch.Salvage, 3, -1,
+              TechEffect.TowCapacity, 1f, 88, 2, 0, 5, 2.0f, "sal2");
 
             N("sal5", "감정 회로", "크레딧 +12%", TechBranch.Salvage, 3, -2,
               TechEffect.ValueMul, 0.12f, 112, 3, 0, 5, 1.7f, "sal2", "sal3");
 
-            N("sal6", "학습 코어", "경험치 +12%", TechBranch.Salvage, 4, -2,
-              TechEffect.XpMul, 0.12f, 128, 3, 1, 4, 1.7f, "sal3");
+            N("sal6", "관성 상쇄기", "짐이 덜 무겁다 (+18%)", TechBranch.Salvage, 4, -2,
+              TechEffect.TowWeight, 0.18f, 128, 3, 1, 4, 1.7f, "sal3");
 
             N("sal7", "보급 신호", "아이템 드랍률 +0.6%p", TechBranch.Salvage, 4, -1,
               TechEffect.ItemDropChance, 0.006f, 152, 4, 1, 5, 1.7f, "sal4");
+
+            // 🔴 **회수 드론** — 배 옆에 떠서 제 줄을 끈다 (한 대당 2칸).
+            //    칸 노드는 숫자만 늘지만 이건 **화면에 보인다.**
+            //    수집 가지의 끝에 두는 이유: 이 가지에서 제일 크게 체감되는 보상이어야 한다.
+            N("sal_drone", "회수 드론", "드론이 따라붙어 2칸을 더 끈다",
+              TechBranch.Salvage, 5, -3,
+              TechEffect.CarrierDrone, 1f, 420, 12, 3, 3, 2.2f, "sal4", "sal7");
 
             N("sal8", "연료 농축", "연료 아이템 회복량 +20%", TechBranch.Salvage, 5, -1,
               TechEffect.FuelPickupBonus, 0.20f, 168, 4, 1, 3, 1.7f, "sal7");
@@ -170,55 +243,72 @@ namespace SalvageRun.Data
               TechEffect.MatFindAll, 0.10f, 640, 18, 4, 4, 1.85f, "mat3");
 
             // ==========================================================================
-            //  무기 특색 — 패턴별 (아래쪽 바깥)
-            //  🔴 무기 이름이 아니라 **패턴**에 붙인다. 무기가 늘어도 여기는 그대로다.
+            //  무기별 가지 — 무기 노드마다 **제 길**이 아래로 뻗는다
+            //
+            //  🔴 사장님 지시 (2026-08-23): *"무기는 따로따로 테크트리 타지게 하자."*
+            //     *"공용이 있고, 무기별로 따로 있는 방식."*
+            //
+            //     · **공용**은 화력 가지(`pow*`)다 — 어느 무기를 들든 같이 오른다
+            //     · **무기별**은 여기다 — 그 무기를 들었을 때만 뜻이 있다
+            //
+            //  ⚠️ 예전에는 이 자리에 **패턴 단위** 노드가 있었다("발사체 +1").
+            //     그건 같은 패턴을 쓰는 무기를 **같이** 올려서 — 작살 노드가 원반까지 키웠다 —
+            //     "무기마다 다른 길"이 성립하지 않았다. 이제 `TechNodeDef.weapon`으로 갈린다.
+            //
+            //  🔴 세 가지가 **성격이 다르게** 뻗는다. 다 같은 모양이면 무기를 바꿀 이유가 없다:
+            //     · 작살 = 한 발을 **뚫는다** (관통 → 발사 수)
+            //     · 방전 = **퍼진다** (연쇄 대상 → 사거리)
+            //     · 원반 = **오래 돈다** (쿨다운 → 피해)
             // ==========================================================================
-            N("wp_orbit1", "추가 궤도", "궤도체(절단날·방벽) +1", TechBranch.Weapon, -2, -4,
-              TechEffect.BladeCount, 1f, 140, 3, 0, 3, 1.9f, "hull2");
 
-            N("wp_orbit2", "고속 회전", "궤도 회전 속도 +12%", TechBranch.Weapon, -3, -4,
-              TechEffect.BladeSpin, 0.12f, 104, 2, 0, 4, 1.6f, "wp_orbit1");
+            // ---- 견인 작살 (0,-3에서 아래로) ----
+            Won("hp1", "강화 미늘", "작살 관통 +1", WeaponKind.Harpoon, 0, -4,
+                TechEffect.WeaponPierceOne, 1f, 120, 3, 0, 4, 1.75f, "wep_harpoon");
 
-            N("wp_proj1", "추가 발사", "발사체(작살·원반) +1", TechBranch.Weapon, -1, -4,
-              TechEffect.HarpoonCount, 1f, 160, 4, 1, 3, 1.9f, "root");
+            Won("hp2", "연장 탄창", "작살 발사 수 +1", WeaponKind.Harpoon, 0, -5,
+                TechEffect.WeaponCountOne, 1f, 260, 7, 1, 3, 1.95f, "hp1");
 
-            N("wp_proj2", "강화 미늘", "관통 +1", TechBranch.Weapon, 0, -4,
-              TechEffect.HarpoonPierce, 1f, 120, 3, 0, 4, 1.75f, "wp_proj1");
+            Won("hp3", "관통 장약", "작살 피해 +12%", WeaponKind.Harpoon, 1, -5,
+                TechEffect.WeaponPowerOne, 0.12f, 180, 5, 0, 5, 1.7f, "hp1");
 
-            N("wp_blast1", "추가 탄두", "폭발물(폭탄·지뢰) +1", TechBranch.Weapon, 1, -4,
-              TechEffect.BombCount, 1f, 168, 4, 1, 3, 1.9f, "sal1");
+            // ---- 정전기 방출 (-2,-3에서 아래로) ----
+            Won("ac1", "분기 회로", "방전 대상 +1", WeaponKind.Arc, -2, -4,
+                TechEffect.WeaponCountOne, 1f, 152, 4, 1, 4, 1.8f, "wep_arc");
 
-            N("wp_blast2", "고폭 장약", "폭발 반경 +10%", TechBranch.Weapon, 2, -4,
-              TechEffect.BombRadius, 0.10f, 112, 3, 0, 4, 1.65f, "wp_blast1");
+            Won("ac2", "전도 확장", "방전 사거리 +12%", WeaponKind.Arc, -3, -5,
+                TechEffect.WeaponRangeOne, 0.12f, 120, 3, 0, 4, 1.65f, "ac1");
 
-            N("wp_chain1", "분기 회로", "연쇄 대상 +1", TechBranch.Weapon, 3, -4,
-              TechEffect.ArcTargets, 1f, 152, 4, 1, 4, 1.8f, "wp_blast1");
+            Won("ac3", "축전 개선", "방전 쿨다운 -7%", WeaponKind.Arc, -2, -5,
+                TechEffect.WeaponCooldownOne, 0.07f, 190, 5, 0, 4, 1.7f, "ac1");
 
-            N("wp_chain2", "전도 확장", "연쇄 사거리 +12%", TechBranch.Weapon, 4, -4,
-              TechEffect.ArcRange, 0.12f, 120, 3, 0, 4, 1.65f, "wp_chain1");
+            // ---- 회수 원반 (2,-3에서 아래로) ----
+            Won("ds1", "경량 날", "원반 쿨다운 -7%", WeaponKind.Discus, 2, -4,
+                TechEffect.WeaponCooldownOne, 0.07f, 150, 4, 0, 4, 1.7f, "wep_discus");
 
-            N("wp_field1", "장판 확장", "장판 반경 +10%", TechBranch.Weapon, -4, -4,
-              TechEffect.VortexRadius, 0.10f, 120, 3, 0, 4, 1.65f, "wp_orbit2");
+            Won("ds2", "쌍원반", "원반 발사 수 +1", WeaponKind.Discus, 3, -5,
+                TechEffect.WeaponCountOne, 1f, 300, 8, 1, 3, 1.95f, "ds1");
 
-            N("wp_field2", "고밀도 장판", "장판 피해 +15%", TechBranch.Weapon, -5, -4,
-              TechEffect.VortexDamage, 0.15f, 168, 4, 1, 4, 1.7f, "wp_field1");
+            Won("ds3", "중량 테두리", "원반 피해 +14%", WeaponKind.Discus, 2, -5,
+                TechEffect.WeaponPowerOne, 0.14f, 200, 5, 0, 5, 1.7f, "ds1");
 
             // ==========================================================================
             //  특수 — 런을 시작하는 조건 자체를 바꾼다 (위쪽 바깥)
             //  🔴 여기가 제일 비싸다. **판이 시작되는 모양**을 바꾸는 것이라
             //     숫자 노드 수십 개보다 체감이 크다.
             // ==========================================================================
-            N("sp_card1", "예비 설계도", "레벨업 카드 선택지 +1", TechBranch.Special, 0, 3,
-              TechEffect.CardChoices, 1f, 280, 8, 1, 2, 2.2f, "pow1", "drv1");
+            // 🔴 카드·레벨이 없어져(2026-08-26) 죽은 두 노드를 **끌고 다니는 쪽**으로 갈아끼웠다.
+            //    지금 판에서 제일 큰 결정이 "얼마나 싣고 갈까"이므로 특수 노드도 거기 붙는다.
+            N("sp_card1", "화물 정렬기", "짐이 덜 무겁다 (+25%)", TechBranch.Special, 0, 3,
+              TechEffect.TowWeight, 0.25f, 280, 8, 1, 2, 2.2f, "pow1", "drv1");
 
-            N("sp_lv1", "사전 조율", "런을 레벨 +1로 시작한다", TechBranch.Special, -1, 3,
-              TechEffect.StartLevel, 1f, 320, 9, 1, 3, 2.1f, "sp_card1");
+            N("sp_lv1", "화물 증설", "끌 수 있는 칸 +2", TechBranch.Special, -1, 3,
+              TechEffect.TowCapacity, 2f, 320, 9, 1, 3, 2.1f, "sp_card1");
 
             N("sp_wlv1", "숙련 정비", "시작 무기 레벨 +1", TechBranch.Special, 1, 3,
               TechEffect.StartWeaponLevel, 1f, 360, 10, 2, 3, 2.1f, "sp_card1");
 
-            N("sp_combo1", "계열 공명", "조합 발동에 필요한 레벨 -1", TechBranch.Special, 0, 4,
-              TechEffect.ComboLevelDown, 1f, 560, 15, 4, 3, 2.3f, "sp_lv1", "sp_wlv1");
+            N("sp_combo1", "정제 압축", "가져온 재화 +15%", TechBranch.Special, 0, 4,
+              TechEffect.MatFindAll, 0.15f, 560, 15, 4, 3, 2.3f, "sp_lv1", "sp_wlv1");
 
             // ---- 계열 끝 노드 (코어를 크게 요구한다) ----
             N("sp_power", "과부하 정비", "전 무기 피해 +25%", TechBranch.Special, 2, 3,

@@ -36,6 +36,11 @@ namespace SalvageRun.Run
         }
 
         /// <summary>조종을 사람에게 돌려준다.</summary>
+        public static void ClearCollect(RunDirector director)
+        {
+            if (director != null) director.CollectOverride = null;
+        }
+
         public static void Release(ShipController ship)
         {
             if (ship == null) return;
@@ -58,6 +63,10 @@ namespace SalvageRun.Run
         {
             if (director == null || ship == null) return;
 
+            // 🔴 봇은 **수집기를 항상 켜 둔다.** 사람은 고르지만 봇은 못 고른다 —
+            //    측정에서는 "다 줍는 경우"를 기준선으로 잡는 편이 낫다.
+            director.CollectOverride = true;
+
             Vector2 me = ship.transform.position;
 
             // 🔴 **경보가 울리면 보스 자리로 간다.**
@@ -76,23 +85,9 @@ namespace SalvageRun.Run
 
             bool boss = director.Phase == FloorPhase.BossActive;
 
-            // 🔴 **rev.7: 봇이 귀환과 입금을 알아야 한다.**
-            //    rev.6까지 봇은 "가장 가까운 걸 계속 팬다"였다. 그건 이제
-            //    *사람이 하지 않는 플레이*다 — 입금을 안 하면 레벨이 안 오르고
-            //    기지가 수리되지 않으니, 그 봇으로 잰 값은 이 게임의 값이 아니다.
-            if (!boss && ShouldReturn(director))
-            {
-                Vector2 home = director.field != null ? director.field.BaseCenter : Vector2.zero;
-                Vector2 toHome = home - me;
-
-                // 도킹 반경 안에 들어가면 자동 입금된다 — 그 뒤엔 평소 행동으로 돌아간다
-                if (toHome.sqrMagnitude > 0.25f)
-                {
-                    ship.AimOverride = me + toHome.normalized * 6f;
-                    ship.ThrustOverride = true;
-                    return;
-                }
-            }
+            // ⬜ **돌아갈 곳이 없다** (2026-08-23: 모선을 없앴다).
+            //    연료가 낮으면 모선으로 가던 분기를 뺐다 — 이제 회복 지점이 없으므로
+            //    봇이 할 수 있는 건 **끝까지 캐는 것**뿐이다. 사람도 마찬가지다.
 
             var target = boss ? NearestBossPart(director, me, out float dist)
                               : BestThreat(director, me, out dist);
@@ -119,36 +114,15 @@ namespace SalvageRun.Run
         }
 
         /// <summary>
-        /// 🔴 지금 돌아가야 하는가 — **이 게임의 세 번째 결정**을 봇이 흉내 내는 부분.
-        ///
-        ///    화물이 차면 돌아간다. rev.8에서 기지 체력이 사라지면서
-        ///    "기지가 위험하니 수리하러 간다"는 이유는 없어졌다.
-        /// </summary>
-        static bool ShouldReturn(RunDirector director)
-        {
-            if (director.CargoCount <= 0) return false;
-
-            // 만재에 가까우면 간다
-            if (director.CargoRatio >= ReturnAtCargoRatio) return true;
-
-            return false;
-        }
-
-        /// <summary>
         /// 🔴 무엇부터 치울 것인가.
         ///
-        ///    가장 가까운 것을 치는 건 rev.4까지의 답이었다. rev.7에서는 틀렸다 —
-        ///    **기지에 가까운 쓰레기가 곧 손해**이기 때문이다.
-        ///    그렇다고 기지에 제일 가까운 것만 쫓으면 배가 기지에 붙어 살게 되고,
-        ///    그것도 사람이 하는 플레이가 아니다.
-        ///
-        ///    그래서 **위협(기지까지 거리) + 이동 비용(나까지 거리)**를 함께 본다.
-        ///    계수는 찍은 값이다. 봇이 사람처럼 보이는지로만 검증할 수 있다.
+        ///    rev.7~11에서는 **기지에 가까운 쓰레기가 곧 손해**라서 기지까지의 거리를
+        ///    점수에 넣었다. 기지가 목적이 아니게 된 지금은 그 항이 틀렸다 —
+        ///    다시 **나에게 가까운 것**부터 친다 (rev.4까지의 답이다).
         /// </summary>
         public static JunkPiece BestThreat(RunDirector director, Vector2 from, out float dist)
         {
             var field = director.field;
-            Vector2 home = field != null ? field.BaseCenter : Vector2.zero;
 
             JunkPiece best = null;
             float bestScore = float.MaxValue;
@@ -163,7 +137,7 @@ namespace SalvageRun.Run
                 Vector2 at = j.transform.position;
                 float toMeSq = (at - from).sqrMagnitude;
 
-                float score = (at - home).magnitude + Mathf.Sqrt(toMeSq) * TravelCostWeight;
+                float score = toMeSq;
                 if (score >= bestScore) continue;
 
                 bestScore = score; best = j; bestSq = toMeSq;
@@ -172,12 +146,6 @@ namespace SalvageRun.Run
             dist = best != null ? Mathf.Sqrt(bestSq) : 999f;
             return best;
         }
-
-        /// <summary>화물이 이만큼 차면 돌아간다.</summary>
-        public const float ReturnAtCargoRatio = 0.55f;
-
-        /// <summary>위협 점수에서 이동 거리에 붙는 가중치.</summary>
-        public const float TravelCostWeight = 0.6f;
 
         public const float KeepDistance = 3.2f;
         public const float BossKeepDistance = 1.6f;

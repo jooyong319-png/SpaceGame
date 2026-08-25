@@ -20,25 +20,6 @@ namespace SalvageRun.Run
     /// </summary>
     public enum FloorPhase { Collecting, BossIncoming, BossActive }
 
-    /// <summary>
-    /// 🔴 **rev.11의 두 국면** (2026-08-23).
-    ///
-    ///    이야기: 지구가 기지를 특정 좌표까지 보내는 임무. 연료 수단이 전부 파괴됐고
-    ///    남은 방법은 쓰레기를 연료로 바꾸는 것뿐이다.
-    ///
-    ///    · <see cref="Docked"/> — 기지는 멈춰 있고, 우주선을 몰고 나가 **캔다**
-    ///    · <see cref="Travelling"/> — 우주선은 격납되고, 기지가 나아가며
-    ///      **플레이어가 기지 무기로 막는다**
-    ///
-    /// 🔴 국면을 나눈 이유: 지금까지는 위협이 **항상 조금씩** 있어서
-    ///    조용한 때도 위험한 때도 없었다. **일정한 위협은 위협이 아니다.**
-    ///    조용한 구간이 있어야 시끄러운 구간이 무섭다.
-    ///
-    /// 🔴 조작도 갈린다 — 정박은 **몰고**, 항행은 **조준한다.**
-    ///    조작이 다르면 "국면이 다르다"가 손으로 느껴진다.
-    /// </summary>
-    public enum Voyage { Docked, Travelling }
-
     public struct Popup
     {
         public Vector3 worldPos;
@@ -71,7 +52,6 @@ namespace SalvageRun.Run
         public StageField field;
         public WeaponRig arms;
         public BossBehaviour boss;
-        public HomeBase homeBase;
         ShipVisual shipVisual;
         public Transform stageBounds;
         public Camera cam;
@@ -79,17 +59,6 @@ namespace SalvageRun.Run
         public GameState State { get; private set; } = GameState.Ready;
         public FloorPhase Phase { get; private set; }
 
-        /// <summary>지금 정박인가 항행인가.</summary>
-        public Voyage Leg { get; private set; } = Voyage.Docked;
-
-        public bool Docked => Leg == Voyage.Docked;
-        public bool Travelling => Leg == Voyage.Travelling;
-
-        /// <summary>이번 구간에서 남은 거리(0~1). 항행 중에만 뜻이 있다.</summary>
-        public float LegProgress { get; private set; }
-
-        /// <summary>이번 구간 총 소요 시간(초). 연료·강화에 따라 달라진다.</summary>
-        public float LegSeconds { get; private set; } = 40f;
         public RunStats Stats { get; private set; }
 
         /// <summary>🔴 지금 플레이 중인 맵. 맵 하나가 완결된 한 판이다(뱀서 구조).</summary>
@@ -98,10 +67,9 @@ namespace SalvageRun.Run
         public bool IsFinalWave => Wave >= (Stage != null ? Stage.waveCount : 8);
 
         // 경험치
-        public int Level { get; private set; }
-        public float Xp { get; private set; }
-        public float XpNeed { get; private set; }
-        public float XpRatio => XpNeed <= 0f ? 0f : Mathf.Clamp01(Xp / XpNeed);
+        // ⬜ **레벨업을 없앴다** (2026-08-26 사장님 지시: *"레벨업은 없애고"*).
+        //    카드 뽑기가 사라진 뒤로 레벨은 **숫자만 오르고 아무것도 안 주고** 있었다.
+        //    성장은 전부 정비소(테크트리)로 갔으므로 판 안에 층을 하나 더 둘 이유가 없다.
 
         // 🔴 웨이브 — 시간이 갈수록 거세진다 (뱀서 골격)
         public int Wave { get; private set; }
@@ -114,8 +82,17 @@ namespace SalvageRun.Run
         // 집계
         public int RunValue { get; private set; }
         public int RunCollected { get; private set; }
-        public int ContactHits { get; private set; }
-        public float ContactFuelLost { get; private set; }
+        /// <summary>
+        /// 이번 런에 **주워서** 되찾은 연료. 2026-08-23부터 출처는 연료 아이템 하나뿐이다
+        /// (모선도, 파편 변환도 없앴다). HUD와 결과 화면이 읽는다.
+        /// </summary>
+        public float FuelRecovered { get; private set; }
+
+        /// <summary>
+        /// ⬜ 파편 가치 1당 돌아오던 연료. **2026-08-23에 0이 됐다** (사장님 지시).
+        ///    되살리려면 `Absorb()`에서 다시 곱하면 된다.
+        /// </summary>
+        public const float FuelPerValue = 0f;
         public float RunTime { get; private set; }
         public string LastMessage { get; private set; } = "";
 
@@ -132,11 +109,8 @@ namespace SalvageRun.Run
         public static bool WorldPaused { get; private set; }
 
         public readonly List<Popup> Popups = new List<Popup>();
-        public readonly List<CardDef> Offers = new List<CardDef>();
-        public readonly List<CardDef> Taken = new List<CardDef>();
 
         Vector2 lastArena;
-        int draftSeed;
 
         /// <summary>
         /// 🔴 켜면 카드 뽑기가 매번 같아진다. **밸런스 시뮬 전용.**
@@ -168,60 +142,18 @@ namespace SalvageRun.Run
             RebuildStats();
 
             // 🔴 영구 강화 '사전 조율'이 있으면 레벨을 올린 채로 시작한다
-            Level = Mathf.Max(0, Stats.startLevel);
-            Xp = 0f;
-            XpNeed = content.XpToNext(Level);
-            Taken.Clear();
-            Offers.Clear();
-            // 🔴 카드 뽑기 시드.
-            //
-            //    고정값(12345)이었다. 시뮬 재현성 때문이었는데, 그러면
-            //    **모든 런에서 카드가 똑같은 순서로 나온다** —
-            //    2026-08-22 피드백: *"처음 레벨업 했을 때 나오는 무기가 맨날 같은 것만 나오는 것 같은데?"*
-            //    맞다. 항상 같았다.
-            //
-            //    시뮬(`DeterministicDraft`)만 고정하고, 실제 플레이는 매번 다르게 한다.
-            draftSeed = DeterministicDraft
-                ? 12345
-                : (int)(System.DateTime.Now.Ticks & 0x7fffffff) ^ (MapIndex * 7919);
-
             // 🔴 무기 난수도 런마다 되감는다. 안 그러면 앞 런의 길이가 이번 런을 바꾼다
             if (arms != null) arms.ResetRandom();
 
             RunValue = 0;
             RunCollected = 0;
-            CargoCount = 0;
-            CargoValue = 0;
-            CargoXp = 0f;
-            DepositedTotal = 0;
-            LostCargo = 0;
-            AtBase = false;
-            RespawnLeft = 0f;
+            BankedCount = 0;
+            towed.Clear();
+            SyncDrones();
             WreckCount = 0;
-            DepositStreak = 0;
-            Depositing = false;
-            DepositBonus = 1f;
-            fullLoadFlash = 0f;
-            pendingValue = 0f; pendingXp = 0f;
-            DraftIndex = 0; DraftTotal = 0;
-            DockedValue = 0; dockFlash = 0f;
-            anchorFlash = 0f; finalIntro = 0f;
-            IntroLeft = 0f; lastArraysLost = 0;
-            Leg = Voyage.Docked; LegProgress = 0f; legIntro = 0f; legSpawn = 0f;
 
-            if (homeBase != null)
-            {
-                // 🔴 rev.9: 승리는 **가동 게이지**, 패배는 **기지 연료 고갈**.
-                //    강화 카드는 가동 시간을 줄인다 (baseHpBonus를 그 용도로 재사용).
-                homeBase.Begin(
-                    config.baseFuelMax,
-                    (Stage != null ? Stage.baseDrainPerSecond : 6f) * Tuning.BaseDrainMul);
-                homeBase.director = this;
-                homeBase.field = field;
-            }
             if (field != null) field.BaseCenter = Vector2.zero;
-            ContactHits = 0;
-            ContactFuelLost = 0f;
+            FuelRecovered = 0f;
             RunTime = 0f;
             Cleared = false;
             FloorCollected = 0;
@@ -238,14 +170,12 @@ namespace SalvageRun.Run
             field.spawnRateMul = 1f;
             field.aliveCapOverride = 25;
             field.MapHalf = MapHalf;
-            field.spawnRadius = ScreenHalf.magnitude * 1.15f;   // 화면 바로 밖
             field.ResetDockClock();
             field.itemDropChance = config.itemDropChance + Stats.itemDropBonus;
             field.scrapFind = Stats.scrapFind;
             field.circuitFind = Stats.circuitFind;
             field.coreFind = Stats.coreFind;
             for (int i = 0; i < field.MatsThisRun.Length; i++) field.MatsThisRun[i] = 0;
-            field.cullRadius = ScreenHalf.magnitude * 2.0f;
             field.Build(Stage, MapHalf);
             UpdateStageBounds(MapHalf);
 
@@ -258,9 +188,8 @@ namespace SalvageRun.Run
             ship.GetComponentInChildren<ShipVisual>()?.ApplyShip(CurrentShip);
 
             // 🔴 **격침 상태로 판이 끝났으면 배가 꺼진 채 남는다.**
-            //    `Wreck()`이 `SetActive(false)`로 끄고 `Respawn()`이 켜는데,
-            //    부활을 기다리는 5초 사이에 기지가 무너지면 켜 줄 사람이 없다.
-            //    그러면 **다음 판이 꺼진 배로 시작한다** — 움직이지도, 줍지도 못한다.
+            //    `Wreck()`이 `SetActive(false)`로 끄기 때문에, 다음 판을 그대로 시작하면
+            //    **꺼진 배로 시작한다** — 움직이지도, 줍지도 못한다.
             //
             //    2026-08-21 시뮬에서 결정론 91.8% 차이로 잡혔다.
             //    1회차 Lv.14 / 파편 2462 → 2회차 Lv.0 / 파편 201.
@@ -268,7 +197,6 @@ namespace SalvageRun.Run
             if (!ship.gameObject.activeSelf) ship.gameObject.SetActive(true);
 
             ship.ResetShip(Vector2.zero, Stats.fuelMax * Tuning.ShipFuelMul * Mathf.Clamp(Stats.startFuelRatio, 0.1f, 1f));
-            revivesLeft = Stats.revives;
             ship.ControlEnabled = true;
 
             State = GameState.Field;
@@ -285,58 +213,20 @@ namespace SalvageRun.Run
 
             if (State != GameState.Field) return;
 
-            // 🔴 도입 연출 동안에는 아무것도 안 돈다 — 보는 시간이다
-            if (InIntro)
-            {
-                UpdateIntro();
-                return;
-            }
-
             RunTime += Time.deltaTime;
-
-            // 🔴 항행 중에는 밭도 화물도 없다. 오직 막는 것뿐이다
-            if (Travelling)
-            {
-                UpdateLeg();
-                UpdatePopups();
-                return;
-            }
-
             UpdateWave();
-            AttractFragments();
+            CollectByTouch();
             CollectPickups();
 
-            // 입고 중에는 접촉을 보지 않는다. 쓰레기가 멈춰도 **겹쳐 있으면** 판정이 난다
-            // 🔴 **격침 중에는 접촉을 보지 않는다** (2026-08-23 피드백:
-            //    *"부활도 못하고 계속 죽은 상태에서 맞는다"*).
-            //
-            //    배가 꺼져 있어도 `transform.position`은 그 자리에 남는다.
-            //    그래서 잔해 자리에 쓰레기가 있으면 판정이 계속 나고,
-            //    `Wreck()`이 다시 불려 **부활 타이머가 5초로 되돌아간다.**
-            //    로봇은 배를 쫓으므로 죽은 자리에 모여 있다 → **영원히 못 나온다.**
-            if (!Depositing && RespawnLeft <= 0f) { CheckContact(); CheckEnemyShots(); }
-
             TidyTow();
-            if (Core.InputReader.JettisonPressed && !Depositing) JettisonTow();
+            UpdateDrones();
 
             Stats.TickBursts(Time.deltaTime);
-            UpdateCargo();
 
             if (Phase == FloorPhase.BossIncoming) UpdateBossIntro();
 
-            // 🔴 **rev.7: 우주선이 부서져도 게임은 안 끝난다.**
-            //    일정 시간 뒤 기지에서 다시 나온다. 우주선은 소모품이고 기지가 목적이다.
-            //    🔴 rev.8: 기지에 체력이 없다. 이기는 건 **가동 게이지를 다 채우는 것**이고
-            //       (`TravelToNext`), 격침은 시간 손실이다 — 그동안 기지 연료는 계속 닳는다.
-            if (RespawnLeft > 0f)
-            {
-                RespawnLeft -= Time.deltaTime;
-                if (RespawnLeft <= 0f) Respawn();
-            }
-            else if (ship.OutOfFuel)
-            {
-                Wreck();
-            }
+            // 🔴 **판이 끝나는 길은 이것 하나뿐이다.** 맞아 죽는 것도, 격침도 없다
+            if (ship.OutOfFuel) Finish("연료 소진 — 자동 귀환");
         }
 
         /// <summary>
@@ -360,7 +250,6 @@ namespace SalvageRun.Run
 
             // 🔴 곡선은 완만하게 시작해 후반에 급격히 오른다 (뱀서 실측 참고).
             //    초반은 한산해야 한다 — "파바바박"은 무기가 쌓인 뒤에 오는 보상이지 시작 상태가 아니다.
-            //    뱀서는 웨이브가 1분마다이고, 동시 300마리를 넘으면 스폰을 멈춘다.
             field.spawnRateMul = Mathf.Pow(1.45f, Wave - 1);
             field.aliveCapOverride = Mathf.Min(300, 25 + (Wave - 1) * 35);
 
@@ -375,55 +264,59 @@ namespace SalvageRun.Run
 
         // ---------------------------------------------------------------- 파편 · 접촉
 
-        void AttractFragments()
+        /// <summary>
+        /// 🔴 **자석을 없앴다** (2026-08-26 사장님 지시: *"자석 아예 없애고"*).
+        ///
+        ///    자석이 있으면 지나가기만 해도 다 빨려 온다 —
+        ///    그러면 *"이건 가져갈까, 저건 버릴까"*가 **성립할 수가 없다.**
+        ///    이제 **배가 직접 닿아야** 붙는다. 무엇을 실을지가 곧 **어디로 갈지**가 된다.
+        ///
+        /// 🔴 그리고 **여러 개가 겹쳐 있으면 하나만 문다** — 제일 가까운 것 하나.
+        ///    한 번에 다 쓸어 담으면 종류를 고를 수 없고,
+        ///    그러면 자석을 없앤 의미가 사라진다.
+        ///
+        ///    ⚠️ 대신 **덩어리가 오래 남아야** 한다. 금방 사라지면 고를 새가 없다
+        ///       (`Fragment`의 수명은 `StageField`가 길게 준다).
+        /// </summary>
+        void CollectByTouch()
         {
             Vector2 shipPos = ship.transform.position;
-            float r = config.magnetRadius * (Stats != null ? Stats.intakeMul : 1f);
 
-            // 🔴 흡입 반경을 시각에 알려준다 — 빨아들이는 게 보여야 청소기다.
-            //    입금 중에는 0으로 꺼서 **비우는 중**이라는 게 눈으로도 읽히게 한다.
+            // 닿는 거리. 자석이 아니라 **배 크기**에 가까운 값이다
+            float reach = config.intakeRadius * (Stats != null ? Stats.intakeMul : 1f);
+            float reach2 = reach * reach;
+
+            // 🔴 **한 번 누르면 하나만.** 홀드였을 때는 매 프레임 하나씩 물어서
+            //    뭉쳐 있으면 통째로 빨려 들어갔다 (2026-08-26 피드백).
+            bool pressed = CollectOverride ?? Core.InputReader.CollectPressed;
+
             if (shipVisual == null) shipVisual = ship.GetComponentInChildren<ShipVisual>();
-            if (shipVisual != null) shipVisual.intakeRadius = Depositing ? 0f : r;
-            float r2 = r * r;
-            float take2 = config.intakeRadius * config.intakeRadius;
+            if (shipVisual != null) shipVisual.intakeRadius = reach;
 
-            // 🔴 **입금 중에는 빨아들이지 않는다.**
-            //
-            //    2026-08-21 시뮬에서 교착이 잡혔다: 배가 기지 정중앙에 속도 0으로 굳고
-            //    화물이 200/200에서 120초 동안 1도 안 줄었다.
-            //
-            //    입금이 화물을 199로 내리면 **다음 프레임에 자석이 주변 파편을 빨아들여
-            //    다시 200으로 채웠다.** 기지 주변에 파편이 176개 쌓여 있었으니 무한 반복.
-            //    화물이 0이 되어야 입금이 끝나는데 0이 될 수가 없다 → 영원히 입금 중.
-            //    봇은 "화물 가득하니 기지로"라고 판단하는데 이미 기지라 붙박이가 된다.
-            //
-            //    🔴 이건 시뮬만의 문제가 아니다. 사람이 화물 가득 싣고 기지에 갔을 때
-            //       주변에 파편이 흩어져 있으면 **똑같이 멈춘다.**
-            //       입금을 3초에 걸쳐 빼도록 바꾸면서 생긴 구멍이다 —
-            //       예전처럼 한 번에 정산했으면 없었을 문제다.
-            //
-            //    규칙으로도 자연스럽다: 청소기가 먼지통을 비우는 중에 동시에 빨아들이지는 않는다.
-            if (Depositing) return;
+            // 🔴 **후보는 수집기를 끈 채로도 계산한다** (2026-08-26).
+            //    누르기 **전에** 무엇이 걸리는지 보여야 고르는 것이 된다 —
+            //    켠 뒤에 알려주면 그건 통보지 선택이 아니다.
+            Fragment best = null;
+            float bestSq = float.MaxValue;
 
             for (int i = 0; i < field.Fragments.Count; i++)
             {
                 var f = field.Fragments[i];
+                f.Marked = false;                  // 지난 프레임 표시를 지운다
+
                 if (!f.Collectable) continue;      // 이미 끌고 있거나, 방금 버린 것은 건너뛴다
 
                 float sq = ((Vector2)f.transform.position - shipPos).sqrMagnitude;
+                if (sq > reach2 || sq >= bestSq) continue;
 
-                // 전체 흡수로 날아오는 중이면 자석 반경을 무시하고 **배를 쫓아온다**
-                if (f.rushing) f.RushUpdate(shipPos);
-                else if (sq > r2) continue;
-
-                if (sq <= take2)
-                {
-                    // 🔴 가득 차면 더 못 줍는다. 돌아가라는 신호다
-                    if (CargoCount < CargoMax) Absorb(f);
-                    continue;
-                }
-                if (!f.rushing) f.Attract(shipPos, config.magnetPull);
+                bestSq = sq; best = f;
             }
+
+            PickTarget = best;
+            if (best == null) return;
+
+            best.Marked = true;
+            if (pressed) { Absorb(best); PickTarget = null; }
         }
 
         /// <summary>
@@ -456,6 +349,7 @@ namespace SalvageRun.Run
                 {
                     float before = ship.Fuel;
                     ship.Refuel(config.fuelPickupAmount * Stats.fuelPickupMul);
+                    FuelRecovered += ship.Fuel - before;
                     AddPopup(ship.transform.position,
                         $"연료 +{Mathf.RoundToInt(ship.Fuel - before)}", PickupItem.ColorFor(it.kind));
                     break;
@@ -489,65 +383,191 @@ namespace SalvageRun.Run
         ///      그래서 *"하나만 더?"*가 **매 순간** 돌아온다.
         ///      화물칸 방식은 "찼나 안 찼나" 한 번뿐이었다
         /// </summary>
+        /// <summary>
+        /// 🔴 **줍는 게 아니라 매단다** (2026-08-26 사장님 지시:
+        ///    *"이걸 먹으면 뒤에 1개씩 줄처럼 매달린다"* · Dome Keeper 방식).
+        ///
+        ///    재화가 숫자로 사라지는 대신 **배 뒤에 줄줄이 달린다.**
+        ///    · 꼬리 길이가 곧 적재량이라 **UI를 안 봐도 얼마나 실었는지 안다**
+        ///    · 한계가 딱딱하지 않다 — 더 달 수 있지만 **느려진다**
+        ///      그래서 *"하나만 더?"*가 **매 순간** 돌아온다
+        ///    · 끌고 **돌아와야** 내 것이 된다. 도중에 버리면 그 자리에 남는다
+        ///
+        /// 🔴 이게 사장님이 원하신 "선택과 집중"이다 —
+        ///    *이걸 가져갈까 · 버릴까 · 이것만 가져갈까.*
+        /// </summary>
         void Absorb(Fragment f)
         {
-            int gained = Mathf.RoundToInt(f.value * Stats.valueMultiplier);
             RunCollected++;
             FloorCollected++;
 
-            CargoCount++;
-            CargoValue += gained;
-            CargoXp += gained * Stats.xpMultiplier;
+            // 🔴 **꽉 찼으면 맨 앞이 밀려 떨어진다** (2026-08-26 · Dome Keeper 방식).
+            //
+            //    버리기 버튼을 두지 않는 이유: Dome Keeper에는 그런 버튼이 **없다.**
+            //    거기서 "선택과 집중"은 버리는 조작이 아니라 **애초에 뭘 밟느냐**에서 나온다.
+            //    자석을 없앤 지금 우리도 똑같다 — 안 주우려면 그 위로 안 가면 된다.
+            //
+            //    그리고 이게 더 좋은 이유: **코어를 주우면 고철이 하나 밀려 나간다.**
+            //    "이것만 가져갈까"가 버튼이 아니라 **줍는 행위 자체**로 표현된다.
+            while (towed.Count >= MaxTow) PushOutOldest();
 
-            // 줄의 맨 뒤에 붙인다. 앞에 아무것도 없으면 배를 따라간다
-            Transform lead = towed.Count > 0 ? towed[towed.Count - 1].transform : ship.transform;
-            f.AttachTow(lead, towed.Count);
             towed.Add(f);
+            f.AttachTow(LeadFor(towed.Count - 1), towed.Count - 1);
 
-            Fx.Spark(f.transform.position, 0.22f, new Color(0.7f, 0.95f, 1f), 0.12f);
+            Fx.Spark(f.transform.position, 0.22f, Mats.ColorOf(f.mat), 0.12f);
             Juice.Pickup();
         }
 
-        /// <summary>지금 끌고 있는 파편들. 순서가 곧 줄이다.</summary>
-        readonly System.Collections.Generic.List<Fragment> towed =
-            new System.Collections.Generic.List<Fragment>();
+        /// <summary>지금 끌고 있는 것들. 순서가 곧 줄이다.</summary>
+        readonly List<Fragment> towed = new List<Fragment>();
 
         public int TowedCount => towed.Count;
 
+        /// <summary>지금 Space를 누르면 주워질 것. HUD가 이름과 색을 읽는다.</summary>
+        public Fragment PickTarget { get; private set; }
+
         /// <summary>
-        /// 🔴 **끌던 것을 놓는다** (`Q`).
-        ///
-        ///    로봇에 쫓길 때 **버리고 도망칠 수 있다** — 목숨과 벌이를 맞바꾸는 선택이다.
-        ///    무겁다 = 느리다 = **도망을 못 친다**이므로, 욕심이 곧 위험이라는 게
-        ///    조작으로 직결된다.
-        ///
-        ///    버린 것은 **그 자리에 남는다.** 사라지면 그건 결정이 아니라 손실이다.
+        /// 🔴 **봇·검사가 대신 누르는 스위치.** 봇은 키보드를 못 누른다 —
+        ///    `true`면 후보가 있을 때마다 계속 줍는다 (봇에게는 고르는 판단이 없으므로 그게 맞다).
+        ///    이게 없으면 시뮬이 **아무것도 안 줍는 배**를 재게 되고,
+        ///    그 숫자로 밸런스를 판단하면 통째로 틀린다.
+        ///    (`ShipController.AimOverride`와 같은 이유의 같은 장치다)
         /// </summary>
-        public void JettisonTow()
+        public bool? CollectOverride { get; set; }
+
+        /// <summary>
+        /// 🔴 **무게는 삼각수로 붙는다** (2026-08-26 · Dome Keeper 방식).
+        ///
+        ///    Dome Keeper는 N개를 끌면 무게가 **N(N+1)/2**다 —
+        ///    1·3·6·10·15… 개수가 늘수록 **가속도로** 무거워진다.
+        ///
+        ///    처음엔 점근선(계속 달아도 0.35까지만)으로 했는데 그건 틀렸다.
+        ///    점근선은 *"많이 달아도 어쨌든 갈 수는 있다"*라서 **결정이 안 생긴다** —
+        ///    귀찮을 뿐 못 할 이유가 없으니 결국 전부 줍게 된다.
+        ///
+        ///    삼각수는 **일곱 개쯤에서 확실히 못 견디게** 만든다.
+        ///    그 벽이 있어야 *"이건 두고 갈까"*가 진짜 질문이 된다.
+        ///
+        ///    ⚠️ 0으로 수렴하면 조작 불능이 되므로 하한을 둔다.
+        /// </summary>
+        public float TowWeightMul
         {
-            if (towed.Count == 0) return;
-
-            int n = towed.Count;
-            Vector2 at = ship.transform.position;
-
-            for (int i = 0; i < towed.Count; i++)
+            get
             {
-                var f = towed[i];
-                if (f == null || !f.Alive) continue;
+                int n = towed.Count;
+                if (n <= 0) return 1f;
 
-                // 사방으로 조금씩 튕긴다 — 한 점에 뭉치면 다시 주울 때 한 번에 다 붙는다
-                float ang = (i / (float)n) * Mathf.PI * 2f;
-                f.ReleaseTow(new Vector2(Mathf.Cos(ang), Mathf.Sin(ang)) * 3.5f);
+                float carry = n * (n + 1) * 0.5f;                       // 삼각수
+                float perUnit = SlowPerCarry
+                              / Mathf.Max(0.05f, Tuning.TowWeightMul
+                                               * (Stats != null ? Stats.towWeightMul : 1f));
+
+                return Mathf.Clamp(1f - carry * perUnit, MinTowSpeed, 1f);
+            }
+        }
+
+        /// <summary>캐리 1당 깎이는 속도 비율. 삼각수에 곱해진다.</summary>
+        const float SlowPerCarry = 0.012f;
+
+        /// <summary>아무리 무거워도 이보다 느려지지 않는다. 0이면 조작 불능이다.</summary>
+        const float MinTowSpeed = 0.25f;
+
+        /// <summary>
+        /// 🔴 **끌 수 있는 최대 개수.** Dome Keeper의 *"줄이 6블록을 넘으면 끊긴다"*를 옮긴 것.
+        ///    넘으면 **맨 앞(제일 먼저 주운 것)이 밀려 떨어진다.**
+        /// </summary>
+        /// <summary>배 자체가 끄는 칸.</summary>
+        public int ShipTow => Mathf.Max(1, config.towCapacity + (Stats != null ? Stats.towCapacityBonus : 0));
+
+        /// <summary>드론 한 대가 더 끌어 주는 칸.</summary>
+        public const int DroneCarry = 2;
+
+        /// <summary>배 + 드론을 합쳐 끌 수 있는 총 칸.</summary>
+        public int MaxTow => ShipTow + drones.Count * DroneCarry;
+
+        // ---------------------------------------------------------------- 회수 드론
+
+        /// <summary>
+        /// 🔴 **회수 드론** (2026-08-26 사장님 제안:
+        ///    *"드론같은게 붙어서 몇 개 더 가져갈 수 있게"*).
+        ///
+        ///    칸을 늘리는 노드는 이미 있었지만 그건 **숫자만 늘어난다** —
+        ///    산 게 화면에 안 보이면 "강해졌다"가 안 남는다.
+        ///    드론은 배 옆에 **실제로 떠서 제 줄을 끈다.** 사면 보인다.
+        ///
+        ///    ⚠️ 장식이 아니다. 줄이 **드론 뒤로 갈라져** 붙는다 —
+        ///       배 뒤 6칸이 차면 그다음 2칸은 1번 드론이, 그다음은 2번 드론이 끈다.
+        /// </summary>
+        readonly List<Transform> drones = new List<Transform>();
+
+        void SyncDrones()
+        {
+            int want = Stats != null ? Mathf.Max(0, Stats.carrierDrones) : 0;
+
+            while (drones.Count > want)
+            {
+                var last = drones[drones.Count - 1];
+                drones.RemoveAt(drones.Count - 1);
+                if (last != null) Destroy(last.gameObject);
             }
 
-            towed.Clear();
-            CargoCount = 0;
-            CargoValue = 0;
-            CargoXp = 0f;
+            while (drones.Count < want)
+            {
+                var go = new GameObject("TowDrone" + drones.Count);
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = PixelArt.Ship(12, 0.28f, 0.7f, 0.2f);
+                sr.color = new Color(0.75f, 0.9f, 1f);
+                sr.sortingOrder = 9;
+                go.transform.localScale = Vector3.one * 0.55f;
+                go.transform.position = ship != null ? ship.transform.position : Vector3.zero;
+                drones.Add(go.transform);
+            }
+        }
 
-            AddPopup(at, $"화물 {n}개 투기", new Color(1f, 0.7f, 0.4f));
-            Fx.Shockwave(at, 2.2f, new Color(1f, 0.8f, 0.5f, 0.8f), 0.3f);
-            Juice.Break();
+        /// <summary>
+        /// 드론은 배 **옆**에 붙어 따라온다. 좌우로 번갈아 서서 줄이 겹치지 않게 한다.
+        /// </summary>
+        void UpdateDrones()
+        {
+            if (drones.Count == 0 || ship == null) return;
+
+            Vector2 fwd = ship.Velocity.sqrMagnitude > 0.04f
+                ? ship.Velocity.normalized : Vector2.right;
+            Vector2 side = new Vector2(-fwd.y, fwd.x);
+
+            for (int i = 0; i < drones.Count; i++)
+            {
+                if (drones[i] == null) continue;
+
+                float lane = (i % 2 == 0 ? 1f : -1f) * (1.15f + (i / 2) * 0.75f);
+                Vector2 want = (Vector2)ship.transform.position + side * lane - fwd * 0.5f;
+
+                drones[i].position = Vector2.Lerp(drones[i].position, want,
+                                                  1f - Mathf.Exp(-9f * Time.deltaTime));
+
+                float ang = Mathf.Atan2(fwd.y, fwd.x) * Mathf.Rad2Deg;
+                drones[i].rotation = Quaternion.Euler(0f, 0f, ang);
+            }
+        }
+
+        /// <summary>
+        /// 🔴 **i번째 짐이 무엇을 따라가는가.**
+        ///    배 뒤 `ShipTow`칸까지는 배가 끌고, 그다음부터는 드론이 나눠 끈다.
+        /// </summary>
+        Transform LeadFor(int i)
+        {
+            int shipCap = ShipTow;
+
+            if (i < shipCap)
+                return i == 0 ? ship.transform : towed[i - 1].transform;
+
+            int d = (i - shipCap) / DroneCarry;
+            int k = (i - shipCap) % DroneCarry;
+
+            if (d >= drones.Count || drones[d] == null)
+                return towed[Mathf.Max(0, i - 1)].transform;      // 드론이 사라졌으면 줄에 잇는다
+
+            return k == 0 ? drones[d] : towed[i - 1].transform;
         }
 
         /// <summary>줄에서 빠진 것을 정리하고 순서를 다시 잇는다.</summary>
@@ -562,1011 +582,90 @@ namespace SalvageRun.Run
             if (!dirty) return;
 
             // 앞사람이 사라졌으면 줄을 다시 잇는다 — 안 그러면 뒤가 허공을 따라간다
+            for (int i = 0; i < towed.Count; i++) towed[i].AttachTow(LeadFor(i), i);
+        }
+
+        /// <summary>
+        /// 🔴 **맨 앞(제일 먼저 주운 것)을 밀어낸다.** 줄이 꽉 찼을 때 새것이 들어오면서 부른다.
+        ///
+        ///    맨 뒤가 아니라 맨 앞인 이유: 맨 뒤는 **방금 주운 것**이다.
+        ///    방금 집은 걸 도로 뱉으면 "주웠다"가 취소된 것으로 읽혀 조작이 배신처럼 느껴진다.
+        ///    앞에서 밀려 나가야 **컨베이어**로 읽힌다.
+        ///
+        ///    ⚠️ 밀려난 것은 그 자리에 남는다 (`ReleaseTow`가 3초간 다시 안 붙게 잠근다) —
+        ///       사라지면 그건 결정이 아니라 손실이다. 되찾으러 갈 수 있어야 한다.
+        /// </summary>
+        void PushOutOldest()
+        {
+            if (towed.Count == 0) return;
+
+            var f = towed[0];
+            towed.RemoveAt(0);
+
+            // 남은 줄을 다시 잇는다 — 안 그러면 뒤가 허공을 따라간다
+            for (int i = 0; i < towed.Count; i++) towed[i].AttachTow(LeadFor(i), i);
+
+            if (f == null || !f.Alive) return;
+
+            Vector2 back = ship.Velocity.sqrMagnitude > 0.01f
+                ? -ship.Velocity.normalized : Vector2.down;
+            f.ReleaseTow(back * 2.2f);
+
+            AddPopup(f.transform.position, $"{Mats.Name(f.mat)} 밀려남", new Color(1f, 0.75f, 0.45f));
+        }
+
+        /// <summary>
+        /// 🔴 **끌고 온 것만 내 것이 된다.** 귀환 정산에서 부른다.
+        ///    이게 "가져갈까 버릴까"에 값을 매긴다 — 안 그러면 아무거나 다 주우면 된다.
+        /// </summary>
+        void BankTow()
+        {
             for (int i = 0; i < towed.Count; i++)
             {
-                Transform lead = i == 0 ? ship.transform : towed[i - 1].transform;
-                towed[i].AttachTow(lead, i);
+                var f = towed[i];
+                if (f == null || !f.Alive) continue;
+
+                field.MatsThisRun[(int)f.mat] += f.matAmount;
+                MetaSave.AddMaterial(f.mat, f.matAmount);
+                RunValue += Mathf.RoundToInt(f.value * Stats.valueMultiplier);
+                BankedCount++;
+
+                f.Despawn();
             }
+            towed.Clear();
         }
-
-        /// <summary>기지에 넘긴다 — 줄이 통째로 빨려 들어간다.</summary>
-        void ConsumeTow(int count)
-        {
-            for (int i = 0; i < count && towed.Count > 0; i++)
-            {
-                var f = towed[0];
-                towed.RemoveAt(0);
-                if (f != null && f.Alive) f.Despawn();
-            }
-
-            for (int i = 0; i < towed.Count; i++)
-            {
-                Transform lead = i == 0 ? ship.transform : towed[i - 1].transform;
-                towed[i].AttachTow(lead, i);
-            }
-        }
-
-        // ================================================================ 화물 · 입금
-
-        /// <summary>지금 싣고 있는 파편 수 · 가치 · 경험치.</summary>
-        public int CargoCount { get; private set; }
-        public int CargoValue { get; private set; }
-        public float CargoXp { get; private set; }
-
-        /// <summary>적재 한계. 넘으면 더 못 줍는다.</summary>
-        public int CargoMax => config != null ? config.cargoMax : 200;
-
-        public float CargoRatio => CargoMax <= 0 ? 0f : Mathf.Clamp01(CargoCount / (float)CargoMax);
-
-        /// <summary>
-        /// 🔴 무게 = 느려짐. **욕심의 대가**다.
-        ///    가득 실으면 이동 속도가 절반 아래로 떨어져 회피가 어려워진다.
-        /// </summary>
-        /// <summary>
-        /// 🔴 **rev.11: 상한이 없다. 계속 무거워진다.**
-        ///
-        ///    화물칸이 있던 시절엔 "가득 참"에서 딱 끊겼고, 결정은 그 한 번뿐이었다.
-        ///    이제는 하나 달 때마다 조금씩 느려져서 **"하나만 더?"가 매 순간** 돌아온다.
-        ///
-        ///    점근선(0.30)을 두는 이유: 0으로 수렴하면 어느 순간 **아예 못 움직여서**
-        ///    조작 불능이 된다. 아주 느리더라도 갈 수는 있어야 플레이어가 스스로 판단한다.
-        /// </summary>
-        public float CargoWeightMul
-        {
-            get
-            {
-                float n = towed.Count;
-                float half = Mathf.Max(1f, config.towWeightHalf * Tuning.TowWeightMul);
-                return Mathf.Lerp(1f, 0.30f, n / (n + half));
-            }
-        }
-
-        /// <summary>모선에 닿았는가. HUD와 입금 판정이 같이 쓴다.</summary>
-        public bool AtBase { get; private set; }
-
-        /// <summary>
-        /// 🔴 **메뉴 없이 지나가면 입금된다.**
-        ///    창을 띄우면 뱀서의 끊김 없는 흐름이 깨진다 — rev.2에서 화물 시스템을
-        ///    잘라냈던 이유가 그것이었다. 이번엔 흐름을 지키면서 결정만 가져온다.
-        /// </summary>
-        // ---------------------------------------------------------------- 입금 연출
-
-        /// <summary>입금 중인가. 이 동안 카운터가 내려가고 화물이 기지로 빨려 들어간다.</summary>
-        public bool Depositing { get; private set; }
-
-        /// <summary>이번 입금의 시작 물량 — HUD가 진행률을 그린다.</summary>
-        public int DepositTotal { get; private set; }
-
-        /// <summary>이번 입금이 만재였는가. 연출이 달라진다.</summary>
-        public bool DepositWasFull { get; private set; }
-
-        /// <summary>이번 입금에 적용되는 총 배수 (만재 보너스 × 연쇄).</summary>
-        public float DepositBonus { get; private set; } = 1f;
-
-        /// <summary>
-        /// 🔴 **연쇄 입금.** 죽지 않고 만재 입금을 이어 가면 쌓인다.
-        ///    진짜 재미는 배수가 아니라 **"지금 죽으면 끊긴다"는 공포**다 —
-        ///    3연쇄째에 화물 가득 싣고 돌아가는 길이 이 게임에서 가장 긴장되는 30초가 된다.
-        /// </summary>
-        public int DepositStreak { get; private set; }
-
-        /// <summary>연쇄 배수. 4연쇄에서 ×2.0으로 멈춘다.</summary>
-        public float StreakMul => 1f + Mathf.Min(DepositStreak, 4) * 0.25f;
-
-        /// <summary>만재 배너를 띄우는 시간.</summary>
-        public float fullLoadFlash;
-
-        /// <summary>이번 도킹에서 실어 온 크레딧 — 정산 배너가 읽는다.</summary>
-        public int DockedValue { get; private set; }
-
-        /// <summary>도킹 정산 배너를 띄우는 시간.</summary>
-        public float dockFlash;
-
-        float depFrac;          // 소수점 누적 — 프레임률과 무관하게 같은 속도로 흐른다
-        float depRate;          // 초당 옮기는 개수
-        float depTickClock;
-        float depPerValue, depPerXp;
-        float depositClock;
-
-        /// <summary>입금이 이보다 오래 걸리면 무언가 잘못된 것이다. 화물 200개도 2.4초면 빠진다.</summary>
-        const float DepositTimeout = 8f;
-        float pendingValue, pendingXp;
-
-        /// <summary>
-        /// 🔴 **입금은 순간이 아니라 장면이다.**
-        ///
-        ///    바꾸기 전에는 숫자 팝업 하나가 뜨고 끝이었다. 이 게임에서 가장 중요한
-        ///    순간인데 가장 밋밋했다.
-        ///
-        ///    보상이 즉시 끝나면 도파민이 안 나온다 — 슬롯머신이 결과를 바로 안 보여주고
-        ///    뱀서의 상자가 느리게 열리는 것과 같은 이유다. 같은 보상이라도
-        ///    **올라가는 음과 함께 카운터가 가속하며 떨어지는 3초**가 붙으면 체감이 다르다.
-        /// </summary>
-        void UpdateCargo()
-        {
-            float r = config.baseDockRadius;
-            AtBase = ((Vector2)ship.transform.position).sqrMagnitude <= r * r;
-
-            if (fullLoadFlash > 0f) fullLoadFlash = Mathf.Max(0f, fullLoadFlash - Time.deltaTime);
-            if (dockFlash > 0f) dockFlash = Mathf.Max(0f, dockFlash - Time.deltaTime);
-            if (anchorFlash > 0f) anchorFlash = Mathf.Max(0f, anchorFlash - Time.deltaTime);
-
-            if (!Depositing)
-            {
-                if (AtBase && CargoCount > 0) BeginDeposit();
-                return;
-            }
-
-            // 🔴 기지를 벗어나면 **멈춘다.** 남은 화물은 그대로 싣고 간다.
-            //    다 넣으려면 서 있어야 한다는 게 작지만 진짜 선택이다 —
-            //    그 3초 동안 쓰레기는 계속 흘러든다.
-            UpdateDocking();
-            DrainDeposit();
-        }
-
-        /// <summary>
-        /// 🔴 **도킹.** 입금하는 동안 배를 기지 중심으로 끌어당기고 조종을 잠근다
-        ///    (2026-08-22 요청: *"기지로 쏙 들어가지는 연출... 멈추면서
-        ///    재화 얼마나 모았고 레벨업이 파파파파파박"*).
-        ///
-        ///    전에는 기지 근처를 **지나가면 조용히 정산**됐다. 그래서 아무 사건도 아니었다 —
-        ///    이 게임에서 가장 큰 보상의 순간인데 화면에서 아무 일도 안 일어났다.
-        ///
-        ///    이제 빨려 들어가서 **멈춘다.** 멈추는 것이 핵심이다:
-        ///    움직이면서 받는 보상은 배경음이고, **멈춰서 받는 보상은 사건**이다.
-        /// </summary>
-        void UpdateDocking()
-        {
-            if (!Depositing || homeBase == null) return;
-
-            Vector2 to = (Vector2)homeBase.transform.position - (Vector2)ship.transform.position;
-
-            // 빨려 들어간다 — 가까울수록 부드럽게 멎는다
-            ship.transform.position = Vector2.Lerp(
-                ship.transform.position, homeBase.transform.position, 6f * Time.deltaTime);
-
-            if (to.sqrMagnitude > 0.04f && Fx.Instance != null)
-            {
-                dockFx -= Time.deltaTime;
-                if (dockFx <= 0f)
-                {
-                    dockFx = 0.07f;
-                    Fx.Mote(ship.transform.position, homeBase.transform,
-                            new Color(0.6f, 1f, 0.9f, 0.8f), 0.25f);
-                }
-            }
-        }
-
-        float dockFx;
-
-        void BeginDeposit()
-        {
-            Depositing = true;
-
-            // 🔴 조종을 잠근다. 안 잠그면 빨려 들어가는 중에 밖으로 빠져나가
-            //    입금이 끊기고 연출이 반쪽이 된다
-            ship.ControlEnabled = false;
-            ship.AimOverride = null;
-            ship.ThrustOverride = null;
-
-            // 🔴 **입고하는 동안 세상이 멈춘다** (2026-08-22 사장님 판단:
-            //    *"기지로 들어가면 쓰레기들도 멈추는 게 나아 보이는데?"*).
-            //
-            //    조종만 잠그면 **묶인 채로 맞아 죽는다** — 만재면 2.4초인데
-            //    그 사이 로봇 둘이면 격침이고, 그건 긴장이 아니라 억울함이다.
-            //
-            //    무적으로 막을 수도 있었지만 멈추는 쪽이 낫다:
-            //    · 카드 고를 때 이미 세상이 멈춘다 — **규칙이 일관된다**
-            //    · 보상을 받는 동안은 **화면에 다른 일이 없어야** 보상이 보인다
-            //    · 기지 연료 감소도 같이 멈춘다 — 입고가 **안전한 주머니**가 된다
-            WorldPaused = true;
-
-            DepositTotal = CargoCount;
-            DepositWasFull = CargoRatio >= 0.9f;
-            DockedValue = CargoValue;
-
-            // 🔴 많이 실을수록 입금 보너스 — 아슬아슬하게 버티다 가는 게 이득이어야
-            //    "그냥 자주 왕복하기"가 최적 전략이 되지 않는다.
-            DepositBonus = (1f + CargoRatio * config.fullLoadBonus) * StreakMul;
-
-            depPerValue = CargoValue / (float)DepositTotal;
-            depPerXp    = CargoXp    / (float)DepositTotal;
-            pendingValue = 0f; pendingXp = 0f;
-            depFrac = 0f; depTickClock = 0f; depositClock = 0f;
-
-            // 물량이 많을수록 길게, 하지만 가속해서 흐르므로 지루하지 않다
-            float seconds = Mathf.Lerp(0.55f, 2.4f, CargoRatio);
-            depRate = DepositTotal / Mathf.Max(0.1f, seconds);
-        }
-
-        void DrainDeposit()
-        {
-            // 🔴 **안전장치.** 위 교착(입금하며 동시에 흡입)으로 120초를 굳은 적이 있다.
-            //    원인은 고쳤지만, 입금이 안 끝나면 판이 통째로 멎으므로 상한을 둔다.
-            //    화물 200개를 빼는 데 2.4초면 되니 8초는 "무언가 잘못됐다"는 뜻이다.
-            depositClock += Time.deltaTime;
-            if (depositClock > DepositTimeout)
-            {
-                Debug.LogWarning($"[RunDirector] 입금이 {DepositTimeout}초를 넘겼다 — 강제 정산 " +
-                                 $"(남은 화물 {CargoCount}). 교착이 다시 생긴 것이다.");
-                CargoCount = 0;
-                FinishDeposit();
-                return;
-            }
-
-            float t01 = DepositTotal <= 0 ? 1f : 1f - CargoCount / (float)DepositTotal;
-
-            // 🔴 뒤로 갈수록 빨라진다. 등속이면 그냥 기다림이고, 가속이면 고조다
-            depFrac += depRate * (0.6f + t01 * 1.2f) * Time.deltaTime;
-
-            int move = Mathf.FloorToInt(depFrac);
-            if (move > 0)
-            {
-                depFrac -= move;
-                move = Mathf.Min(move, CargoCount);
-
-                CargoCount -= move;
-                ConsumeTow(move);
-                CargoValue = Mathf.Max(0, CargoValue - Mathf.RoundToInt(depPerValue * move));
-                CargoXp    = Mathf.Max(0f, CargoXp - depPerXp * move);
-
-                pendingValue += depPerValue * move * DepositBonus;
-                pendingXp    += depPerXp    * move * DepositBonus;
-
-                // 🔴 **입금이 기지를 고친다.** 회복 수단을 따로 두지 않고 입금에 묶은 이유:
-                //    그래야 "지금 돌아갈까"에 이유가 하나 더 붙는다. 기지가 위험하면
-                //    욕심을 줄이고 자주 실어 나르게 되고, 여유가 있으면 만재를 노리게 된다.
-                // 🔴 **입금이 기지를 살린다** (rev.9).
-                //    지금까지 "왜 굳이 주워야 하나"의 답이 레벨업뿐이었고, 레벨업은 안 해도 그만이라
-                //    결국 안 주워도 되는 게임이었다. 이제 **안 주우면 진다.**
-                if (homeBase != null && !homeBase.Destroyed)
-                    homeBase.Refuel(move * config.fuelPerCargo * Tuning.FuelPerCargoMul);
-
-                // 화물이 배에서 기지로 빨려 들어가는 줄기
-                if (Fx.Instance != null && homeBase != null)
-                    Fx.Mote(ship.transform.position, homeBase.transform,
-                            new Color(0.6f, 1f, 0.85f, 0.85f), 0.30f);
-            }
-
-            // 소리는 개수가 아니라 **시간**으로 낸다. 200개면 200번 울려서 못 듣는다
-            depTickClock -= Time.deltaTime;
-            if (depTickClock <= 0f)
-            {
-                depTickClock = Mathf.Lerp(0.075f, 0.030f, t01);
-                Juice.DepositTick(t01);
-            }
-
-            if (CargoCount <= 0) FinishDeposit();
-        }
-
-        /// <summary>기지를 벗어났다 — 넣은 만큼만 정산하고 조용히 끝낸다.</summary>
-        void InterruptDeposit()
-        {
-            Flush();
-            Depositing = false;
-            ship.ControlEnabled = true;
-            WorldPaused = false;
-        }
-
-        void FinishDeposit()
-        {
-            int moved = DepositTotal;
-            bool full = DepositWasFull;
-            float bonus = DepositBonus;
-
-            Flush();
-            Depositing = false;
-            ship.ControlEnabled = true;
-
-            // 🔴 여기서 먼저 푼다. 아래 LevelUp()이 카드 화면을 위해 다시 멈추므로
-            //    순서가 뒤바뀌면 카드가 뜬 채로 세상이 돌아간다
-            WorldPaused = false;
-
-            // 🔴 연쇄는 **만재로 다 넣었을 때만** 오른다. 조금씩 자주 나르는 플레이로는
-            //    쌓이지 않아야 "꽉 채워서 살아 돌아오기"에 값이 붙는다.
-            if (full)
-            {
-                DepositStreak++;
-                fullLoadFlash = 1.6f;
-            }
-
-            DepositedTotal += moved;
-            dockFlash = 2.2f;
-
-            AddPopup(ship.transform.position,
-                     $"입금 {moved}개" + (bonus > 1.05f ? $"  ×{bonus:0.00}" : ""),
-                     new Color(0.5f, 1f, 0.8f));
-
-            Juice.DepositDone(full);
-
-            // 🔴 레벨업은 여기서 **몰아서** 터진다. rev.7은 입금 때만 XP가 들어오므로
-            //    한 번에 2~3레벨이 동시에 오른다 — 구조가 이미 그렇게 생겼다
-            if (Xp >= XpNeed && State != GameState.Drafting) LevelUp();
-        }
-
-        /// <summary>쌓아 둔 크레딧·경험치를 실제로 넣는다.</summary>
-        void Flush()
-        {
-            RunValue += Mathf.RoundToInt(pendingValue);
-            Xp += pendingXp;
-            pendingValue = 0f; pendingXp = 0f;
-        }
-
-        /// <summary>
-        /// 🔴 지금 입금하면 몇 레벨이 오르는가. HUD가 "돌아갈 값어치"를 보여줄 때 쓴다.
-        /// </summary>
-        public int PendingLevels
-        {
-            get
-            {
-                if (content == null) return 0;
-                float xp = Xp + CargoXp * (1f + CargoRatio * config.fullLoadBonus) * StreakMul;
-                float need = XpNeed;
-                int lv = Level, n = 0;
-                while (xp >= need && n < 20) { xp -= need; lv++; n++; need = content.XpToNext(lv); }
-                return n;
-            }
-        }
-
-        /// <summary>이번 런에 실제로 입금한 총량. 결과 화면이 읽는다.</summary>
-        public int DepositedTotal { get; private set; }
-
-        /// <summary>격침 때 흘린 화물. 결과 화면이 읽는다.</summary>
-        public int LostCargo { get; private set; }
-
-        /// <summary>우주선이 다시 나오기까지 남은 시간. 0이면 살아 있다.</summary>
-        public float RespawnLeft { get; private set; }
 
         public int WreckCount { get; private set; }
 
-        /// <summary>
-        /// 🔴 격침. **런은 계속된다.** 그동안 기지는 무방비다 —
-        ///    죽는 것의 대가가 "게임 오버"가 아니라 **"기지가 맞는 시간"**이 된다.
-        ///    이게 컨셉과 규칙을 일치시킨다: 우주선은 소모품, 기지가 목적.
-        /// </summary>
-        void Wreck()
-        {
-            // 🔴 **이미 격침 상태면 다시 죽지 않는다.** 위의 CheckContact 가드와 이중으로 막는다 —
-            //    한 곳만 막으면 다른 경로(연료 고갈 등)로 또 리셋될 수 있다.
-            if (RespawnLeft > 0f) return;
-
-            WreckCount++;
-            RespawnLeft = config.respawnSeconds;
-
-            // 🔴 **연쇄가 끊긴다.** 배수를 잃는 것 자체보다 "쌓아 둔 걸 날렸다"가 아프다 —
-            //    그 아픔이 곧 돌아갈 이유이고, 입금 보상을 키운 만큼의 반대편 추다.
-            if (DepositStreak > 0)
-            {
-                AddPopup(ship.transform.position, $"연쇄 {DepositStreak} 끊김", new Color(1f, 0.6f, 0.3f));
-                DepositStreak = 0;
-            }
-
-            // 입금 중에 죽으면 넣던 것은 넣은 것으로 친다
-            if (Depositing) InterruptDeposit();
-
-            if (CargoCount > 0)
-            {
-                // 🔴 **잃는 게 아니라 떨어뜨린다.** 전부 잃으면 "많이 싣는다"가 선택지에서 빠지고,
-                //    그러면 무게 저울질이라는 이 게임의 세 번째 결정이 통째로 죽는다.
-                //    되찾으러 가려면 격침당한 그 자리로 돌아가야 한다 — 위험했던 곳으로.
-                // 🔴 rev.11: 끌던 것을 **그대로 놓는다.** 새로 만들어 뿌리지 않는다 —
-                //    내가 끌고 있던 바로 그것들이 그 자리에 남아야 "되찾으러 간다"가 성립한다.
-                //    (`wreckSpillRatio`로 일부만 남기던 방식은 없앴다.
-                //     끌던 게 눈앞에서 절반 증발하면 그건 규칙이 아니라 버그로 읽힌다)
-                int spilled = towed.Count;
-                JettisonTow();
-
-                AddPopup(ship.transform.position, $"화물 {spilled}개를 그 자리에 놓쳤다",
-                         new Color(1f, 0.5f, 0.4f));
-            }
-
-            AddPopup(ship.transform.position, "격침 — 재출항 준비", new Color(1f, 0.45f, 0.4f));
-            Juice.Break();
-
-            ship.ControlEnabled = false;
-            ship.gameObject.SetActive(false);
-        }
-
-        void Respawn()
-        {
-            ship.gameObject.SetActive(true);
-            ship.ResetShip(field != null ? field.BaseCenter : Vector2.zero, Stats.fuelMax * Tuning.ShipFuelMul);
-            ship.ControlEnabled = true;
-
-            // 🔴 **나오자마자 죽는 고리를 끊는다** (2026-08-23 피드백).
-            //    부활 지점은 기지인데 로봇은 배를 쫓으므로 **죽은 자리에 모여 있다.**
-            //    무적이 없으면 나오자마자 두 대 맞고 또 죽는다 — 플레이어가 할 수 있는 게 없다.
-            ship.GrantInvuln(config.respawnInvulnSeconds);
-
-            // 그리고 기지 주변을 **밀어낸다.** 무적만 주면 무적이 끝나는 순간 같은 일이 난다
-            if (field != null)
-            {
-                Vector2 at = ship.transform.position;
-                float r = config.respawnClearRadius;
-
-                for (int i = 0; i < field.Pieces.Count; i++)
-                {
-                    var p = field.Pieces[i];
-                    if (!p.Alive || p.IsBossPart) continue;
-                    if (p.type != null && p.type.isAnchor) continue;   // 계류 장치는 안 밀린다
-
-                    Vector2 d = (Vector2)p.transform.position - at;
-                    if (d.sqrMagnitude > r * r) continue;
-
-                    p.Flee(at, 16f);
-                }
-
-                Fx.Shockwave(at, r, new Color(0.6f, 1f, 0.9f, 0.9f), 0.4f);
-            }
-
-            AddPopup(ship.transform.position, "재출항 — 잠시 무적", new Color(0.6f, 1f, 0.8f));
-            Juice.LevelUp();
-        }
-
-        // ---------------------------------------------------------------- 지역 이동
+        /// <summary>이번 귀환에 실제로 가져온 덩어리 수. 결과 화면이 읽는다.</summary>
+        public int BankedCount { get; private set; }
 
         /// <summary>
-        /// 🔴 **다음 지역으로 떠날 수 있는가** (rev.10).
-        ///    기지 안에 있고, 여비(`travelFuelCost`)를 내고도 연료가 남아야 한다.
-        /// </summary>
-        public bool CanTravel =>
-            State == GameState.Field && Docked && AtBase && !Depositing &&
-            homeBase != null && !homeBase.Destroyed &&
-            Stage != null && MapIndex < content.StageCount - 1 &&
-            homeBase.Fuel > Stage.travelFuelCost + 1f &&
-            !AnchorsBlocking;
-
-        /// <summary>
-        /// 🔴 **계류 장치가 마지막 도약을 막는다** (rev.11 재배치).
+        /// 🔴 **닿아도 아프지 않다 — 플레이어는 무적이다** (2026-08-23 사장님:
+        ///    *"플레이어를 공격하는 것도 없애고, 플레이어는 무적이야.
+        ///      죽는 건 연료가 다 닳아서 죽는 것 말곤 없음"*).
         ///
-        ///    rev.10에서는 최종 지역에 도착한 뒤 상시로 연료를 빨아먹는 장치였다.
-        ///    rev.11에서는 **떠나지 못하게 하는 자물쇠**가 된다 —
-        ///    이야기와 맞다: *가야 하는데 붙잡혀 있다.*
+        ///    그래서 접촉 판정(`CheckContact`)과 적 탄 판정(`CheckEnemyShots`)을 통째로 뺐다.
+        ///    배리어·격침·부활도 같이 의미를 잃었다.
         ///
-        ///    그래서 마지막 구간은 **"연료를 모아 떠난다"가 아니라
-        ///    "붙잡은 것을 끊어내고 떠난다"**가 된다. 목표가 하나 더 얹히는 게 아니라
-        ///    **같은 목표(떠나기)에 장애물이 놓이는 것**이라 새로 배울 게 없다.
-        /// </summary>
-        public bool AnchorsBlocking =>
-            field != null && field.AnchorsTotal > 0 && field.AnchorsAlive > 0;
-
-        public float TravelCost => Stage != null ? Stage.travelFuelCost : 0f;
-
-        /// <summary>🔴 마지막 지역인가.</summary>
-        public bool AtLastRegion => content != null && MapIndex >= content.StageCount - 1;
-
-        /// <summary>
-        /// 🔴 **떠난다.** 이 게임에서 이기는 유일한 길이다.
+        /// 🔴 **그러면 긴장은 어디서 오나 — 연료다.**
+        ///    이제 시계가 하나뿐이다: 나가면 닳고, 안 나가면 못 캔다.
+        ///    맞아 죽는 게 없어진 만큼 **연료가 진짜 압박이어야** 판이 성립한다.
+        ///    그래서 추진 소모를 되돌렸고(rev.12 초안에서 1/4로 눌러 뒀었다),
+        ///    쓰레기의 `fuelBonus`를 처음으로 실제로 물렸다.
         ///
-        ///    출발을 자동으로 만들지 않은 이유: 그러면 결정이 사라진다.
-        ///    여비를 내야 하므로 **"지금 갈까, 더 캐고 갈까"**가 매 지역마다 돌아온다 —
-        ///    지금 가면 적은 연료로 시작하고, 더 캐고 가면 여유롭지만 그동안 계속 닳는다.
+        ///    되찾는 길은 둘이다 — **모선에 들어가 채우거나, 연료가 나오는 쓰레기를 캐거나.**
         ///
-        /// 🔴 화물·레벨·무기는 **유지한다.** 지역마다 초기화하면
-        ///    이동이 이득이 아니라 손해가 되어 아무도 안 간다.
-        /// </summary>
-        /// <summary>
-        /// 🔴 **rev.11: 즉시 이동이 아니라 항행 국면으로 들어간다.**
-        ///    출발만 여기서 하고, 도착은 `FinishLeg()`가 한다.
-        /// </summary>
-        public void TravelToNext()
-        {
-            if (!CanTravel) return;
-
-            homeBase.Spend(TravelCost);
-            BeginLeg();
-        }
-
-        /// <summary>
-        /// 🔴 **항행 시작.** 우주선을 격납하고 기지가 나아가기 시작한다.
-        ///    이 동안 플레이어는 **기지 무기를 조준**해 정면에서 오는 잔해를 막는다.
-        /// </summary>
-        void BeginLeg()
-        {
-            Leg = Voyage.Travelling;
-            LegProgress = 0f;
-            LegSeconds = config.legSeconds * Tuning.LegSecondsMul;
-
-            // 🔴 우주선을 격납한다 — 조작이 "몰기"에서 "조준"으로 바뀌는 지점이다
-            JettisonTow();                    // 끌던 것은 기지가 이미 먹었거나 놓는다
-            ship.ControlEnabled = false;
-            ship.gameObject.SetActive(false);
-
-            // 항행 중에는 밭이 없다. 정면에서 잔해가 밀려올 뿐이다
-            field.ClearAllJunk();
-            field.Spawning = false;
-
-            // 🔴 카메라를 기지로 옮긴다 — 배가 꺼졌으므로 따라갈 대상이 없다
-            var follow = cam != null ? cam.GetComponent<CameraFollow>() : null;
-            if (follow != null && homeBase != null) follow.target = homeBase.transform;
-
-            legIntro = 3.5f;
-            AddPopup(Vector2.zero, "항행 시작 — 기지를 지켜라", new Color(1f, 0.8f, 0.45f));
-            Juice.LevelUp();
-        }
-
-        /// <summary>항행 시작 안내를 띄우는 시간.</summary>
-        public float legIntro;
-
-        /// <summary>
-        /// 🔴 **항행 진행.** 시간이 곧 거리다. 잔해가 정면에서 밀려온다.
-        /// </summary>
-        void UpdateLeg()
-        {
-            if (legIntro > 0f) legIntro = Mathf.Max(0f, legIntro - Time.deltaTime);
-
-            LegProgress = Mathf.Clamp01(LegProgress + Time.deltaTime / Mathf.Max(1f, LegSeconds));
-
-            // 정면에서 밀려오는 잔해 — rev.7의 조류를 여기서 되살린다
-            legSpawn -= Time.deltaTime;
-            if (legSpawn <= 0f)
-            {
-                legSpawn = Mathf.Lerp(0.55f, 0.22f, LegProgress) / Mathf.Max(0.2f, Tuning.IncomingRateMul);
-                field.SpawnIncoming();
-            }
-
-            if (LegProgress >= 1f) FinishLeg();
-        }
-
-        float legSpawn;
-
-        /// <summary>🔴 도착. 다음 지역에 정박한다.</summary>
-        void FinishLeg()
-        {
-            Leg = Voyage.Docked;
-            LegProgress = 0f;
-
-            MapIndex++;
-            Wave = 1;
-            NextBossIn = 0f;
-            Phase = FloorPhase.Collecting;
-            FloorCollected = 0;
-            if (boss != null) boss.End();
-
-            // 새 지역의 감소율로 갈아탄다 — **난이도는 여기서 올라간다**
-            homeBase.Retune(Stage.baseDrainPerSecond * Tuning.BaseDrainMul);
-
-            // MapHalf는 Stage에서 파생되는 읽기 전용이다 — MapIndex를 올린 순간 이미 새 값이다
-            ship.boundsHalf = MapHalf;
-            field.MapHalf = MapHalf;
-            field.Build(Stage, MapHalf);
-            field.BaseCenter = Vector2.zero;
-            UpdateStageBounds(MapHalf);
-
-            var follow = cam != null ? cam.GetComponent<CameraFollow>() : null;
-            if (follow != null) follow.mapHalf = MapHalf;
-
-            // 🔴 **마지막 구간 직전에 계류 장치가 붙는다.**
-            //    도착한 지역이 최종 바로 앞이면, 여기서 떠나려 할 때 붙잡혀 있다.
-            //    (rev.10에서는 최종 지역에서 상시로 연료를 빨았다 —
-            //     이제는 **떠나지 못하게 하는 자물쇠**다)
-            if (MapIndex == content.StageCount - 2)
-            {
-                field.PlantAnchors();
-                finalIntro = 6f;
-            }
-
-            // 우주선을 다시 꺼낸다 — 조작이 "조준"에서 "몰기"로 돌아온다
-            ship.gameObject.SetActive(true);
-            ship.ResetShip(Vector2.zero, Stats.fuelMax * Tuning.ShipFuelMul);
-            ship.ControlEnabled = true;
-            field.Spawning = true;
-            field.ResetDockClock();          // 새 지역이니 썩은 정도도 초기화
-
-            // 카메라를 배로 되돌린다
-            var back = cam != null ? cam.GetComponent<CameraFollow>() : null;
-            if (back != null) back.target = ship.transform;
-
-            AddPopup(Vector2.zero, $"{Stage.displayName} 도착", new Color(0.6f, 1f, 0.85f));
-            Juice.DepositDone(true);
-
-            MetaSave.UnlockNextMap(MapIndex - 1);
-
-            // 🔴 **최종 좌표에 닿았다 — 임무 완수.**
-            if (AtLastRegion)
-            {
-                Cleared = true;
-                Finish("임무 완수 — 좌표 도달");
-            }
-        }
-
-        /// <summary>
-        /// 🔴 계류 장치를 하나 부쉈다. 남은 게 없으면 **승리.**
-        /// </summary>
-        public void OnAnchorBroken(int alive, int total)
-        {
-            if (State != GameState.Field) return;
-
-            anchorFlash = 2.6f;
-
-            if (alive > 0)
-            {
-                AddPopup(ship.transform.position,
-                         $"계류 장치 파괴  {total - alive}/{total}  —  {alive}개 남았다",
-                         new Color(0.6f, 1f, 0.85f));
-                Juice.DepositDone(true);
-                return;
-            }
-
-            // 🔴 다 끊었다 — 이제 **떠날 수 있다.** 여기서 판이 끝나는 게 아니다
-            AddPopup(ship.transform.position, "계류 해제 — 이제 떠날 수 있다",
-                     new Color(0.6f, 1f, 0.85f));
-            Juice.DepositDone(true);
-        }
-
-        /// <summary>계류 장치를 부순 직후 크게 알리는 시간.</summary>
-        public float anchorFlash;
-
-        /// <summary>
-        /// 최종 지역 도착 안내를 띄우는 시간.
-        /// 🔴 **뭘 해야 하는지 모르면 아무것도 안 한다.** 한 번은 크게 말해 줘야 한다.
-        /// </summary>
-        public float finalIntro;
-
-        /// <summary>🔴 기지 연료가 바닥났다 — **패배.**</summary>
-        public void OnBaseDrained()
-        {
-            if (State != GameState.Field) return;
-            Finish("기지 연료 고갈");
-        }
-
-        /// <summary>
-        /// 🔴 **적 탄 판정.** 쓰레기 충돌과 **같은 규칙**이다 — 배리어 한 대, 그다음은 격침.
-        ///    규칙을 하나로 두면 플레이어가 배울 게 늘지 않는다.
-        /// </summary>
-        void CheckEnemyShots()
-        {
-            Vector2 shipPos = ship.transform.position;
-            const float hit = 0.9f;
-
-            for (int i = 0; i < field.Shots.Count; i++)
-            {
-                var sh = field.Shots[i];
-                if (!sh.Alive) continue;
-                if (((Vector2)sh.transform.position - shipPos).sqrMagnitude > hit * hit) continue;
-
-                sh.Despawn();
-                ContactHits++;
-
-                if (ship.AbsorbHit())
-                {
-                    AddPopup(shipPos, "배리어 파괴", new Color(0.55f, 0.9f, 1f));
-                    continue;
-                }
-
-                AddPopup(shipPos, "피격 — 격침", new Color(1f, 0.35f, 0.3f));
-                Wreck();
-                return;
-            }
-        }
-
-        /// <summary>🔴 쓰레기 본체에 닿으면 연료를 잃는다 — 붙는 것의 대가.</summary>
-        void CheckContact()
-        {
-            Vector2 shipPos = ship.transform.position;
-
-            for (int i = 0; i < field.Pieces.Count; i++)
-            {
-                var j = field.Pieces[i];
-                if (!j.Alive) continue;
-
-                float touch = 0.55f + j.transform.localScale.x * 0.5f;
-                if (((Vector2)j.transform.position - shipPos).sqrMagnitude > touch * touch) continue;
-                if (!j.TryContact()) continue;
-
-                // 🔴 웨이브가 오를수록 접촉이 아파진다.
-                //    HP는 웨이브마다 올렸는데 **접촉 피해는 고정**이라,
-                //    후반에 쓰레기가 단단해지기만 하고 **위협은 그대로**였다.
-                //    2026-08-22 피드백: *"쓰레기가 약해서 잘 안 죽는데, 난이도가 좀 쉬운가봐"*
-                //    시뮬에서도 27런 격침 0회였다 — 봇이 잘해서가 아니라 실제로 안 아팠다.
-                // 🔴 **rev.10: 우주선은 두 대에 부서진다.**
-                //    (2026-08-21: *"배리어가 없는 상태에서 한 대 더 맞으면 우주선 파괴"*)
-                //
-                //    연료를 야금야금 깎던 방식을 버렸다. 그때는 "지금 얼마나 위험한가"가
-                //    **숫자**라서 화면을 안 보면 알 수 없었다.
-                //    이제 상태는 둘뿐이다 — **배리어가 있다 / 없다.**
-                //    없으면 다음 한 대가 끝이다. 보기만 해도 안다.
-                //
-                //    🔴 연료는 이제 **오직 이동 비용**이다. 맞아서 줄지 않는다.
-                //       역할이 하나면 플레이어가 헷갈릴 일이 없다.
-                ContactHits++;
-
-                if (ship.AbsorbHit())
-                {
-                    AddPopup(ship.transform.position, "배리어 파괴", new Color(0.55f, 0.9f, 1f));
-                    continue;
-                }
-
-                AddPopup(ship.transform.position, "격침", new Color(1f, 0.35f, 0.3f));
-                Wreck();
-                return;
-            }
-        }
+        ///    ⚠️ 되살리려면 `rev11-voyage` 브랜치나 이 커밋 직전을 보면 된다.
 
         // ---------------------------------------------------------------- 레벨업 · 카드
 
-        void LevelUp()
-        {
-            Xp -= XpNeed;
-            Level++;
-            XpNeed = content.XpToNext(Level);
-
-            // 🔴 몰아서 오를수록 음이 높아진다 — "3레벨이 한꺼번에 올랐다"가 귀로 들려야 한다
-            Juice.LevelUp();
-            if (Xp >= XpNeed) Juice.Fanfare(0.5f, 1.35f);
-
-            BuildOffers();
-            if (Offers.Count == 0) return;
-
-            // 이번 정산에서 몇 장을 고르게 되는지 미리 센다 — HUD가 "2 / 5"로 보여준다.
-            //    몇 장 남았는지 알면 기다림이 **기대**가 된다. 모르면 그냥 반복이다
-            if (DraftTotal <= 0)
-            {
-                DraftIndex = 0;
-                DraftTotal = 1 + ExtraLevelsQueued();
-            }
-
-            State = GameState.Drafting;
-            ship.ControlEnabled = false;
-            WorldPaused = true;
-        }
-
-        /// <summary>지금 XP로 이번 정산에서 **추가로** 오를 레벨 수.</summary>
-        int ExtraLevelsQueued()
-        {
-            if (content == null) return 0;
-
-            float xp = Xp;
-            int lv = Level, n = 0;
-            float need = XpNeed;
-
-            while (xp >= need && n < 20) { xp -= need; lv++; n++; need = content.XpToNext(lv); }
-            return n;
-        }
-
-        /// <summary>이번 정산에서 지금 몇 번째 장을 고르는가 (0부터).</summary>
-        public int DraftIndex { get; private set; }
-
-        /// <summary>이번 정산에서 고르게 될 총 장수.</summary>
-        public int DraftTotal { get; private set; }
-
         /// <summary>
-        /// 🔴 무기는 **딱 둘**이다 (우주선이 준 것 + 얻은 것 하나).
-        ///    그래서 두 번째 무기를 고르는 순간이 이 게임의 첫 갈림길이고,
-        ///    그 판이 어떤 판이 될지가 거기서 정해진다 — 조합 능력까지 같이 결정되니까.
-        ///
-        ///    · 아직 하나뿐이면 → **무기만** 보여준다. 강화 카드를 섞으면 갈림길이 흐려진다
-        ///    · 둘이 되면 → 안 가진 무기 카드는 **영영 안 나온다**
+        /// ⬜ 무기 상한. 카드 뽑기가 없어진 지금(2026-08-23) **두 번째 무기를 얻을 길이 없다** —
+        ///    배가 준 하나로 끝난다. 값은 HUD가 "무기 1/2"로 쓰는 데만 남아 있다.
         /// </summary>
         public int MaxWeapons => config != null ? config.maxWeapons : 2;
         public int ComboLevel => config != null ? config.comboLevel : 5;
-
-        public bool PickingSecondWeapon => Stats != null && config != null
-                                        && Stats.OwnedWeaponCount < config.maxWeapons;
-
-        void BuildOffers()
-        {
-            Offers.Clear();
-
-            // 🔴 무기 카드는 **데이터로 두지 않는다.** `content.weapons`에서 그때그때 만든다 —
-            //    무기를 추가할 때마다 카드도 같이 써야 하면 반드시 어긋난다.
-            if (PickingSecondWeapon) { BuildWeaponOffers(); return; }
-
-            var pool = new List<CardDef>();
-
-            // 보유한 무기의 강화 카드 — 무기가 둘뿐이라 항상 후보에 올린다
-            for (int i = 0; i < Weapons.Count; i++)
-            {
-                var kind = (WeaponKind)i;
-                if (!Stats.Has(kind)) continue;
-
-                var def = content.Weapon(kind);
-                if (def == null) continue;
-                pool.Add(WeaponCard(def, Stats.LevelOf(kind)));
-            }
-
-            if (content.cards != null)
-                for (int i = 0; i < content.cards.Length; i++)
-                {
-                    // 남아 있는 구 무기 카드는 무시한다 (에셋이 오래됐을 수 있다)
-                    if (content.cards[i].effect == CardEffect.Weapon) continue;
-                    pool.Add(content.cards[i]);
-                }
-
-            if (pool.Count == 0) return;
-
-            // 🔴 **무기 카드 한 장은 보장한다.**
-            //    패시브가 28장이라 무기 강화가 잘 안 뜬다는 피드백이 있었다 (2026-08-22).
-            //    무기를 둘만 갖는 게 이 게임의 구조인데, 그 둘을 키울 기회가
-            //    운에 맡겨져 있으면 구조가 성립하지 않는다.
-            var weaponCards = new List<CardDef>();
-            for (int i = 0; i < pool.Count; i++)
-                if (pool[i].effect == CardEffect.Weapon) weaponCards.Add(pool[i]);
-
-            if (weaponCards.Count > 0)
-            {
-                var pick = weaponCards[NextRandom(weaponCards.Count)];
-                Offers.Add(pick);
-                pool.Remove(pick);
-            }
-
-            // 🔴 **기지 카드도 한 장 보장한다** (rev.11 — 이 게임의 전략 축).
-            //
-            //    자원은 하나인데 쓸 곳이 둘이다: 우주선(정박에서 캔다) / 기지(항행에서 버틴다).
-            //    한쪽만 파면 반드시 막히므로 **매번 양쪽을 다 보여 줘야** 저울질이 성립한다.
-            //    기지 카드가 9장뿐이라 운에 맡기면 몇 판 내내 안 뜬다 —
-            //    그러면 플레이어는 "기지를 키울 수 있다"는 걸 모른 채 항행에서 깨진다.
-            var baseCards = new List<CardDef>();
-            for (int i = 0; i < pool.Count; i++)
-                if (Cards.IsBase(pool[i].effect)) baseCards.Add(pool[i]);
-
-            if (baseCards.Count > 0 && Offers.Count < Stats.cardChoices)
-            {
-                var pick = baseCards[NextRandom(baseCards.Count)];
-                Offers.Add(pick);
-                pool.Remove(pick);
-            }
-
-            DrawFrom(pool, Stats.cardChoices - Offers.Count);
-        }
-
-        /// <summary>
-        /// 🔴 두 번째 무기를 고르는 판. **무기만** 보여준다.
-        ///    패시브를 섞으면 이 게임의 첫 갈림길이 흐려진다 —
-        ///    여기서 고른 것이 조합까지 결정하기 때문에 다른 판보다 중요하다.
-        /// </summary>
-        void BuildWeaponOffers()
-        {
-            var pool = new List<CardDef>();
-            if (content.weapons == null) return;
-
-            for (int i = 0; i < content.weapons.Length; i++)
-            {
-                var def = content.weapons[i];
-                if (def == null || Stats.Has(def.kind)) continue;
-                pool.Add(WeaponCard(def, 0));
-            }
-            DrawFrom(pool, Stats.cardChoices);
-        }
-
-        /// <summary>
-        /// 무기 하나를 카드 모양으로 포장한다.
-        /// 🔴 **무엇이 얼마나 오르는지 숫자로 보여준다.** "무기 강화"라고만 쓰면
-        ///    뭘 고른 건지 알 수가 없다 — 2026-08-22 플레이 피드백: *"무기 강화가 너무 애매하다"*.
-        /// </summary>
-        CardDef WeaponCard(WeaponDef def, int currentLevel)
-        {
-            int next = currentLevel + 1;
-            string desc;
-
-            if (currentLevel <= 0)
-            {
-                desc = def.description;
-            }
-            else
-            {
-                float dmgNow = def.damage + def.damagePerLevel * (currentLevel - 1);
-                float dmgNext = def.damage + def.damagePerLevel * (next - 1);
-                desc = $"피해 {dmgNow:0} → {dmgNext:0}";
-
-                if (def.rangePerLevel > 0.001f)
-                {
-                    float rNow = def.range + def.rangePerLevel * (currentLevel - 1);
-                    float rNext = def.range + def.rangePerLevel * (next - 1);
-                    desc += $"\n사거리 {rNow:0.0} → {rNext:0.0}";
-                }
-
-                if (def.cooldown > 0.001f && def.cooldownPerLevel < 0.999f)
-                {
-                    float cNow = def.cooldown * Mathf.Pow(def.cooldownPerLevel, currentLevel - 1);
-                    float cNext = def.cooldown * Mathf.Pow(def.cooldownPerLevel, next - 1);
-                    desc += $"\n쿨다운 {cNow:0.00}초 → {cNext:0.00}초";
-                }
-
-                // 개수가 느는 레벨이면 그게 제일 눈에 띄는 변화다
-                if (def.countEveryLevels > 0 && (next - 1) % def.countEveryLevels == 0)
-                    desc += "\n개수 +1";
-            }
-
-            var trait = def.TraitUnlockedAt(next);
-            if (trait != null) desc += "\n\n★ " + trait.title + " — " + trait.description;
-
-            return new CardDef
-            {
-                title = currentLevel <= 0 ? def.displayName : $"{def.displayName}  Lv.{next}",
-                description = desc,
-                effect = CardEffect.Weapon,
-                param = (int)def.kind,
-                value = 1f,
-                // 🔴 특성이 붙는 레벨은 더 자주 뜨게 한다. 그게 진짜 성장 구간이다
-                weight = trait != null ? 34 : 20,
-                // 특성이 붙는 레벨은 등급을 올려 **눈에 띄게** 한다
-                rarity = trait != null ? CardRarity.Epic : CardRarity.Rare,
-                color = def.color
-            };
-        }
-
-        void DrawFrom(List<CardDef> pool, int want)
-        {
-            want = Mathf.Min(want, pool.Count);
-            for (int n = 0; n < want; n++)
-            {
-                int total = 0;
-                for (int i = 0; i < pool.Count; i++) total += Mathf.Max(1, pool[i].weight);
-
-                int roll = NextRandom(total);
-                for (int i = 0; i < pool.Count; i++)
-                {
-                    roll -= Mathf.Max(1, pool[i].weight);
-                    if (roll >= 0) continue;
-                    Offers.Add(pool[i]);
-                    pool.RemoveAt(i);
-                    break;
-                }
-            }
-        }
-
-        public void ChooseCard(int index)
-        {
-            if (State != GameState.Drafting) return;
-            if (index < 0 || index >= Offers.Count) return;
-
-            var card = Offers[index];
-            TechSystem.ApplyCard(Stats, card);
-
-            // 🔴 기지 체력 카드는 스탯만 올려서는 안 된다 — 지금 서 있는 기지에 바로 반영해야
-            //    카드를 먹은 순간 실드 고리가 커지는 게 보인다
-            // (rev.8: 기지 체력 카드는 '가동 단축'으로 바뀌었다 — Begin에서 반영된다)
-            Taken.Add(card);
-            Offers.Clear();
-
-            arms.Rebuild();
-            ship.stats = Stats;
-            CheckCombo();
-
-            // 🔴 특성이 붙었으면 그걸 알린다. 붙었는데 아무 말이 없으면
-            //    "레벨만 올랐네"로 읽혀서 레벨업의 의미가 사라진다.
-            if (card.effect == CardEffect.Weapon)
-            {
-                var wdef = content.Weapon((WeaponKind)card.param);
-                var got = wdef?.TraitUnlockedAt(Stats.LevelOf((WeaponKind)card.param));
-                if (got != null)
-                {
-                    AddPopup(ship.transform.position, $"★ {got.title}", wdef.color);
-                    LastMessage = $"{wdef.displayName} — {got.title}: {got.description}";
-                }
-            }
-
-            string tag = card.effect == CardEffect.Weapon
-                ? (Stats.LevelOf((WeaponKind)card.param) <= 1 ? "NEW  " : $"Lv.{Stats.LevelOf((WeaponKind)card.param)}  ")
-                : "";
-            AddPopup(ship.transform.position, tag + card.title, card.color);
-
-            // 🔴 **밀려 있는 보상은 화면을 새로 열지 않고 이어서 고른다** (rev.10).
-            //    (2026-08-21 요청: *"여러 번 레벨업 하면 그에 따른 여러 번 보상 지급,
-            //    도파민스러운 연출까지"*)
-            //
-            //    rev.9까지는 카드를 고를 때마다 `State`를 Field로 돌렸다가 다시 Drafting으로
-            //    올렸다. 그러면 화면이 **다섯 번 새로 열린다** — 같은 보상인데
-            //    보상이 아니라 **절차**로 느껴진다.
-            //
-            //    입금 한 번에 3~5레벨이 오르는 게 rev.9 이후의 정상이므로,
-            //    여기가 이 게임에서 가장 자주 보는 화면이다. 끊기면 안 된다.
-            DraftIndex++;
-
-            if (Xp >= XpNeed)
-            {
-                LevelUp();                       // 화면을 유지한 채 다음 장으로
-                if (State == GameState.Drafting) return;
-            }
-
-            DraftIndex = 0;
-            DraftTotal = 0;
-
-            State = GameState.Field;
-            ship.ControlEnabled = true;
-            WorldPaused = false;
-        }
 
         /// <summary>지금 판에서 열린 조합. 아직이면 null.</summary>
         public ComboDef ActiveCombo { get; private set; }
@@ -1615,14 +714,6 @@ namespace SalvageRun.Run
             comboFlashLeft = 2.2f;
         }
 
-        /// <summary>시드 고정 의사난수 — 시뮬 재현성을 위해 UnityEngine.Random을 쓰지 않는다.</summary>
-        int NextRandom(int maxExclusive)
-        {
-            draftSeed = draftSeed * 1103515245 + 12345;
-            int v = (draftSeed >> 16) & 0x7fff;
-            return maxExclusive <= 0 ? 0 : v % maxExclusive;
-        }
-
         // ---------------------------------------------------------------- 보스 = 부위 3개
 
         /// <summary>보스 등장 연출이 남은 시간. HUD가 읽는다.</summary>
@@ -1660,7 +751,7 @@ namespace SalvageRun.Run
                 introPulse = 0.45f;
                 // 경보 고리는 **보스 자리**에서 퍼진다 — 그쪽을 보게 만든다
                 float t = Mathf.Clamp01(1f - BossIntroLeft / 4f);
-                Fx.Shockwave(field.BossCenter, Mathf.Lerp(30f, 10f, t),
+                Fx.Shockwave(field.BossCenter, Mathf.Lerp(MapHalf.y * 1.4f, MapHalf.y * 0.45f, t),
                              new Color(1f, 0.45f, 0.35f, 0.85f), 0.55f);
             }
 
@@ -1707,39 +798,30 @@ namespace SalvageRun.Run
         {
             if (boss != null) boss.End();
 
-            MetaSave.UnlockNextMap(MapIndex);
+            // ⬜ 예전에는 여기서 다음 구역을 열었다. 2026-08-26부터 **구역은 재화로 산다** —
+            //    보스를 잡는 것은 이제 해금이 아니라 그냥 한 바퀴를 잘 끝낸 것이다.
             Cleared = true;
             Finish($"{Stage.displayName} 클리어");
         }
 
         public bool Cleared { get; private set; }
 
-        int revivesLeft;
 
+        /// <summary>
+        /// 🔴 **한 바퀴가 끝났다 — 지는 게 아니다** (2026-08-26 사장님:
+        ///    *"연료를 다 쓰면 자동으로 복귀되는 방식으로 하자"*).
+        ///
+        ///    Space Rock Breaker 쪽으로 가기로 하면서 **패배라는 개념을 뺐다.**
+        ///    인크리멘탈에는 실패가 없다 — 연료가 떨어지면 **자동 귀환**이고,
+        ///    가지고 온 것을 정산해서 강화에 쓴다. 그게 한 바퀴다.
+        ///
+        ///    ⚠️ 그래서 여기서 잃는 것은 아무것도 없다. `revivesLeft`(비상 전개)도
+        ///       되살릴 대상이 없어져 뺐다 — 죽지 않는데 부활이 있을 수 없다.
+        /// </summary>
         void Finish(string why)
         {
-            // 🔴 영구 강화 '비상 전개 장치' — 격침될 때 한 번 살아난다.
-            //    잃는 것 없이 되살아나면 긴장이 사라지므로 **연료 절반**으로만 돌아온다.
-            if (revivesLeft > 0 && why != "강제 종료" && why != "귀환" && !Cleared)
-            {
-                revivesLeft--;
-                ship.ResetShip(ship.transform.position, Stats.fuelMax * 0.5f);
-                AddPopup(ship.transform.position, "비상 전개", new Color(1f, 0.6f, 0.4f));
-                Juice.LevelUp();
-                return;
-            }
-
-            // 🔴 **죽으면 화물을 그 자리에 흘린다.** 통째로 잃으면 다시 안 한다 —
-            //    5분 모은 걸 날리는 게임은 두 번째 판이 없다.
-            //    (지금은 표시만 한다. 회수 구현은 이 루프가 재미있다고 판단된 뒤에)
-            if (CargoCount > 0 && why != "귀환")
-            {
-                AddPopup(ship.transform.position, $"화물 {CargoCount}개 유실", new Color(1f, 0.5f, 0.4f));
-                LostCargo = CargoCount;
-                CargoCount = 0;
-                CargoValue = 0;
-                CargoXp = 0f;
-            }
+            // 🔴 **끌고 온 것만 내 것이 된다.** 여기가 "가져갈까 버릴까"에 값을 매기는 자리다
+            BankTow();
 
             State = GameState.Result;
             WorldPaused = false;
@@ -1748,7 +830,7 @@ namespace SalvageRun.Run
             ship.ControlEnabled = false;
             MetaSave.RecordRun(RunValue, RunCollected, 1);
 
-            LastMessage = $"{why} · Lv.{Level} · 파편 {RunCollected}개 · {RunValue} 크레딧";
+            LastMessage = $"{why} · 파편 {RunCollected}개 · {RunValue} 크레딧";
         }
 
         public void ReturnNow() { if (State == GameState.Field) Finish("귀환"); }
@@ -1767,108 +849,18 @@ namespace SalvageRun.Run
 
         // ---------------------------------------------------------------- 팝업 · 아레나
 
-        /// <summary>타이틀 → 홈. 게임을 켠 뒤 한 번만 지난다.</summary>
-        // ================================================================ 도입부 (rev.12)
-
         /// <summary>
-        /// 🔴 **도입 연출** — 태양광 어레이가 뜯겨 나가는 장면.
+        /// 🔴 **타이틀에서 바로 시작한다** (2026-08-23 사장님:
+        ///    *"배는 선택할 필요가 없어, 바로 게임 시작이 되어야지"*).
         ///
-        ///    (2026-08-23 사장님: *"새로 하는 경우 기지의 부품들이 파괴되는 모습을
-        ///    보여주면서 시작"*)
-        ///
-        ///    *"연료 수단이 파괴됐다"*를 글로 읽히는 것과 **눈앞에서 뜯겨 나가는 걸 보는 것**은
-        ///    완전히 다르다. 그리고 마지막에 남은 게 드릴 하나뿐이라는 것도 그림으로 설명된다.
-        ///
-        /// 🔴 **컷신으로 분리하지 않는다.** 게임 안에서 벌어지고 그대로 조작이 넘어와야
-        ///    "남의 이야기"가 아니라 "내 상황"이 된다.
+        ///    준비 화면(`Ready`)은 정비소로 남겨 둔다 — 결과 화면에서 돌아오는 자리다.
         /// </summary>
-        public float IntroLeft { get; private set; }
-
-        public bool InIntro => IntroLeft > 0f;
-
-        /// <summary>도입부 총 길이.</summary>
-        public const float IntroSeconds = 7f;
-
-        /// <summary>어레이 3개가 차례로 뜯긴다. 진행률 0~1.</summary>
-        public float IntroProgress => 1f - Mathf.Clamp01(IntroLeft / IntroSeconds);
-
-        /// <summary>지금까지 몇 개가 뜯겨 나갔나 (0~3).</summary>
-        public int ArraysLost
-        {
-            get
-            {
-                float t = IntroProgress;
-                if (t >= 0.72f) return 3;
-                if (t >= 0.50f) return 2;
-                if (t >= 0.28f) return 1;
-                return 0;
-            }
-        }
-
-        int lastArraysLost;
-
-        /// <summary>새 임무 — 도입 연출부터 시작한다.</summary>
         public void StartNewMission()
         {
-            StartRun(0);
-            IntroLeft = IntroSeconds;
-            lastArraysLost = 0;
-
-            // 연출 동안은 조작이 없다. 보는 시간이다
-            ship.ControlEnabled = false;
-            if (field != null) field.Spawning = false;
+            StartRun(Mathf.Max(0, MetaSave.Data.unlockedMaps - 1));
         }
 
-        /// <summary>연출을 건너뛴다.</summary>
-        public void SkipIntro()
-        {
-            if (!InIntro) return;
-            IntroLeft = 0f;
-            EndIntro();
-        }
-
-        void UpdateIntro()
-        {
-            IntroLeft = Mathf.Max(0f, IntroLeft - Time.deltaTime);
-
-            // 어레이가 하나씩 뜯길 때마다 충격
-            int lost = ArraysLost;
-            if (lost != lastArraysLost)
-            {
-                lastArraysLost = lost;
-
-                Vector2 at = homeBase != null ? (Vector2)homeBase.transform.position : Vector2.zero;
-                float side = (lost % 2 == 0) ? 1f : -1f;
-                Vector2 hit = at + new Vector2(side * 5f, 1.5f);
-
-                Fx.Shockwave(hit, 3.2f, new Color(1f, 0.6f, 0.3f, 0.9f), 0.45f);
-                for (int i = 0; i < 10; i++)
-                    Fx.Streak(hit, i * 36f, 2.4f, new Color(1f, 0.75f, 0.4f), 0.35f);
-
-                // 마지막 하나는 더 크게 — 여기서 끝이라는 게 느껴져야 한다
-                Juice.Break();
-                if (lost >= 3)
-                {
-                    Fx.Shockwave(at, 9f, new Color(1f, 0.4f, 0.25f, 0.95f), 0.8f);
-                    Juice.DepositDone(true);
-                }
-            }
-
-            if (IntroLeft <= 0f) EndIntro();
-        }
-
-        void EndIntro()
-        {
-            IntroLeft = 0f;
-            ship.ControlEnabled = true;
-            if (field != null)
-            {
-                field.Spawning = true;
-                field.ResetDockClock();
-            }
-            AddPopup(ship.transform.position, "드릴 가동", new Color(0.6f, 1f, 0.85f));
-        }
-
+        /// <summary>타이틀 → 홈. 정비소를 거쳐 가고 싶을 때 쓴다.</summary>
         public void LeaveTitle()
         {
             if (State == GameState.Title) State = GameState.Ready;
@@ -1892,8 +884,21 @@ namespace SalvageRun.Run
             }
         }
 
-        /// <summary>맵 반경. 🔴 화면보다 훨씬 크다 — 카메라가 배를 따라간다.</summary>
-        public Vector2 MapHalf => Stage != null ? Stage.mapHalfSize : new Vector2(52f, 34f);
+        /// <summary>
+        /// 🔴 **맵 = 화면 한 장** (2026-08-23 사장님: *"딱 화면 전체가 맵인 걸로 하자"*).
+        ///
+        ///    2026-08-20에 *"화면 한 장에 갇히면 도망이 성립하지 않는다"*며 넓은 맵 +
+        ///    추적 카메라로 바꿨었다. 그 판단을 되돌린다 — 사장님이 rev.4~5로
+        ///    돌아가기로 하셨고, 그때는 화면 한 장이었다.
+        ///
+        /// 🔴 화면 한 장이 주는 것: **모든 위협이 항상 보인다.**
+        ///    화면 밖에서 무슨 일이 벌어지는지 몰라서 지는 일이 없어지고,
+        ///    "어디에 서 있을지"가 **화면 전체를 보고 내리는 판단**이 된다.
+        ///    카메라도 안 움직이니 화면이 조용해서 파바박이 더 잘 읽힌다.
+        ///
+        ///    ⚠️ `StageDef.mapHalfSize`는 더 이상 안 쓴다. 맵 크기는 창 크기가 정한다.
+        /// </summary>
+        public Vector2 MapHalf => ScreenHalf;
 
         /// <summary>화면 반경 — 스폰/컬링 반경을 여기서 뽑는다.</summary>
         public Vector2 ScreenHalf
@@ -1914,9 +919,16 @@ namespace SalvageRun.Run
             var screen = ScreenHalf;
             if ((screen - lastArena).sqrMagnitude < 0.01f) return;
 
+            // 🔴 창 크기가 바뀌면 **맵 크기 자체가 바뀐다** (맵 = 화면이므로).
+            //    배 경계·카메라 한계·경계선까지 전부 같이 따라가야 한다 —
+            //    하나라도 빠지면 창을 줄인 순간 배가 화면 밖에 갇힌다.
             lastArena = screen;
-            field.spawnRadius = screen.magnitude * 1.15f;
-            field.cullRadius = screen.magnitude * 2.0f;
+            field.MapHalf = screen;
+            ship.boundsHalf = screen;
+            UpdateStageBounds(screen);
+
+            var follow = cam != null ? cam.GetComponent<CameraFollow>() : null;
+            if (follow != null) follow.mapHalf = screen;
         }
 
         void UpdateStageBounds(Vector2 arena)

@@ -47,10 +47,8 @@ namespace SalvageRun.Run
         ///    붙었다 빠지는 리듬이 생긴다.
         /// </summary>
         /// <summary>드릴이 물고 있을 때의 속도 배율. 0이 아닌 이유는 위 주석 참고.</summary>
-        public static float DrillDragMul => Tuning.DrillDrag;
 
         /// <summary>드릴이 무언가를 물고 있는가. `WeaponRig`이 매 프레임 넣어 준다.</summary>
-        public bool Drilling { get; set; }
 
         /// <summary>
         /// 🔴 **부활 무적 시간** (2026-08-23 플레이 피드백:
@@ -68,6 +66,12 @@ namespace SalvageRun.Run
 
         public void GrantInvuln(float seconds) => InvulnLeft = Mathf.Max(InvulnLeft, seconds);
 
+        /// <summary>
+        /// ⬜ **2026-08-23부터 깨지지 않는다.** 플레이어가 무적이 되면서
+        ///    `AbsorbHit()`을 부르는 곳이 없어졌기 때문이다.
+        ///    그래서 배 주위의 고리가 **항상 켜져 있다** — 그게 마침 "무적"으로 읽힌다.
+        ///    (지우지 않은 이유: 위협을 되살리면 그대로 다시 동작한다)
+        /// </summary>
         public bool BarrierUp { get; private set; } = true;
 
         /// <summary>남은 재생 시간. HUD가 링으로 그린다.</summary>
@@ -149,6 +153,24 @@ namespace SalvageRun.Run
         void Update()
         {
             if (RunDirector.WorldPaused) return;
+
+            // 🔴 **연료는 타이머다** (2026-08-23 사장님: *"연료는 자동으로 닳게 해줘,
+            //    타이머 개념인거지"*).
+            //
+            //    무엇을 하든 같은 속도로 준다 — 밀어도, 대시해도, 가만히 있어도.
+            //    행동에 값을 매기던 것(추진 소모·대시 비용)은 전부 뺐다.
+            //
+            // 🔴 왜 이게 나은가: 값이 붙어 있으면 **아끼는 것이 이득**이 된다.
+            //    그러면 최적 플레이가 "덜 움직이기"가 되는데, 이 게임에서
+            //    움직이는 것 말고는 할 게 없다 — 즉 **잘하는 법이 안 하는 것**이 된다.
+            //    타이머는 반대다. 어차피 가므로 **쓰는 게 이득**이다.
+            //
+            //    ⚠️ 조종이 잠겼을 때도 간다(`ControlEnabled` 확인보다 위에 있다).
+            //       멈추는 건 `WorldPaused`(카드 고르는 중)뿐이다.
+            if (ControlEnabled || Fuel > 0f)
+                Fuel = Mathf.Max(0f, Fuel - config.idleFuelPerSecond * Tuning.FuelDrainMul
+                                          * Time.deltaTime);
+
             if (DashCooldownLeft > 0f) DashCooldownLeft -= Time.deltaTime;
             if (!ControlEnabled) return;
 
@@ -171,7 +193,7 @@ namespace SalvageRun.Run
             if (dir.sqrMagnitude < 0.0001f) return false;
 
             rb.AddForce(dir.normalized * config.dashImpulse, ForceMode2D.Impulse);
-            Fuel = Mathf.Max(0f, Fuel - config.dashFuelCost);
+            // ⬜ 대시는 공짜다. 연료는 **타이머**이므로 행동에 값을 매기지 않는다
             DashCooldownLeft = config.dashCooldown;
             return true;
         }
@@ -231,35 +253,20 @@ namespace SalvageRun.Run
                 // 멀수록 강하게, 가까울수록 약하게 = 커서 위에서 부드럽게 정지
                 ThrottleNow = Mathf.Clamp01(Mathf.InverseLerp(config.deadZone, config.fullThrustDistance, dist));
 
-                // 🔴 화물이 무거우면 느려진다. **욕심의 대가**가 조작감에 직접 실린다
-                float weight = RunDirector.Instance != null ? RunDirector.Instance.CargoWeightMul : 1f;
-
-                // 🔴 **드릴이 물고 있으면 배가 묶인다** (rev.10).
-                //    채굴 자체는 재미가 없다 — 재미는 "지금 캘까, 빼야 하나"에서 나오고,
-                //    그러려면 캐는 시간이 **무방비한 시간**이어야 한다.
-                //    완전히 0으로 묶지는 않는다: 조작이 먹통이 되면 버그로 느껴진다.
-                //    아주 느리게라도 움직이면 "무거운 것을 끌고 있다"로 읽힌다.
-                if (Drilling) weight *= DrillDragMul;
+                // 🔴 **짐이 무거우면 느려진다** (2026-08-26 — 견인을 되살렸다).
+                //    욕심의 대가가 조작감에 직접 실려야 *"하나만 더?"*가 진짜 결정이 된다.
+                float weight = RunDirector.Instance != null
+                             ? RunDirector.Instance.TowWeightMul : 1f;
 
                 float force = (stats != null ? stats.thrustForce * stats.speedMul : config.thrustForce)
                             * ThrottleNow * weight;
                 rb.AddForce(toCursor.normalized * force, ForceMode2D.Force);
 
-                // 🔴 **rev.10: 연료는 이동 비용이다** (더 이상 HP가 아니다).
-                //    (2026-08-21: *"플레이어는 연료로 이동하며, 연료가 모두 닳을 시 파괴"*)
-                //
-                //    이러면 보통 **가만히 있는 게 최적**이 되는데, 이 게임에서는 아니다 —
-                //    **기지 연료가 계속 닳으므로 멈춰 있으면 진다.**
-                //    즉 정지를 처벌하는 것은 기지 쪽 시계다.
-                //    🔴 그래서 `StageDef.baseDrainPerSecond`는 난이도 손잡이가 아니라
-                //       **이 구조를 지탱하는 기둥**이다. 0에 가깝게 낮추면 게임이 무너진다.
-                Fuel = Mathf.Max(0f, Fuel - config.thrustFuelPerSecond * Tuning.ThrustFuelMul
-                                          * ThrottleNow * Time.deltaTime);
             }
 
+
             float cap = config.maxSpeed * (stats != null ? stats.speedMul : 1f)
-                      * (RunDirector.Instance != null ? RunDirector.Instance.CargoWeightMul : 1f)
-                      * (Drilling ? DrillDragMul : 1f);
+                      * (RunDirector.Instance != null ? RunDirector.Instance.TowWeightMul : 1f);
             if (rb.linearVelocity.magnitude > cap)
                 rb.linearVelocity = rb.linearVelocity.normalized * cap;
 

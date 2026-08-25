@@ -26,7 +26,7 @@ namespace SalvageRun.Data
         [TextArea] public string description;
 
         [Tooltip("🔴 이 배가 주는 시작 무기. 조합의 절반이 여기서 정해진다")]
-        public WeaponKind startingWeapon = WeaponKind.Blade;
+        public WeaponKind startingWeapon = WeaponKind.Discus;
 
         [Header("스탯 — 맞바꾸기. 전부 플러스면 선택이 사라진다")]
         [Tooltip("최대 연료 배수")]
@@ -72,7 +72,7 @@ namespace SalvageRun.Data
     }
 
     /// <summary>
-    /// 우주선 6척. 계열마다 한 척씩.
+    /// 우주선 3척. 배 하나가 무기 하나를 맡는다 (2026-08-23).
     /// 수치 정본은 에셋이고 여기는 씨앗이다.
     /// </summary>
     public static class ShipDefaults
@@ -86,46 +86,31 @@ namespace SalvageRun.Data
                 // 🔴 첫 배는 반드시 무료여야 한다. 아무것도 없는 상태에서 시작하므로
                 new ShipDef {
                     id = "handy", displayName = "정비선 · 핸디",
-                    // 🔴 rev.10: 첫 배는 **드릴**을 준다. 이 게임의 기본 동사가 채굴이므로
-                    //    첫 판에서 반드시 만나야 한다 — 못 만나면 무슨 게임인지 모른 채 끝난다
-                    description = "표준형. 드릴로 캐낸다. 무엇과도 어울린다",
-                    startingWeapon = WeaponKind.Drill,
+                    // 🔴 **첫 배는 견인 작살을 준다** (2026-08-23 사장님 지시).
+                    //    조준한 쪽으로 곧게 날아가 꽂히는 것이라 **인과가 제일 단순하다** —
+                    //    첫 3초에 "내가 뭘 했는지"가 이해되는 무기가 첫 배에 맞다.
+                    //    (드릴 → 원반을 거쳐 여기로 왔다)
+                    description = "표준형. 곧게 쏴서 꿰뚫는다. 무엇과도 어울린다",
+                    startingWeapon = WeaponKind.Harpoon,
                     color = C(160, 210, 240),
                     nose = 0.16f, tail = 0.92f, wing = 0.10f,
                 },
 
-                new ShipDef {
-                    id = "harpoon", displayName = "포경선 · 하푼",
-                    description = "멀리서 꿰뚫는다. 사거리가 길지만 선체가 얇다",
-                    startingWeapon = WeaponKind.Harpoon,
-                    rangeMul = 1.25f, powerMul = 1.10f,
-                    fuelMul = 0.80f, dampingMul = 0.85f,
-                    color = C(255, 210, 130), bodyScale = 0.92f,
-                    nose = 0.06f, tail = 0.70f, wing = 0f,        // 송곳형 — 멀리 찌른다
-                    costScrap = 900, costCircuit = 12,
-                },
+                // ⬜ 2026-08-23: **포경선 하푼을 뺐다.**
+                //    첫 배(핸디)가 작살을 가져가면서 **같은 무기를 주는 배가 둘**이 됐다.
+                //    무기가 셋인데 배가 넷이면 반드시 하나가 겹치는데,
+                //    겹치는 쪽이 하푼이었다 — 정체성이 *"작살을 조금 더 잘 쓴다"*뿐이라
+                //    **사는 이유가 배가 아니라 숫자**였다.
+                //
+                //    🔴 배 하나가 무기 하나를 맡는 편이 낫다. 그래야 배를 고르는 것이
+                //       곧 **무기를 고르는 것**이 되고, 정비소에서 살 이유가 분명해진다.
+                //    (하푼의 사거리·화력 배수가 아까우면 다른 배에 옮겨 붙이면 된다)
 
-                new ShipDef {
-                    id = "grinder", displayName = "굴착선 · 그라인더",
-                    description = "붙어서 갈아버린다. 튼튼하지만 굼뜨다",
-                    startingWeapon = WeaponKind.Vortex,
-                    fuelMul = 1.45f, contactResist = 0.18f,
-                    thrustMul = 0.85f, rangeMul = 0.90f,
-                    color = C(140, 200, 255), bodyScale = 1.18f,
-                    nose = 0.42f, tail = 1.10f, wing = 0.05f,     // 뭉툭한 굴착기
-                    costScrap = 1200, costCircuit = 18,
-                },
-
-                new ShipDef {
-                    id = "blaster", displayName = "폭파선 · 블래스트",
-                    description = "크게 터뜨린다. 화력은 최고지만 맞으면 아프다",
-                    startingWeapon = WeaponKind.Bomb,
-                    powerMul = 1.35f,
-                    fuelMul = 0.75f, contactResist = -0.12f,
-                    color = C(255, 150, 90), bodyScale = 1.05f,
-                    nose = 0.30f, tail = 0.85f, wing = 0.40f,     // 양쪽에 탄창을 단 형태
-                    costScrap = 1600, costCircuit = 26, costCore = 3,
-                },
+                // ⬜ 2026-08-23: **그라인더 · 블래스트를 뺐다** (사장님 지시).
+                //    둘 다 `contactResist`(충돌 저항)가 정체성의 절반이었는데,
+                //    같은 날 플레이어가 무적이 되면서 **그 절반이 아무 의미도 없어졌다.**
+                //    남은 절반(연료 배수·화력 배수)만으로는 다른 배와 구분이 안 된다.
+                //    지우기 전 상태는 `rev11-voyage` 브랜치와 이 커밋 직전에 있다.
 
                 new ShipDef {
                     id = "arc", displayName = "전기선 · 아크",
@@ -135,13 +120,22 @@ namespace SalvageRun.Data
                     powerMul = 0.85f, fuelMul = 0.90f,
                     color = C(200, 180, 255), bodyScale = 0.95f,
                     nose = 0.10f, tail = 0.66f, wing = 0.28f,     // 날개 달린 화살
-                    costScrap = 1800, costCircuit = 30, costCore = 4,
+                    // 🔴 값을 내렸다 (1800·30·코어4 → 1000·14·코어0).
+                    //    하푼(900·12)이 빠지면서 **첫 구매 자리가 비었다** —
+                    //    그대로 두면 처음 살 수 있는 배가 두 배로 비싸져서
+                    //    "몇 판을 해도 살 게 없다"가 된다. 하푼이 있던 자리를 이어받는다.
+                    costScrap = 1000, costCircuit = 14,
                 },
 
                 new ShipDef {
                     id = "titan", displayName = "견인선 · 타이탄",
-                    description = "끌어모아 한 번에 처리한다. 잘 벌지만 화력이 낮다",
-                    startingWeapon = WeaponKind.Well,
+                    // 🔴 겹치는 자리를 **여기로 옮겼다** (2026-08-23).
+                    //    첫 배가 작살을 가져가면서 하푼과 겹쳤는데, 그 둘은 **같은 무기를
+                    //    다르게 쓰는 배**(표준 / 사거리 특화)라 겹쳐도 뜻이 통한다.
+                    //    대신 타이탄이 원반을 맡아 **무기 셋이 전부 어느 배엔가 있게** 했다.
+                    //    원반(오가며 두 번 벤다)은 넓게 훑는 견인선과도 맞는다.
+                    description = "끌어모아 잘 번다. 흡입이 넓지만 화력이 낮다",
+                    startingWeapon = WeaponKind.Discus,
                     intakeMul = 1.50f, valueMul = 1.30f, fuelMul = 1.20f,
                     powerMul = 0.80f, thrustMul = 0.88f,
                     color = C(210, 150, 255), bodyScale = 1.25f,

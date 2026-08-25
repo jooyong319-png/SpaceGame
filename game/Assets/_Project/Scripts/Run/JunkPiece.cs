@@ -44,6 +44,7 @@ namespace SalvageRun.Run
         Vector2 drift;
         float contactCooldown;
         float moveClock;      // 패턴용 자체 시계 (절대 시각을 쓰지 않는다 — 시뮬 재현성)
+        float wanderPhase;    // 조각마다 다른 흔들림 위상 — 나란히 흐르지 않게
         float chargeTimer;
 
         public void Bind(SpriteRenderer body, Transform highlight)
@@ -75,6 +76,11 @@ namespace SalvageRun.Run
 
             moveClock = 0f;
             chargeTimer = 0f;
+
+            // 🔴 조각마다 다른 위상. **난수를 새로 쓰지 않는다** —
+            //    시뮬 재현성이 깨지면 밸런스 표가 통째로 못 쓰게 된다.
+            //    스폰 방향에서 뽑으면 조각마다 다르면서도 항상 같은 값이 나온다.
+            wanderPhase = Mathf.Repeat(Mathf.Atan2(drift.y, drift.x) * 7.13f, Mathf.PI * 2f);
             transform.position = pos;
             // 🔴 밭이 된 이상 **멀리서도 보여야** 찾아갈 마음이 생긴다 (2026-08-22 피드백)
             transform.localScale = Vector3.one * (t.size * Tuning.JunkSize * (bossPart ? 1.9f : 1f));
@@ -140,7 +146,13 @@ namespace SalvageRun.Run
         bool fleeing;
 
         /// <summary>저격기 사격 타이머 · 매복기 각성 여부. 스폰마다 초기화된다.</summary>
+        /// <summary>
+        /// ⬜ 저격기 발사 간격. 2026-08-23에 **쏘는 쪽을 막으면서** 읽는 데가 없어졌다.
+        ///    되살릴 때 같이 필요하므로 지우지 않고 남긴다 (`ApplyMovePattern`의 Sniper 참고).
+        /// </summary>
+#pragma warning disable CS0414
         float shotClock;
+#pragma warning restore CS0414
         bool awake;
 
         /// <summary>저격기가 유지하려는 거리.</summary>
@@ -297,33 +309,54 @@ namespace SalvageRun.Run
         }
 
         /// <summary>
-        /// 🔴 **rev.7: 쓰레기는 쫓아오지 않는다. 떠다닌다.**
+        /// 🔴 **쓰레기는 쫓아오지 않는다. 저 혼자 천천히 흘러간다.**
         ///
-        ///    사용자 결정 (2026-08-22):
-        ///    *"이제는 그냥 공중에 떠다니는 거야."*
+        ///    사장님 지시 (2026-08-23):
+        ///    *"쓰레기가 플레이어를 따라다니지 않게 해주고, 천천히 자율 운동 하게 해줘"*
         ///
-        ///    **쫓아오는 건 몬스터고, 떠다니는 게 쓰레기다.**
-        ///    이 게임이 뱀서로 읽힌 큰 이유 하나가 "적이 나를 향해 몰려온다"였다.
+        ///    **쫓아오는 건 로봇이고, 떠다니는 게 쓰레기다.**
+        ///    화면에 세 부류가 있다 — 캐는 것(쓰레기) · 죽이는 것(로봇) · 피하는 것(위험물).
+        ///    쓰레기까지 쫓아오면 셋이 전부 "나를 향해 오는 것"이 되어 구분이 사라진다.
         ///
-        ///    목표를 쫓는 조종을 전부 뺐다. 스폰될 때 받은 속도로 **관성으로만** 흘러간다.
-        ///    다만 완전 무작위면 기지에 아무것도 안 닿아 위협이 사라지므로,
-        ///    바깥에서 기지 쪽으로 흘러드는 **조류**로 뿌린다 (`StageField.SpawnFromEdge`).
+        ///    ⚠️ 이 결정은 이 프로젝트에서 **세 번째**다 (rev.4 쫓음 → rev.7 떠다님 →
+        ///       rev.9 밭 → rev.12 쫓음 → 지금 떠다님). 되돌릴 때마다 같이 손봐야 하는 것:
+        ///       **스폰 방향**(겨누는가 / 흩는가)과 **속도**(쫓을 때 쓰던 값은 너무 빠르다).
+        ///       둘 중 하나만 바꾸면 그림이 안 맞는다.
         ///
-        ///    `MoveKind`는 이제 "무엇을 쫓는가"가 아니라 **"어떻게 흘러가는가"**다.
+        ///    `MoveKind`는 "무엇을 쫓는가"가 아니라 **"어떻게 흘러가는가"**다.
+        ///    로봇 넷(`Hunter`/`Sniper`/`Ambusher`/`Circler`)만 여전히 목표를 본다.
         /// </summary>
+        /// <summary>
+        /// 🔴 **쓰레기가 흘러가는 속도 배수** (2026-08-23 사장님:
+        ///    *"쓰레기가 플레이어를 따라다니지 않게 하고, 천천히 자율 운동 하게"*).
+        ///
+        ///    데이터의 `driftSpeed`는 **쫓아오던 시절의 값**이다 —
+        ///    쫓아올 때는 빨라야 위협이 되지만, 흘러다니기만 할 때 그 속도면
+        ///    잔해가 아니라 **총알**로 보인다. 그래서 여기서 한 번 눌러 준다.
+        ///
+        ///    ⚠️ **로봇에는 안 걸린다.** 로봇은 여전히 쫓아오는 것이 일이고,
+        ///       느려지면 위협이 통째로 사라진다.
+        /// </summary>
+        public const float DriftScale = 0.42f;
+
+        /// <summary>이 종류가 실제로 낼 속도. 스폰할 때와 굴릴 때가 같아야 한다.</summary>
+        public static float SpeedOf(JunkType t)
+        {
+            float baseSpeed = Mathf.Max(0.1f, t.driftSpeed);
+            return t.IsRobot ? baseSpeed : baseSpeed * DriftScale * Tuning.JunkSpeedMul;
+        }
+
         void ApplyMovePattern()
         {
-            float speed = Mathf.Max(0.1f, type.driftSpeed);
+            float speed = SpeedOf(type);
 
-            // 밭이 떠 있는 속도. 0이면 죽은 그림이라 아주 조금만 움직인다
-            float idleSpeed = speed * 0.12f;
 
             switch (type.move)
             {
                 case MoveKind.Drift:
-                    // 밀리거나 끌린 뒤에는 다시 느린 표류로 가라앉는다
-                    if (drift.sqrMagnitude > idleSpeed * idleSpeed * 1.02f)
-                        drift = Vector2.Lerp(drift, drift.normalized * idleSpeed, 1.5f * Time.deltaTime);
+                    // 그냥 직진. 밀리거나 끌린 뒤에는 제 속도로 돌아온다
+                    if (drift.sqrMagnitude > speed * speed * 1.02f)
+                        drift = Vector2.Lerp(drift, drift.normalized * speed, 1.5f * Time.deltaTime);
                     break;
 
                 case MoveKind.Zigzag:
@@ -331,7 +364,12 @@ namespace SalvageRun.Run
                     // 흘러가면서 좌우로 흔들린다 — 맞히기 까다롭다
                     Vector2 fwd = drift.sqrMagnitude > 0.01f ? drift.normalized : Vector2.right;
                     Vector2 perp = new Vector2(-fwd.y, fwd.x);
-                    drift += perp * Mathf.Sin(moveClock * 5f) * type.movePower * speed * 1.6f * Time.deltaTime;
+                    drift += perp * Mathf.Sin(moveClock * 3.2f) * type.movePower * speed * 1.2f * Time.deltaTime;
+
+                    // 🔴 옆으로 더하기만 하면 **속도가 계속 커진다.** 사행은 방향이지 가속이 아니다.
+                    //    쫓아오던 시절엔 어차피 배 쪽으로 다시 당겨져서 안 드러났다.
+                    if (drift.sqrMagnitude > speed * speed * 1.02f)
+                        drift = Vector2.Lerp(drift, drift.normalized * speed, 2f * Time.deltaTime);
                     break;
                 }
 
@@ -387,13 +425,11 @@ namespace SalvageRun.Run
                             drift = Vector2.Lerp(drift, want, 1.6f * Time.deltaTime);
                         }
 
-                        // 쏜다 — 사거리 안이고 시야가 트였을 때만
-                        shotClock -= Time.deltaTime;
-                        if (d <= keep * 1.6f && shotClock <= 0f)
-                        {
-                            shotClock = Mathf.Max(0.9f, 2.4f / Mathf.Max(0.3f, type.movePower));
-                            field.FireEnemyShot(this, (Vector2)transform.position, to.normalized);
-                        }
+                        // ⬜ **쏘지 않는다** (2026-08-23 — 플레이어를 공격하는 것이 없다).
+                        //    탄을 없앤 게 아니라 **쏘는 쪽을 막았다.** 탄 자체는
+                        //    `StageField.FireEnemyShot`에 그대로 있으므로,
+                        //    위협을 되살릴 때 이 한 줄만 풀면 된다.
+                        //    (탄이 날아와도 지금은 맞는 판정이 없어 그냥 지나간다)
                     }
                     break;
                 }
@@ -456,15 +492,23 @@ namespace SalvageRun.Run
 
                 case MoveKind.Chase:
                 default:
-                    // 🔴 **rev.9: 아무 데도 향하지 않는다.**
-                    //    여기가 *"쓰레기가 아직도 기지로 모인다"*의 진범이었다 —
-                    //    스폰 방향을 고쳐도 이 보정이 매 프레임 다시 기지로 끌어당겼다.
+                {
+                    // 🔴 **더 이상 쫓지 않는다 — 저 혼자 흘러간다** (2026-08-23 사장님 지시).
                     //
-                    //    이제 쓰레기는 **밭**이다. 제자리에서 아주 느리게 표류하기만 한다.
-                    //    (쫓는 것은 `MoveKind.Hunter`뿐이다)
-                    if (drift.sqrMagnitude > idleSpeed * idleSpeed)
-                        drift = Vector2.Lerp(drift, drift.normalized * idleSpeed, 1.2f * Time.deltaTime);
+                    //    이름은 `Chase`로 남겨 뒀다. 이 값이 쓰레기 데이터 20여 줄에 박혀 있어서
+                    //    바꾸면 그 줄들을 전부 건드려야 하는데, **그건 위험만 늘리고 얻는 게 없다.**
+                    //    지금 `MoveKind`는 "무엇을 쫓는가"가 아니라 **"어떻게 흘러가는가"**다.
+                    //
+                    //    직진만 하면 열여섯 개가 나란히 흐르는 게 눈에 보인다.
+                    //    그래서 방향이 아주 천천히 **저 혼자 휜다** — 조각마다 다른 위상으로.
+                    float turn = Mathf.Sin(moveClock * 0.55f + wanderPhase) * type.homing * 0.35f;
+                    drift = Rotate(drift, turn * Time.deltaTime);
+
+                    // 밀리거나 끌린 뒤에는 제 속도로 돌아온다
+                    if (drift.sqrMagnitude > speed * speed * 1.02f)
+                        drift = Vector2.Lerp(drift, drift.normalized * speed, 1.2f * Time.deltaTime);
                     break;
+                }
             }
 
             float max = MaxSpeed;

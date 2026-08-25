@@ -66,8 +66,10 @@ namespace SalvageRun.Run
             BuildStars(420, 0.17f, 0.8f);
 
             var bounds = BuildArenaFrame();
-            var mothership = BuildMothership();
 
+            // ⬜ 2026-08-23: **모선을 없앴다** (사장님 지시).
+            //    회복 지점이 사라지면서 연료가 순수한 타이머가 됐다.
+            //    `BuildMothership()`은 남겨 뒀다 — 되살릴 때 그대로 쓴다.
             var ship = BuildShip(cam);
 
             var fieldGo = new GameObject("Field");
@@ -127,29 +129,6 @@ namespace SalvageRun.Run
             fxGo.glow = glowArt;
             fxGo.shard = PixelArt.Shard(10);
 
-            // 🔴 기지 — 이 게임의 승패가 여기서 갈린다 (rev.7)
-            var baseGo = mothership.gameObject.AddComponent<HomeBase>();
-            baseGo.director = director;
-            baseGo.field = field;
-            baseGo.body = mothership.GetComponentInChildren<SpriteRenderer>();
-
-            // 어레이를 기지에 연결한다 (이름으로 찾는다 — 순서가 곧 뜯기는 순서다)
-            var found = new System.Collections.Generic.List<Transform>();
-            for (int i = 0; i < 3; i++)
-            {
-                var tr = mothership.Find("Array" + i);
-                if (tr != null) found.Add(tr);
-            }
-            baseGo.arrays = found.ToArray();
-
-            var shield = NewSprite("Shield", Vector3.zero, Vector3.one,
-                new Color(0.45f, 0.85f, 1f, 0.16f), -6);
-            shield.transform.SetParent(mothership, false);
-            shield.GetComponent<SpriteRenderer>().sprite = PixelArt.Ring(64, 0.10f);
-            baseGo.shieldRing = shield.transform;
-
-            director.homeBase = baseGo;
-
             var bossAI = runGo.AddComponent<BossBehaviour>();
             bossAI.director = director;
             bossAI.field = field;
@@ -164,8 +143,6 @@ namespace SalvageRun.Run
             tech.content = content;
             hud.tech = tech;
 
-            // 모선은 늘 중앙에 있다 — 자동 귀환의 도착점
-            mothership.position = Vector3.zero;
         }
 
         void BuildData()

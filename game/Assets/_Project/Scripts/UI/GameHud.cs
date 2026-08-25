@@ -93,7 +93,7 @@ namespace SalvageRun.UI
 
             // 🔴 정비소는 **런 밖에서만** 연다. 판 도중에 영구 강화를 사면
             //    "죽기 직전에 사서 버틴다"가 되어 런의 긴장이 사라진다.
-            if (director.State == GameState.Field || director.State == GameState.Drafting)
+            if (director.State == GameState.Field)
             {
                 tech.Close();
                 return;
@@ -113,9 +113,8 @@ namespace SalvageRun.UI
             switch (director.State)
             {
                 case GameState.Title: DrawTitle(s); break;
-                case GameState.Ready: DrawReady(s); break;   // ⬜ rev.12: 더 이상 안 쓴다
+                case GameState.Ready: DrawReady(s); break;
                 case GameState.Field: DrawField(s); break;
-                case GameState.Drafting: DrawField(s); DrawDraft(s); break;
                 case GameState.Result: DrawResult(s); break;
             }
             DrawDiagnostics(s);
@@ -124,18 +123,6 @@ namespace SalvageRun.UI
             DrawBossIntro(s);
             DrawBurstTimer(s);
             DrawBossArrow(s);
-            DrawBaseHp(s);
-            DrawRespawn(s);
-            DrawCargo(s);
-            DrawDockTally(s);
-            DrawFullLoadBanner(s);
-            DrawBaseArrow(s);
-            DrawIntro(s);
-            DrawVoyage(s);
-            DrawRot(s);
-            DrawAnchorArrows(s);
-            DrawAnchorStatus(s);
-            DrawFinalIntro(s);
             DrawTunePanel(s);
         }
 
@@ -165,19 +152,14 @@ namespace SalvageRun.UI
             GUI.color = Color.white;
             y += 26f * s;
 
-            Tuning.DrillDrag       = Row(s, r.x, ref y, w, "드릴 묶임",  Tuning.DrillDrag,       0.05f, 1f);
-            Tuning.DrillPower      = Row(s, r.x, ref y, w, "드릴 피해",  Tuning.DrillPower,      0.25f, 4f);
             Tuning.HunterRatio     = Row(s, r.x, ref y, w, "로봇 비율",  Tuning.HunterRatio,     0f,    0.6f);
-            Tuning.BaseDrainMul    = Row(s, r.x, ref y, w, "기지 감소",  Tuning.BaseDrainMul,    0f,    3f);
-            Tuning.FuelPerCargoMul = Row(s, r.x, ref y, w, "화물 회복",  Tuning.FuelPerCargoMul, 0.2f,  5f);
             Tuning.ShipFuelMul     = Row(s, r.x, ref y, w, "배 연료",    Tuning.ShipFuelMul,     0.3f,  4f);
-            Tuning.ThrustFuelMul   = Row(s, r.x, ref y, w, "추진 소모",  Tuning.ThrustFuelMul,   0f,    3f);
+            Tuning.FuelDrainMul    = Row(s, r.x, ref y, w, "연료 감소",  Tuning.FuelDrainMul,    0f,    3f);
             Tuning.JunkSize        = Row(s, r.x, ref y, w, "쓰레기 크기", Tuning.JunkSize,        0.5f,  3f);
             Tuning.JunkDensity     = Row(s, r.x, ref y, w, "쓰레기 밀도", Tuning.JunkDensity,     0.3f,  3f);
+            Tuning.JunkSpeedMul    = Row(s, r.x, ref y, w, "쓰레기 속도", Tuning.JunkSpeedMul,    0.2f,  3f);
             Tuning.TowWeightMul    = Row(s, r.x, ref y, w, "견인 무게",   Tuning.TowWeightMul,    0.2f,  4f);
-            Tuning.LegSecondsMul   = Row(s, r.x, ref y, w, "항행 길이",   Tuning.LegSecondsMul,   0.3f,  3f);
             Tuning.IncomingCostMul = Row(s, r.x, ref y, w, "충돌 손실",   Tuning.IncomingCostMul, 0f,    3f);
-            Tuning.IncomingRateMul = Row(s, r.x, ref y, w, "잔해 양",     Tuning.IncomingRateMul, 0.2f,  3f);
             Tuning.TurretPowerMul  = Row(s, r.x, ref y, w, "포탑 화력",   Tuning.TurretPowerMul,  0.2f,  5f);
 
             y += 4f * s;
@@ -222,6 +204,40 @@ namespace SalvageRun.UI
         static readonly Color TextDim  = new Color(0.58f, 0.64f, 0.76f, 1f);
 
         /// <summary>직접 그리는 버튼. 유니티 기본 버튼은 이 게임과 안 어울린다.</summary>
+        /// <summary>
+        /// 🔴 **글이 상자를 넘으면 글자 크기를 줄여서 넣는다.**
+        ///
+        ///    (2026-08-22 피드백: *"텍스트 잘리는 부분이 좀 많음"*)
+        ///
+        ///    `GUI.Label`은 상자를 넘는 글을 **말없이 잘라 버린다.** 그래서 카드 제목이
+        ///    길거나, 창이 좁거나, 한글이 라틴 문자보다 넓게 잡히면 뒷부분이 사라진다.
+        ///    화면에서는 "글이 짧다"로 보여서 **버그로 안 보이는 게 더 나쁘다.**
+        ///
+        ///    고정 크기로 그리고 잘리는 대신, **들어갈 때까지 줄인다.**
+        ///    줄여도 안 되면 그때는 잘리지만, 그건 상자 자체가 잘못 잡힌 것이다.
+        ///
+        ///    ⚠️ `CalcHeight`는 `wordWrap`이 켜져 있어야 뜻이 있다. 꺼져 있으면
+        ///       한 줄 높이만 돌려주므로 **가로 넘침을 못 잡는다** — 그래서 여기서 켠다.
+        /// </summary>
+        void Fit(Rect r, string text, GUIStyle style, float minRatio = 0.62f)
+        {
+            if (string.IsNullOrEmpty(text)) return;
+
+            int want = style.fontSize;
+            int floor = Mathf.Max(8, Mathf.RoundToInt(want * minRatio));
+            bool wrapWas = style.wordWrap;
+            style.wordWrap = true;
+
+            var gc = new GUIContent(text);
+            while (style.fontSize > floor && style.CalcHeight(gc, r.width) > r.height)
+                style.fontSize--;
+
+            GUI.Label(r, gc, style);
+
+            style.fontSize = want;
+            style.wordWrap = wrapWas;
+        }
+
         bool Btn(Rect r, string text, float s, bool enabled = true, Color? tint = null)
         {
             var mouse = Event.current.mousePosition;
@@ -234,7 +250,10 @@ namespace SalvageRun.UI
                   hot ? 2f * s : 1.4f * s);
 
             GUI.color = enabled ? (hot ? Color.white : new Color(0.86f, 0.90f, 0.97f)) : TextDim;
-            GUI.Label(new Rect(r.x, r.y + (r.height - 20f * s) * 0.5f, r.width, 20f * s), text, center);
+            // 🔴 버튼 글씨는 **가로로** 넘친다. 좌우 여백을 빼고 재야 잘리는 걸 잡는다
+            float pad = 8f * s;
+            Fit(new Rect(r.x + pad, r.y + (r.height - 20f * s) * 0.5f, r.width - pad * 2f, 20f * s),
+                text, center);
             GUI.color = Color.white;
 
             return enabled && Event.current.type == EventType.MouseDown && r.Contains(mouse);
@@ -251,7 +270,7 @@ namespace SalvageRun.UI
         /// <summary>
         /// 🔴 **타이틀** (rev.12). 화면에 **결정 하나만** 둔다.
         ///
-        ///    예전엔 준비 화면 하나에 임무 설명 5줄 · 재화 · 정비소 · 조작 · 우주선 6척 ·
+        ///    예전엔 준비 화면 하나에 임무 설명 5줄 · 재화 · 정비소 · 조작 · 우주선 고르기 ·
         ///    맵 6개를 다 쏟아부었다. **아직 한 판도 안 해본 사람에게 배와 맵을 고르라고**
         ///    하니 고를 근거가 없어 그냥 첫 번째를 눌렀다 — 그건 선택이 아니라 관문이다.
         ///
@@ -274,12 +293,13 @@ namespace SalvageRun.UI
             y += 58f * s;
 
             GUI.color = TextDim;
-            GUI.Label(new Rect(0, y, Screen.width, 24f * s), "우주를 건너는 마지막 방법", center);
+            Fit(new Rect(Screen.width * 0.06f, y, Screen.width * 0.88f, 24f * s),
+                "우주 쓰레기를 쓸어담으며 버틴다", center);
             GUI.color = Color.white;
             y += 50f * s;
 
             float bw = 280f * s, bh = 42f * s;
-            bool hasSave = false;      // ⬜ 이어하기 저장은 아직 없다 (rev.12에서 붙인다)
+            bool hasSave = false;      // ⬜ 이어하기 저장은 아직 없다 — 붙일지는 출시 뒤에 판단
 
             if (hasSave)
             {
@@ -366,34 +386,30 @@ namespace SalvageRun.UI
             GUI.color = Color.white;
             y += 46f * s;
 
-            // 🔴 **이야기가 규칙을 설명한다** (rev.11).
+            // 🔴 **첫 화면이 장르를 말한다** (rev.12).
             //
-            //    지금까지는 *"기지를 왜 지키지?"*에 답이 없어서 규칙이 겉돌았다.
-            //    임무 한 줄이 들어가자 **연료가 곧 거리**가 되고, 모든 규칙이 거기서 나온다.
-            //    그래서 첫 화면은 규칙 나열이 아니라 **임무 브리핑**이어야 한다.
+            //    rev.11에서는 임무 브리핑이었다 — 기지가 좌표까지 가는 이야기였고,
+            //    규칙이 전부 거기서 나왔다. 그 구조를 걷어냈으니 문구도 같이 걷는다.
+            //    지금 여기서 알려줘야 하는 건 딱 셋이다:
+            //    **몰려온다 / 줍는다 / 닿으면 닳는다.**
             GUI.color = Warm;
-            GUI.Label(new Rect(0, y, Screen.width, 22f * s),
-                "지구가 이 기지를 좌표까지 보냈다. 연료 수단은 전부 파괴됐다", center);
-            y += 22f * s;
-
-            GUI.color = new Color(1f, 0.9f, 0.6f);
-            GUI.Label(new Rect(0, y, Screen.width, 22f * s),
-                "남은 방법은 하나 — 우주 쓰레기를 연료로 바꾼다", center);
+            Fit(new Rect(Screen.width * 0.06f, y, Screen.width * 0.88f, 22f * s),
+                "연료가 다 닳기 전에 최대한 쓸어담는다", center);
             y += 26f * s;
 
             GUI.color = TextDim;
-            GUI.Label(new Rect(0, y, Screen.width, 22f * s),
-                "정박: 나가서 캔다 · 끌수록 무거워진다 (Q로 버림)", center);
+            Fit(new Rect(Screen.width * 0.06f, y, Screen.width * 0.88f, 22f * s),
+                "무기는 알아서 조준하고 쏜다 — 당신이 정하는 건 어디에 서 있을지다", center);
             y += 22f * s;
-            GUI.Label(new Rect(0, y, Screen.width, 22f * s),
-                "항행: 기지가 나아간다. 커서로 조준해 잔해를 막아라", center);
+            Fit(new Rect(Screen.width * 0.06f, y, Screen.width * 0.88f, 22f * s),
+                "재화 위에서 Space — 한 번에 하나씩 배 뒤에 매달린다", center);
             y += 22f * s;
-            GUI.Label(new Rect(0, y, Screen.width, 22f * s),
-                "연료가 0이면 표류 — 좌표에 닿으면 임무 완수", center);
+            Fit(new Rect(Screen.width * 0.06f, y, Screen.width * 0.88f, 22f * s),
+                "많이 달수록 느려진다 — 무엇을 싣고 갈지가 이 게임의 전부다", center);
             y += 22f * s;
-            GUI.Label(new Rect(0, y, Screen.width, 22f * s),
+            Fit(new Rect(Screen.width * 0.06f, y, Screen.width * 0.88f, 22f * s),
                 (Core.InputReader.UsingKeyboard ? "WASD = 이동" : "좌클릭 홀드 = 이동")
-                + " · Shift = 대시 · E = 출발 · K = 조절", center);
+                + " · Shift = 대시 · Space = 줍기 · T = 정비소", center);
             GUI.color = Color.white;
             y += 34f * s;
 
@@ -401,14 +417,20 @@ namespace SalvageRun.UI
             var md = MetaSave.Data;
             float bw = 340f * s;
 
-            // 재화는 색을 각자 준다 — 어느 게 귀한 건지 색으로 배우게 한다
+            // 🔴 재화는 색을 각자 준다 — 어느 게 귀한 건지 색으로 배우게 한다.
+            //    6종이 되면서(2026-08-26) 한 줄에 셋씩 **두 줄**로 깐다 —
+            //    여섯을 한 줄에 밀어 넣으면 글씨가 줄어 이름이 안 읽힌다.
             float chipW = bw / 3f;
-            DrawMatChip(cx - bw * 0.5f,               y, chipW, s, MatKind.Scrap,   md.scrap);
-            DrawMatChip(cx - bw * 0.5f + chipW,       y, chipW, s, MatKind.Circuit, md.circuit);
-            DrawMatChip(cx - bw * 0.5f + chipW * 2,   y, chipW, s, MatKind.Core,    md.core);
-            y += 26f * s;
+            for (int i = 0; i < Mats.Count; i++)
+            {
+                var m = (MatKind)i;
+                float mx = cx - bw * 0.5f + chipW * (i % 3);
+                float myy = y + (i / 3) * 22f * s;
+                DrawMatChip(mx, myy, chipW, s, m, md.Mat(m));
+            }
+            y += 22f * s * Mathf.CeilToInt(Mats.Count / 3f) + 4f * s;
 
-            if (Btn(new Rect(cx - bw * 0.5f, y, bw, 34f * s), "정비소 — 영구 강화  [T]", s, true, Warm))
+            if (Btn(new Rect(cx - bw * 0.5f, y, bw, 34f * s), "정비소 — 우주선 · 영구 강화  [T]", s, true, Warm))
                 tech?.Toggle();
             y += 38f * s;
 
@@ -431,35 +453,92 @@ namespace SalvageRun.UI
 
             GUI.color = TextDim;
             GUI.Label(new Rect(cx - bw * 0.5f, y, bw, 18f * s),
-                kb ? "WASD · 방향키로 이동 · 조준은 커서" : "좌클릭 홀드로 커서 쪽 이동",
+                kb ? "WASD · 방향키로 이동 · 조준은 자동" : "좌클릭 홀드로 커서 쪽 이동 · 조준은 자동",
                 centerSmall);
             GUI.color = Color.white;
             y += 26f * s;
 
-            // ---- 우주선 ----
-            SectionLabel(ref y, s, "우주선 — 시작 무기가 정해진다");
-            DrawShipPicker(s, ref y);
-            y += 14f * s;
+            // ---- 지금 든 무기 ----
+            //
+            // 🔴 **여기서 고르지 않는다** (2026-08-23 사장님 지시).
+            //    무기를 열고 고르는 것은 **테크트리 안**으로 옮겼다 —
+            //    무기가 영구 강화의 일부가 되어야 "강화를 살까, 무기를 열까"가 한 저울이 된다.
+            //    여기서는 **지금 무엇을 들고 있는지만** 보여준다.
+            {
+                var wep = MetaSave.CurrentWeapon(content, config != null
+                                                          ? config.startingWeapon
+                                                          : WeaponKind.Harpoon);
+                var wdef = content.Weapon(wep);
+                var wc = wdef != null ? wdef.color : Accent;
 
-            // ---- 맵 ----
-            SectionLabel(ref y, s, "맵 — 클리어하면 다음이 열린다");
+                float sw = Mathf.Min(340f * s, Screen.width * 0.86f);
+                var sr = new Rect(cx - sw * 0.5f, y, sw, 46f * s);
 
-            int open = Mathf.Clamp(md.unlockedMaps, 1, content.StageCount);
-            float mw = 340f * s, mh = 30f * s;
+                Box(sr, new Color(wc.r * 0.22f, wc.g * 0.22f, wc.b * 0.22f, 0.92f));
+                Frame(sr, new Color(wc.r, wc.g, wc.b, 0.6f), 1.5f * s);
+
+                GUI.color = wc;
+                Fit(new Rect(sr.x + 8f * s, sr.y + 5f * s, sr.width - 16f * s, 18f * s),
+                    Weapons.Name(wep), center);
+                GUI.color = new Color(0.80f, 0.86f, 0.95f);
+                Fit(new Rect(sr.x + 8f * s, sr.y + 24f * s, sr.width - 16f * s, 18f * s),
+                    wdef != null ? wdef.description : "", centerSmall);
+                GUI.color = Color.white;
+
+                y += 50f * s;
+
+                GUI.color = TextDim;
+                Fit(new Rect(cx - sw * 0.5f, y, sw, 18f * s),
+                    "다른 무기는 정비소의 테크트리에서 연다  [T]", centerSmall);
+                GUI.color = Color.white;
+                y += 24f * s;
+            }
+
+            // ---- 구역 ----
+            //
+            // 🔴 **구역은 재화로 산다** (2026-08-26 · Space Rock Breaker 방향).
+            //    잠긴 구역은 회색이 아니라 **값이 적힌 버튼**이다 — 눌러서 연다.
+            //    "언제 열리지?"가 아니라 **"얼마 모으면 되지?"**가 되어야
+            //    판을 한 번 더 도는 이유가 화면에 적혀 있게 된다.
+            SectionLabel(ref y, s, "구역 — 재화로 연다");
+
+            float mw = 340f * s, mh = 34f * s;
 
             for (int i = 0; i < content.StageCount; i++)
             {
                 var st = content.Stage(i);
                 var r = new Rect(cx - mw * 0.5f, y, mw, mh);
-                bool unlocked = i < open;
 
-                string t = unlocked
-                    ? $"{st.displayName}   ·   웨이브 {st.waveCount}"
-                    : "??? — 앞 맵을 클리어하면 열린다";
+                if (MetaSave.StageUnlocked(content, i))
+                {
+                    if (Btn(r, $"{st.displayName}   ·   난이도 {st.rank}", s, true))
+                        director.StartRun(i);
+                }
+                else
+                {
+                    bool can = MetaSave.CanUnlockStage(content, i, out string why);
 
-                if (Btn(r, t, s, unlocked)) director.StartRun(i);
+                    // 앞 구역도 안 열렸으면 값도 안 보여준다 — 한 칸 앞만 보이게
+                    string t = why == "앞 구역 먼저"
+                        ? "???"
+                        : $"{st.displayName} 열기   ·   {StageCostText(st)}";
+
+                    if (Btn(r, t, s, can, can ? Warm : TextDim) && can)
+                        MetaSave.UnlockStage(content, i);
+                }
                 y += mh + 5f * s;
             }
+        }
+
+        static string StageCostText(StageDef st)
+        {
+            string t = "";
+            if (st.unlockScrap > 0) t += $"{Mats.Name(MatKind.Scrap)} {st.unlockScrap}";
+            if (st.unlockCircuit > 0)
+                t += (t.Length > 0 ? " · " : "") + $"{Mats.Name(MatKind.Circuit)} {st.unlockCircuit}";
+            if (st.unlockCore > 0)
+                t += (t.Length > 0 ? " · " : "") + $"{Mats.Name(MatKind.Core)} {st.unlockCore}";
+            return t;
         }
 
         void DrawMatChip(float x, float y, float w, float s, MatKind m, int amount)
@@ -472,100 +551,12 @@ namespace SalvageRun.UI
         void SectionLabel(ref float y, float s, string text)
         {
             GUI.color = TextDim;
-            GUI.Label(new Rect(0, y, Screen.width, 20f * s), text, center);
+            Fit(new Rect(Screen.width * 0.06f, y, Screen.width * 0.88f, 20f * s), text, center);
             GUI.color = Color.white;
             y += 22f * s;
 
             // 얇은 구분선 — 구역이 나뉘어 보인다
             Box(Screen.width * 0.30f, y - 6f * s, Screen.width * 0.40f, 1f, new Color(Edge.r, Edge.g, Edge.b, 0.35f));
-        }
-
-        /// <summary>
-        /// 🔴 우주선 선택. rev.5에서 배는 단순한 스탯 묶음이 아니라
-        ///    **시작 무기를 정하므로 조합의 절반을 미리 결정한다.**
-        ///    그래서 시작 무기를 항상 같이 보여준다 — 그게 배의 정체다.
-        /// </summary>
-        void DrawShipPicker(float s, ref float y)
-        {
-            if (content.ships == null || content.ships.Length == 0) return;
-
-            int n = content.ships.Length;
-            float gap = 6f * s;
-            float w = Mathf.Min(150f * s, (Screen.width * 0.92f - gap * (n - 1)) / n);
-            float h = 68f * s;
-            float total = n * w + (n - 1) * gap;
-            float x0 = Screen.width * 0.5f - total * 0.5f;
-
-            var cur = MetaSave.CurrentShip(content);
-
-            for (int i = 0; i < n; i++)
-            {
-                var def = content.ships[i];
-                var r = new Rect(x0 + i * (w + gap), y, w, h);
-
-                bool owned = MetaSave.ShipUnlocked(def);
-                bool selected = cur != null && cur.id == def.id;
-
-                Box(r, selected ? new Color(def.color.r * 0.32f, def.color.g * 0.32f, def.color.b * 0.32f, 0.95f)
-                       : owned ? new Color(0.13f, 0.15f, 0.20f, 0.92f)
-                       : new Color(0.08f, 0.09f, 0.12f, 0.92f));
-
-                Frame(r, selected ? Color.white
-                        : owned ? new Color(def.color.r, def.color.g, def.color.b, 0.55f)
-                        : new Color(0.28f, 0.31f, 0.38f, 0.7f),
-                      selected ? 2.5f * s : 1.5f * s);
-
-                float ty = r.y + 5f * s;
-
-                GUI.color = owned ? def.color : new Color(0.45f, 0.47f, 0.55f);
-                GUI.Label(new Rect(r.x + 3f * s, ty, r.width - 6f * s, 30f * s), def.displayName, centerSmall);
-                GUI.color = Color.white;
-                ty += 30f * s;
-
-                GUI.color = owned ? new Color(0.85f, 0.90f, 1f) : new Color(0.40f, 0.42f, 0.50f);
-                GUI.Label(new Rect(r.x + 3f * s, ty, r.width - 6f * s, 16f * s),
-                    Weapons.Name(def.startingWeapon), centerSmall);
-                GUI.color = Color.white;
-
-                if (owned)
-                {
-                    GUI.color = selected ? new Color(0.7f, 1f, 0.85f) : new Color(0.60f, 0.65f, 0.75f);
-                    GUI.Label(new Rect(r.x + 3f * s, r.yMax - 18f * s, r.width - 6f * s, 16f * s),
-                        selected ? "선택됨" : "선택", centerSmall);
-                    GUI.color = Color.white;
-
-                    if (GUI.Button(r, GUIContent.none, GUIStyle.none)) MetaSave.SelectShip(def);
-                }
-                else
-                {
-                    bool can = MetaSave.CanBuyShip(def, out _);
-                    GUI.color = can ? new Color(1f, 0.9f, 0.5f) : new Color(0.62f, 0.45f, 0.45f);
-                    GUI.Label(new Rect(r.x + 2f * s, r.yMax - 30f * s, r.width - 4f * s, 28f * s),
-                        ShipCostText(def), centerSmall);
-                    GUI.color = Color.white;
-
-                    if (GUI.Button(r, GUIContent.none, GUIStyle.none)) MetaSave.BuyShip(def);
-                }
-            }
-
-            y += h + 4f * s;
-
-            if (cur != null)
-            {
-                GUI.color = new Color(0.70f, 0.74f, 0.84f);
-                GUI.Label(new Rect(0, y, Screen.width, 20f * s), cur.description, center);
-                GUI.color = Color.white;
-                y += 20f * s;
-            }
-        }
-
-        static string ShipCostText(ShipDef d)
-        {
-            string t = "";
-            if (d.costScrap > 0) t += $"고철 {d.costScrap}";
-            if (d.costCircuit > 0) t += (t.Length > 0 ? "\n" : "") + $"회로 {d.costCircuit}";
-            if (d.costCore > 0) t += (t.Length > 0 ? " · " : "") + $"코어 {d.costCore}";
-            return t;
         }
 
         void Frame(Rect r, Color c, float t)
@@ -591,26 +582,88 @@ namespace SalvageRun.UI
             Color fc = fuel01 > 0.35f ? new Color(0.35f, 0.85f, 0.6f)
                      : (fuel01 > 0.15f ? new Color(0.95f, 0.75f, 0.3f) : new Color(1f, 0.4f, 0.35f));
             Box(pad, pad, barW * fuel01, barH, fc);
-            GUI.Label(new Rect(pad, pad + barH + 2f * s, barW * 2f, 22f * s),
-                $"연료 {ship.Fuel:0} / {ship.FuelMax:0}" +
-                (ship.ThrottleNow > 0.01f ? $"   ▲ 출력 {(ship.ThrottleNow * 100f):0}%" : "   ● 관성"), small);
 
-            // 경험치 · 레벨
+            // 🔴 **남은 시간을 초로 같이 쓴다** (2026-08-23 — 연료가 타이머가 됐다).
+            //    바는 "얼마나 남았나"를 어림으로 보여주지만 **얼마나 급한지**는 안 알려준다.
+            //    40초 남은 것과 4분 남은 것은 완전히 다른 판단인데 바로는 구분이 안 된다.
+            //    ⚠️ 감소율이 1이 아니게 되면서(2026-08-26: 2.5) **숫자 = 초가 아니다.**
+            //       그래서 여기서 나눠서 초로 바꿔 쓴다 — 플레이어가 암산할 일이 아니다.
+            float left = director.Config != null && director.Config.idleFuelPerSecond > 0.01f
+                ? ship.Fuel / (director.Config.idleFuelPerSecond * Tuning.FuelDrainMul)
+                : 0f;
+
+            string clock = Tuning.FuelDrainMul < 0.01f
+                ? "정지"
+                : $"{Mathf.FloorToInt(left / 60f)}:{Mathf.FloorToInt(left % 60f):00}";
+
+            GUI.color = fuel01 > 0.15f ? Color.white
+                      : new Color(1f, 0.5f, 0.45f, 0.65f + 0.35f * Mathf.Sin(Time.time * 8f));
+            GUI.Label(new Rect(pad, pad + barH + 2f * s, barW * 2f, 22f * s),
+                $"연료 {ship.Fuel:0} / {ship.FuelMax:0}   ·   남은 시간 {clock}", small);
+            GUI.color = Color.white;
+
+            // 🔴 **끌고 있는 짐** (2026-08-26 — 경험치 바가 있던 자리).
+            //    레벨업이 없어졌으므로 여기 있어야 하는 건 **지금 얼마나 무거운가**다.
+            //    꼬리를 보면 개수는 알지만 **얼마나 느려졌는지**는 숫자로 봐야 안다.
             float xy = pad + barH + 24f * s;
+            float slow = (1f - director.TowWeightMul) * 100f;
+
             Box(pad, xy, barW, 10f * s, new Color(0f, 0f, 0f, 0.5f));
-            Box(pad, xy, barW * director.XpRatio, 10f * s, new Color(0.55f, 0.8f, 1f));
+            // 🔴 **칸이 곧 한계다.** 몇 칸 중 몇 개인지가 보여야 "하나 더?"가 계산이 된다
+            int cap = director.MaxTow;
+            float fill = cap <= 0 ? 0f : director.TowedCount / (float)cap;
+            bool heavy = director.TowedCount >= cap;
+
+            Box(pad, xy, barW * Mathf.Clamp01(fill), 10f * s,
+                heavy ? new Color(1f, 0.55f, 0.4f) : new Color(1f, 0.85f, 0.45f));
+
+            GUI.color = heavy ? new Color(1f, 0.7f, 0.55f) : Color.white;
             GUI.Label(new Rect(pad, xy + 10f * s, barW * 2f, 22f * s),
-                $"Lv.{director.Level}   ·   무기 {director.Stats.OwnedWeaponCount}/{director.MaxWeapons}", small);
+                director.TowedCount > 0
+                    ? $"짐 {director.TowedCount}/{cap}   ·   속도 -{slow:0}%"
+                      + (heavy ? "   ·   꽉 참 — 주우면 앞엣것이 밀려난다" : "")
+                    : $"짐 0/{cap}", small);
+            GUI.color = Color.white;
+
+            // 🔴 **지금 무엇을 주울 수 있는지 보여준다** (2026-08-26).
+            //    "왜 안 주워지지?"는 이 게임에서 나올 수 있는 최악의 질문이다 —
+            //    조작을 바꿨으면 그 조작이 화면에 상주해야 한다.
+            float cy = xy + 30f * s;
+            var pick = director.PickTarget;
+
+            if (pick != null)
+            {
+                var pc = Mats.ColorOf(pick.mat);
+                Box(pad, cy, 12f * s, 12f * s, pc);
+
+                GUI.color = pc;
+                GUI.Label(new Rect(pad + 18f * s, cy - 3f * s, barW * 2f, 20f * s),
+                    $"Space = {Mats.Name(pick.mat)} 줍기", small);
+            }
+            else
+            {
+                Box(pad, cy, 12f * s, 12f * s, new Color(0.32f, 0.35f, 0.42f));
+
+                GUI.color = TextDim;
+                GUI.Label(new Rect(pad + 18f * s, cy - 3f * s, barW * 2f, 20f * s),
+                    "재화 위로 가면 테두리가 뜬다 · Space = 줍기", small);
+            }
+            GUI.color = Color.white;
 
             // 보유 무기 목록 — 늘어나는 게 눈에 보여야 성장이 체감된다
-            string[] wn = { "절단날", "작살", "소용돌이", "폭탄", "방전" };
+            // 🔴 **이름을 손으로 적어 두고 있었다.** 목록이 `{"절단날","작살","소용돌이",...}`라
+            //    실제 `WeaponKind` 순서(절단날·원반·작살·레이저·방전…)와 **어긋나 있었다** —
+            //    즉 이 패널은 **틀린 이름을 보여주고 있었고**, 앞 5칸만 보여줬다.
+            //    2026-08-23 무기를 5종으로 줄이다가 발견했다.
+            //    이제 `Weapons.Name`에서 뽑는다. 무기를 늘리든 줄이든 다시는 안 어긋난다.
             float wy = xy + 30f * s;
-            for (int i = 0; i < wn.Length; i++)
+            for (int i = 0; i < Weapons.Count && i < director.Stats.weaponLevel.Length; i++)
             {
                 int lv = director.Stats.weaponLevel[i];
                 if (lv <= 0) continue;
                 GUI.color = new Color(0.7f, 0.95f, 1f);
-                GUI.Label(new Rect(pad, wy, 220f * s, 20f * s), $"{wn[i]}  Lv.{lv}", small);
+                Fit(new Rect(pad, wy, 220f * s, 20f * s),
+                    $"{Weapons.Name((WeaponKind)i)}  Lv.{lv}", small);
                 GUI.color = Color.white;
                 wy += 18f * s;
             }
@@ -658,11 +711,13 @@ namespace SalvageRun.UI
                 GUI.color = Color.white;
             }
 
-            if (director.ContactHits > 0)
+            // 🔴 **주운 연료를 보여준다.** 모선도 파편 변환도 없어진 지금
+            //    시계를 되감는 방법은 **연료 아이템 하나뿐**이라 눈에 띄어야 한다
+            if (director.FuelRecovered > 0.5f)
             {
-                GUI.color = new Color(1f, 0.5f, 0.45f);
+                GUI.color = new Color(0.55f, 1f, 0.8f);
                 GUI.Label(new Rect(rx, pad + 80f * s, 260f * s, 20f * s),
-                    $"충돌 {director.ContactHits}회 · 연료 -{director.ContactFuelLost:0}", small);
+                    $"주운 연료 +{director.FuelRecovered:0}", small);
                 GUI.color = Color.white;
             }
 
@@ -733,125 +788,6 @@ namespace SalvageRun.UI
             }
         }
 
-        // ---------------------------------------------------------------- 카드
-
-        /// <summary>
-        /// 🔴 **보상 몇 장 중 몇 장째인가** (rev.10).
-        ///    rev.9 이후 입금 한 번에 3~5레벨이 한꺼번에 오르는 게 정상이 됐다.
-        ///    남은 장수를 안 보여주면 그건 **보상이 아니라 반복 절차**로 느껴진다 —
-        ///    몇 장 남았는지 알아야 기다림이 **기대**가 된다.
-        ///
-        ///    그리고 뒤로 갈수록 **밝아진다.** 마지막 장이 가장 화려해야
-        ///    "쌓였다가 터진다"는 리듬이 완성된다.
-        /// </summary>
-        void DrawDraftProgress(float s)
-        {
-            int total = director.DraftTotal;
-            if (total <= 1) return;
-
-            int idx = Mathf.Clamp(director.DraftIndex, 0, total - 1);
-            float heat = total <= 1 ? 1f : idx / (float)(total - 1);
-
-            float w = Mathf.Min(340f * s, Screen.width * 0.5f);
-            float y = Screen.height * 0.20f - 34f * s;
-            var r = new Rect(Screen.width * 0.5f - w * 0.5f, y, w, 24f * s);
-
-            var c = Color.Lerp(new Color(0.5f, 0.85f, 1f), new Color(1f, 0.8f, 0.35f), heat);
-
-            // 남은 장수를 칸으로 — 숫자보다 칸이 빨리 읽힌다
-            float pad = 3f * s;
-            float cellW = (r.width - pad * (total - 1)) / total;
-            for (int i = 0; i < total; i++)
-            {
-                var cell = new Rect(r.x + i * (cellW + pad), r.y + 14f * s, cellW, 6f * s);
-                Box(cell, i <= idx ? c : new Color(c.r, c.g, c.b, 0.18f));
-            }
-
-            GUI.color = c;
-            GUI.Label(new Rect(r.x, r.y - 4f * s, r.width, 20f * s),
-                $"보상 {idx + 1} / {total}", center);
-            GUI.color = Color.white;
-        }
-
-        void DrawDraft(float s)
-        {
-            Box(0, 0, Screen.width, Screen.height, new Color(0.02f, 0.03f, 0.05f, 0.82f));
-            bool picking = director.PickingSecondWeapon;
-            GUI.Label(new Rect(0, Screen.height * 0.20f, Screen.width, 40f * s),
-                picking ? "두 번째 무기를 고른다" : $"Lv.{director.Level} — 강화 선택", big);
-
-            GUI.color = picking ? new Color(1f, 0.85f, 0.45f) : new Color(0.55f, 0.7f, 0.85f);
-            GUI.Label(new Rect(0, Screen.height * 0.20f + 40f * s, Screen.width, 22f * s),
-                picking ? "이 판에서 무기는 둘뿐이다. 여기서 빌드가 정해진다." : "— 정지 —", small);
-            GUI.color = Color.white;
-
-            DrawDraftProgress(s);
-
-            int n = director.Offers.Count;
-            if (n == 0) return;
-
-            // 🔴 카드 화면은 이 게임에서 **가장 중요한 순간**이다. 크게 준다
-            float cw = Mathf.Min(310f * s, (Screen.width - 40f * s) / n - 12f * s);
-            float ch = 240f * s;
-            float total = n * cw + (n - 1) * 16f * s;
-            float x0 = Screen.width * 0.5f - total * 0.5f;
-            float y = Screen.height * 0.34f;
-
-            for (int i = 0; i < n; i++)
-            {
-                var c = director.Offers[i];
-                float x = x0 + i * (cw + 16f * s);
-
-                // 🔴 등급을 **색으로** 보여준다. 흰 → 파랑 → 보라 → 주황.
-                //    "+25%"와 "+45%"가 같은 색이면 매번 글을 읽어야 한다 (2026-08-22 피드백)
-                var rc = c.RarityColor;
-
-                Box(new Rect(x, y, cw, ch), Panel);
-                Frame(new Rect(x, y, cw, ch), new Color(rc.r, rc.g, rc.b, 0.9f),
-                      c.rarity >= CardRarity.Epic ? 3f * s : 2f * s);
-                Box(x, y, cw, 4f * s, rc);   // 위쪽 등급 띠
-
-                // 🔴 **어느 쪽을 키우는 카드인가** (rev.11 — 이 게임의 전략 축).
-                //    기지(주황) / 우주선(청록). 자원은 하나인데 쓸 곳이 둘이므로,
-                //    **매번 어느 쪽인지 한눈에 보여야** 저울질이 성립한다.
-                var side = Cards.SideColor(c.effect);
-                var sideRect = new Rect(x + cw - 62f * s, y + 8f * s, 54f * s, 18f * s);
-                Box(sideRect, new Color(side.r * 0.25f, side.g * 0.25f, side.b * 0.25f, 0.95f));
-                Frame(sideRect, new Color(side.r, side.g, side.b, 0.85f), 1.2f * s);
-                GUI.color = side;
-                GUI.Label(sideRect, Cards.SideName(c.effect), centerSmall);
-                GUI.color = Color.white;
-
-                // 등급 이름 — 일반은 굳이 안 쓴다
-                if (c.rarity != CardRarity.Common)
-                {
-                    GUI.color = rc;
-                    GUI.Label(new Rect(x + 10f * s, y + 6f * s, cw - 20f * s, 18f * s),
-                        Cards.NameOf(c.rarity), centerSmall);
-                    GUI.color = Color.white;
-                }
-                GUI.color = rc;
-                GUI.Label(new Rect(x + 12f * s, y + 24f * s, cw - 24f * s, 28f * s), c.title, label);
-                GUI.color = Color.white;
-                GUI.Label(new Rect(x + 12f * s, y + 54f * s, cw - 24f * s, 110f * s), c.description, small);
-
-                if (c.effect == CardEffect.Weapon)
-                {
-                    int lv = director.Stats.weaponLevel[c.param];
-                    GUI.color = lv <= 0 ? new Color(1f, 0.9f, 0.4f) : new Color(0.7f, 0.9f, 1f);
-                    GUI.Label(new Rect(x + 12f * s, y + ch - 68f * s, cw - 24f * s, 20f * s),
-                        lv <= 0 ? "NEW — 두 번째 무기" : $"보유 Lv.{lv} → Lv.{lv + 1}", small);
-                    GUI.color = Color.white;
-                }
-
-                if (Btn(new Rect(x + 12f * s, y + ch - 44f * s, cw - 24f * s, 32f * s), $"선택  [{i + 1}]", s, true, c.color))
-                    director.ChooseCard(i);
-            }
-
-            int key = SalvageRun.Core.InputReader.NumberPressed();
-            if (key >= 1 && key <= n) director.ChooseCard(key - 1);
-        }
-
         // ---------------------------------------------------------------- 결과
 
         /// <summary>
@@ -868,31 +804,19 @@ namespace SalvageRun.UI
             float y = Screen.height * 0.16f;
 
             // ---- 결과 한 줄 ----
-            var head = director.Cleared ? Warm : Danger;
+            // 🔴 **정산 화면이지 패배 화면이 아니다** (2026-08-26).
+            //    붉은색은 "뭘 잘못했다"로 읽힌다 — 한 바퀴를 무사히 마친 것이므로 따뜻한 색으로.
+            var head = Warm;
             GUI.color = head;
             GUI.Label(new Rect(0, y, Screen.width, 44f * s),
-                director.Cleared ? "기지 탈출 성공" : "기지 상실", big);
+                director.Cleared ? "구역 정리 완료" : "귀환 — 정산", big);
             GUI.color = Color.white;
             y += 48f * s;
 
             GUI.color = TextDim;
-            GUI.Label(new Rect(0, y, Screen.width, 24f * s), director.LastMessage, center);
+            Fit(new Rect(Screen.width * 0.06f, y, Screen.width * 0.88f, 24f * s), director.LastMessage, center);
             GUI.color = Color.white;
 
-            // 🔴 **얼마나 왔는지 보여준다.** 졌을 때 "3/4까지 갔다"를 알면
-            //    다음 판을 하고, 아무것도 안 보이면 거기서 끝난다.
-            var field = director.field;
-            if (field != null && field.AnchorsTotal > 0)
-            {
-                int broke = field.AnchorsTotal - field.AnchorsAlive;
-                y += 26f * s;
-
-                GUI.color = director.Cleared ? new Color(0.6f, 1f, 0.85f) : new Color(1f, 0.6f, 0.55f);
-                GUI.Label(new Rect(0, y, Screen.width, 24f * s),
-                          $"계류 장치 {broke} / {field.AnchorsTotal} 파괴", center);
-                GUI.color = Color.white;
-                y -= 26f * s;
-            }
             y += 34f * s;
 
             // ---- 성적표 ----
@@ -902,8 +826,9 @@ namespace SalvageRun.UI
             Frame(stat, new Color(Edge.r, Edge.g, Edge.b, 0.7f), 1.5f * s);
 
             float col = pw / 4f;
-            StatCell(stat.x,           stat.y, col, s, "생존",   $"{director.RunTime:0}초");
-            StatCell(stat.x + col,     stat.y, col, s, "레벨",   $"{director.Level}");
+            // ⬜ "생존"이 아니라 "조업 시간"이다 — 살아남은 게 아니라 일한 것이다 (2026-08-26)
+            StatCell(stat.x,           stat.y, col, s, "조업",   $"{director.RunTime:0}초");
+            StatCell(stat.x + col,     stat.y, col, s, "가져옴", $"{director.BankedCount}");
             StatCell(stat.x + col * 2, stat.y, col, s, "파편",   $"{director.RunCollected}");
             StatCell(stat.x + col * 3, stat.y, col, s, "크레딧", $"{director.RunValue}");
 
@@ -911,118 +836,32 @@ namespace SalvageRun.UI
             var f = director.field;
             if (f != null)
             {
+                // 🔴 **가져온 것만 보여준다** (2026-08-26). 6종이 되면서 0을 다 깔면
+                //    성적표가 0으로 도배된다 — 번 것이 안 읽힌다.
                 float my = stat.y + 52f * s;
                 float mw2 = pw / 3f;
-                for (int i = 0; i < f.MatsThisRun.Length && i < 3; i++)
+                int shown = 0;
+
+                for (int i = 0; i < f.MatsThisRun.Length; i++)
                 {
+                    if (f.MatsThisRun[i] <= 0) continue;
+
                     GUI.color = Mats.ColorOf((MatKind)i);
-                    GUI.Label(new Rect(stat.x + mw2 * i, my, mw2, 22f * s),
+                    GUI.Label(new Rect(stat.x + mw2 * (shown % 3), my + (shown / 3) * 20f * s,
+                                       mw2, 22f * s),
                         $"{Mats.Name((MatKind)i)} +{f.MatsThisRun[i]}", centerSmall);
                     GUI.color = Color.white;
+                    shown++;
                 }
             }
             y += 102f * s;
 
-            // ---- 고른 강화 — 계산서처럼 ----
-            y = DrawReceipt(cx, y, pw, s);
+            // ⬜ 여기 "정비 내역"(고른 카드 목록)이 있었다. 카드 뽑기를 없애면서(2026-08-23)
+            //    고른 것이 없으므로 표도 없앴다.
 
             // ---- 버튼 ----
             float bw = 260f * s, bh = 42f * s;
             if (Btn(new Rect(cx - bw * 0.5f, y, bw, bh), "맵 선택으로", s)) director.BackToReady();
-        }
-
-        /// <summary>
-        /// 🔴 이번 런에 고른 강화를 **계산서처럼** 항목별로 나열한다.
-        ///    한 줄에 이어 붙였더니 화면 밖으로 흘러나가 잘렸고, 무엇을 골랐는지도 안 읽혔다.
-        ///    (2026-08-22 요청: *"네모난 창 하나 띄워서 주르르륵 나오면 좋겠다, 계산서 마냥"*)
-        ///
-        ///    같은 강화를 여러 번 골랐으면 **×N으로 묶는다** — 13줄이 5줄이 되고,
-        ///    "무엇에 몰빵했는가"가 한눈에 보인다.
-        /// </summary>
-        float DrawReceipt(float cx, float y, float pw, float s)
-        {
-            var taken = director.Taken;
-            if (taken == null || taken.Count == 0) return y;
-
-            // 같은 제목끼리 묶는다. 순서는 처음 고른 순서를 유지한다
-            var names = new List<string>();
-            var counts = new List<int>();
-            var colors = new List<Color>();
-
-            for (int i = 0; i < taken.Count; i++)
-            {
-                // 무기 카드는 "회전 절단날  Lv.3"처럼 레벨이 붙어 제목이 매번 다르다.
-                // 레벨 부분을 떼고 묶어야 "절단날 ×5"로 읽힌다
-                string n = taken[i].title;
-                int cut = n.IndexOf("  Lv.");
-                if (cut > 0) n = n.Substring(0, cut);
-
-                int at = names.IndexOf(n);
-                if (at >= 0) { counts[at]++; continue; }
-
-                names.Add(n);
-                counts.Add(1);
-                colors.Add(taken[i].RarityColor);
-            }
-
-            float lineH = 20f * s;
-            int maxLines = Mathf.Max(3, Mathf.FloorToInt((Screen.height * 0.30f) / lineH));
-            int shown = Mathf.Min(names.Count, maxLines);
-
-            float h = (shown + 2) * lineH + 26f * s;
-            var box = new Rect(cx - pw * 0.5f, y, pw, h);
-
-            Box(box, Panel);
-            Frame(box, new Color(Edge.r, Edge.g, Edge.b, 0.85f), 1.5f * s);
-
-            float ty = box.y + 8f * s;
-
-            GUI.color = TextDim;
-            GUI.Label(new Rect(box.x, ty, box.width, lineH), "정 비 내 역", center);
-            GUI.color = Color.white;
-            ty += lineH + 2f * s;
-
-            Divider(box, ty, s);
-            ty += 6f * s;
-
-            float padX = 18f * s;
-            for (int i = 0; i < shown; i++)
-            {
-                GUI.color = colors[i];
-                GUI.Label(new Rect(box.x + padX, ty, box.width - padX * 2f, lineH), names[i], small);
-
-                // 개수는 오른쪽 끝에 — 계산서처럼 줄이 맞아야 읽힌다
-                GUI.color = counts[i] > 1 ? Warm : TextDim;
-                GUI.Label(new Rect(box.x + padX, ty, box.width - padX * 2f, lineH),
-                    counts[i] > 1 ? $"×{counts[i]}" : "·", rightSmall);
-                GUI.color = Color.white;
-
-                ty += lineH;
-            }
-
-            if (names.Count > shown)
-            {
-                GUI.color = TextDim;
-                GUI.Label(new Rect(box.x, ty, box.width, lineH), $"외 {names.Count - shown}종", center);
-                GUI.color = Color.white;
-                ty += lineH;
-            }
-
-            Divider(box, ty + 2f * s, s);
-            ty += 8f * s;
-
-            GUI.color = TextDim;
-            GUI.Label(new Rect(box.x + padX, ty, box.width - padX * 2f, lineH), "합계", small);
-            GUI.color = Warm;
-            GUI.Label(new Rect(box.x + padX, ty, box.width - padX * 2f, lineH), $"{taken.Count}개", rightSmall);
-            GUI.color = Color.white;
-
-            return box.yMax + 12f * s;
-        }
-
-        void Divider(Rect box, float y, float s)
-        {
-            Box(box.x + 14f * s, y, box.width - 28f * s, 1f, new Color(Edge.r, Edge.g, Edge.b, 0.5f));
         }
 
         void StatCell(float x, float y, float w, float s, string label, string value)
@@ -1031,646 +870,6 @@ namespace SalvageRun.UI
             GUI.Label(new Rect(x, y + 8f * s, w, 18f * s), label, centerSmall);
             GUI.color = Color.white;
             GUI.Label(new Rect(x, y + 24f * s, w, 26f * s), value, center);
-        }
-
-        /// <summary>
-        /// 🔴 **기지 연료 — 이 게임의 패배 조건이다** (rev.10).
-        ///    화면에서 가장 눈에 띄어야 한다. 연료가 0이면 끝이다.
-        ///
-        ///    "몇 초 남았는가"를 같이 보여준다 — 비율만 보면 얼마나 급한지 모른다.
-        ///    남은 시간은 **지금 감소율 기준**이라 맵마다 다르게 나온다.
-        /// </summary>
-        void DrawBaseHp(float s)
-        {
-            if (director.State != GameState.Field || director.homeBase == null) return;
-
-            var hb = director.homeBase;
-            float w = Mathf.Min(Screen.width * 0.42f, 460f * s), h = 20f * s;
-            var r = new Rect(Screen.width * 0.5f - w * 0.5f, 12f * s, w, h);
-
-            float t = hb.FuelRatio;
-            var c = t > 0.5f ? new Color(0.45f, 0.9f, 0.8f)
-                  : t > 0.25f ? Warm
-                  : new Color(1f, 0.4f, 0.35f);
-
-            Box(r, new Color(0f, 0f, 0f, 0.6f));
-            Box(r.x, r.y, r.width * t, r.height, c);
-            Frame(r, new Color(c.r, c.g, c.b, 0.9f), 1.5f * s);
-
-            // 🔴 **남은 여정**을 같이 보여준다 — 이 게임의 목표가 좌표 도달이므로
-            //    *"얼마나 남았나"*가 항상 보여야 지금의 선택에 뜻이 생긴다
-            int total = content.StageCount;
-            int done = Mathf.Clamp(director.MapIndex, 0, total - 1);
-
-            GUI.color = Color.white;
-            GUI.Label(new Rect(r.x, r.y, r.width, h),
-                $"기지 연료  {hb.Fuel:0} / {hb.FuelMax:0}      구간 {done + 1} / {total}", center);
-
-            if (t < 0.25f)
-            {
-                GUI.color = new Color(1f, 0.4f, 0.35f, 0.6f + 0.4f * Mathf.Sin(Time.time * 9f));
-                GUI.Label(new Rect(r.x, r.yMax + 3f * s, r.width, 20f * s),
-                    "기지 연료 고갈 임박 — 쓰레기를 가져와라", center);
-                GUI.color = Color.white;
-            }
-        }
-
-        /// <summary>🔴 격침 중. **게임이 안 끝났다는 걸** 분명히 알려야 한다.</summary>
-        void DrawRespawn(float s)
-        {
-            if (director.RespawnLeft <= 0f) return;
-
-            Box(0, Screen.height * 0.38f, Screen.width, 84f * s, new Color(0.12f, 0.03f, 0.03f, 0.8f));
-
-            GUI.color = new Color(1f, 0.5f, 0.42f);
-            GUI.Label(new Rect(0, Screen.height * 0.38f + 8f * s, Screen.width, 32f * s), "격침", big);
-            GUI.color = new Color(0.9f, 0.92f, 1f);
-            GUI.Label(new Rect(0, Screen.height * 0.38f + 44f * s, Screen.width, 22f * s),
-                $"재출항까지 {director.RespawnLeft:0.0}초   ·   그동안 기지는 무방비다", center);
-            GUI.color = Color.white;
-        }
-
-        /// <summary>
-        /// 🔴 화물 상태. **저울질이 보여야 결정이 성립한다.**
-        ///    얼마나 실었는지 · 얼마나 느려졌는지 · 입금하면 몇 레벨 오르는지를
-        ///    한자리에 붙여 놓는다. 이 셋이 안 보이면 "더 모을까"를 판단할 수 없다.
-        /// </summary>
-        void DrawCargo(float s)
-        {
-            if (director.Travelling) return;      // 항행 중엔 화물·도킹 표시가 무의미하다
-            if (director.State != GameState.Field) return;
-
-            float w = 300f * s, h = 54f * s;
-            var r = new Rect(Screen.width * 0.5f - w * 0.5f, Screen.height - h - 24f * s, w, h);
-
-            float fill = director.CargoRatio;
-            bool full = fill >= 0.999f;
-
-            Box(r, new Color(0.06f, 0.08f, 0.12f, 0.85f));
-
-            // 🔴 입금 중에는 막대가 **줄어드는 것 자체가 연출**이다.
-            //    카운터가 가속하며 떨어지는 걸 보고 있는 그 3초가 보상의 몸통이다.
-            if (director.Depositing)
-            {
-                float done = director.DepositTotal <= 0 ? 1f
-                           : 1f - director.CargoCount / (float)director.DepositTotal;
-
-                Box(r.x + 2f * s, r.y + 2f * s, (r.width - 4f * s) * done, 12f * s,
-                    new Color(0.5f, 1f, 0.8f, 0.35f + 0.35f * done));
-            }
-
-            // 막대 — 가득 차면 붉게 (돌아가라는 신호)
-            var barC = full ? Danger
-                     : fill > 0.7f ? Warm
-                     : new Color(0.45f, 0.9f, 0.75f);
-            Box(r.x + 2f * s, r.y + 2f * s, (r.width - 4f * s) * fill, 12f * s, barC);
-            Frame(r, new Color(barC.r, barC.g, barC.b, 0.8f), 1.5f * s);
-
-            GUI.color = new Color(0.85f, 0.9f, 0.97f);
-            GUI.Label(new Rect(r.x, r.y + 15f * s, r.width, 20f * s),
-                $"화물 {director.CargoCount} / {director.CargoMax}", center);
-
-            // 속도 저하 — 무게의 대가를 숫자로
-            float slow = (1f - director.CargoWeightMul) * 100f;
-            GUI.color = slow > 30f ? Danger : TextDim;
-            GUI.Label(new Rect(r.x, r.y + 33f * s, r.width * 0.5f, 18f * s),
-                slow > 1f ? $"속도 -{slow:0}%" : "가볍다", centerSmall);
-
-            // 입금하면 오를 레벨
-            int levels = PendingLevels();
-            GUI.color = levels > 0 ? new Color(0.5f, 1f, 0.8f) : TextDim;
-            GUI.Label(new Rect(r.x + r.width * 0.5f, r.y + 33f * s, r.width * 0.5f, 18f * s),
-                levels > 0 ? $"입금 시 +{levels}레벨" : "입금 대기", centerSmall);
-            GUI.color = Color.white;
-
-            if (full && !director.Depositing)
-            {
-                GUI.color = new Color(1f, 0.45f, 0.4f, 0.6f + 0.4f * Mathf.Sin(Time.time * 8f));
-                GUI.Label(new Rect(r.x, r.y - 22f * s, r.width, 20f * s), "화물칸 가득 — 모선으로", center);
-                GUI.color = Color.white;
-            }
-
-            DrawStreak(s, r);
-            DrawTravel(s, r);
-        }
-
-        /// <summary>
-        /// 🔴 **다음 지역으로 떠나기** — 이 게임에서 이기는 유일한 길이다 (rev.10).
-        ///    기지에 있을 때만, 그리고 여비를 낼 수 있을 때만 뜬다.
-        ///
-        ///    자동으로 출발시키지 않은 이유: 그러면 결정이 사라진다.
-        ///    여비가 있으므로 **"지금 갈까, 더 캐고 갈까"**가 매 지역마다 돌아온다.
-        /// </summary>
-        void DrawTravel(float s, Rect cargo)
-        {
-            if (!director.AtBase || director.State != GameState.Field) return;
-
-            float w = 340f * s, h = 34f * s;
-            var r = new Rect(cargo.x + cargo.width * 0.5f - w * 0.5f, cargo.y - h - 34f * s, w, h);
-
-            bool can = director.CanTravel;
-            bool last = director.AtLastRegion;
-
-            if (last)
-            {
-                GUI.color = new Color(1f, 0.85f, 0.45f);
-                GUI.Label(r, "최종 지역 — 여기서 버텨라", center);
-                GUI.color = Color.white;
-                return;
-            }
-
-            // 🔴 **왜 못 떠나는지** 말해 준다. 버튼이 그냥 안 되면 그건 버그로 읽힌다
-            if (director.AnchorsBlocking)
-            {
-                var fld = director.field;
-                GUI.color = new Color(1f, 0.45f, 0.5f, 0.75f + 0.25f * Mathf.Sin(Time.time * 5f));
-                GUI.Label(r, $"계류 장치에 붙잡혀 있다 — {fld.AnchorsAlive}개 남음", center);
-                GUI.color = TextDim;
-                GUI.Label(new Rect(r.x, r.yMax - 4f * s, r.width, 18f * s),
-                          "화살표를 따라가 전부 끊어라", centerSmall);
-                GUI.color = Color.white;
-                return;
-            }
-
-            if (!can)
-            {
-                GUI.color = TextDim;
-                GUI.Label(r, $"다음 지역 — 연료 {director.TravelCost:0} 필요", centerSmall);
-                GUI.color = Color.white;
-                return;
-            }
-
-            // 🔴 **다음이 최종 지역이면 미리 알린다.**
-            //    모르고 들어가서 갑자기 연료가 2.6배로 닳으면 그건 난이도가 아니라 함정이다.
-            //    준비할 기회를 준 뒤에 어려운 건 괜찮다 — **모르고 당하는 것**이 나쁘다.
-            bool nextIsFinal = director.MapIndex + 1 >= content.StageCount - 1;
-
-            if (nextIsFinal)
-            {
-                GUI.color = new Color(1f, 0.5f, 0.5f, 0.75f + 0.25f * Mathf.Sin(Time.time * 4f));
-                GUI.Label(new Rect(r.x, r.y - 40f * s, r.width, 20f * s),
-                          "다음은 최종 지역 — 돌아올 수 없다", center);
-
-                GUI.color = TextDim;
-                GUI.Label(new Rect(r.x, r.y - 22f * s, r.width, 20f * s),
-                          "기지 연료를 최대한 채우고 갈 것", centerSmall);
-                GUI.color = Color.white;
-            }
-
-            string label = nextIsFinal
-                ? $"최종 지역으로 출발  [E]   (연료 -{director.TravelCost:0})"
-                : $"다음 지역으로 출발  [E]   (연료 -{director.TravelCost:0})";
-
-            if (Btn(r, label, s, true, nextIsFinal ? Danger : Warm))
-                director.TravelToNext();
-
-            if (Core.InputReader.TravelPressed) director.TravelToNext();
-        }
-
-        /// <summary>
-        /// 🔴 **연쇄 입금.** 배수 자체보다 *"지금 죽으면 끊긴다"*를 보이게 하는 게 목적이다.
-        ///    그래서 숫자를 작게 쓰지 않고 화물 막대 바로 위에 크게 붙인다 —
-        ///    돌아갈지 더 주울지 고민하는 그 순간에 눈에 들어와야 한다.
-        /// </summary>
-        void DrawStreak(float s, Rect cargo)
-        {
-            int st = director.DepositStreak;
-            if (st <= 0) return;
-
-            float w = 150f * s, h = 24f * s;
-            var r = new Rect(cargo.x + cargo.width * 0.5f - w * 0.5f, cargo.y - h - 6f * s, w, h);
-
-            // 연쇄가 길수록 뜨거워진다
-            float heat = Mathf.Clamp01(st / 4f);
-            var c = Color.Lerp(new Color(0.5f, 1f, 0.8f), new Color(1f, 0.75f, 0.25f), heat);
-
-            Box(r, new Color(0.06f, 0.08f, 0.12f, 0.8f));
-            Frame(r, new Color(c.r, c.g, c.b, 0.75f), 1.5f * s);
-
-            GUI.color = c;
-            GUI.Label(r, $"연쇄 {st}  ×{director.StreakMul:0.00}", center);
-            GUI.color = Color.white;
-        }
-
-        /// <summary>
-        /// 🔴 **도킹 정산** (2026-08-22 요청: *"멈추면서 재화 얼마나 모았고
-        ///    레벨업이 파파파파파박 되는 느낌"*).
-        ///
-        ///    빨려 들어가 **멈춘 그 자리**에 숫자를 띄운다.
-        ///    움직이면서 받는 보상은 배경음이고, **멈춰서 받는 보상은 사건**이다.
-        ///
-        ///    입금 중에는 남은 화물이 줄어드는 걸 보여주고,
-        ///    끝나면 **얼마 벌었는지 · 몇 레벨 오르는지**를 크게 띄운다.
-        /// </summary>
-        void DrawDockTally(float s)
-        {
-            if (director.Travelling) return;      // 항행 중엔 화물·도킹 표시가 무의미하다
-            if (director.State != GameState.Field && director.State != GameState.Drafting) return;
-
-            bool live = director.Depositing;
-            float fade = live ? 1f : Mathf.Clamp01(director.dockFlash / 2.2f);
-            if (!live && fade <= 0.01f) return;
-
-            float w = 320f * s, h = 96f * s;
-            var r = new Rect(Screen.width * 0.5f - w * 0.5f, Screen.height * 0.30f, w, h);
-
-            var accent = new Color(0.55f, 1f, 0.85f);
-
-            Box(r, new Color(0.03f, 0.09f, 0.08f, 0.80f * fade));
-            Frame(r, new Color(accent.r, accent.g, accent.b, 0.85f * fade), 2f * s);
-
-            GUI.color = new Color(accent.r, accent.g, accent.b, fade);
-            GUI.Label(new Rect(r.x, r.y + 6f * s, r.width, 24f * s),
-                      live ? "입 고 중" : "입 고 완 료", center);
-
-            if (live)
-            {
-                // 남은 화물이 줄어드는 걸 보여준다 — 줄어드는 것 자체가 연출이다
-                GUI.color = new Color(1f, 1f, 1f, fade);
-                GUI.Label(new Rect(r.x, r.y + 32f * s, r.width, 34f * s),
-                          $"{director.CargoCount}", big);
-
-                float done = director.DepositTotal <= 0 ? 1f
-                           : 1f - director.CargoCount / (float)director.DepositTotal;
-                Box(r.x + 12f * s, r.yMax - 16f * s, (r.width - 24f * s) * done, 6f * s,
-                    new Color(accent.r, accent.g, accent.b, fade));
-            }
-            else
-            {
-                GUI.color = new Color(1f, 0.95f, 0.65f, fade);
-                GUI.Label(new Rect(r.x, r.y + 30f * s, r.width, 34f * s),
-                          $"+{director.DockedValue:N0}", big);
-
-                GUI.color = new Color(0.8f, 0.9f, 1f, fade * 0.9f);
-                GUI.Label(new Rect(r.x, r.yMax - 26f * s, r.width, 20f * s),
-                          director.DepositBonus > 1.05f ? $"보너스 ×{director.DepositBonus:0.00}" : "", center);
-            }
-
-            GUI.color = Color.white;
-        }
-
-        /// <summary>
-        /// 🔴 만재 입금은 **다른 사건**이어야 한다.
-        ///    보너스(×1.6)는 원래도 주고 있었는데 화면상 100%나 60%나 똑같이 생겨서
-        ///    "만재로 넣었다"가 아무 감각도 아니었다. 보상은 이미 주고 있으니 연출만 붙인다.
-        /// </summary>
-        void DrawFullLoadBanner(float s)
-        {
-            float f = director.fullLoadFlash;
-            if (f <= 0.01f) return;
-
-            float a = Mathf.Clamp01(f / 1.6f);
-            float pop = 1f + (1f - a) * 0.35f;      // 뜰 때 커졌다가 가라앉는다
-
-            // 화면 전체가 한 번 물든다
-            Box(0, 0, Screen.width, Screen.height, new Color(1f, 0.85f, 0.4f, a * 0.10f));
-
-            float w = 420f * s * pop, h = 62f * s * pop;
-            var r = new Rect(Screen.width * 0.5f - w * 0.5f, Screen.height * 0.34f - h * 0.5f, w, h);
-
-            Box(r, new Color(0.08f, 0.07f, 0.04f, a * 0.8f));
-            Frame(r, new Color(1f, 0.8f, 0.35f, a), 2f * s);
-
-            GUI.color = new Color(1f, 0.88f, 0.5f, a);
-            GUI.Label(new Rect(r.x, r.y + 6f * s, r.width, 34f * s), "만 재 입 금", big);
-            GUI.color = new Color(1f, 0.75f, 0.4f, a * 0.9f);
-            GUI.Label(new Rect(r.x, r.y + 38f * s, r.width, 20f * s),
-                      $"×{director.DepositBonus:0.00}", center);
-            GUI.color = Color.white;
-        }
-
-        /// <summary>
-        /// 입금하면 몇 레벨 오르는지. 저울질의 핵심 정보다.
-        ///
-        /// 🔴 계산은 `RunDirector`가 한다. 여기서 따로 계산하던 것을 지웠다 —
-        ///    HUD 쪽은 만재 보너스 0.6을 손으로 박아 두고 있어서 **연쇄 배수가 빠졌고**,
-        ///    그래서 화면 숫자가 실제 입금액보다 작았다. 계산이 두 군데면 반드시 갈라진다.
-        /// </summary>
-        int PendingLevels() => director.CargoXp <= 0f ? 0 : director.PendingLevels;
-
-        /// <summary>🔴 모선이 화면 밖이면 방향을 알려준다. 어디로 돌아갈지 모르면 루프가 안 돈다.</summary>
-        /// <summary>
-        /// 🔴 **지역이 썩고 있다는 걸 보여준다** (rev.11).
-        ///
-        ///    정박이 길어질수록 로봇이 는다. 그런데 **말해 주지 않으면**
-        ///    플레이어는 "왜 갑자기 어려워지지"만 느끼고 원인을 모른다 —
-        ///    그러면 그건 압박이 아니라 **부당함**이다.
-        ///
-        ///    출발 압박이 목적이므로 **"뜰 때가 됐다"가 읽혀야** 한다.
-        /// </summary>
-        void DrawRot(float s)
-        {
-            if (director.State != GameState.Field || director.Travelling) return;
-
-            var field = director.field;
-            if (field == null) return;
-
-            float rot = field.RotRatio;
-            if (rot <= 1.05f) return;               // 초반엔 굳이 안 띄운다
-
-            float t = Mathf.InverseLerp(1f, 3f, rot);
-            var c = Color.Lerp(new Color(0.8f, 0.85f, 0.5f), new Color(1f, 0.45f, 0.35f), t);
-
-            float w = Mathf.Min(320f * s, Screen.width * 0.4f);
-            var r = new Rect(Screen.width * 0.5f - w * 0.5f, 60f * s, w, 20f * s);
-
-            GUI.color = t > 0.6f
-                ? new Color(c.r, c.g, c.b, 0.7f + 0.3f * Mathf.Sin(Time.time * 5f))
-                : c;
-            GUI.Label(r, $"이 지역이 시끄러워지고 있다  ×{rot:0.0}", center);
-
-            if (t > 0.7f)
-            {
-                GUI.color = new Color(1f, 0.6f, 0.45f, 0.85f);
-                GUI.Label(new Rect(r.x, r.yMax, r.width, 18f * s), "떠날 때가 됐다", centerSmall);
-            }
-            GUI.color = Color.white;
-        }
-
-        /// <summary>
-        /// 🔴 **도입 연출의 자막.** 어레이가 뜯겨 나가는 동안 관제가 한마디 던진다.
-        ///    설명문 다섯 줄보다 **관제 한마디**가 훨씬 빨리 박힌다.
-        /// </summary>
-        void DrawIntro(float s)
-        {
-            if (!director.InIntro) return;
-
-            float t = director.IntroProgress;
-
-            // 마지막 어레이가 터질 때 화면이 붉어진다
-            if (t > 0.72f && t < 0.84f)
-            {
-                float f = 1f - Mathf.InverseLerp(0.72f, 0.84f, t);
-                Box(0, 0, Screen.width, Screen.height, new Color(1f, 0.25f, 0.15f, f * 0.35f));
-            }
-
-            float w = Mathf.Min(560f * s, Screen.width * 0.85f);
-            var r = new Rect(Screen.width * 0.5f - w * 0.5f, Screen.height * 0.68f, w, 96f * s);
-
-            string line =
-                t < 0.28f ? "항행 중 — 잔해 밀집 구역 진입" :
-                t < 0.50f ? "경고 · 태양광 어레이 1번 손실" :
-                t < 0.72f ? "경고 · 어레이 2번 손실. 회피 불가" :
-                            "— 지구 관제 —";
-
-            Box(r, new Color(0.03f, 0.04f, 0.07f, 0.78f));
-
-            GUI.color = t < 0.72f ? new Color(1f, 0.55f, 0.4f) : Accent;
-            GUI.Label(new Rect(r.x, r.y + 8f * s, r.width, 26f * s), line, center);
-            GUI.color = Color.white;
-
-            if (t >= 0.72f)
-            {
-                GUI.color = new Color(1f, 0.95f, 0.9f);
-                GUI.Label(new Rect(r.x, r.y + 36f * s, r.width, 24f * s),
-                          "연료 수단 전멸 확인. 잔해 회수로 자체 생산할 것.", center);
-                GUI.color = TextDim;
-                GUI.Label(new Rect(r.x, r.y + 62f * s, r.width, 22f * s),
-                          "귀환 계획 없음.", center);
-                GUI.color = Color.white;
-            }
-
-            // 스킵 — 두 번째부터는 매번 보면 고문이다
-            GUI.color = new Color(0.6f, 0.65f, 0.75f, 0.7f);
-            GUI.Label(new Rect(0, Screen.height - 34f * s, Screen.width, 20f * s),
-                      "아무 키나 눌러 건너뛰기", center);
-            GUI.color = Color.white;
-
-            if (Event.current.type == EventType.KeyDown ||
-                Event.current.type == EventType.MouseDown) director.SkipIntro();
-        }
-
-        // ================================================================ 항행 (rev.11)
-
-        /// <summary>
-        /// 🔴 **항행 화면.** 남은 거리 · 조작 안내 · 시작 브리핑.
-        ///
-        ///    조작이 *몰기 → 조준*으로 바뀌는 국면이라, **바뀌었다는 걸 말해 주지 않으면**
-        ///    플레이어는 배가 고장 난 줄 안다.
-        /// </summary>
-        void DrawVoyage(float s)
-        {
-            if (director.State != GameState.Field || !director.Travelling) return;
-
-            // ---- 남은 거리 ----
-            float w = Mathf.Min(Screen.width * 0.5f, 520f * s), h = 22f * s;
-            var r = new Rect(Screen.width * 0.5f - w * 0.5f, 60f * s, w, h);
-
-            float t = director.LegProgress;
-
-            Box(r, new Color(0f, 0f, 0f, 0.55f));
-            Box(r.x, r.y, r.width * t, r.height, new Color(0.55f, 0.85f, 1f));
-            Frame(r, new Color(0.6f, 0.9f, 1f, 0.9f), 1.5f * s);
-
-            float left = Mathf.Max(0f, (1f - t) * director.LegSeconds);
-            GUI.color = Color.white;
-            GUI.Label(r, $"항행 중 — 다음 지역까지 {left:0}초", center);
-
-            // ---- 조작 안내 (계속 띄운다. 이 국면은 조작이 다르다) ----
-            GUI.color = new Color(1f, 0.85f, 0.5f, 0.75f);
-            GUI.Label(new Rect(r.x, r.yMax + 3f * s, r.width, 20f * s),
-                      "커서로 조준 — 기지 무기가 그쪽을 먼저 쏜다", centerSmall);
-            GUI.color = Color.white;
-
-            DrawVoyageIntro(s);
-        }
-
-        /// <summary>
-        /// 🔴 항행 시작 브리핑. **한 줄 목표 + 한 줄 조작**이면 충분하다.
-        /// </summary>
-        void DrawVoyageIntro(float s)
-        {
-            float f = director.legIntro;
-            if (f <= 0.01f) return;
-
-            float a = Mathf.Min(1f, Mathf.Clamp01(f / 3.5f) * 2.2f);
-
-            Box(0, 0, Screen.width, Screen.height, new Color(0.5f, 0.35f, 0.05f, a * 0.14f));
-
-            float w = Mathf.Min(520f * s, Screen.width * 0.84f), h = 104f * s;
-            var r = new Rect(Screen.width * 0.5f - w * 0.5f, Screen.height * 0.30f, w, h);
-
-            Box(r, new Color(0.09f, 0.06f, 0.02f, a * 0.88f));
-            Frame(r, new Color(1f, 0.8f, 0.45f, a), 2f * s);
-
-            GUI.color = new Color(1f, 0.85f, 0.5f, a);
-            GUI.Label(new Rect(r.x, r.y + 10f * s, r.width, 34f * s), "항 행", big);
-
-            GUI.color = new Color(1f, 0.95f, 0.9f, a);
-            GUI.Label(new Rect(r.x, r.y + 48f * s, r.width, 24f * s),
-                      "우주선은 격납됐다. 기지 무기로 잔해를 막아라", center);
-
-            GUI.color = new Color(1f, 0.7f, 0.55f, a);
-            GUI.Label(new Rect(r.x, r.y + 74f * s, r.width, 22f * s),
-                      "기지에 부딪히면 연료를 잃는다 = 거리를 잃는다", center);
-            GUI.color = Color.white;
-        }
-
-        // ================================================================ 계류 장치 (최종 지역)
-
-        /// <summary>
-        /// 🔴 **닻이 어디 있는지 못 찾으면 게임이 안 끝난다.**
-        ///    맵이 넓으므로 화면 밖에 있으면 가장자리에 화살표로 가리킨다.
-        ///    기지 화살표(청록)와 **색을 다르게**(붉은) 해서 무엇을 가리키는지 구분되게 한다.
-        /// </summary>
-        void DrawAnchorArrows(float s)
-        {
-            if (director.State != GameState.Field || cam == null) return;
-
-            var field = director.field;
-            if (field == null || field.AnchorsTotal <= 0) return;
-
-            float margin = 64f * s;
-            var center = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
-
-            for (int i = 0; i < field.Anchors.Count; i++)
-            {
-                var a = field.Anchors[i];
-                if (a == null || !a.Alive) continue;
-
-                Vector3 sp = cam.WorldToScreenPoint(a.transform.position);
-                sp.y = Screen.height - sp.y;
-
-                bool onScreen = sp.z > 0f && sp.x > margin && sp.x < Screen.width - margin
-                                          && sp.y > margin && sp.y < Screen.height - margin;
-                if (onScreen) continue;
-
-                Vector2 dir = new Vector2(sp.x, sp.y) - center;
-                if (sp.z < 0f) dir = -dir;
-                if (dir.sqrMagnitude < 0.01f) dir = Vector2.up;
-                dir.Normalize();
-
-                float rx = Screen.width * 0.5f - margin;
-                float ry = Screen.height * 0.5f - margin;
-                Vector2 at = center + dir * Mathf.Min(rx / Mathf.Max(0.001f, Mathf.Abs(dir.x)),
-                                                      ry / Mathf.Max(0.001f, Mathf.Abs(dir.y)));
-
-                var c = new Color(1f, 0.45f, 0.5f, 0.55f + 0.25f * Mathf.Sin(Time.time * 4f + i));
-                float ang = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-                ArrowBar(at, ang + 150f, 24f * s, 5f * s, c);
-
-                // 🔴 몇 번 닻인지 같이 쓴다 — 번호가 곧 난이도 순서다
-                GUI.color = c;
-                GUI.Label(new Rect(at.x - 24f * s, at.y + 12f * s, 48f * s, 18f * s),
-                          $"{i + 1}번", centerSmall);
-                GUI.color = Color.white;
-            }
-        }
-
-        /// <summary>
-        /// 🔴 **왜 갑자기 연료가 빨리 닳는지** 모르면 억울하다.
-        ///    기지 연료 바 바로 아래에 **몇 개 남았고 몇 배로 닳는지**를 붙인다.
-        ///    닻을 부수면 배수가 내려가는 게 눈에 보인다 — 그게 진행감이다.
-        /// </summary>
-        void DrawAnchorStatus(float s)
-        {
-            if (director.State != GameState.Field) return;
-
-            var field = director.field;
-            var hb = director.homeBase;
-            if (field == null || hb == null || field.AnchorsTotal <= 0) return;
-
-            float w = Mathf.Min(Screen.width * 0.42f, 460f * s);
-            var r = new Rect(Screen.width * 0.5f - w * 0.5f, 34f * s, w, 22f * s);
-
-            int alive = field.AnchorsAlive;
-            int broke = field.AnchorsTotal - alive;
-
-            var c = alive > 0 ? new Color(1f, 0.45f, 0.5f) : new Color(0.6f, 1f, 0.85f);
-
-            GUI.color = c;
-            GUI.Label(r, alive > 0
-                ? $"계류 장치 {broke} / {field.AnchorsTotal} 파괴   ·   기지 부담 ×{hb.DrainMul:0.0}"
-                : "계류 해제 완료", center);
-            GUI.color = Color.white;
-
-            // 부순 직후 크게 알린다
-            float f = director.anchorFlash;
-            if (f > 0.01f)
-            {
-                float a = Mathf.Clamp01(f / 2.6f);
-                GUI.color = new Color(0.6f, 1f, 0.85f, a);
-                GUI.Label(new Rect(0, Screen.height * 0.24f, Screen.width, 34f * s),
-                          alive > 0 ? $"계류 장치 파괴 — 남은 {alive}개" : "계류 해제!", big);
-                GUI.color = Color.white;
-            }
-        }
-
-        /// <summary>
-        /// 🔴 **뭘 해야 하는지 모르면 아무것도 안 한다.**
-        ///    최종 지역에 도착하면 한 번, 크게, 짧게 말해 준다.
-        ///    긴 설명은 안 읽는다 — **한 줄 목표 + 한 줄 이유**면 충분하다.
-        /// </summary>
-        void DrawFinalIntro(float s)
-        {
-            float f = director.finalIntro;
-            if (f <= 0.01f) return;
-
-            float a = Mathf.Clamp01(f / 6f);
-            a = Mathf.Min(1f, a * 2.2f);        // 뜰 때 빠르게, 사라질 때 천천히
-
-            Box(0, 0, Screen.width, Screen.height, new Color(0.4f, 0.05f, 0.1f, a * 0.20f));
-
-            float w = Mathf.Min(560f * s, Screen.width * 0.86f), h = 132f * s;
-            var r = new Rect(Screen.width * 0.5f - w * 0.5f, Screen.height * 0.30f, w, h);
-
-            Box(r, new Color(0.10f, 0.03f, 0.05f, a * 0.88f));
-            Frame(r, new Color(1f, 0.45f, 0.5f, a), 2f * s);
-
-            GUI.color = new Color(1f, 0.55f, 0.55f, a);
-            GUI.Label(new Rect(r.x, r.y + 10f * s, r.width, 34f * s), "계 류 됨", big);
-
-            GUI.color = new Color(1f, 0.92f, 0.9f, a);
-            GUI.Label(new Rect(r.x, r.y + 50f * s, r.width, 24f * s),
-                      "거대 잔해가 기지를 붙잡았다 — 계류 장치 4개", center);
-
-            GUI.color = new Color(1f, 0.75f, 0.55f, a);
-            GUI.Label(new Rect(r.x, r.y + 76f * s, r.width, 24f * s),
-                      "전부 끊어내기 전에는 떠날 수 없다", center);
-
-            GUI.color = new Color(0.75f, 0.85f, 1f, a * 0.9f);
-            GUI.Label(new Rect(r.x, r.y + 102f * s, r.width, 22f * s),
-                      "화살표를 따라가라 — 하나씩 끊을 때마다 부담도 준다", center);
-            GUI.color = Color.white;
-        }
-
-        void DrawBaseArrow(float s)
-        {
-            if (director.Travelling) return;      // 항행 중엔 화물·도킹 표시가 무의미하다
-            if (director.State != GameState.Field || cam == null) return;
-            if (director.CargoCount <= 0) return;      // 실은 게 없으면 굳이 안 가도 된다
-
-            Vector3 sp = cam.WorldToScreenPoint(Vector3.zero);
-            sp.y = Screen.height - sp.y;
-
-            float margin = 64f * s;
-            if (sp.z > 0f && sp.x > margin && sp.x < Screen.width - margin
-                          && sp.y > margin && sp.y < Screen.height - margin) return;
-
-            Vector2 center = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
-            Vector2 dir = new Vector2(sp.x, sp.y) - center;
-            if (sp.z < 0f) dir = -dir;
-            if (dir.sqrMagnitude < 0.01f) dir = Vector2.up;
-            dir.Normalize();
-
-            float rx = Screen.width * 0.5f - margin;
-            float ry = Screen.height * 0.5f - margin;
-            Vector2 at = center + dir * Mathf.Min(rx / Mathf.Max(0.001f, Mathf.Abs(dir.x)),
-                                                  ry / Mathf.Max(0.001f, Mathf.Abs(dir.y)));
-
-            // 가득 찼으면 더 강하게 재촉한다
-            var c = director.CargoRatio > 0.85f
-                ? new Color(1f, 0.55f, 0.4f, 0.55f + 0.45f * Mathf.Sin(Time.time * 7f))
-                : new Color(0.45f, 0.95f, 0.8f, 0.6f);
-
-            float len = 22f * s, thick = 5f * s;
-            float ang = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            ArrowBar(at, ang + 150f, len, thick, c);
-            ArrowBar(at, ang - 150f, len, thick, c);
-
-            GUI.color = c;
-            GUI.Label(new Rect(at.x - 50f * s, at.y + 14f * s, 100f * s, 20f * s), "모선", centerSmall);
-            GUI.color = Color.white;
         }
 
         /// <summary>

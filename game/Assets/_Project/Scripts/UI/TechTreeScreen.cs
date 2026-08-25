@@ -107,13 +107,15 @@ namespace SalvageRun.UI
         {
             if (!Open || content == null || content.techTree == null) return;
 
+            MetaSave.EnsureFreeNodes(content);
+
             float s = Mathf.Clamp(Screen.height / 720f, 0.75f, 2.2f);
             Styles(s);
 
             Box(new Rect(0, 0, Screen.width, Screen.height), new Color(0.02f, 0.025f, 0.05f, 0.97f));
 
             DrawHeader(s);
-            HandlePan();
+            HandlePan(56f * s);      // 머리말 아래에서만 끌린다
 
             Vector2 origin = new Vector2(Screen.width * 0.5f, Screen.height * 0.52f) + pan;
             float cell = CellBase * s;
@@ -134,30 +136,41 @@ namespace SalvageRun.UI
             Box(new Rect(0, 0, Screen.width, 56f * s), new Color(0.05f, 0.07f, 0.11f, 0.95f));
             GUI.Label(new Rect(20f * s, 12f * s, 400f * s, 32f * s), "정비소 — 영구 강화", title);
 
-            float x = Screen.width - 470f * s;
-            DrawMat(ref x, s, MatKind.Scrap, d.scrap);
-            DrawMat(ref x, s, MatKind.Circuit, d.circuit);
-            DrawMat(ref x, s, MatKind.Core, d.core);
+            // 🔴 6종이 되면서(2026-08-26) **가진 것만** 보여준다.
+            //    0을 다 깔면 머리말이 0으로 도배되고, 정작 가진 것이 안 읽힌다.
+            //    (첫 셋은 0이어도 보여준다 — 있어야 할 자리가 비면 사라진 줄 안다)
+            float x = Screen.width - 620f * s;
+            for (int i = 0; i < Mats.Count; i++)
+            {
+                var m = (MatKind)i;
+                if (i >= 3 && d.Mat(m) <= 0) continue;
+                DrawMat(ref x, s, m, d.Mat(m));
+            }
 
             GUI.Label(new Rect(20f * s, 34f * s, 700f * s, 20f * s),
-                "드래그 = 이동 · 클릭 = 강화 · T 또는 Esc = 닫기", small);
+                "드래그 = 이동 · 클릭 = 강화 · 연 무기를 다시 누르면 장착 · T/Esc = 닫기", small);
         }
 
         void DrawMat(ref float x, float s, MatKind m, int amount)
         {
             GUI.color = Mats.ColorOf(m);
-            GUI.Label(new Rect(x, 14f * s, 150f * s, 26f * s), $"{Mats.Name(m)}  {amount}", label);
+            GUI.Label(new Rect(x, 14f * s, 105f * s, 26f * s), $"{Mats.Name(m)} {amount}", label);
             GUI.color = Color.white;
-            x += 150f * s;
+            x += 105f * s;
         }
 
         // ---------------------------------------------------------------- 이동
 
-        void HandlePan()
+        void HandlePan(float topGuard)
         {
             var e = Event.current;
             if (e.type == EventType.MouseDown && e.button == 0)
             {
+                // 🔴 **머리말·우주선 줄에서는 이동이 안 걸린다.**
+                //    안 막으면 배를 고르려고 누른 것이 트리를 끌어 버린다 —
+                //    누르는 순간 화면이 통째로 미끄러지므로 "고장 났다"로 읽힌다.
+                if (e.mousePosition.y < topGuard) return;
+
                 dragging = true;
                 dragFrom = e.mousePosition;
                 panFrom = pan;
@@ -181,6 +194,75 @@ namespace SalvageRun.UI
 
         // ---------------------------------------------------------------- 선
 
+        /// <summary>노드가 화면에 어떻게 나오는가.</summary>
+        enum Vis
+        {
+            /// <summary>안 그린다. 여기 뭐가 있는지도 모른다</summary>
+            Hidden = 0,
+            /// <summary>이름 없이 흐린 칸만. **"이 앞에 뭔가 더 있다"**만 알려준다</summary>
+            Ghost,
+            /// <summary>제대로 보인다. 재화만 있으면 누를 수 있다</summary>
+            Open,
+        }
+
+        /// <summary>
+        /// 🔴 **안 열린 건 안 보인다 — 다만 한 칸 앞은 흐리게** (2026-08-26 사장님 지시).
+        ///
+        ///    · 찍었거나 · 선행을 전부 찍었으면 → `Open`
+        ///    · 선행이 **전부 `Open`**이지만 아직 안 찍었으면 → `Ghost` (한 칸 앞)
+        ///    · 그보다 멀면 → `Hidden`
+        ///
+        /// 🔴 잠긴 것을 전부 회색으로 펼쳐 보이던 것을 그만둔 이유:
+        ///    52칸이 한꺼번에 깔리면 **어디부터 봐야 할지 모른다.**
+        ///
+        ///    그렇다고 통째로 숨기면 **앞에 뭐가 있는지 몰라 아껴 둘 이유가 없어진다** —
+        ///    목표가 안 보이면 재화는 그냥 눈앞의 것에 다 쓰게 된다.
+        ///    한 칸만 흐리게 두는 게 둘 사이의 답이다: **길은 보이되 지도는 안 준다.**
+        /// </summary>
+        Vis VisOf(TechNodeDef n)
+        {
+            if (n == null) return Vis.Hidden;
+            if (MetaSave.Data.RankOf(n.id) > 0) return Vis.Open;
+            if (n.requires == null || n.requires.Length == 0) return Vis.Open;
+
+            bool allBought = true;
+            for (int i = 0; i < n.requires.Length; i++)
+            {
+                if (string.IsNullOrEmpty(n.requires[i])) continue;
+                if (MetaSave.Data.RankOf(n.requires[i]) <= 0) { allBought = false; break; }
+            }
+            if (allBought) return Vis.Open;
+
+            // 선행이 **보이기는 하는가** — 보이면 그 바로 다음 칸이므로 흐리게 보여준다
+            for (int i = 0; i < n.requires.Length; i++)
+            {
+                if (string.IsNullOrEmpty(n.requires[i])) continue;
+
+                var req = Find(n.requires[i]);
+                if (req == null) continue;
+                if (VisOfShallow(req) != Vis.Open) return Vis.Hidden;
+            }
+            return Vis.Ghost;
+        }
+
+        /// <summary>
+        /// `VisOf`가 자기를 다시 부르면 사슬이 길어질수록 비싸진다(그리고 순환하면 멈추지 않는다).
+        /// 한 단계만 본다 — 유령 판정에는 그것으로 충분하다.
+        /// </summary>
+        Vis VisOfShallow(TechNodeDef n)
+        {
+            if (n == null) return Vis.Hidden;
+            if (MetaSave.Data.RankOf(n.id) > 0) return Vis.Open;
+            if (n.requires == null || n.requires.Length == 0) return Vis.Open;
+
+            for (int i = 0; i < n.requires.Length; i++)
+            {
+                if (string.IsNullOrEmpty(n.requires[i])) continue;
+                if (MetaSave.Data.RankOf(n.requires[i]) <= 0) return Vis.Hidden;
+            }
+            return Vis.Open;
+        }
+
         void DrawLinks(Vector2 origin, float cell, float node, float s)
         {
             var tree = content.techTree;
@@ -198,12 +280,17 @@ namespace SalvageRun.UI
                     var req = Find(n.requires[r]);
                     if (req == null) continue;
 
+                    // 숨긴 노드로 가는 선은 안 그린다 — 안 그러면 허공으로 선이 뻗는다
+                    var vTo = VisOf(n);
+                    if (vTo == Vis.Hidden || VisOf(req) == Vis.Hidden) continue;
+
                     Vector2 from = PosOf(req, origin, cell);
 
                     bool reqDone = meta.RankOf(req.id) > 0;
                     bool bothDone = reqDone && meta.RankOf(n.id) > 0;
 
-                    Color c = bothDone ? new Color(0.55f, 0.85f, 1f, 0.75f)
+                    Color c = vTo == Vis.Ghost ? new Color(0.30f, 0.33f, 0.40f, 0.30f)
+                            : bothDone ? new Color(0.55f, 0.85f, 1f, 0.75f)
                             : reqDone  ? new Color(0.45f, 0.55f, 0.70f, 0.55f)
                                        : new Color(0.25f, 0.28f, 0.35f, 0.40f);
 
@@ -241,30 +328,54 @@ namespace SalvageRun.UI
 
                 if (r.yMax < 56f * s || r.yMin > Screen.height) continue;
 
+                var vis = VisOf(n);
+                if (vis == Vis.Hidden) continue;      // 🔴 멀리 있는 것은 **아예 안 보인다**
+
+                // 🔴 **한 칸 앞은 흐린 칸만.** 이름도 값도 안 준다 —
+                //    "이 앞에 뭔가 더 있다"만 알려주고 나머지는 찍어야 알 수 있다
+                if (vis == Vis.Ghost)
+                {
+                    Box(r, new Color(0.10f, 0.11f, 0.14f, 0.55f));
+                    Frame(r, new Color(0.28f, 0.31f, 0.38f, 0.35f), 1.2f * s);
+
+                    GUI.color = new Color(0.40f, 0.43f, 0.52f, 0.75f);
+                    GUI.Label(new Rect(r.x, r.y + r.height * 0.3f, r.width, 20f * s), "???", center);
+                    GUI.color = Color.white;
+                    continue;                          // 눌러도 안 되고 설명도 안 뜬다
+                }
+
                 int rank = meta.RankOf(n.id);
                 bool maxed = rank >= n.maxRank;
+
+                // 🔴 무기 노드는 상태가 셋이다 — 잠김 / 열림 / **장착 중**.
+                //    지금 무엇을 들고 나가는지가 트리에서 바로 보여야 한다
+                bool isWeapon = n.effect == TechEffect.UnlockWeapon;
+                bool wOpen = isWeapon && MetaSave.WeaponUnlocked(content, n.weapon);
+                bool equipped = wOpen && MetaSave.CurrentWeapon(content, n.weapon) == n.weapon;
+                if (wOpen) { rank = Mathf.Max(rank, 1); maxed = true; }
                 bool can = MetaSave.CanBuy(n, content, out string why);
-                bool locked = !can && !maxed && why == "선행 필요";
+                // ⬜ "선행 필요"로 잠긴 상태는 이제 화면에 안 온다 — `VisOf`가 걸러낸다.
+                //    남은 잠김은 **재화 부족**뿐이라 따로 어둡게 칠하지 않는다.
 
                 Color bc = BranchColor(n.branch);
 
                 // 배경 — 상태가 한눈에 갈려야 한다
                 Color fill = maxed ? new Color(bc.r * 0.42f, bc.g * 0.42f, bc.b * 0.42f, 0.95f)
                            : rank > 0 ? new Color(bc.r * 0.30f, bc.g * 0.30f, bc.b * 0.30f, 0.92f)
-                           : locked ? new Color(0.09f, 0.10f, 0.13f, 0.92f)
                            : new Color(0.14f, 0.16f, 0.21f, 0.94f);
 
                 Box(r, fill);
 
                 // 테두리 — 찍은 것은 밝게, 지금 살 수 있는 것은 흰 테두리
-                Color edge = maxed ? bc
+                Color edge = equipped ? Color.white
+                           : maxed ? bc
                            : can ? Color.white
                            : rank > 0 ? new Color(bc.r, bc.g, bc.b, 0.7f)
                            : new Color(0.3f, 0.33f, 0.4f, 0.8f);
-                Frame(r, edge, (can || maxed) ? 2.5f * s : 1.5f * s);
+                Frame(r, edge, equipped ? 3.5f * s : (can || maxed) ? 2.5f * s : 1.5f * s);
 
                 // 이름
-                GUI.color = locked ? new Color(0.45f, 0.47f, 0.55f) : Color.white;
+                GUI.color = Color.white;
                 GUI.Label(new Rect(r.x + 3f * s, r.y + 5f * s, r.width - 6f * s, r.height * 0.55f),
                     n.title, center);
                 GUI.color = Color.white;
@@ -275,6 +386,15 @@ namespace SalvageRun.UI
                     GUI.color = maxed ? bc : new Color(0.7f, 0.75f, 0.85f);
                     GUI.Label(new Rect(r.x, r.yMax - 18f * s, r.width, 16f * s),
                         $"{rank}/{n.maxRank}", center);
+                    GUI.color = Color.white;
+                }
+                else if (isWeapon)
+                {
+                    GUI.color = equipped ? new Color(0.7f, 1f, 0.85f)
+                              : wOpen ? new Color(0.72f, 0.78f, 0.9f)
+                                      : new Color(0.62f, 0.55f, 0.45f);
+                    GUI.Label(new Rect(r.x, r.yMax - 18f * s, r.width, 16f * s),
+                              equipped ? "장착 중" : wOpen ? "누르면 장착" : "열기", center);
                     GUI.color = Color.white;
                 }
                 else if (rank > 0)
@@ -305,6 +425,17 @@ namespace SalvageRun.UI
 
         void TryBuy(TechNodeDef n, bool can, bool maxed, string why)
         {
+            // 🔴 **연 무기를 다시 누르면 그걸 골라 든다** (2026-08-23).
+            //    여는 것과 고르는 것을 같은 노드에서 한다 — 화면을 하나 더 만들지 않으려는 것이다.
+            //    그래서 무기 노드는 "이미 최대다"로 튕기지 않는다.
+            if (n.effect == TechEffect.UnlockWeapon
+                && MetaSave.WeaponUnlocked(content, n.weapon))
+            {
+                MetaSave.SelectWeapon(content, n.weapon);
+                Flash($"{Weapons.Name(n.weapon)} 장착", BranchColor(n.branch));
+                return;
+            }
+
             if (maxed) { Flash("이미 최대다", new Color(0.7f, 0.75f, 0.85f)); return; }
             if (!can) { Flash(why ?? "아직 안 된다", new Color(1f, 0.55f, 0.45f)); return; }
 
@@ -377,13 +508,8 @@ namespace SalvageRun.UI
             CostLine(r, ref ty, s, MatKind.Circuit, n.CostAt(MatKind.Circuit, next), meta.circuit);
             CostLine(r, ref ty, s, MatKind.Core, n.CostAt(MatKind.Core, next), meta.core);
 
-            if (!MetaSave.CanBuy(n, content, out string why) && why == "선행 필요")
-            {
-                GUI.color = new Color(1f, 0.6f, 0.5f);
-                GUI.Label(new Rect(r.x + 10f * s, ty, w - 20f * s, 20f * s),
-                    "선행 노드를 먼저 찍어야 한다", small);
-                GUI.color = Color.white;
-            }
+            // ⬜ "선행 노드를 먼저 찍어야 한다" 줄이 있었다. 안 열린 노드는 이제
+            //    화면에 안 나오므로(`VisOf`) 그 안내를 볼 일 자체가 없다.
         }
 
         void CostLine(Rect r, ref float ty, float s, MatKind m, int cost, int have)

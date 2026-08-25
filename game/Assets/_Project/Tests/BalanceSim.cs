@@ -183,22 +183,22 @@ namespace SalvageRun.Tests
                 {
                     yield return RunWith(a, b, director.ComboLevel);
 
-                    // 🔴 입금한 것만 센다. 싣고만 있던 화물은 아무 일도 하지 않았다
-                    int dep = director.DepositedTotal;
+                    // 🔴 rev.12: 주운 것이 곧 성과다. 입금이라는 단계가 없어졌다
+                    int dep = director.RunCollected;
                     depSum += dep;
                     depMin = Mathf.Min(depMin, dep);
                     depMax = Mathf.Max(depMax, dep);
 
-                    lvSum += director.Level;
+                    lvSum += director.BankedCount;
                     wreckSum += director.WreckCount;
                     if (director.Cleared) cleared++;
 
-                    // 🔴 rev.10: 지는 조건은 **기지 연료 고갈**이다
-                    var hb = director.homeBase;
-                    if (hb != null)
+                    // 🔴 rev.12: 지는 조건은 **우주선 연료 고갈**이다 (= 연료가 체력)
+                    var sh0 = director.ship;
+                    if (sh0 != null)
                     {
-                        if (!hb.Destroyed) baseAlive++;
-                        hpSum += hb.FuelRatio * 100f;
+                        if (!sh0.OutOfFuel) baseAlive++;
+                        hpSum += (sh0.FuelMax > 0f ? sh0.Fuel / sh0.FuelMax : 0f) * 100f;
                     }
 
                     director.BackToReady();
@@ -252,25 +252,20 @@ namespace SalvageRun.Tests
                 for (int i = 0; i < f.Fragments.Count; i++) if (f.Fragments[i].Alive) frag++;
             }
 
-            var hb = director.homeBase;
             var sh = director.ship;
 
             var st = director.Stats;
-            return $"{Pad(label, 7)} t={director.RunTime,6:0.0} Lv={director.Level,2} " +
-                   $"주움={director.RunCollected,5} 입금={director.DepositedTotal,5} " +
-                   $"화물={director.CargoCount,4} 격침={director.WreckCount} " +
-                   $"기지연료={(hb != null ? hb.FuelRatio * 100f : -1f),4:0}% " +
+            return $"{Pad(label, 7)} t={director.RunTime,6:0.0} 짐={director.TowedCount,2} " +
+                   $"주움={director.RunCollected,5} 크레딧={director.RunValue,6} " +
                    $"배켜짐={(sh != null && sh.gameObject.activeSelf ? "O" : "X")} " +
                    $"연료={(sh != null ? sh.Fuel : -1f),5:0} " +
                    $"쓰레기={junk,4} 파편={frag,4} 웨이브={director.Wave,2} " +
                    $"상태={director.State} 국면={director.Phase} " +
                    $"힘={(st != null ? st.powerMul : -1f):0.00} 사거리={(st != null ? st.rangeMul : -1f):0.00} " +
                    $"쿨={(st != null ? st.cooldownMul : -1f):0.00} 사거리제약={BossBehaviour.RangeChoke:0.00} " +
-                   $"날Lv={(st != null ? st.LevelOf(WeaponKind.Blade) : -1)} " +
-                   $"기지까지={(sh != null ? ((Vector2)sh.transform.position).magnitude : -1f),6:0.0} " +
-                   $"도킹={(director.AtBase ? "O" : "X")} 입금중={(director.Depositing ? "O" : "X")} " +
-                   $"속도={(sh != null ? sh.Velocity.magnitude : -1f),5:0.0} " +
-                   $"무게={director.CargoWeightMul:0.00}";
+                   $"원반Lv={(st != null ? st.LevelOf(WeaponKind.Discus) : -1)} " +
+                   $"모선까지={(sh != null ? ((Vector2)sh.transform.position).magnitude : -1f),6:0.0} " +
+                   $"속도={(sh != null ? sh.Velocity.magnitude : -1f),5:0.0}";
         }
 
         // ==============================================================================
@@ -307,25 +302,25 @@ namespace SalvageRun.Tests
             t.AppendLine("       " + Snapshot("A 전"));
 
             trace = t;
-            yield return RunWith(WeaponKind.Blade, WeaponKind.Vortex, director.ComboLevel);
+            yield return RunWith(WeaponKind.Discus, WeaponKind.Harpoon, director.ComboLevel);
             trace = null;
-            a = (director.RunTime, director.Level, director.RunCollected, director.RunValue);
+            a = (director.RunTime, director.BankedCount, director.RunCollected, director.RunValue);
             t.AppendLine("       " + Snapshot("A 후"));
             director.BackToReady();
             yield return null;
 
             // 사이에 전혀 다른 조합을 한 번 돌린다
             t.AppendLine("       " + Snapshot("끼움 전"));
-            yield return RunWith(WeaponKind.Bomb, WeaponKind.Mine, director.ComboLevel);
+            yield return RunWith(WeaponKind.Harpoon, WeaponKind.Arc, director.ComboLevel);
             t.AppendLine("       " + Snapshot("끼움 후"));
             director.BackToReady();
             yield return null;
 
             t.AppendLine("       " + Snapshot("B 전"));
             trace = t;
-            yield return RunWith(WeaponKind.Blade, WeaponKind.Vortex, director.ComboLevel);
+            yield return RunWith(WeaponKind.Discus, WeaponKind.Harpoon, director.ComboLevel);
             trace = null;
-            b = (director.RunTime, director.Level, director.RunCollected, director.RunValue);
+            b = (director.RunTime, director.BankedCount, director.RunCollected, director.RunValue);
             t.AppendLine("       " + Snapshot("B 후"));
             director.BackToReady();
             yield return null;
@@ -395,7 +390,7 @@ namespace SalvageRun.Tests
 
                 // 🔴 두 번째 무기를 고정해야 **배의 차이만** 남는다.
                 //    절단날은 근접 상시라 어느 배와도 붙어서 기준선으로 쓰기 좋다.
-                var second = ship.startingWeapon == WeaponKind.Blade ? WeaponKind.Harpoon : WeaponKind.Blade;
+                var second = ship.startingWeapon == WeaponKind.Harpoon ? WeaponKind.Discus : WeaponKind.Harpoon;
 
                 UnlockAndSelect(ship);
                 yield return RunWith(ship.startingWeapon, second, director.ComboLevel);
@@ -405,10 +400,10 @@ namespace SalvageRun.Tests
 
                 t.AppendLine(
                     $"{Pad(ship.displayName, 19)} | {Pad(Weapons.Name(ship.startingWeapon), 14)} | " +
-                    $"{director.RunTime,5:0.0}s | {director.Level,2} | {director.RunCollected,4} | " +
-                    $"{director.RunValue,6} | {director.ContactHits,4} | {perMin,8:0}");
+                    $"{director.RunTime,5:0.0}s | {director.BankedCount,2} | {director.RunCollected,4} | " +
+                    $"{director.RunValue,6} | {director.FuelRecovered,4:0} | {perMin,8:0}");
 
-                rows.Add((ship.displayName, perMin, director.RunTime, director.Level));
+                rows.Add((ship.displayName, perMin, director.RunTime, director.BankedCount));
 
                 director.BackToReady();
                 yield return null;
@@ -438,7 +433,7 @@ namespace SalvageRun.Tests
             //    "첫 레벨업까지 몇 초"가 이 측정의 핵심이기 때문이다.
             director.StartRun(0);
             var marks = new List<(int level, float at)>();
-            int lastLevel = director.Level;
+            int lastLevel = director.TowedCount;
 
             var f = director.field;
             for (int i = 0; i < f.MatsThisRun.Length; i++) f.MatsThisRun[i] = 0;
@@ -450,11 +445,10 @@ namespace SalvageRun.Tests
             {
                 DriveBot(ship);
 
-                if (director.State == GameState.Drafting) director.ChooseCard(0);
 
-                if (director.Level != lastLevel)
+                if (director.TowedCount != lastLevel)
                 {
-                    lastLevel = director.Level;
+                    lastLevel = director.TowedCount;
                     if (marks.Count < 12) marks.Add((lastLevel, director.RunTime));
                 }
 
@@ -472,7 +466,7 @@ namespace SalvageRun.Tests
                 t.AppendLine($"  → 첫 레벨업까지 {marks[0].at:0.0}초");
 
             t.AppendLine();
-            t.AppendLine($"런 결과: {director.RunTime:0.0}초 · Lv.{director.Level} · " +
+            t.AppendLine($"런 결과: {director.RunTime:0.0}초 · 가져옴 {director.BankedCount} · " +
                          $"파편 {director.RunCollected} · 크레딧 {director.RunValue}");
 
             t.AppendLine();
@@ -505,7 +499,7 @@ namespace SalvageRun.Tests
         /// </summary>
         IEnumerator Warmup()
         {
-            yield return RunWith(WeaponKind.Blade, WeaponKind.Harpoon, 3, 900);
+            yield return RunWith(WeaponKind.Discus, WeaponKind.Harpoon, 3, 900);
             director.BackToReady();
             yield return null;
         }
@@ -513,7 +507,7 @@ namespace SalvageRun.Tests
         /// <summary>이 조합을 만들 수 있는 무기 한 쌍을 찾는다.</summary>
         bool PickPairFor(ComboDef combo, out WeaponKind a, out WeaponKind b)
         {
-            a = WeaponKind.Blade; b = WeaponKind.Blade;
+            a = WeaponKind.Discus; b = WeaponKind.Discus;
 
             var weapons = director.content.weapons;
             if (weapons == null) return false;
@@ -570,7 +564,6 @@ namespace SalvageRun.Tests
                 DriveBot(ship);
 
                 // 레벨업이 뜨면 첫 장을 고른다. 무기는 이미 줬으므로 강화만 쌓인다
-                if (director.State == GameState.Drafting) director.ChooseCard(0);
 
                 frames++;
 
@@ -583,12 +576,10 @@ namespace SalvageRun.Tests
 
             if (frames >= maxFrames)
             {
-                // 🔴 rev.7에서 시간 초과는 **실패가 아니라 결과다.**
-                //    지는 조건이 기지 상실이므로, 안 끝났다는 건 **기지를 지켜냈다**는 뜻이다.
-                //    예전 문구("연료가 안 닳는 조합")는 생존 게임 시절의 해석이라 지웠다.
-                var hb = director.homeBase;
-                Debug.Log($"[SIM] {(maxFrames * StepSeconds):0}초 완주 — 기지 연료 " +
-                          $"{(hb != null ? hb.FuelRatio * 100f : 0f):0}% (버텨냈다는 뜻이다)");
+                // 🔴 시간 초과는 **실패가 아니라 결과다** — 끝까지 살아남았다는 뜻이다.
+                var sh2 = director.ship;
+                Debug.Log($"[SIM] {(maxFrames * StepSeconds):0}초 완주 — 남은 연료 " +
+                          $"{(sh2 != null && sh2.FuelMax > 0f ? sh2.Fuel / sh2.FuelMax * 100f : 0f):0}%");
                 director.ReturnNow();
                 yield return null;
             }
@@ -602,7 +593,11 @@ namespace SalvageRun.Tests
         /// </summary>
         void DriveBot(ShipController ship) => AutoPilot.Drive(director, ship);
 
-        void ClearBot(ShipController ship) => AutoPilot.Release(ship);
+        void ClearBot(ShipController ship)
+        {
+            AutoPilot.Release(ship);
+            AutoPilot.ClearCollect(director);
+        }
 
         /// <summary>
         /// 🔴 밸런스에서 중요한 건 평균이 아니라 **격차**다.

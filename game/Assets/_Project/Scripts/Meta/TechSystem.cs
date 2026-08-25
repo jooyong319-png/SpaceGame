@@ -36,15 +36,39 @@ namespace SalvageRun.Meta
         public float bossDamageMul;       // 보스에게 주는 추가 피해
 
         // ---- 영구 강화(테크트리)가 채우는 무기 보너스 ----
-        // 🔴 무기 '종류'가 아니라 **패턴**에 붙인다. 무기를 20종으로 늘려도
-        //    노드를 다시 쓰지 않아도 되기 때문이다.
-        public int orbitCountBonus;        // 궤도체 +N (절단날 · 방벽)
-        public int projectileCountBonus;   // 발사체 +N (작살 · 원반)
-        public int blastCountBonus;        // 폭발물 +N (폭탄 · 지뢰)
+        // ⬜ **패턴 단위** 보너스. 무기가 셋으로 줄고 무기마다 제 가지를 타게 되면서
+        //    거의 안 쓴다. 남은 것은 아래 무기별 배열이 대신한다.
+        public int projectileCountBonus;   // 발사체 +N (작살 · 원반 공통)
         public int chainTargetBonus;       // 연쇄 대상 +N (방전)
         public int pierceBonus;            // 관통 +N
-        public float orbitSpinMul = 1f;    // 궤도 회전 속도
         public float orbitRadiusMul = 1f;  // 궤도 반경
+
+        // ---- 🔴 무기별 보너스 (2026-08-23) ----
+        //
+        // 🔴 사장님 지시: *"무기는 따로따로 테크트리 타지게 하자."*
+        //
+        //    전에는 보너스가 **패턴 단위**였다. 그래서 "작살 발사 수 +1"이
+        //    같은 패턴을 쓰는 **원반까지 같이** 올렸다 — 무기마다 다른 길을 타게 하려면
+        //    그 구조로는 안 된다. 무기 하나를 키우면 다른 무기도 같이 커지므로
+        //    **가지를 나눈 의미가 없어진다.**
+        //
+        //    그래서 무기 종류마다 칸을 따로 둔다. `TechNodeDef.weapon`이 어느 칸인지 정한다.
+        public readonly float[] wPower    = Filled(1f);   // 무기별 피해 배수
+        public readonly float[] wRange    = Filled(1f);   // 무기별 사거리 배수
+        public readonly float[] wCooldown = Filled(1f);   // 무기별 쿨다운 배수 (작을수록 빠름)
+        public readonly int[]   wCount    = new int[Weapons.Count];   // 무기별 발사 수 · 연쇄 대상 +N
+        public readonly int[]   wPierce   = new int[Weapons.Count];   // 무기별 관통 +N
+
+        static float[] Filled(float v)
+        {
+            var a = new float[Weapons.Count];
+            for (int i = 0; i < a.Length; i++) a[i] = v;
+            return a;
+        }
+
+        public float PowerOf(WeaponKind k)    => powerMul * wPower[(int)k];
+        public float RangeOf(WeaponKind k)    => rangeMul * wRange[(int)k];
+        public float CooldownOf(WeaponKind k) => cooldownMul * wCooldown[(int)k];
 
         // ---- 배 ----
         public float fuelMax;
@@ -66,7 +90,16 @@ namespace SalvageRun.Meta
 
         public float intakeMul = 1f;
         public float valueMultiplier = 1f;
-        public float xpMultiplier = 1f;
+        public float xpMultiplier = 1f;   // ⬜ 레벨업이 없다 (2026-08-26). 읽는 곳 없음
+
+        /// <summary>🔴 끌 때 덜 무거워지는 정도. `RunDirector.TowWeightMul`이 읽는다.</summary>
+        public float towWeightMul = 1f;
+
+        /// <summary>🔴 끌 수 있는 개수 +N. `RunDirector.ShipTow`가 읽는다.</summary>
+        public int towCapacityBonus;
+
+        /// <summary>🔴 회수 드론 대수. `RunDirector.SyncDrones`가 읽는다.</summary>
+        public int carrierDrones;
         public float refinePerCollect;
 
         // ---- 카드 ----
@@ -183,14 +216,21 @@ namespace SalvageRun.Meta
             // 🔴 그다음 우주선. 테크는 **더하기**, 우주선은 **곱하기**로 준다 —
             //    순서가 반대면 우주선 배수가 테크 보너스를 못 받아
             //    "테크를 올릴수록 배 차이가 줄어드는" 이상한 곡선이 된다.
+            // 공짜 노드를 먼저 채워 둔다 — 안 그러면 첫 무기조차 안 열린 것으로 읽힌다
+            MetaSave.EnsureFreeNodes(content);
+
             var ship = MetaSave.CurrentShip(content);
             ApplyShip(s, ship);
 
-            // 🔴 시작 무기는 **우주선이 정한다.** 무기를 둘만 갖는 구조라
-            //    이 한 줄이 그 판 조합의 절반을 결정한다.
-            //    두 번째 무기는 런 중에 카드로 **얻어야** 한다 — 그게 이 게임의 첫 갈림길이다.
-            var start = ship != null ? ship.startingWeapon : cfg.startingWeapon;
-            s.AddWeapon(start, 1 + s.startWeaponLevel);
+            // 🔴 **시작 무기는 테크트리에서 고른다** (2026-08-23).
+            //    예전에는 우주선이 정했다. 이제 무기가 트리 노드라
+            //    "강화를 살까, 무기를 열까"가 같은 저울에 오른다.
+            //
+            //    ⚠️ 못 고른 경우(트리를 한 번도 안 연 사람)에도 **반드시 하나는 들려야 한다** —
+            //       무기가 없으면 아무것도 못 하고 3분을 구경만 한다.
+            //       그래서 `CurrentWeapon`이 열린 것 중 첫 번째로, 그것도 없으면 여기 값으로 되돌린다.
+            var fallback = ship != null ? ship.startingWeapon : cfg.startingWeapon;
+            s.AddWeapon(MetaSave.CurrentWeapon(content, fallback), 1 + s.startWeaponLevel);
             return s;
         }
 
@@ -252,20 +292,22 @@ namespace SalvageRun.Meta
                     case TechEffect.WeaponCooldown: s.cooldownMul *= Mathf.Pow(1f - n.value, rank); break;
                     case TechEffect.BossDamage:     s.bossDamageMul += v; break;
 
-                    // 무기 패턴
-                    case TechEffect.BladeCount:     s.orbitCountBonus += Mathf.RoundToInt(v); break;
-                    case TechEffect.BladeSpin:      s.orbitSpinMul += v; break;
-                    case TechEffect.HarpoonCount:   s.projectileCountBonus += Mathf.RoundToInt(v); break;
-                    case TechEffect.HarpoonPierce:  s.pierceBonus += Mathf.RoundToInt(v); break;
-                    case TechEffect.BombCount:      s.blastCountBonus += Mathf.RoundToInt(v); break;
-                    case TechEffect.ArcTargets:     s.chainTargetBonus += Mathf.RoundToInt(v); break;
-                    case TechEffect.BombRadius:
-                    case TechEffect.VortexRadius:
-                    case TechEffect.ArcRange:       s.rangeMul += v * 0.5f; break;
-                    case TechEffect.VortexDamage:   s.powerMul += v * 0.5f; break;
+                    // 🔴 무기별 — `n.weapon`이 가리키는 한 무기에만 붙는다
+                    case TechEffect.WeaponPowerOne:    s.wPower[(int)n.weapon] += v; break;
+                    case TechEffect.WeaponRangeOne:    s.wRange[(int)n.weapon] += v; break;
+                    case TechEffect.WeaponCooldownOne:
+                        s.wCooldown[(int)n.weapon] *= Mathf.Pow(1f - n.value, rank); break;
+                    case TechEffect.WeaponCountOne:    s.wCount[(int)n.weapon] += Mathf.RoundToInt(v); break;
+                    case TechEffect.WeaponPierceOne:   s.wPierce[(int)n.weapon] += Mathf.RoundToInt(v); break;
+
+                    // ⬜ 무기를 여는 노드는 스탯을 안 바꾼다 (`MetaSave.CurrentWeapon`이 읽는다)
+                    case TechEffect.UnlockWeapon:      break;
 
                     // 수집 · 경제
                     case TechEffect.IntakeRadius:   s.intakeMul += v; break;
+                    case TechEffect.TowWeight:      s.towWeightMul += v; break;
+                    case TechEffect.TowCapacity:    s.towCapacityBonus += Mathf.RoundToInt(v); break;
+                    case TechEffect.CarrierDrone:   s.carrierDrones += Mathf.RoundToInt(v); break;
                     case TechEffect.ValueMul:       s.valueMultiplier += v; break;
                     case TechEffect.XpMul:          s.xpMultiplier += v; break;
                     case TechEffect.RefineOnCollect:s.refinePerCollect += v; break;
@@ -307,13 +349,14 @@ namespace SalvageRun.Meta
                 case CardEffect.FuelMax:         s.fuelMax += card.value; break;
                 case CardEffect.Thrust:          s.thrustForce += card.value; break;
 
-                // 🔴 무기 패턴별 강화 — 영구 강화(테크트리)와 같은 값을 쓴다
-                case CardEffect.OrbitCount:      s.orbitCountBonus += Mathf.RoundToInt(card.value); break;
-                case CardEffect.OrbitSpin:       s.orbitSpinMul += card.value; break;
+                // ⬜ 무기 패턴별 강화. 카드 뽑기를 없애서(2026-08-23) **부르는 곳이 없다.**
+                //    궤도·폭발 계열은 스탯 자체가 사라져 조용히 버린다.
+                case CardEffect.OrbitCount:
+                case CardEffect.OrbitSpin:
+                case CardEffect.BlastCount:      break;
                 case CardEffect.OrbitRadius:     s.orbitRadiusMul += card.value; break;
                 case CardEffect.ProjectileCount: s.projectileCountBonus += Mathf.RoundToInt(card.value); break;
                 case CardEffect.PierceBonus:     s.pierceBonus += Mathf.RoundToInt(card.value); break;
-                case CardEffect.BlastCount:      s.blastCountBonus += Mathf.RoundToInt(card.value); break;
                 case CardEffect.ChainTargets:    s.chainTargetBonus += Mathf.RoundToInt(card.value); break;
 
                 // 🔴 단발성 — 즉시 켜진다. 영구값을 안 건드린다

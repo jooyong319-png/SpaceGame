@@ -32,7 +32,10 @@ namespace SalvageRun.Data
         public float dashFuelCost = 0f;   // 연료는 HP다 — 대시에 비용을 물리지 않는다
 
         [Header("연료")]
-        public float fuelMax = 180f;
+        // 🔴 **180 → 100** (2026-08-26 · Space Rock Breaker 방향).
+        //    100 ÷ 2.5 = **40초.** 처음엔 답답한 게 맞다 —
+        //    선체 가지를 타면 늘어나고, 그 늘어나는 게 곧 성장의 체감이다.
+        public float fuelMax = 100f;
 
         [Tooltip("🔴 가만히 있어도 나가는 초당 소모(생명유지). 이게 0이면 정지가 최적 전략이 된다")]
         public float idleBurnPerSecond = 1.4f;
@@ -43,7 +46,7 @@ namespace SalvageRun.Data
         [Header("무기 — 🔴 뱀서와 다른 지점")]
         [Tooltip("⚠️ 대비책일 뿐이다. 실제 시작 무기는 **우주선**이 정한다 (ShipDef.startingWeapon). " +
                  "우주선 데이터가 없을 때만 이 값이 쓰인다")]
-        public WeaponKind startingWeapon = WeaponKind.Blade;
+        public WeaponKind startingWeapon = WeaponKind.Harpoon;
 
         [Tooltip("🔴 한 런에 가질 수 있는 무기 수. **2다.** " +
                  "뱀서는 6개를 넓게 모으지만 이 게임은 둘을 깊게 판다 — " +
@@ -65,7 +68,15 @@ namespace SalvageRun.Data
         /// 🔴 **무게 반감점.** 이만큼 끌면 속도 저하가 절반쯤 진행된다.
         ///    작을수록 금방 무거워진다 — 이 값 하나가 "얼마나 욕심낼 수 있나"를 정한다.
         /// </summary>
+        // ⬜ 점근선 방식에서 쓰던 값. 2026-08-26에 무게를 **삼각수**로 바꾸면서 안 읽는다.
         public float towWeightHalf = 14f;
+
+        /// <summary>
+        /// 🔴 **끌 수 있는 개수.** Dome Keeper의 "줄이 6블록 넘으면 끊긴다"를 옮긴 것이다.
+        ///    넘으면 맨 앞이 밀려 떨어진다 — 그래서 **무엇을 밟느냐가 곧 무엇을 버리느냐**다.
+        ///    정비소에서 늘릴 수 있다 (`TechEffect.TowCapacity`).
+        /// </summary>
+        public int towCapacity = 6;
 
         /// <summary>
         /// 🔴 항행 한 구간에 걸리는 시간(초). **이 시간이 곧 거리다.**
@@ -95,11 +106,31 @@ namespace SalvageRun.Data
 
         /// <summary>기지 연료 최대치 (= 기지 HP). 0이 되면 패배.</summary>
         /// <summary>
-        /// 🔴 추진 중 초당 연료 소모 (rev.10). 연료는 이제 **오직 이동 비용**이다.
-        ///    이 값과 `fuelMax`가 **한 번 나갔을 때 얼마나 멀리 갈 수 있는가**를 정한다 —
-        ///    즉 밭을 얼마나 멀리까지 고를 수 있는지가 여기서 나온다.
+        /// ⬜ **더 이상 안 읽는다** (2026-08-23). 연료가 타이머가 되면서
+        ///    행동에 값을 매기는 것을 전부 뺐다 — `idleFuelPerSecond` 하나만 남았다.
+        ///    지우지 않은 이유: 되돌릴 여지가 아직 닫히지 않았다.
         /// </summary>
-        public float thrustFuelPerSecond = 4.5f;
+        public float thrustFuelPerSecond = 2.0f;
+
+        /// <summary>
+        /// 🔴 **초당 연료 감소 = 이 게임의 타이머.**
+        ///
+        ///    (2026-08-23 사장님: *"연료는 자동으로 닳게 해줘, 타이머 개념인거지"*)
+        ///
+        ///    🔴 **1.0 → 2.5로 올렸다** (2026-08-26 사장님: *"연료의 효율을 확 낮춰"*).
+        ///
+        ///    카드 뽑기가 없어지면서 **한 판이 하는 일이 "재화 벌어 오기" 하나**가 됐다.
+        ///    판 안에서는 아무것도 안 변하므로 **길어봐야 같은 30초의 반복**이다 —
+        ///    재밌는 것은 전부 정비소에 있고, 판은 거기로 돌아가는 통로다.
+        ///    그러면 통로는 **짧고 자주**여야 한다.
+        ///
+        ///    한 판 기본 길이 = `fuelMax`(180) ÷ 2.5 = **72초.**
+        ///    늘리는 방법은 **떨어진 연료통(+55)** 하나뿐이다.
+        ///
+        ///    ⚠️ 이제 **연료 숫자 = 남은 초가 아니다** (2.5초어치가 1로 표시된다).
+        ///       그래서 HUD가 바 옆에 남은 시간을 따로 계산해 쓴다 — 거기만 보면 된다.
+        /// </summary>
+        public float idleFuelPerSecond = 2.5f;
 
         public float baseFuelMax = 1000f;
 
@@ -144,10 +175,14 @@ namespace SalvageRun.Data
         /// </summary>
         public float wreckSpillRatio = 0.6f;
 
-        public float magnetRadius = 8f;
+        // ⬜ **자석을 없앴다** (2026-08-26). 읽는 곳이 없다 —
+        //    `RunDirector.CollectByTouch`가 `intakeRadius`만 쓴다.
+        public float magnetRadius = 2.6f;
         public float magnetPull = 26f;
         [Tooltip("배 중심에서 이 거리 안에 들어오면 흡수된다")]
-        public float intakeRadius = 1.0f;
+        // 🔴 **닿는 거리.** 자석이 없어진 뒤로 이 값이 곧 "줍는 반경"이다.
+        //    배 반경보다 조금 크게 둔다 — 정확히 겹쳐야만 주워지면 조작이 신경질적이 된다.
+        public float intakeRadius = 1.35f;
 
         [Header("회전 절단날 (기본 무기)")]
         [Tooltip("날 개수. 카드로 늘어난다")]

@@ -48,10 +48,26 @@ namespace SalvageRun.Meta
         /// <summary>지금 고른 배. 비어 있으면 첫 배.</summary>
         public string selectedShip = "";
 
+        /// <summary>
+        /// 🔴 지금 들고 시작할 무기 (`WeaponKind`의 정수값). -1이면 아직 안 골랐다.
+        ///    2026-08-23부터 무기는 **테크트리 노드**로 열고 고른다.
+        ///    ⚠️ 이름이 아니라 정수로 저장하므로, `WeaponKind`의 순서를 바꾸면
+        ///       저장된 값이 다른 무기를 가리킨다. 순서는 함부로 안 바꾼다.
+        /// </summary>
+        public int selectedWeapon = -1;
+
         // ---- 영구 재화 ----
+        //
+        // 🔴 **배열이 아니라 개별 필드로 둔다** (2026-08-26에 3종 → 6종으로 늘리며 확인).
+        //    배열로 바꾸면 이미 저장된 파일을 옮겨 심어야 하는데, 그 마이그레이션이
+        //    조용히 틀리면 **사장님 재화가 사라진다.** 필드를 늘리는 쪽은
+        //    JsonUtility가 없는 필드를 0으로 두므로 옛 저장이 그대로 열린다.
         public int scrap;
         public int circuit;
         public int core;
+        public int alloy;
+        public int crystal;
+        public int isotope;
 
         /// <summary>
         /// 🔴 테크 노드는 **여러 번 찍을 수 있으므로** 목록이 아니라 랭크를 저장한다.
@@ -80,13 +96,31 @@ namespace SalvageRun.Meta
         public bool HasShip(string id)
             => !string.IsNullOrEmpty(id) && unlockedShips != null && unlockedShips.Contains(id);
 
-        public int Mat(MatKind m) => m == MatKind.Scrap ? scrap : m == MatKind.Circuit ? circuit : core;
+        public int Mat(MatKind m)
+        {
+            switch (m)
+            {
+                case MatKind.Scrap:   return scrap;
+                case MatKind.Circuit: return circuit;
+                case MatKind.Core:    return core;
+                case MatKind.Alloy:   return alloy;
+                case MatKind.Crystal: return crystal;
+                case MatKind.Isotope: return isotope;
+            }
+            return 0;
+        }
 
         public void AddMat(MatKind m, int n)
         {
-            if (m == MatKind.Scrap) scrap += n;
-            else if (m == MatKind.Circuit) circuit += n;
-            else core += n;
+            switch (m)
+            {
+                case MatKind.Scrap:   scrap += n;   break;
+                case MatKind.Circuit: circuit += n; break;
+                case MatKind.Core:    core += n;    break;
+                case MatKind.Alloy:   alloy += n;   break;
+                case MatKind.Crystal: crystal += n; break;
+                case MatKind.Isotope: isotope += n; break;
+            }
         }
     }
 
@@ -212,6 +246,85 @@ namespace SalvageRun.Meta
             return true;
         }
 
+        /// <summary>
+        /// 🔴 **공짜이고 선행도 없는 노드는 저절로 찍힌다.**
+        ///
+        ///    그런 노드는 "살까 말까"가 아니다 — 누구나 즉시 누를 수 있으므로
+        ///    안 누를 이유가 없고, 안 누르면 **그 아래가 통째로 잠겨 보인다.**
+        ///    (뿌리와 첫 무기가 그렇다. 첫 무기를 안 찍으면 무기 가지가 다 안 보인다)
+        ///
+        ///    랭크를 실제로 채워 두면 `RankOf`를 보는 모든 곳이 한 가지로 답한다 —
+        ///    "여긴 공짜니까 사실 열린 거야" 같은 예외를 화면마다 따로 둘 필요가 없다.
+        /// </summary>
+        public static void EnsureFreeNodes(GameContent content)
+        {
+            if (content == null || content.techTree == null) return;
+
+            bool changed = false;
+            for (int i = 0; i < content.techTree.Length; i++)
+            {
+                var n = content.techTree[i];
+                if (n == null || !n.IsFree) continue;
+                if (n.requires != null && n.requires.Length > 0) continue;
+                if (Data.RankOf(n.id) > 0) continue;
+
+                Data.SetRank(n.id, 1);
+                changed = true;
+            }
+            if (changed) Save();
+        }
+
+        // ---------------------------------------------------------------- 무기
+
+        /// <summary>
+        /// 🔴 **무기를 골라 든다.** 이미 연 무기 노드를 다시 누르면 여기로 온다.
+        ///    연 적 없는 무기는 못 고른다 — 노드를 안 찍고 저장을 손대도 안 넘어간다.
+        /// </summary>
+        public static void SelectWeapon(GameContent content, WeaponKind k)
+        {
+            if (!WeaponUnlocked(content, k)) return;
+            Data.selectedWeapon = (int)k;
+            Save();
+        }
+
+        /// <summary>이 무기를 여는 노드를 찍었는가.</summary>
+        public static bool WeaponUnlocked(GameContent content, WeaponKind k)
+        {
+            if (content == null || content.techTree == null) return false;
+
+            for (int i = 0; i < content.techTree.Length; i++)
+            {
+                var n = content.techTree[i];
+                if (n == null || n.effect != TechEffect.UnlockWeapon) continue;
+                if (n.weapon != k) continue;
+
+                // `EnsureFreeNodes`가 공짜 노드를 미리 찍어 두므로 랭크만 보면 된다
+                return Data.RankOf(n.id) > 0;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 🔴 지금 들고 시작할 무기.
+        ///
+        ///    고른 것이 없거나 **잠긴 것을 가리키고 있으면**(데이터가 바뀌었을 수 있다)
+        ///    열려 있는 것 중 첫 번째로 되돌린다. 그것도 없으면 `fallback`.
+        ///    ⚠️ 여기서 안 막으면 **무기 없이 판이 시작된다** — 아무것도 못 하고 3분을 본다.
+        /// </summary>
+        public static WeaponKind CurrentWeapon(GameContent content, WeaponKind fallback)
+        {
+            if (Data.selectedWeapon >= 0 && Data.selectedWeapon < Weapons.Count)
+            {
+                var picked = (WeaponKind)Data.selectedWeapon;
+                if (WeaponUnlocked(content, picked)) return picked;
+            }
+
+            for (int i = 0; i < Weapons.Count; i++)
+                if (WeaponUnlocked(content, (WeaponKind)i)) return (WeaponKind)i;
+
+            return fallback;
+        }
+
         public static void SelectShip(ShipDef s)
         {
             if (!ShipUnlocked(s)) return;
@@ -297,12 +410,53 @@ namespace SalvageRun.Meta
             catch (Exception e) { Debug.LogWarning($"[MetaSave] 저장 실패: {e.Message}"); }
         }
 
-        /// <summary>맵을 클리어했다 — 다음 맵이 열린다.</summary>
-        public static void UnlockNextMap(int clearedIndex)
+        // ---------------------------------------------------------------- 구역 해금
+
+        /// <summary>
+        /// 🔴 **구역은 재화로 산다** (2026-08-26 · Space Rock Breaker 방향).
+        ///    보스를 잡아서 여는 방식을 버렸다 — 자세한 이유는 `StageDef`의 주석에.
+        /// </summary>
+        public static bool StageUnlocked(GameContent content, int index)
         {
-            int want = clearedIndex + 2;   // 0번을 깨면 2개가 열린다
-            if (Data.unlockedMaps < want) Data.unlockedMaps = want;
+            if (index <= 0) return true;                    // 첫 구역은 항상 열려 있다
+
+            var st = content != null ? content.Stage(index) : null;
+            if (st == null) return false;
+            if (st.FreeFromStart) return true;
+
+            return Data.unlockedMaps > index;
+        }
+
+        public static bool CanUnlockStage(GameContent content, int index, out string why)
+        {
+            why = null;
+            if (StageUnlocked(content, index)) { why = "이미 열림"; return false; }
+
+            var st = content != null ? content.Stage(index) : null;
+            if (st == null) { why = "없는 구역"; return false; }
+
+            // 🔴 **앞 구역부터 차례로** 연다. 건너뛰게 두면 재화를 모아 마지막 구역으로
+            //    바로 가고, 그러면 중간 구역이 통째로 안 쓰인다.
+            if (!StageUnlocked(content, index - 1)) { why = "앞 구역 먼저"; return false; }
+
+            if (Data.scrap   < st.unlockScrap)   { why = "고철 부족"; return false; }
+            if (Data.circuit < st.unlockCircuit) { why = "회로 부족"; return false; }
+            if (Data.core    < st.unlockCore)    { why = "코어 부족"; return false; }
+            return true;
+        }
+
+        public static bool UnlockStage(GameContent content, int index)
+        {
+            if (!CanUnlockStage(content, index, out _)) return false;
+
+            var st = content.Stage(index);
+            Data.scrap   -= st.unlockScrap;
+            Data.circuit -= st.unlockCircuit;
+            Data.core    -= st.unlockCore;
+
+            if (Data.unlockedMaps < index + 1) Data.unlockedMaps = index + 1;
             Save();
+            return true;
         }
 
         public static void RecordRun(int value, int collected, int depthReached)

@@ -23,30 +23,25 @@ namespace SalvageRun.Run
     {
         public static bool PanelOpen;
 
-        /// <summary>드릴이 무는 동안 배 속도 배율. 작을수록 꽉 묶인다.</summary>
-        public static float DrillDrag = 0.22f;
+        /// <summary>
+        /// 🔴 파손 로봇이 스폰에서 차지하는 비율(0~1).
+        ///    **기본값 0** — 2026-08-23부터 플레이어를 공격하는 것이 없다.
+        ///    올리면 그 자리에서 로봇이 다시 나오지만 **아프지는 않다** (접촉 피해가 없다).
+        /// </summary>
+        public static float HunterRatio = 0f;
 
-        /// <summary>드릴 피해 배수. 캐는 속도가 곧 이 게임의 리듬이다.</summary>
-        public static float DrillPower = 1f;
-
-        /// <summary>파손 로봇이 스폰에서 차지하는 비율(0~1). 위협의 총량이다.</summary>
-        public static float HunterRatio = 0.22f;
-
-        /// <summary>기지 연료 초당 감소 배수. 🔴 이게 0이면 게임 구조가 무너진다.</summary>
-        public static float BaseDrainMul = 1f;
-
-        /// <summary>화물 하나당 기지 회복 배수.</summary>
-        public static float FuelPerCargoMul = 1f;
-
-        /// <summary>우주선 최대 연료 배수 — 한 번에 얼마나 멀리 나갈 수 있는가.</summary>
+        /// <summary>우주선 최대 연료 배수 — 연료가 곧 체력이므로 이게 곧 맷집이다.</summary>
         public static float ShipFuelMul = 1f;
 
-        /// <summary>추진 연료 소모 배수.</summary>
-        public static float ThrustFuelMul = 1f;
+        /// <summary>
+        /// 🔴 **연료 감소 배수 = 판이 얼마나 빨리 끝나는가.**
+        ///    연료가 타이머가 되면서(2026-08-23) 이 값이 곧 제한 시간이다.
+        ///    0으로 두면 **안 끝난다** — 연습용으로 쓸 수 있다.
+        /// </summary>
+        public static float FuelDrainMul = 1f;
 
         /// <summary>
         /// 🔴 쓰레기 크기 배수 (2026-08-22 피드백: *"크기가 너무 작아"*).
-        ///    밭이 된 이상 **멀리서도 "저기 캘 게 있다"가 보여야** 찾아갈 마음이 생긴다.
         /// </summary>
         public static float JunkSize = 1.5f;
 
@@ -56,51 +51,48 @@ namespace SalvageRun.Run
         /// </summary>
         public static float JunkDensity = 1f;
 
-        // ---------------------------------------------------------------- 항행 (rev.11)
-
-        /// <summary>항행 한 구간 길이 배수. 방어 국면이 얼마나 긴가.</summary>
-        public static float LegSecondsMul = 1f;
+        /// <summary>
+        /// 🔴 **쓰레기가 흘러가는 속도 배수** (2026-08-23).
+        ///    쫓아오지 않고 저 혼자 떠다니게 바꾸면서 생긴 손잡이다.
+        ///    너무 느리면 화면이 정지 화면처럼 보이고,
+        ///    너무 빠르면 잔해가 아니라 총알로 보인다. **로봇에는 안 걸린다.**
+        /// </summary>
+        public static float JunkSpeedMul = 1f;
 
         /// <summary>
-        /// 🔴 잔해가 기지에 부딪힐 때 연료 손실 배수.
-        ///    **"못 막으면 얼마나 손해인가"**를 정한다. 이 값이 항행 난이도의 핵심이다.
+        /// 🔴 쓰레기에 닿을 때 연료 손실 배수 — **"한 대가 얼마나 아픈가"**다.
+        ///    연료가 곧 체력이므로 이 값이 곧 난이도다.
         /// </summary>
         public static float IncomingCostMul = 1f;
 
-        /// <summary>항행 중 잔해가 밀려오는 양 배수.</summary>
-        public static float IncomingRateMul = 1f;
-
-        /// <summary>기지 포탑 화력 배수 — 항행에서 얼마나 버티는가.</summary>
-        public static float TurretPowerMul = 1f;
-
-        /// <summary>끌 때 무거워지는 정도. 작을수록 금방 무거워진다.</summary>
+        /// <summary>
+        /// 🔴 끌 때 무거워지는 정도. **작을수록 금방 무거워진다.**
+        ///    이 값이 "몇 개까지 욕심낼 수 있나"를 정한다 — 선택과 집중의 손잡이다.
+        /// </summary>
         public static float TowWeightMul = 1f;
+
+        /// <summary>기지 포탑 화력 배수.</summary>
+        public static float TurretPowerMul = 1f;
 
         public static void Reset()
         {
-            DrillDrag = 0.22f;
-            DrillPower = 1f;
-            HunterRatio = 0.22f;
-            BaseDrainMul = 1f;
-            FuelPerCargoMul = 1f;
+            HunterRatio = 0f;
             ShipFuelMul = 1f;
-            ThrustFuelMul = 1f;
+            FuelDrainMul = 1f;
             JunkSize = 1.5f;
             JunkDensity = 1f;
-            LegSecondsMul = 1f;
+            JunkSpeedMul = 1f;
             IncomingCostMul = 1f;
-            IncomingRateMul = 1f;
-            TurretPowerMul = 1f;
             TowWeightMul = 1f;
+            TurretPowerMul = 1f;
         }
 
         /// <summary>사장님이 그대로 읽어서 알려줄 수 있게 한 줄로.</summary>
         public static string Summary =>
-            $"드릴묶임 {DrillDrag:0.00} · 드릴피해 {DrillPower:0.00} · 로봇비율 {HunterRatio:0.00} · " +
-            $"기지감소 {BaseDrainMul:0.00} · 화물회복 {FuelPerCargoMul:0.00} · " +
-            $"배연료 {ShipFuelMul:0.00} · 추진소모 {ThrustFuelMul:0.00} · " +
+            $"로봇비율 {HunterRatio:0.00} · " +
+            $"배연료 {ShipFuelMul:0.00} · 연료감소 {FuelDrainMul:0.00} · " +
             $"쓰레기크기 {JunkSize:0.00} · 쓰레기밀도 {JunkDensity:0.00} · " +
-            $"항행길이 {LegSecondsMul:0.00} · 충돌손실 {IncomingCostMul:0.00} · " +
-            $"잔해량 {IncomingRateMul:0.00} · 포탑화력 {TurretPowerMul:0.00} · 견인무게 {TowWeightMul:0.00}";
+            $"쓰레기속도 {JunkSpeedMul:0.00} · " +
+            $"충돌손실 {IncomingCostMul:0.00} · 견인무게 {TowWeightMul:0.00}";
     }
 }

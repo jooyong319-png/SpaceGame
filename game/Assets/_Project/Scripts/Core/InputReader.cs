@@ -285,13 +285,20 @@ namespace SalvageRun.Core
             KeyCode.K);
 
         /// <summary>
-        /// 🔴 끌던 화물을 놓는다 (rev.11). 쫓길 때 **버리고 도망치는** 선택.
+        /// 🔴 **한 번 누르면 하나** (2026-08-26).
+        ///
+        ///    처음엔 홀드로 했는데, 홀드는 **매 프레임 하나씩** 물어서
+        ///    한 곳에 여러 개가 있으면 **누르는 순간 전부 빨려 들어갔다** —
+        ///    그러면 청소기와 다를 게 없고 "고른다"가 다시 사라진다.
+        ///
+        ///    ⚠️ 연타 걱정을 했었지만 아니다. 칸이 여섯이고 덩어리가 크므로
+        ///       한 번 나갔다 오는 동안 **여섯 번쯤** 누른다. 그건 연타가 아니라 조작이다.
         /// </summary>
-        public static bool JettisonPressed => KeyOnce(
+        public static bool CollectPressed => KeyOnce(
 #if ENABLE_INPUT_SYSTEM
-            Keyboard.current != null && Keyboard.current.qKey.wasPressedThisFrame,
+            Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame,
 #endif
-            KeyCode.Q);
+            KeyCode.Space);
 
         /// <summary>정비소(영구 강화) 열기/닫기</summary>
         public static bool ToggleTechPressed => KeyOnce(

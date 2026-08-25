@@ -12,29 +12,21 @@ namespace SalvageRun.Data
     ///    패턴을 데이터로 빼두면 무기를 20종으로 늘려도 `WeaponRig`는 안 커진다 —
     ///    무기마다 전용 코드를 쓰기 시작하면 5종에서 이미 손을 못 대게 된다.
     /// </summary>
+    /// <summary>
+    /// 🔴 **쓰는 무기가 있는 패턴만 남겼다** (2026-08-23).
+    ///
+    ///    무기를 발사형 5종으로 줄인 뒤에도 `WeaponRig`에 **구현 여섯 개가 그대로 살아 있었다**
+    ///    (궤도·장판·충격파·지뢰·우물·드론). 도달하지 않는 코드였지만
+    ///    읽는 사람에게는 *"이 게임에는 장판 무기가 있다"*로 보인다 —
+    ///    지금까지 이 프로젝트가 헤맨 이유의 절반이 그런 코드였다. 통째로 걷어냈다.
+    ///
+    ///    되살리려면 `rev11-voyage` 브랜치나 이 커밋 직전에 전부 있다.
+    /// </summary>
     public enum WeaponPattern
     {
-        Orbit = 0,      // 배 주위를 도는 것들 (절단날 · 방벽)
-        Boomerang,      // 던져서 돌아온다 (원반)
-        Projectile,     // 커서 방향 발사 (작살)
-        Beam,           // 커서 방향 지속 광선 (레이저)
+        Boomerang = 0,  // 던져서 돌아온다 (원반)
+        Projectile,     // 조준 방향 발사 (작살)
         Chain,          // 가까운 것들에게 연쇄 (방전)
-        PeriodicAoe,    // 주기적으로 근처에서 폭발 (폭탄)
-        Nova,           // 배를 중심으로 원형 파동 (충격파)
-        Mine,           // 제자리에 두고 간다 (지뢰)
-        Aura,           // 배 주위 지속 장판 (소용돌이)
-        Well,           // 한 점으로 끌어모은다 (중력 우물)
-        Companion,      // 따라다니며 스스로 일한다 (드론)
-
-        /// <summary>
-        /// 🔴 **드릴** (rev.10). 목표 하나에 붙어 **지속적으로** 갈아낸다.
-        ///    다른 패턴과 결정적으로 다른 점: **캐는 동안 배가 묶인다.**
-        ///
-        ///    채굴은 그 자체로는 재미가 없다 — 가만히 있는 돌에 버튼을 누르는 일이다.
-        ///    재미는 **"지금 이걸 캘까, 로봇 먼저 처리할까, 그냥 뺄까"**에서 나온다.
-        ///    그러려면 캐는 시간이 **무방비한 시간**이어야 한다. 그게 이 패턴의 전부다.
-        /// </summary>
-        Drill
     }
 
     /// <summary>
@@ -53,27 +45,27 @@ namespace SalvageRun.Data
         Gravity     // 중력 — 모으고 끈다
     }
 
+    /// <summary>
+    /// 🔴 **발사형만 남겼다** (2026-08-23 사장님:
+    ///    *"무기 종류는 발사형만 남기자. 나머진 제거"*).
+    ///
+    ///    남긴 기준은 **커서 방향으로 무언가를 내보내는가**다.
+    ///    지운 여덟은 배 주위를 돌거나(절단날·방벽), 배를 중심으로 터지거나(충격파),
+    ///    제자리에 두거나(지뢰), 따라다니거나(드론), 붙어서 갈아내는(드릴) 것들이었다 —
+    ///    전부 **조준이 필요 없는** 무기였다.
+    ///
+    ///    ⚠️ 지운 것들의 **패턴 구현은 `WeaponRig`에 그대로 남아 있다.**
+    ///       여기 값이 없어서 도달하지 않을 뿐이다 — 정의를 다시 쓰면 되살아난다.
+    ///       (지우기 전 상태는 `rev11-voyage` 브랜치에 통째로 있다)
+    ///
+    ///    ⚠️ 태그가 넷으로 줄었다(절삭·관통·전기·폭발). 장판·중력은 쓰는 무기가 없다 —
+    ///       `WeaponTag`는 그대로 두되 조합표에서 그 줄들은 이제 안 뜬다.
+    /// </summary>
     public enum WeaponKind
     {
-        Blade = 0,      // 회전 절단날   Orbit      Cut
-        Discus,         // 회수 원반     Boomerang  Cut
-        Harpoon,        // 견인 작살     Projectile Pierce
-        Laser,          // 절단 레이저   Beam       Pierce
-        Arc,            // 정전기 방출   Chain      Shock
-        Nova,           // 충격파        Nova       Shock
-        Bomb,           // 압축 폭탄     PeriodicAoe Blast
-        Mine,           // 자기 지뢰     Mine       Blast
-        Vortex,         // 흡입 소용돌이 Aura       Field
-        Barrier,        // 플라즈마 방벽 Orbit      Field
-        Well,           // 중력 우물     Well       Gravity
-        Drone,          // 견인 드론     Companion  Gravity
-
-        /// <summary>
-        /// 🔴 **채굴 드릴** (rev.10). 이 게임의 새 기본 동사.
-        ///    커서 방향 가까운 쓰레기 하나에 **붙어서 갈아낸다** —
-        ///    쏘는 게 아니라 **시간을 들이는** 무기다.
-        /// </summary>
-        Drill
+        Discus = 0,     // 회수 원반     Boomerang    Cut
+        Harpoon,        // 견인 작살     Projectile   Pierce
+        Arc,            // 정전기 방출   Chain        Shock
     }
 
     /// <summary>
@@ -208,19 +200,9 @@ namespace SalvageRun.Data
         {
             switch (k)
             {
-                case WeaponKind.Blade:   return "회전 절단날";
                 case WeaponKind.Discus:  return "회수 원반";
                 case WeaponKind.Harpoon: return "견인 작살";
-                case WeaponKind.Laser:   return "절단 레이저";
                 case WeaponKind.Arc:     return "정전기 방출";
-                case WeaponKind.Nova:    return "충격파";
-                case WeaponKind.Bomb:    return "압축 폭탄";
-                case WeaponKind.Mine:    return "자기 지뢰";
-                case WeaponKind.Drill:   return "채굴 드릴";
-                case WeaponKind.Vortex:  return "흡입 소용돌이";
-                case WeaponKind.Barrier: return "플라즈마 방벽";
-                case WeaponKind.Well:    return "중력 우물";
-                case WeaponKind.Drone:   return "견인 드론";
             }
             return "?";
         }
