@@ -102,9 +102,36 @@ namespace SalvageRun.Tests
             //    나머지가 생기지 않는다.
             originalFixed = Time.fixedDeltaTime;
             Time.fixedDeltaTime = StepSeconds;
+
+            // 🔴 **결정론 5번째 조건 — 물리를 우리가 직접 돌린다** (2026-08-26).
+            //
+            //    `fixedDeltaTime = captureDeltaTime`으로 "프레임당 한 스텝"을 노렸지만
+            //    실측에서 안 맞았다. 같은 빌드 두 번이 **프레임 1에는 완전히 같고
+            //    프레임 15에서 속도만 1.6 vs 3.5**로 갈렸다 —
+            //    세상(쓰레기 16개·연료 120)은 똑같은데 **배만 두 배로 빨랐다.**
+            //    누산기에 남은 나머지 때문에 어떤 프레임은 물리를 두 번 밟는다.
+            //
+            //    수동 모드로 두고 프레임마다 정확히 한 번 `Simulate`하면 누산기가 없다.
+            originalSim = Physics2D.simulationMode;
+            Physics2D.simulationMode = SimulationMode2D.Script;
+            physGo = new GameObject("== SIM PHYSICS ==");
+            physGo.AddComponent<StepPhysics>().step = StepSeconds;
         }
 
         float originalFixed;
+        SimulationMode2D originalSim;
+        GameObject physGo;
+
+        /// <summary>
+        /// 프레임마다 물리를 **정확히 한 번** 민다. `LateUpdate`에서 미는 이유는
+        /// 유니티의 평소 순서(FixedUpdate → Update)와 어긋나지 않게 하려는 것이다 —
+        /// 이번 프레임의 `Update`가 읽는 물리 상태는 언제나 *직전 스텝의 결과*가 된다.
+        /// </summary>
+        class StepPhysics : MonoBehaviour
+        {
+            public float step = 1f / 30f;
+            void LateUpdate() => Physics2D.Simulate(step);
+        }
 
         [UnityTearDown]
         public IEnumerator TearDown()
@@ -115,6 +142,8 @@ namespace SalvageRun.Tests
             Time.timeScale = originalTimeScale;
             Time.captureDeltaTime = originalCapture;
             if (originalFixed > 0f) Time.fixedDeltaTime = originalFixed;
+            Physics2D.simulationMode = originalSim;
+            if (physGo != null) Object.Destroy(physGo);
             if (bootGo != null) Object.Destroy(bootGo);
             MetaSave.ReplaceInMemory(new MetaData());
             MetaSave.DisableWrites = false;
@@ -265,7 +294,12 @@ namespace SalvageRun.Tests
                    $"쿨={(st != null ? st.cooldownMul : -1f):0.00} 사거리제약={BossBehaviour.RangeChoke:0.00} " +
                    $"원반Lv={(st != null ? st.LevelOf(WeaponKind.Discus) : -1)} " +
                    $"모선까지={(sh != null ? ((Vector2)sh.transform.position).magnitude : -1f),6:0.0} " +
-                   $"속도={(sh != null ? sh.Velocity.magnitude : -1f),5:0.0}";
+                   $"속도={(sh != null ? sh.Velocity.magnitude : -1f),5:0.0} " +
+                   // 🔴 **풀 크기와 배 좌표.** 결정론이 깨졌을 때 "세상이 다른가 / 배가 다른가"를
+                   //    가르는 두 값이다. 풀 크기가 다르면 `EnsurePool` 성장이 런 사이에 남은 것이고,
+                   //    풀은 같은데 좌표가 다르면 물리·조종 쪽이다.
+                   $"풀={(f != null ? f.Pieces.Count : -1)}/{(f != null ? f.Fragments.Count : -1)} " +
+                   $"좌표=({(sh != null ? sh.transform.position.x : 0f),6:0.00},{(sh != null ? sh.transform.position.y : 0f),6:0.00})";
         }
 
         // ==============================================================================
@@ -567,8 +601,12 @@ namespace SalvageRun.Tests
 
                 frames++;
 
-                if (trace != null && frames % 900 == 0)
-                    trace.AppendLine("         " + Snapshot($"+{frames / 30}s"));
+                // 🔴 **초반을 촘촘히 찍는다.** 30초마다만 찍으면 "두 번이 다르다"만 알고
+                //    *언제부터* 갈렸는지를 모른다 — 첫 프레임부터 다르면 시작 상태가 샌 것이고,
+                //    중간부터 갈리면 판이 도는 중에 남는 것이 있다는 뜻이다. 원인이 완전히 다르다.
+                if (trace != null && (frames == 1 || frames == 15 || frames == 60
+                                      || frames == 150 || frames % 900 == 0))
+                    trace.AppendLine($"         " + Snapshot($"+{frames}f"));
 
                 yield return null;
             }

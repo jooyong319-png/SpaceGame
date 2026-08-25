@@ -292,6 +292,96 @@ namespace SalvageRun.Data
                 TechEffect.WeaponPowerOne, 0.14f, 200, 5, 0, 5, 1.7f, "ds1");
 
             // ==========================================================================
+            //  🔴 발동형 — **가끔 터지는 것** (2026-08-26)
+            //
+            //     사장님: *"독특한 것이 많으면 많을수록 좋아.
+            //     쓰레기 처치 시 재화 드롭 확률 증가, 무기 공격 시 몇 %로 폭발 이런거"*
+            //
+            //     숫자만 오르는 노드는 이미 충분하다. **확률로 터지는 것**이 있어야
+            //     같은 판이 판마다 다르게 느껴진다 — 인크리멘탈의 도파민이 여기서 나온다.
+            //
+            //  🔴 오른쪽 위(+x, +y)로 뻗는다. 화력 가지 옆이라 "공격이 화려해진다"로 읽힌다.
+            // ==========================================================================
+            N("pr1", "불안정 탄두", "맞힐 때 6% 확률로 터진다", TechBranch.Power, 2, 4,
+              TechEffect.ProcExplode, 0.06f, 180, 5, 0, 5, 1.8f, "pow2");
+
+            N("pr2", "고폭 신관", "맞힐 때 터질 확률 +8%p", TechBranch.Power, 3, 4,
+              TechEffect.ProcExplode, 0.08f, 420, 12, 2, 4, 1.9f, "pr1");
+
+            N("pr3", "유도 방전", "부술 때 10% 확률로 번개가 옮겨붙는다", TechBranch.Power, 4, 4,
+              TechEffect.ProcChain, 0.10f, 220, 6, 1, 5, 1.8f, "pr1");
+
+            N("pr4", "과충전 코일", "번개가 옮겨붙을 확률 +12%p", TechBranch.Power, 4, 3,
+              TechEffect.ProcChain, 0.12f, 480, 14, 2, 4, 1.9f, "pr3");
+
+            N("pr5", "예비 격발", "8% 확률로 한 번 더 쏜다", TechBranch.Power, 5, 2,
+              TechEffect.ProcDoubleShot, 0.08f, 340, 9, 1, 5, 1.95f, "pr2");
+
+            N("pr6", "연사 회로", "한 번 더 쏠 확률 +10%p", TechBranch.Power, 6, 2,
+              TechEffect.ProcDoubleShot, 0.10f, 760, 20, 4, 3, 2.1f, "pr5");
+
+            N("pr7", "추진 여열", "부수면 2초 동안 +15% 빨라진다", TechBranch.Drive, 5, 3,
+              TechEffect.KillSpeed, 0.15f, 260, 7, 1, 4, 1.85f, "drv2");
+
+            // ==========================================================================
+            //  🔴 드롭형 — **무엇이 얼마나 떨어지는가**
+            //     인크리멘탈에서 제일 크게 체감되는 가지다. 수집 계열(우하) 아래로 뻗는다.
+            // ==========================================================================
+            N("dr1", "정밀 절단", "재화가 두 배로 나올 확률 +6%", TechBranch.Salvage, 4, -5,
+              TechEffect.MatDoubleChance, 0.06f, 200, 5, 0, 5, 1.85f, "sal2");
+
+            N("dr2", "이중 회수", "두 배로 나올 확률 +9%p", TechBranch.Salvage, 5, -5,
+              TechEffect.MatDoubleChance, 0.09f, 520, 14, 2, 4, 1.95f, "dr1");
+
+            N("dr3", "광물 감식", "희귀 재화가 나올 확률 +25%", TechBranch.Salvage, 5, -4,
+              TechEffect.RareMatChance, 0.25f, 280, 8, 1, 5, 1.9f, "dr1");
+
+            N("dr4", "심층 탐사", "희귀 재화 확률 +40%p", TechBranch.Salvage, 6, -4,
+              TechEffect.RareMatChance, 0.40f, 640, 18, 3, 4, 2.0f, "dr3");
+
+            N("dr5", "감정 등급", "가져온 재화 값어치 +10%", TechBranch.Salvage, 7, -3,
+              TechEffect.MatValue, 0.10f, 300, 8, 1, 6, 1.85f, "dr2", "dr3");
+
+            N("dr6", "표류 안정기", "떨어진 덩어리가 +20초 더 남는다", TechBranch.Salvage, 4, -4,
+              TechEffect.LumpLife, 20f, 150, 4, 0, 4, 1.7f, "sal3");
+
+            // ==========================================================================
+            //  🔴 보스 — 위협이 보스에만 있으므로 대비도 여기만 있다
+            // ==========================================================================
+            N("bs1", "충격 완충재", "보스 탄 피해 -12%", TechBranch.Hull, -5, -1,
+              TechEffect.BossShotResist, 0.12f, 240, 7, 1, 4, 1.85f, "hull4");
+
+            N("bs2", "관통 탄심", "보스에게 주는 피해 +18%", TechBranch.Power, 6, 1,
+              TechEffect.BossDamage, 0.18f, 320, 9, 2, 5, 1.9f, "pow3");
+
+            N("bs3", "해체 전문", "보스에서 나오는 재화 +30%", TechBranch.Salvage, 7, -1,
+              TechEffect.BossMatBonus, 0.30f, 560, 16, 3, 4, 2.0f, "dr5");
+
+            // ==========================================================================
+            //  🔴 연료 — 조업 시간이 곧 한 판의 길이다
+            // ==========================================================================
+            N("fu1", "연료 절약", "연료 감소 -6%", TechBranch.Hull, -5, -3,
+              TechEffect.FuelDrain, 0.06f, 260, 7, 1, 5, 1.9f, "hull5");
+
+            N("fu2", "회수 정제", "연료통 회복량 +20%", TechBranch.Hull, -6, -2,
+              TechEffect.FuelPickupBonus, 0.20f, 200, 6, 0, 4, 1.8f, "hull6");
+
+            N("fu3", "대형 탱크", "최대 연료 +140", TechBranch.Hull, -6, -3,
+              TechEffect.FuelMax, 140f, 420, 12, 2, 4, 1.9f, "fu1");
+
+            // ==========================================================================
+            //  🔴 견인 — 이 게임의 핵심 결정("얼마나 싣고 갈까")을 직접 민다
+            // ==========================================================================
+            N("tw1", "보강 견인대", "끌 수 있는 칸 +1", TechBranch.Salvage, 3, -3,
+              TechEffect.TowCapacity, 1f, 300, 8, 1, 4, 2.1f, "sal4");
+
+            N("tw2", "관성 제어", "짐이 덜 무겁다 (+12%)", TechBranch.Drive, 4, -3,
+              TechEffect.TowWeight, 0.12f, 240, 7, 1, 5, 1.85f, "drv3");
+
+            N("tw3", "예비 드론", "드론이 한 대 더 붙는다", TechBranch.Salvage, 6, -3,
+              TechEffect.CarrierDrone, 1f, 880, 24, 6, 2, 2.4f, "sal_drone");
+
+            // ==========================================================================
             //  특수 — 런을 시작하는 조건 자체를 바꾼다 (위쪽 바깥)
             //  🔴 여기가 제일 비싸다. **판이 시작되는 모양**을 바꾸는 것이라
             //     숫자 노드 수십 개보다 체감이 크다.
@@ -322,6 +412,118 @@ namespace SalvageRun.Data
 
             N("sp_speed", "곡예 기동", "이동 속도 +15%", TechBranch.Special, -3, 3,
               TechEffect.MoveSpeed, 0.15f, 760, 21, 5, 2, 2.4f, "drv7");
+
+
+            // ==========================================================================
+            //  🔴 2차 확장 (2026-08-26 밤) — 사장님: *"테크트리를 최대한 많이 늘려라.
+            //     독특한 것이 많을수록 좋다"*
+            //
+            //     기준을 하나 세웠다: **숫자만 오르는 노드는 더 안 만든다.**
+            //     이미 충분하고, 그건 살 때 아무 생각이 안 든다.
+            //     여기 있는 것들은 전부 *판이 굴러가는 모양*을 바꾼다 —
+            //     터지고, 옮겨붙고, 자동으로 줍고, 보스에서 연료가 나온다.
+            // ==========================================================================
+
+            // ---- 발동형 2차 (오른쪽 맨 위 줄) ----
+            N("pr8", "충격 기폭", "부술 때 8% 확률로 그 자리가 터진다", TechBranch.Power, 2, 5,
+              TechEffect.KillBlast, 0.08f, 300, 8, 1, 5, 1.9f, "pr2");
+
+            N("pr9", "연쇄 기폭", "부술 때 터질 확률 +11%p", TechBranch.Power, 3, 5,
+              TechEffect.KillBlast, 0.11f, 700, 19, 4, 4, 2.05f, "pr8");
+
+            N("pr10", "고속 사출", "투사체 속도 +18%", TechBranch.Power, 4, 5,
+              TechEffect.ShotSpeed, 0.18f, 190, 5, 0, 5, 1.8f, "pow2");
+
+            N("pr11", "자기 가속로", "투사체 속도 +25%", TechBranch.Power, 5, 5,
+              TechEffect.ShotSpeed, 0.25f, 520, 14, 3, 3, 2.0f, "pr10");
+
+            N("pr12", "여열 순환", "부수면 빨라지는 폭 +20%p", TechBranch.Drive, 6, 5,
+              TechEffect.KillSpeed, 0.20f, 620, 17, 3, 3, 2.0f, "pr7");
+
+            N("pr13", "폭발 확산", "폭발 반경 +12% (사거리)", TechBranch.Power, 6, 3,
+              TechEffect.WeaponRange, 0.12f, 460, 13, 2, 4, 1.95f, "pr2");
+
+            N("pr14", "관통 탄자", "전 무기 관통 +1", TechBranch.Power, 7, 3,
+              TechEffect.WeaponPierceOne, 1f, 540, 15, 3, 3, 2.2f, "pr13");
+
+            // ---- 드롭형 2차 (오른쪽 맨 아래 줄) ----
+            N("dr7", "잔해 선별", "재화 드랍률 +12%", TechBranch.Salvage, 3, -6,
+              TechEffect.MatFindAll, 0.12f, 240, 6, 0, 5, 1.85f, "sal3");
+
+            N("dr8", "정련 회수", "주울 때마다 연료 +0.2", TechBranch.Salvage, 4, -6,
+              TechEffect.RefineOnCollect, 0.2f, 340, 9, 1, 4, 1.95f, "dr7");
+
+            N("dr9", "덩어리 안정", "떨어진 덩어리가 +25초 더 남는다", TechBranch.Salvage, 5, -6,
+              TechEffect.LumpLife, 25f, 400, 11, 2, 3, 1.9f, "dr6");
+
+            N("dr10", "삼중 회수", "두 배로 나올 확률 +12%p", TechBranch.Salvage, 6, -6,
+              TechEffect.MatDoubleChance, 0.12f, 940, 26, 6, 3, 2.2f, "dr2");
+
+            N("dr11", "감정 숙련", "가져온 재화 값어치 +14%", TechBranch.Salvage, 7, -6,
+              TechEffect.MatValue, 0.14f, 700, 19, 4, 4, 2.0f, "dr5");
+
+            N("dr12", "희귀광 감별", "희귀 재화 확률 +55%p", TechBranch.Salvage, 8, -3,
+              TechEffect.RareMatChance, 0.55f, 1200, 32, 8, 3, 2.3f, "dr4");
+
+            // ---- 견인형 2차 (아래 가운데) ----
+            N("tw4", "화물 격벽", "끌 수 있는 칸 +1", TechBranch.Salvage, 2, -6,
+              TechEffect.TowCapacity, 1f, 620, 17, 3, 4, 2.2f, "tw1");
+
+            N("tw5", "중력 상쇄", "짐이 덜 무겁다 (+16%)", TechBranch.Drive, 1, -6,
+              TechEffect.TowWeight, 0.16f, 540, 15, 3, 4, 1.95f, "tw2");
+
+            // 🔴 자동 회수. **빈 칸일 때만** 줍는다 — 밀어내기는 끝까지 손으로 한다.
+            //    그 판단이 이 게임의 특색이라 자동화하면 게임이 없어진다.
+            N("tw6", "자동 견인 팔", "빈 칸이 있으면 알아서 줍는다", TechBranch.Salvage, 2, -7,
+              TechEffect.TowAuto, 1f, 1100, 30, 8, 1, 1f, "tw4");
+
+            N("tw7", "예비 드론 II", "드론이 한 대 더 붙는다", TechBranch.Salvage, 3, -7,
+              TechEffect.CarrierDrone, 1f, 1600, 44, 12, 2, 2.6f, "tw3");
+
+            // ---- 보스형 2차 (오른쪽 바깥 기둥) ----
+            N("bs4", "탄막 예측", "보스 탄 피해 -16%p", TechBranch.Hull, 8, 1,
+              TechEffect.BossShotResist, 0.16f, 580, 16, 3, 4, 2.0f, "bs1");
+
+            N("bs5", "약점 조준", "보스에게 주는 피해 +22%p", TechBranch.Power, 8, 2,
+              TechEffect.BossDamage, 0.22f, 820, 22, 6, 4, 2.1f, "bs2");
+
+            // 🔴 보스전은 연료가 제일 빨리 새는 구간이다. 여기에 숨통을 하나 둔다 —
+            //    없으면 "보스에 닿았는데 연료가 없어 못 끝낸다"가 반복된다.
+            N("bs6", "격파 회수로", "보스 부위를 부술 때마다 연료 +6", TechBranch.Hull, 8, 0,
+              TechEffect.BossFuel, 6f, 660, 18, 4, 4, 2.05f, "bs1");
+
+            N("bs7", "전리품 분류", "보스에서 나오는 재화 +45%p", TechBranch.Salvage, 8, -1,
+              TechEffect.BossMatBonus, 0.45f, 1250, 34, 9, 3, 2.3f, "bs3");
+
+            // ---- 연료형 2차 (왼쪽 바깥 기둥) ----
+            N("fu4", "저온 순환", "연료 감소 -8%p", TechBranch.Hull, -7, -3,
+              TechEffect.FuelDrain, 0.08f, 640, 18, 4, 4, 2.05f, "fu1");
+
+            N("fu5", "예열 출항", "시작 연료가 최대치의 +12% 더", TechBranch.Hull, -7, -2,
+              TechEffect.StartFuel, 0.12f, 300, 8, 1, 4, 1.9f, "fu2");
+
+            N("fu6", "정제 탱크", "연료통 회복량 +28%p", TechBranch.Hull, -8, -2,
+              TechEffect.FuelPickupBonus, 0.28f, 560, 15, 3, 3, 2.0f, "fu2");
+
+            N("fu7", "장기 조업", "최대 연료 +200", TechBranch.Hull, -7, -1,
+              TechEffect.FuelMax, 200f, 900, 25, 6, 3, 2.2f, "fu3");
+
+            // ---- 기동 2차 (왼쪽 아래) ----
+            N("mv1", "긴급 분사", "대시 쿨다운 -9%", TechBranch.Drive, -8, -3,
+              TechEffect.DashCooldown, 0.09f, 280, 8, 1, 4, 1.9f, "drv6");
+
+            N("mv2", "자세 제어", "감쇠 +0.35 (더 잘 멈춘다)", TechBranch.Drive, -6, -1,
+              TechEffect.Handling, 0.35f, 220, 6, 0, 4, 1.85f, "drv4");
+
+            N("mv3", "보조 추진", "추진력 +90", TechBranch.Drive, -7, 0,
+              TechEffect.Thrust, 90f, 380, 10, 2, 4, 1.95f, "drv5");
+
+            // ---- 수집 2차 ----
+            N("iv1", "광역 흡입", "흡수 반경 +14%", TechBranch.Salvage, 9, -2,
+              TechEffect.IntakeRadius, 0.14f, 260, 7, 1, 5, 1.85f, "sal4");
+
+            N("iv2", "아이템 감지", "아이템 드랍률 +6%p", TechBranch.Salvage, 9, -3,
+              TechEffect.ItemDropChance, 0.06f, 420, 12, 2, 4, 2.0f, "iv1");
 
             c.techTree = buf.ToArray();
             buf.Clear();

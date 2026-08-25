@@ -191,6 +191,67 @@ namespace SalvageRun.Data
         /// <summary>🔴 **보스 탄 피해 -N%.** 위협이 보스에만 있으므로 방어도 여기만 있다.</summary>
         BossShotResist,
 
+        /// <summary>보스에서 나오는 재화 +N%.</summary>
+        BossMatBonus,
+
+        // ---- 🔴 발동형 (2026-08-26 사장님: *"독특한 것이 많으면 많을수록 좋아"*) ----
+        //
+        //    숫자만 오르는 노드는 이미 충분하다. **가끔 터지는 것**이 있어야
+        //    같은 판이 판마다 다르게 느껴진다 — 인크리멘탈의 도파민은 여기서 나온다.
+        //    ⚠️ 전부 `RunStats`에 실리고 `WeaponRig`/`StageField`가 **실제로 읽는다.**
+        //       정의만 하고 아무도 안 읽는 효과를 만들면 돈만 먹는 노드가 된다.
+
+        /// <summary>맞힐 때 N% 확률로 그 자리가 터진다.</summary>
+        ProcExplode,
+
+        /// <summary>부술 때 N% 확률로 번개가 옮겨붙는다.</summary>
+        ProcChain,
+
+        /// <summary>N% 확률로 한 번 더 쏜다.</summary>
+        ProcDoubleShot,
+
+        /// <summary>부수면 잠깐 빨라진다 (+N%, 2초).</summary>
+        KillSpeed,
+
+        // ---- 🔴 드롭형 ----
+
+        /// <summary>재화가 **두 배로** 나올 확률 +N%.</summary>
+        MatDoubleChance,
+
+        /// <summary>희귀 재화(회로 이상)가 나올 확률 배수 +N.</summary>
+        RareMatChance,
+
+        /// <summary>가져온 재화의 값어치 +N%.</summary>
+        MatValue,
+
+        /// <summary>밀려나거나 떨어진 덩어리가 **더 오래 남는다** (+N초).</summary>
+        LumpLife,
+
+        /// <summary>
+        /// 🔴 **연료가 천천히 준다** (-N%). 연료가 곧 한 판의 길이이므로
+        ///    이건 "판이 길어진다"와 같은 말이다 — 최대치를 올리는 것과 다른 축이다.
+        /// </summary>
+        FuelDrain,
+
+        /// <summary>
+        /// 🔴 **부순 순간** N% 확률로 주변이 터진다. `ProcExplode`(맞힐 때)와 짝이지만
+        ///    뜻이 다르다 — 이건 **빽빽한 곳에서 연쇄**가 되고, 저건 큰 것에 꽂힌다.
+        /// </summary>
+        KillBlast,
+
+        /// <summary>🔴 보스 부위를 부술 때마다 연료 +N. 보스전이 연료 싸움이라 이게 숨통이다.</summary>
+        BossFuel,
+
+        /// <summary>🔴 투사체가 빨라진다 (+N%). 사거리와 달리 **닿는 데 걸리는 시간**을 줄인다.</summary>
+        ShotSpeed,
+
+        /// <summary>
+        /// 🔴 **칸이 비어 있을 때만** Space 없이 줍는다.
+        ///    ⚠️ 꽉 찼을 때는 절대 자동으로 안 줍는다 — 밀어내기 판단이 이 게임의 핵심이라
+        ///       거기까지 자동이 되면 "이것만 가져갈까"가 사라진다.
+        /// </summary>
+        TowAuto,
+
         /// <summary>
         /// 🔴 **회수 드론 +N대.** 한 대가 배 옆에 떠서 제 줄을 끈다 (`RunDirector.DroneCarry`칸).
         ///    칸 노드와 달리 **화면에 보인다** — 산 것이 눈에 보여야 강해진 게 남는다.

@@ -324,6 +324,15 @@ namespace SalvageRun.Run
             if (best == null) return;
 
             best.Marked = true;
+
+            // 🔴 **자동 회수는 칸이 남을 때만** (테크트리 `TowAuto`).
+            //
+            //    ⚠️ 꽉 찼을 때는 절대 자동으로 안 줍는다. 밀어내기(`PushOutOldest`)는
+            //       **사장님이 손으로 내려야 하는 판단**이다 — *"이 자원을 가져갈까? 버릴까?"*
+            //       거기까지 자동이 되면 이 게임의 특색이 통째로 사라진다.
+            //    그래서 이 노드가 지우는 건 "빈 칸인데도 Space를 눌러야 하는 번거로움"뿐이다.
+            if (Stats != null && Stats.towAuto && towed.Count < MaxTow) pressed = true;
+
             if (pressed) { Absorb(best); PickTarget = null; }
         }
 
@@ -421,6 +430,16 @@ namespace SalvageRun.Run
 
             towed.Add(f);
             f.AttachTow(LeadFor(towed.Count - 1), towed.Count - 1);
+
+            // 🔴 **주우면 연료가 조금 돈다** (`RefineOnCollect`).
+            //    2026-08-26까지 노드 하나(sal_refine)가 이 값을 올리는데
+            //    **읽는 곳이 없었다** — 사장님이 재화를 쓰고 아무 일도 안 일어났다.
+            //
+            //    연료가 곧 시간이므로 이건 "많이 주울수록 판이 길어진다"가 된다.
+            //    견인 6칸 제한과 정확히 반대 방향으로 당기는 축이라 재밌다:
+            //    **줍고 밀어내기를 반복하면 시간이 벌린다.**
+            if (Stats != null && Stats.refinePerCollect > 0f && ship != null)
+                ship.Refuel(Stats.refinePerCollect);
 
             Fx.Spark(f.transform.position, 0.22f, Mats.ColorOf(f.mat), 0.12f);
             Juice.Pickup();
@@ -530,6 +549,18 @@ namespace SalvageRun.Run
                 go.transform.position = ship != null ? ship.transform.position : Vector3.zero;
                 drones.Add(go.transform);
             }
+
+            // 🔴 **런마다 드론을 배 옆 제자리로 되돌린다.**
+            //    안 그러면 앞 런에서 드론이 어디 떠 있었느냐가 남고,
+            //    드론은 견인 줄의 시작점이라 **매달린 것들의 위치가 달라진다.**
+            //    (2026-08-22 밸런스 로그에 "드론 위상"으로 이미 한 번 적혀 있는 누수다)
+            Vector2 home = ship != null ? (Vector2)ship.transform.position : Vector2.zero;
+            for (int i = 0; i < drones.Count; i++)
+            {
+                if (drones[i] == null) continue;
+                drones[i].position = home;
+                drones[i].rotation = Quaternion.identity;
+            }
         }
 
         /// <summary>
@@ -635,7 +666,8 @@ namespace SalvageRun.Run
 
                 field.MatsThisRun[(int)f.mat] += f.matAmount;
                 MetaSave.AddMaterial(f.mat, f.matAmount);
-                RunValue += Mathf.RoundToInt(f.value * Stats.valueMultiplier);
+                // 🔴 가져온 재화의 값어치 (테크트리 `MatValue`)
+                RunValue += Mathf.RoundToInt(f.value * Stats.valueMultiplier * Stats.matValue);
                 BankedCount++;
 
                 f.Despawn();
@@ -822,6 +854,12 @@ namespace SalvageRun.Run
         public void OnBossPartBroken()
         {
             BossPartsLeft--;
+
+            // 🔴 **부위를 부수면 연료가 돈다** (테크트리 `BossFuel`).
+            //    보스전은 연료가 줄줄 새는 구간이다(투사체 피격 + 그냥 흐르는 시간).
+            //    여기에 보상을 걸어야 "부수는 게 곧 시간 버는 것"이 된다.
+            if (Stats != null && Stats.bossFuel > 0f && ship != null) ship.Refuel(Stats.bossFuel);
+
             if (BossPartsLeft > 0)
             {
                 AddPopup(ship.transform.position, $"부위 {BossPartsLeft} 남음", new Color(1f, 0.85f, 0.4f));

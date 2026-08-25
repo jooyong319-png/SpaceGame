@@ -318,6 +318,11 @@ namespace SalvageRun.Run
             float cd = d.cooldown * Mathf.Pow(d.cooldownPerLevel, lv - 1)
                      * stats.CooldownOf(d.kind) * stats.BurstHasteMul;
             if (d.HasTraitAt(WeaponTrait.DoubleTap, lv)) cd *= 0.5f;
+
+            // 🔴 **N% 확률로 한 번 더** (테크트리 `ProcDoubleShot`).
+            //    쿨다운을 아주 짧게 만들어 다음 프레임에 또 나가게 한다 —
+            //    별도 경로를 만들면 특성·조합이 그 경로를 안 타서 조용히 어긋난다
+            if (stats.procDoubleShot > 0f && Rand() < stats.procDoubleShot) cd = 0.02f;
             cooldown[i] = Mathf.Max(0.08f, cd);
             return true;
         }
@@ -355,7 +360,8 @@ namespace SalvageRun.Run
             {
                 float spread = (count == 1) ? 0f : (i - (count - 1) * 0.5f) * 0.16f;
                 var dd = Rotate(dir, spread);
-                Fire(d, lv, shipPos + dd * 0.8f, dd * d.projectileSpeed, dmg, pierce, Range(d, lv));
+                Fire(d, lv, shipPos + dd * 0.8f, dd * d.projectileSpeed * stats.shotSpeedMul,
+                     dmg, pierce, Range(d, lv));
             }
             Juice.Chip(0.8f);
         }
@@ -705,9 +711,29 @@ namespace SalvageRun.Run
             float pull = d.TraitValue(WeaponTrait.Pull, lv);
             if (pull > 0f && d.pattern == WeaponPattern.Projectile) p.Tug(ship.transform.position, pull);
 
+            // 🔴 **맞힐 때 터진다** (테크트리 `ProcExplode`).
+            //    부술 때가 아니라 **맞힐 때**인 이유: 큰 것에 붙어 있으면 계속 터져서
+            //    "이 무기가 세졌다"가 매 순간 보인다. 부술 때만 터지면 잔몹에서만 보인다.
+            if (stats.procExplode > 0f && Rand() < stats.procExplode)
+                Explode(at, 2.0f * stats.rangeMul, dmg * 0.9f, d, lv);
+
             if (!p.Chip(dmg)) return;
 
             // ---- 부순 순간에만 일어나는 것들 ----
+
+            // 🔴 **부순 자리가 터진다** (테크트리 `KillBlast`).
+            //    `ProcExplode`가 큰 것에 꽂히는 값이라면 이건 **잔해가 몰린 곳**에서 산다 —
+            //    하나가 터져 옆을 부수고 그게 또 터진다.
+            if (stats.killBlast > 0f && Rand() < stats.killBlast)
+                Explode(at, 2.6f * stats.rangeMul, dmg * 1.15f, d, lv);
+
+            // 🔴 **부술 때 번개가 옮겨붙는다** (테크트리 `ProcChain`)
+            if (stats.procChain > 0f && Rand() < stats.procChain)
+                ArcFrom(at, 3, 6f * stats.rangeMul, dmg * 0.6f, d, lv);
+
+            // 🔴 **부수면 잠깐 빨라진다** (테크트리 `KillSpeed`).
+            //    치우는 리듬에 보상을 붙인다 — 잘 부술수록 다음 것으로 빨리 간다
+            if (stats.killSpeed > 0f && ship != null) ship.GrantKillRush(stats.killSpeed);
             if (d.HasTraitAt(WeaponTrait.Detonate, lv))
                 Explode(at, 1.8f * stats.rangeMul, d.TraitValue(WeaponTrait.Detonate, lv) * stats.powerMul, d, lv);
 

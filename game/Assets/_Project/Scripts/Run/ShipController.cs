@@ -134,7 +134,19 @@ namespace SalvageRun.Run
         public void ResetShip(Vector2 pos, float fuel)
         {
             transform.position = pos;
-            if (rb != null) rb.linearVelocity = Vector2.zero;
+            if (rb != null)
+            {
+                rb.linearVelocity = Vector2.zero;
+                // 🔴 각속도도 지운다. 안 지우면 **앞 런에서 돌던 회전이 남아**
+                //    다음 런의 첫 몇 초 조종감이 달라진다 — 결정론이 조용히 깨지는 자리다.
+                rb.angularVelocity = 0f;
+                rb.rotation = 0f;
+            }
+
+            // 🔴 처치 가속(`KillSpeed`)이 런 사이에 남아 있었다.
+            //    남으면 다음 런이 **더 빠른 배로 시작**한다.
+            killRush = 0f;
+            killRushLeft = 0f;
             Fuel = fuel;
             ControlEnabled = true;
             ThrottleNow = 0f;
@@ -169,9 +181,11 @@ namespace SalvageRun.Run
             //       멈추는 건 `WorldPaused`(카드 고르는 중)뿐이다.
             if (ControlEnabled || Fuel > 0f)
                 Fuel = Mathf.Max(0f, Fuel - config.idleFuelPerSecond * Tuning.FuelDrainMul
+                                          * (stats != null ? stats.fuelDrainMul : 1f)
                                           * Time.deltaTime);
 
             if (DashCooldownLeft > 0f) DashCooldownLeft -= Time.deltaTime;
+            if (killRushLeft > 0f) killRushLeft -= Time.deltaTime;
             if (!ControlEnabled) return;
 
             // 🔴 화면 흔들림이 조준을 흔들지 않게, 흔들리기 전 카메라 위치를 기준으로 계산한다
@@ -194,7 +208,10 @@ namespace SalvageRun.Run
 
             rb.AddForce(dir.normalized * config.dashImpulse, ForceMode2D.Impulse);
             // ⬜ 대시는 공짜다. 연료는 **타이머**이므로 행동에 값을 매기지 않는다
-            DashCooldownLeft = config.dashCooldown;
+            // 🔴 `dashCooldownMul`을 여기서 읽는다. 2026-08-26까지 노드 두 개(drv3·drv6)가
+            //    이 값을 올리고 있었는데 **읽는 곳이 없어서 아무 일도 안 났다.**
+            DashCooldownLeft = config.dashCooldown
+                             * (stats != null ? stats.dashCooldownMul : 1f);
             return true;
         }
 
@@ -259,14 +276,15 @@ namespace SalvageRun.Run
                              ? RunDirector.Instance.TowWeightMul : 1f;
 
                 float force = (stats != null ? stats.thrustForce * stats.speedMul : config.thrustForce)
-                            * ThrottleNow * weight;
+                            * ThrottleNow * weight * KillRushMul;
                 rb.AddForce(toCursor.normalized * force, ForceMode2D.Force);
 
             }
 
 
             float cap = config.maxSpeed * (stats != null ? stats.speedMul : 1f)
-                      * (RunDirector.Instance != null ? RunDirector.Instance.TowWeightMul : 1f);
+                      * (RunDirector.Instance != null ? RunDirector.Instance.TowWeightMul : 1f)
+                      * KillRushMul;
             if (rb.linearVelocity.magnitude > cap)
                 rb.linearVelocity = rb.linearVelocity.normalized * cap;
 
@@ -318,5 +336,24 @@ namespace SalvageRun.Run
         public void ConsumeFuel(float amount) => Fuel = Mathf.Max(0f, Fuel - amount);
 
         public void Refuel(float amount) => Fuel = Mathf.Min(FuelMax, Fuel + amount);
+
+        // ---------------------------------------------------------------- 처치 가속
+
+        /// <summary>
+        /// 🔴 **부수면 잠깐 빨라진다** (테크트리 `KillSpeed`).
+        ///    치우는 리듬에 보상을 붙인다 — 잘 부술수록 다음 것으로 빨리 간다.
+        ///    ⚠️ 짐이 무거우면 그만큼 덜 체감된다. 그건 의도다 —
+        ///       가볍게 다니는 쪽에 더 큰 보상이 가야 "얼마나 실을까"가 계산이 된다.
+        /// </summary>
+        public void GrantKillRush(float amount)
+        {
+            killRush = Mathf.Max(killRush, amount);
+            killRushLeft = KillRushSeconds;
+        }
+
+        public float KillRushMul => killRushLeft > 0f ? 1f + killRush : 1f;
+
+        const float KillRushSeconds = 2f;
+        float killRush, killRushLeft;
     }
 }

@@ -104,6 +104,29 @@ namespace SalvageRun.Meta
 
         /// <summary>🔴 보스 탄 피해 감소(0~1). `RunDirector.CheckBossShots`가 읽는다.</summary>
         public float bossShotResist;
+
+        /// <summary>보스 재화 배수. `StageField.RollMaterials`가 읽는다.</summary>
+        public float bossMatBonus;
+
+        // ---- 🔴 발동형 (전부 확률 0~1) ----
+        public float procExplode;      // WeaponRig.Hit — 맞힐 때 터진다
+        public float procChain;        // WeaponRig.Hit — 부술 때 번개
+        public float procDoubleShot;   // WeaponRig.Tick — 한 번 더 쏜다
+        public float killSpeed;        // RunDirector — 부수면 잠깐 빨라진다
+
+        // ---- 🔴 드롭형 ----
+        public float matDoubleChance;  // StageField.DropMat — 두 배로 나온다
+        public float rareMatChance = 1f; // StageField.RollMaterials — 희귀 확률 배수
+        public float matValue = 1f;    // RunDirector.BankTow — 값어치 배수
+        public float lumpLife;         // StageField.DropMat — 덩어리 수명 +N초
+
+        /// <summary>🔴 연료 감소 배수(작을수록 오래 간다). `ShipController`가 읽는다.</summary>
+        public float fuelDrainMul = 1f;
+
+        public float killBlast;        // WeaponRig.Hit — 부술 때 터질 확률
+        public float bossFuel;         // RunDirector.OnBossPartBroken — 부위당 연료
+        public float shotSpeedMul = 1f;// WeaponRig.Fire — 투사체 속도 배수
+        public bool  towAuto;          // RunDirector.CollectByTouch — 빈 칸이면 자동
         public float refinePerCollect;
 
         // ---- 카드 ----
@@ -319,6 +342,24 @@ namespace SalvageRun.Meta
                     case TechEffect.TowCapacity:    s.towCapacityBonus += Mathf.RoundToInt(v); break;
                     case TechEffect.CarrierDrone:   s.carrierDrones += Mathf.RoundToInt(v); break;
                     case TechEffect.BossShotResist: s.bossShotResist = Mathf.Min(0.75f, s.bossShotResist + v); break;
+                    case TechEffect.BossMatBonus:   s.bossMatBonus += v; break;
+
+                    // 🔴 발동형 — 확률이라 1을 넘으면 뜻이 없다. 상한을 둔다
+                    case TechEffect.ProcExplode:    s.procExplode = Mathf.Min(0.85f, s.procExplode + v); break;
+                    case TechEffect.ProcChain:      s.procChain = Mathf.Min(0.85f, s.procChain + v); break;
+                    case TechEffect.ProcDoubleShot: s.procDoubleShot = Mathf.Min(0.80f, s.procDoubleShot + v); break;
+                    case TechEffect.KillSpeed:      s.killSpeed = Mathf.Min(1.5f, s.killSpeed + v); break;
+
+                    case TechEffect.MatDoubleChance:s.matDoubleChance = Mathf.Min(0.90f, s.matDoubleChance + v); break;
+                    case TechEffect.RareMatChance:  s.rareMatChance += v; break;
+                    case TechEffect.MatValue:       s.matValue += v; break;
+                    case TechEffect.LumpLife:       s.lumpLife += v; break;
+                    case TechEffect.FuelDrain:
+                        s.fuelDrainMul *= Mathf.Pow(1f - n.value, rank); break;
+                    case TechEffect.KillBlast:      s.killBlast += v; break;
+                    case TechEffect.BossFuel:       s.bossFuel += v; break;
+                    case TechEffect.ShotSpeed:      s.shotSpeedMul += v; break;
+                    case TechEffect.TowAuto:        s.towAuto = true; break;
                     case TechEffect.ValueMul:       s.valueMultiplier += v; break;
                     case TechEffect.XpMul:          s.xpMultiplier += v; break;
                     case TechEffect.RefineOnCollect:s.refinePerCollect += v; break;

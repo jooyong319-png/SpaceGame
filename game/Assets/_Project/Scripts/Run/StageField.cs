@@ -133,9 +133,31 @@ namespace SalvageRun.Run
             int want = Mathf.RoundToInt(Mathf.Max(stage.junkCount, maxAlive) * Mathf.Max(1f, Tuning.JunkDensity));
             EnsurePool(Mathf.Min(700, want) + 24);
 
+            // 🔴 **파편 풀도 여기서 한 번에 잡는다** (2026-08-26 · 결정론 44.6% 누수의 원인).
+            //
+            //    쓰레기 풀(`EnsurePool`)만 여기서 잡고 파편은 필요할 때마다 늘렸다.
+            //    그래서 **첫 런은 풀 65개로 시작하고 두 번째 런은 199개로 시작했다.**
+            //
+            //    풀이 판 중간에 자라면 새 파편이 **목록 맨 뒤에** 붙는다.
+            //    이미 큰 풀에서는 **중간 자리를 재사용**한다 — 즉 `Fragments`의 순서가 달라진다.
+            //    `CollectByTouch`는 이 목록을 훑어 가장 가까운 것을 고르므로
+            //    순서가 달라지면 **같은 자리에서 다른 것을 줍는다.**
+            //    → 배가 다른 곳으로 가고, 결과가 통째로 갈린다.
+            //
+            //    ⚠️ 실측: 같은 빌드 두 번이 파편 56 vs 81 (44.6% 차이).
+            //       세상은 완전히 같았다(쓰레기 159 동일) — **목록 순서 하나가 원인이었다.**
             for (int i = 0; i < Pieces.Count; i++) Pieces[i].Despawn();
             for (int i = 0; i < Fragments.Count; i++) Fragments[i].Despawn();
             for (int i = 0; i < Pickups.Count; i++) Pickups[i].Despawn();
+
+            // ⚠️ **반드시 Despawn 뒤에 부른다.** `EnsureFragments`는 *비어 있는 것*을 세므로
+            //    살아 있는 것이 남은 채로 부르면 그만큼 **또 만든다** — 풀이 런마다 계속 자란다.
+            //    (처음에 Despawn 앞에 뒀다가 정확히 그 꼴이 났다: 264 → 320 → 449)
+            //
+            //    크기는 실측 최고치(약 320) 위로 넉넉히 잡는다. 여기서 한 번에 잡아 두면
+            //    판이 도는 중에는 절대 안 자라고, **목록 순서가 런마다 똑같아진다.**
+            fragCap = Mathf.Min(700, want * 2 + 64);
+            EnsureFragments(fragCap);
 
             // 시작 화면이 비면 안 된다 — 미리 깔아둔다
             for (int i = 0; i < stage.initialFill; i++) SpawnInside();
@@ -636,12 +658,20 @@ namespace SalvageRun.Run
             return null;
         }
 
+        /// <summary>`Build`에서 한 번에 잡아 두는 파편 풀 크기. 판이 도는 중에는 여길 못 넘는다.</summary>
+        int fragCap = 700;
+
         void EnsureFragments(int need)
         {
             int free = 0;
             for (int i = 0; i < Fragments.Count; i++) if (!Fragments[i].Alive) free++;
 
-            while (free < need)
+            // 🔴 **판이 도는 중에는 풀을 안 늘린다.**
+            //    늘리면 새 파편이 목록 **맨 뒤**에 붙어 순서가 달라지고,
+            //    `CollectByTouch`가 다른 것을 줍는다 — 결정론 44.6% 누수의 원인이었다.
+            //    모자라면 그 파편은 안 나온다. 풀을 `Build`에서 실측 최고치의 두 배로
+            //    잡아 두므로 실제로 모자랄 일은 없다.
+            while (free < need && Fragments.Count < fragCap)
             {
                 var go = new GameObject("Fragment");
                 go.transform.SetParent(transform);
@@ -888,6 +918,13 @@ namespace SalvageRun.Run
                 int depth = rank - need;
                 float chance = (0.012f + depth * 0.022f) * (1f + t.tier * 0.6f);
 
+                // 🔴 **희귀 재화가 더 자주** (테크트리 `RareMatChance`) — 회로 이상에만 붙는다
+                var st2 = director != null ? director.Stats : null;
+                if (st2 != null) chance *= Mathf.Max(0.1f, st2.rareMatChance);
+
+                // 🔴 보스 부위에서 나오는 것은 더 많다 (테크트리 `BossMatBonus`)
+                if (t.isAnchor && st2 != null) chance *= 1f + st2.bossMatBonus;
+
                 chance *= m == MatKind.Circuit ? circuitFind
                         : m == MatKind.Core    ? coreFind
                                                : 1f;
@@ -910,6 +947,14 @@ namespace SalvageRun.Run
         /// <summary>재화 덩어리 하나를 그 자리에 떨어뜨린다.</summary>
         void DropMat(MatKind m, int amount, Vector3 at)
         {
+            var st = director != null ? director.Stats : null;
+
+            // 🔴 **두 배로 나올 확률** (테크트리 `MatDoubleChance`).
+            //    개수를 그냥 올리는 것과 다른 점: **가끔** 두 배가 되므로
+            //    부술 때마다 "이번엔?"이 생긴다. 평균만 같으면 아무 느낌이 없다
+            if (st != null && st.matDoubleChance > 0f && rng.NextDouble() < st.matDoubleChance)
+                amount *= 2;
+
             var f = FreeFragment();
             if (f == null) return;
 
@@ -919,6 +964,10 @@ namespace SalvageRun.Run
             // 값어치는 종류가 정한다 (`Mats.WorthOf`) — 한 곳에서만 답하게 모아 뒀다
             f.Spawn(at + (Vector3)(dir * 0.4f), dir * (4.5f + (float)rng.NextDouble() * 2f),
                     Mats.WorthOf(m), m, amount);
+
+            // 🔴 **덩어리가 더 오래 남는다** (테크트리 `LumpLife`).
+            //    자석이 없어 직접 가서 밟아야 하므로, 수명이 곧 "고를 여유"다
+            if (st != null && st.lumpLife > 0f) f.ExtendLife(45f + st.lumpLife);
 
             // ⬜ 팝업은 안 띄운다. 떨어진 덩어리 자체가 눈에 보이므로 글씨는 소음이다
         }

@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using NUnit.Framework;
 using UnityEngine;
@@ -615,6 +617,88 @@ namespace SalvageRun.Tests
             yield return null;
             director.BackToReady();
             yield return null;
+        }
+
+        /// <summary>
+        /// 🔴 **테크 노드 하나하나가 실제로 능력치를 바꾸는가.**
+        ///
+        ///    이 프로젝트에서 여러 번 난 사고다: `TechEffect`에 값을 넣고,
+        ///    `TechNodeDef`에서 그걸 가리키고, **아무도 그 효과를 읽지 않는다.**
+        ///    컴파일도 통과하고 스모크도 통과한다 — 사장님이 재화를 쓰고 아무 일도 안 일어난다.
+        ///
+        ///    그래서 노드마다 **혼자만 찍은 `RunStats`를 기본값과 대조한다.**
+        ///    한 글자도 안 달라지면 그 노드는 죽은 노드다.
+        ///
+        ///    ⚠️ 공짜 노드는 기본값에도 이미 들어가 있으므로 판정에서 뺀다
+        ///       (`EnsureFreeNodes`가 랭크 1로 채워 두기 때문이다).
+        /// </summary>
+        [UnityTest, Timeout(600000)]
+        public IEnumerator EveryTechNodeChangesSomething()
+        {
+            var t = new StringBuilder();
+            t.AppendLine();
+            t.AppendLine("=========== 스모크: 테크 노드가 실제로 먹히는가 ===========");
+
+            var tree = director.content.techTree;
+            Assert.IsNotNull(tree, "테크트리가 비어 있다");
+            Assert.Greater(tree.Length, 0, "테크트리에 노드가 없다");
+
+            var meta = MetaSave.Data;
+            var saved = new List<NodeRank>(meta.nodes);
+
+            meta.nodes.Clear();
+            string baseline = Snapshot(TechSystem.BuildStats(director.content, director.config));
+
+            // 공짜 노드는 기본값에 이미 섞여 있다 — 대조 대상에서 빼기 위해 먼저 걷어 둔다
+            var freeSet = new HashSet<string>();
+            for (int i = 0; i < meta.nodes.Count; i++) freeSet.Add(meta.nodes[i].id);
+
+            var dead = new List<string>();
+            int checkedCount = 0;
+
+            for (int i = 0; i < tree.Length; i++)
+            {
+                var n = tree[i];
+                if (n == null || string.IsNullOrEmpty(n.id)) continue;
+
+                meta.nodes.Clear();
+                meta.SetRank(n.id, Mathf.Max(1, n.maxRank));
+                string one = Snapshot(TechSystem.BuildStats(director.content, director.config));
+
+                if (freeSet.Contains(n.id) && n.maxRank <= 1) continue;   // 기본값과 같을 수밖에 없다
+                checkedCount++;
+                if (one == baseline) dead.Add($"{n.id}({n.effect})");
+            }
+
+            meta.nodes.Clear();
+            meta.nodes.AddRange(saved);
+            yield return null;
+
+            t.AppendLine($"  노드 {tree.Length}개 · 대조 {checkedCount}개");
+            t.AppendLine(dead.Count == 0
+                ? "  전부 능력치를 바꾼다 — 죽은 노드 없음"
+                : $"  🔴 아무것도 안 바꾸는 노드 {dead.Count}개: {string.Join(", ", dead)}");
+
+            Debug.Log("[SMOKE]" + t);
+            Assert.IsEmpty(dead, "효과가 아무 데도 안 읽히는 테크 노드가 있다 — " + string.Join(", ", dead));
+        }
+
+        /// <summary>`RunStats`의 public 필드를 통째로 문자열로 만든다. 배열도 편다.</summary>
+        static string Snapshot(RunStats s)
+        {
+            var sb = new StringBuilder();
+            var fields = typeof(RunStats).GetFields(BindingFlags.Public | BindingFlags.Instance);
+            System.Array.Sort(fields, (a, b) => string.CompareOrdinal(a.Name, b.Name));
+            for (int i = 0; i < fields.Length; i++)
+            {
+                object v = fields[i].GetValue(s);
+                sb.Append(fields[i].Name).Append('=');
+                if (v is System.Array arr)
+                    for (int k = 0; k < arr.Length; k++) sb.Append(arr.GetValue(k)).Append(',');
+                else sb.Append(v);
+                sb.Append('|');
+            }
+            return sb.ToString();
         }
 
         /// <summary>밭(로봇·위험물 제외) 중 아무거나 하나. 없으면 null.</summary>
