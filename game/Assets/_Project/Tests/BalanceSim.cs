@@ -187,13 +187,13 @@ namespace SalvageRun.Tests
             //    입금하지 않은 파편은 레벨도 수리도 되지 않는다.
             t.AppendLine($"=========== 조합 21가지 시뮬 ({Repeats}회 평균 · 맵 1) ===========");
             t.AppendLine();
-            t.AppendLine("🔴 **이 표가 재는 것: 정박 국면(나가서 캐기)뿐이다.**");
-            t.AppendLine("   봇은 출발(E)을 누르지 않으므로 **항행은 한 번도 안 겪는다.**");
-            t.AppendLine("   즉 여기 숫자는 *무기가 얼마나 잘 캐나*이지 *한 판을 이기나*가 아니다.");
-            t.AppendLine("   항행 수지는 SmokeTest의 `VoyageFuelBudget` 진단이 따로 잰다.");
+            t.AppendLine("🔴 **첫 칸은 `가져옴`이다** — 매달고 돌아온 재화 개수.");
+            t.AppendLine("   이게 한 판의 진짜 수입이다. 부순 양도, 주운 양도 아니다 —");
+            t.AppendLine("   **견인 칸이 곧 상한**이라 잘 부순다고 수입이 늘지 않는다.");
+            t.AppendLine("   `주움`과 `가져옴`이 크게 벌어질수록 **밀려 떨어진 것이 많았다**는 뜻이다.");
             t.AppendLine();
-            t.AppendLine("조합            | 무기 조합              | 기지생존 | 잔여연료 | 입금(평균) | 편차 | 격침 | Lv | 보스");
-            t.AppendLine("----------------|------------------------|----------|--------|-----------|------|------|----|------");
+            t.AppendLine("조합            | 무기 조합              | 가져옴 | 주움 | 편차 | 보스탄 | 보스");
+            t.AppendLine("----------------|------------------------|--------|------|------|--------|------");
 
             yield return Warmup();
 
@@ -204,62 +204,59 @@ namespace SalvageRun.Tests
                 var combo = content.combos[i];
                 if (!PickPairFor(combo, out var a, out var b)) continue;
 
-                int depSum = 0, depMin = int.MaxValue, depMax = 0;
-                int lvSum = 0, cleared = 0, baseAlive = 0, wreckSum = 0;
-                float hpSum = 0f;
+                // 🔴 2026-08-26: 칸을 갈아엎었다. 전에는 **기지생존 · 잔여연료 · 격침**을 쟀는데
+                //    **셋 다 지금 게임에 없다.** (기지도, 격침도 없고 연료는 항상 0으로 끝난다)
+                //    없어진 것을 재는 표는 통과하면서 아무것도 안 알려준다 —
+                //    이 프로젝트에서 네 번 겪은 사고다.
+                int bankSum = 0, bankMin = int.MaxValue, bankMax = 0;
+                int pickSum = 0, cleared = 0, hitSum = 0;
 
                 for (int r = 0; r < Repeats; r++)
                 {
                     yield return RunWith(a, b, director.ComboLevel);
 
-                    // 🔴 rev.12: 주운 것이 곧 성과다. 입금이라는 단계가 없어졌다
-                    int dep = director.RunCollected;
-                    depSum += dep;
-                    depMin = Mathf.Min(depMin, dep);
-                    depMax = Mathf.Max(depMax, dep);
+                    // 🔴 **매달고 돌아온 것만 수입이다.** 주운 것(`RunCollected`)은
+                    //    밀려 떨어진 것까지 포함하므로 수입이 아니다.
+                    int bank = director.BankedCount;
+                    bankSum += bank;
+                    bankMin = Mathf.Min(bankMin, bank);
+                    bankMax = Mathf.Max(bankMax, bank);
 
-                    lvSum += director.BankedCount;
-                    wreckSum += director.WreckCount;
+                    pickSum += director.RunCollected;
+                    hitSum += director.BossHits;
                     if (director.Cleared) cleared++;
-
-                    // 🔴 rev.12: 지는 조건은 **우주선 연료 고갈**이다 (= 연료가 체력)
-                    var sh0 = director.ship;
-                    if (sh0 != null)
-                    {
-                        if (!sh0.OutOfFuel) baseAlive++;
-                        hpSum += (sh0.FuelMax > 0f ? sh0.Fuel / sh0.FuelMax : 0f) * 100f;
-                    }
 
                     director.BackToReady();
                     yield return null;
                 }
 
-                float depAvg = depSum / (float)Repeats;
+                float bankAvg = bankSum / (float)Repeats;
 
                 // 🔴 편차 = (최대-최소) ÷ 평균. 이게 크면 그 줄은 못 믿는다
-                float spread = depAvg > 0.01f ? (depMax - depMin) / depAvg * 100f : 0f;
+                float spread = bankAvg > 0.01f ? (bankMax - bankMin) / bankAvg * 100f : 0f;
                 string flag = spread > 40f ? "🔴" : spread > 20f ? "🟡" : "  ";
 
                 t.AppendLine(
                     $"{Pad(combo.title, 15)} | {Pad(Weapons.Name(a) + "+" + Weapons.Name(b), 22)} | " +
-                    $"{baseAlive}/{Repeats}      | {hpSum / Repeats,5:0}% | {depAvg,9:0} | " +
-                    $"{flag}{spread,3:0}% | {wreckSum / (float)Repeats,4:0.0} | {lvSum / Repeats,2} | {cleared}/{Repeats}");
+                    $"{bankAvg,6:0.0} | {pickSum / (float)Repeats,4:0} | " +
+                    $"{flag}{spread,3:0}% | {hitSum / (float)Repeats,6:0.0} | {cleared}/{Repeats}");
 
-                rows.Add((combo.title, depAvg, hpSum / Repeats, lvSum / Repeats));
+                rows.Add((combo.title, bankAvg, pickSum / (float)Repeats, cleared));
             }
 
-            AppendSpread(t, rows, "개 입금",
-                "⚠️ 기지가 일찍 깨진 런은 짧게 끝나므로 입금도 적다 — **입금 격차는 기지생존에 오염된다.**\n" +
-                "   먼저 기지생존 칸이 같은 줄끼리 비교할 것.");
+            AppendSpread(t, rows, "개 가져옴",
+                "⚠️ **가져옴은 견인 칸 수에서 거의 안 벗어난다.** 무기가 셀수록 늘어나는 값이 아니다. " +
+                "무기 차이는 `주움`에서 보인다 — 두 칸을 같이 봐야 한 조합이 뭘 잘하는지 읽힌다.");
             t.AppendLine("편차 🔴40%+ / 🟡20%+ 인 줄은 **한 번의 결과로 판단하지 말 것.**");
             t.AppendLine();
             t.AppendLine("🔴 읽는 법:");
-            t.AppendLine("   · ⚠️ **항행을 안 겪은 숫자다.** 한 판의 승패와 직접 잇지 말 것");
-            t.AppendLine("   · **기지생존**이 첫 칸이다. 여기가 0/N이면 다른 칸은 볼 필요가 없다");
-            t.AppendLine("   · 전 조합이 N/N이고 잔여HP가 높으면 **너무 쉽다** — 조류를 세게");
-            t.AppendLine("   · 전 조합이 0/N이면 **혼자 못 막는다** — 기지 HP나 조류를 낮춰야");
-            t.AppendLine("   · 입금은 '주운 것'이 아니라 **가져다준 것**이다. 파편 수와 다르다");
-            t.AppendLine("   · 격침은 실패가 아니다. 0.0이면 오히려 위험이 없다는 뜻이다");
+            t.AppendLine("   · **가져옴**이 첫 칸이다 — 매달고 돌아온 재화. 이게 한 판의 수입이다");
+            t.AppendLine("   · **주움**과 벌어질수록 **밀려 떨어진 것**이 많았다는 뜻이다");
+            t.AppendLine("     (견인이 꽉 차면 맨 앞이 밀려난다 — 부수는 속도가 칸을 넘어섰다는 신호)");
+            t.AppendLine("   · **가져옴이 전 조합에서 칸 수에 붙어 있으면** 무기 강화가 수입에 안 닿는다.");
+            t.AppendLine("     그때 올려야 하는 건 화력이 아니라 **칸 · 값어치 · 드론**이다");
+            t.AppendLine("   · **보스**가 0/N이면 다른 칸을 볼 필요가 없다 — 구역이 안 열린다");
+            t.AppendLine("   · **보스탄**은 맞은 횟수다. 0.0이면 위협이 실제로는 없다는 뜻이다");
             Debug.Log("[SIM]" + t);
             Assert.Pass();
         }
