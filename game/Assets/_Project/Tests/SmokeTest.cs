@@ -225,6 +225,103 @@ namespace SalvageRun.Tests
         }
 
         /// <summary>
+        /// 🔴 **보스가 진행의 유일한 관문이다** (2026-08-26).
+        ///
+        ///    보스를 부숴야 다음 구역이 열린다. 그런데 보스는 **연료가 다 되기 전에
+        ///    닿을 수 있어야** 한다 — 못 닿으면 게임이 통째로 막힌다.
+        ///    실제로 그랬던 적이 있다: 보스가 300초에 나오는데 연료가 40초였다.
+        ///
+        ///    ⚠️ 이 검사가 없으면 **깰 수 없는 게임**이 조용히 나간다.
+        /// </summary>
+        [UnityTest, Timeout(600000)]
+        public IEnumerator BossArrivesWithinFuel()
+        {
+            var t = new StringBuilder();
+            t.AppendLine();
+            t.AppendLine("=========== 스모크: 보스가 연료 안에 오는가 ===========");
+
+            director.StartRun(0);
+            yield return null;
+
+            var st = director.Stage;
+            float bossAt = st.waveCount * st.waveSeconds;
+            float budget = director.ship.FuelMax / director.Config.idleFuelPerSecond;
+
+            t.AppendLine($"  보스 등장 {bossAt:0}초 · 연료 {budget:0}초");
+
+            Assert.Less(bossAt, budget,
+                $"🔴 보스가 {bossAt:0}초에 나오는데 연료는 {budget:0}초뿐이다 — 깰 수 없는 게임이다");
+
+            Debug.Log("[SMOKE]" + t);
+            director.ReturnNow();
+            yield return null;
+            director.BackToReady();
+            yield return null;
+            Assert.Pass();
+        }
+
+        /// <summary>
+        /// 🔴 **보스 탄에 맞으면 연료가 닳는다** (2026-08-26 사장님 지시).
+        ///    위협이 이것 하나뿐이라 여기가 끊기면 **게임에 긴장이 0**이 된다.
+        /// </summary>
+        [UnityTest, Timeout(600000)]
+        public IEnumerator BossShotsBurnFuel()
+        {
+            var t = new StringBuilder();
+            t.AppendLine();
+            t.AppendLine("=========== 스모크: 보스 탄 = 연료 손실 ===========");
+
+            director.StartRun(0);
+            yield return null;
+
+            var ship = director.ship;
+            var field = director.field;
+
+            // 🔴 보스가 나올 때까지 기다리지 않는다 — 부위를 직접 세우고 탄을 쏜다.
+            //    기다리면 42초가 걸리고, 그 사이 다른 것이 섞여 무엇을 잰 건지 흐려진다.
+            ship.ControlEnabled = false;
+            field.Spawning = false;
+
+            int parts = field.SpawnBossParts(2, 40f);
+            Assert.Greater(parts, 0, "🔴 보스 부위가 하나도 안 생겼다");
+            yield return null;
+
+            JunkPiece shooter = null;
+            for (int i = 0; i < field.Pieces.Count; i++)
+                if (field.Pieces[i].Alive && field.Pieces[i].IsBossPart) { shooter = field.Pieces[i]; break; }
+            Assert.IsNotNull(shooter, "🔴 살아 있는 보스 부위를 못 찾았다");
+
+            // 🔴 판정은 보스 국면에서만 돈다 — 부위만 세워 두면 아무 일도 안 일어난다
+            director.ForceBossPhaseForTest();
+
+            Vector2 from = shooter.transform.position;
+            Vector2 dir = ((Vector2)ship.transform.position - from).normalized;
+
+            float before = ship.Fuel;
+            int hitsBefore = director.BossHits;
+
+            field.FireEnemyShot(shooter, from, dir);
+
+            for (int i = 0; i < 240 && director.BossHits == hitsBefore; i++) yield return null;
+
+            float drop = before - ship.Fuel;
+            t.AppendLine($"  피격 {director.BossHits - hitsBefore}회 · 연료 {before:0.0} → {ship.Fuel:0.0}");
+
+            Assert.Greater(director.BossHits, hitsBefore,
+                "🔴 보스 탄이 배에 닿았는데 맞은 것으로 안 친다 — 위협이 통째로 없다");
+            Assert.Greater(drop, director.Config.bossShotFuelCost * 0.5f,
+                "🔴 맞았는데 연료가 그만큼 안 줄었다");
+
+            Debug.Log("[SMOKE]" + t);
+            ship.ControlEnabled = true;
+            director.ReturnNow();
+            yield return null;
+            director.BackToReady();
+            yield return null;
+            Assert.Pass();
+        }
+
+        /// <summary>
         /// 🔴 **플레이어는 무적이다** (2026-08-23 사장님:
         ///    *"플레이어를 공격하는 것도 없애고, 플레이어는 무적이야"*).
         ///

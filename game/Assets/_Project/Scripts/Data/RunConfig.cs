@@ -79,6 +79,13 @@ namespace SalvageRun.Data
         public int towCapacity = 6;
 
         /// <summary>
+        /// 🔴 **보스 탄 한 대에 닳는 연료** (2026-08-26).
+        ///    죽지는 않는다 — 맞으면 **이번 판이 짧아질** 뿐이다.
+        ///    그게 인크리멘탈에 맞는 벌이다: 손해는 시간이지 진행이 아니다.
+        /// </summary>
+        public float bossShotFuelCost = 12f;
+
+        /// <summary>
         /// 🔴 항행 한 구간에 걸리는 시간(초). **이 시간이 곧 거리다.**
         ///    짧으면 방어 국면이 사건이 안 되고, 길면 지루해진다.
         /// </summary>

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using SalvageRun.Data;
 
@@ -100,6 +101,9 @@ namespace SalvageRun.Meta
 
         /// <summary>🔴 회수 드론 대수. `RunDirector.SyncDrones`가 읽는다.</summary>
         public int carrierDrones;
+
+        /// <summary>🔴 보스 탄 피해 감소(0~1). `RunDirector.CheckBossShots`가 읽는다.</summary>
+        public float bossShotResist;
         public float refinePerCollect;
 
         // ---- 카드 ----
@@ -199,6 +203,9 @@ namespace SalvageRun.Meta
     public static class TechSystem
     {
         /// <summary>런 시작 상태. 카드는 런 중에 여기 더해진다.</summary>
+        /// <summary>`FillOwnedWeapons`가 채우는 임시 버퍼. 매 런마다 새로 만들 이유가 없다.</summary>
+        static readonly List<WeaponKind> ownedBuf = new List<WeaponKind>();
+
         public static RunStats BuildStats(GameContent content, RunConfig cfg)
         {
             var s = new RunStats
@@ -222,15 +229,18 @@ namespace SalvageRun.Meta
             var ship = MetaSave.CurrentShip(content);
             ApplyShip(s, ship);
 
-            // 🔴 **시작 무기는 테크트리에서 고른다** (2026-08-23).
-            //    예전에는 우주선이 정했다. 이제 무기가 트리 노드라
-            //    "강화를 살까, 무기를 열까"가 같은 저울에 오른다.
+            // 🔴 **연 무기가 전부 붙는다** (2026-08-26 사장님 지시:
+            //    *"무기는 장착이 아니라 추가다. 개수 제한은 없다"*).
             //
-            //    ⚠️ 못 고른 경우(트리를 한 번도 안 연 사람)에도 **반드시 하나는 들려야 한다** —
-            //       무기가 없으면 아무것도 못 하고 3분을 구경만 한다.
-            //       그래서 `CurrentWeapon`이 열린 것 중 첫 번째로, 그것도 없으면 여기 값으로 되돌린다.
+            //    고르는 방식이었을 때는 두 번째 무기를 사는 순간 첫 번째가 창고로 갔다 —
+            //    **산 보람이 없다.** 인크리멘탈에서 산 것은 쌓여야 한다.
+            //
+            //    ⚠️ 하나도 안 열렸으면 배가 주던 무기를 준다. 무기가 없으면 40초를 구경만 한다.
             var fallback = ship != null ? ship.startingWeapon : cfg.startingWeapon;
-            s.AddWeapon(MetaSave.CurrentWeapon(content, fallback), 1 + s.startWeaponLevel);
+            MetaSave.FillOwnedWeapons(content, ownedBuf, fallback);
+
+            for (int i = 0; i < ownedBuf.Count; i++)
+                s.AddWeapon(ownedBuf[i], 1 + s.startWeaponLevel);
             return s;
         }
 
@@ -300,7 +310,7 @@ namespace SalvageRun.Meta
                     case TechEffect.WeaponCountOne:    s.wCount[(int)n.weapon] += Mathf.RoundToInt(v); break;
                     case TechEffect.WeaponPierceOne:   s.wPierce[(int)n.weapon] += Mathf.RoundToInt(v); break;
 
-                    // ⬜ 무기를 여는 노드는 스탯을 안 바꾼다 (`MetaSave.CurrentWeapon`이 읽는다)
+                    // ⬜ 무기를 여는 노드는 스탯을 안 바꾼다 (`MetaSave.FillOwnedWeapons`가 읽는다)
                     case TechEffect.UnlockWeapon:      break;
 
                     // 수집 · 경제
@@ -308,6 +318,7 @@ namespace SalvageRun.Meta
                     case TechEffect.TowWeight:      s.towWeightMul += v; break;
                     case TechEffect.TowCapacity:    s.towCapacityBonus += Mathf.RoundToInt(v); break;
                     case TechEffect.CarrierDrone:   s.carrierDrones += Mathf.RoundToInt(v); break;
+                    case TechEffect.BossShotResist: s.bossShotResist = Mathf.Min(0.75f, s.bossShotResist + v); break;
                     case TechEffect.ValueMul:       s.valueMultiplier += v; break;
                     case TechEffect.XpMul:          s.xpMultiplier += v; break;
                     case TechEffect.RefineOnCollect:s.refinePerCollect += v; break;

@@ -158,6 +158,7 @@ namespace SalvageRun.Run
             Cleared = false;
             FloorCollected = 0;
             BossPartsLeft = 0;
+            BossHits = 0;
             Wave = 1;
             NextBossIn = 0f;
             Phase = FloorPhase.Collecting;
@@ -185,7 +186,13 @@ namespace SalvageRun.Run
             ship.boundsHalf = MapHalf;
             // 🔴 고른 배를 화면에 반영한다. 색과 크기가 안 바뀌면 배를 고른 의미가 안 보인다
             CurrentShip = MetaSave.CurrentShip(content);
-            ship.GetComponentInChildren<ShipVisual>()?.ApplyShip(CurrentShip);
+            var vis = ship.GetComponentInChildren<ShipVisual>();
+            if (vis != null)
+            {
+                vis.ApplyShip(CurrentShip);
+                // 🔴 연 무기만큼 배에 부품이 붙는다 — 산 것이 배에 보여야 "늘었다"가 남는다
+                vis.SyncWeaponParts(Stats, content);
+            }
 
             // 🔴 **격침 상태로 판이 끝났으면 배가 꺼진 채 남는다.**
             //    `Wreck()`이 `SetActive(false)`로 끄기 때문에, 다음 판을 그대로 시작하면
@@ -220,6 +227,7 @@ namespace SalvageRun.Run
 
             TidyTow();
             UpdateDrones();
+            CheckBossShots();
 
             Stats.TickBursts(Time.deltaTime);
 
@@ -660,11 +668,8 @@ namespace SalvageRun.Run
 
         // ---------------------------------------------------------------- 레벨업 · 카드
 
-        /// <summary>
-        /// ⬜ 무기 상한. 카드 뽑기가 없어진 지금(2026-08-23) **두 번째 무기를 얻을 길이 없다** —
-        ///    배가 준 하나로 끝난다. 값은 HUD가 "무기 1/2"로 쓰는 데만 남아 있다.
-        /// </summary>
-        public int MaxWeapons => config != null ? config.maxWeapons : 2;
+        // ⬜ **무기 상한을 없앴다** (2026-08-26 사장님: *"개수 제한은 없다"*).
+        //    연 무기가 전부 배에 붙으므로 셀 상한이 없다.
         public int ComboLevel => config != null ? config.comboLevel : 5;
 
         /// <summary>지금 판에서 열린 조합. 아직이면 null.</summary>
@@ -677,42 +682,74 @@ namespace SalvageRun.Run
         public float comboFlashLeft;
 
         /// <summary>
-        /// 🔴 히든 조합. 두 무기가 **모두** 기준 레벨에 닿으면 저절로 열린다.
-        ///    미리 알려주지 않는다 — 발견이 보상이기 때문이다.
-        ///    한쪽만 키우면 안 열리므로, "둘 다 키운다"가 자연스럽게 목표가 된다.
+        /// ⬜ **조합을 껐다** (2026-08-26).
+        ///
+        ///    조합은 *"한 판에 무기를 딱 둘만 갖는다"*는 전제 위에 있었다 —
+        ///    그 둘을 무엇으로 고르느냐가 그 판의 성격이었고, 태그 쌍이 그 답이었다.
+        ///
+        ///    사장님 지시로 **연 무기가 전부 붙게** 되면서 그 전제가 사라졌다.
+        ///    무기를 다 가지면 조합도 전부 성립하므로 **고른 보람이 없다** —
+        ///    남겨 두면 "열렸다"는 팝업만 뜨고 아무 결정도 안 만든다.
+        ///
+        ///    🔴 그 자리를 대신하는 것이 **테크트리의 발동형 노드**다
+        ///       (*"공격 시 N% 폭발"* 같은 것). 사장님이 요청하신 방향이기도 하다.
+        ///
+        ///    ⚠️ `ComboDef` 표와 `WeaponRig`의 조합 처리는 **그대로 뒀다.**
+        ///       무기를 다시 제한하는 날 이 함수만 되살리면 된다.
         /// </summary>
-        void CheckCombo()
+        void CheckCombo() { }
+
+        /// <summary>
+        /// 🔴 **보스가 던지는 것에 맞으면 연료가 닳는다** (2026-08-26 사장님 지시:
+        ///    *"보스가 투사체를 던지는거야. 그걸 맞으면 플레이어의 연료가 닳고"*).
+        ///
+        ///    2026-08-23에 위협을 전부 없앴는데(플레이어 무적), 사장님이 **보스에만** 되살리셨다.
+        ///
+        /// 🔴 **평소에는 여전히 안전하다.** 긴장이 판 전체에 얇게 퍼져 있으면
+        ///    *"일정한 위협은 위협이 아니다"*가 된다 — 조용한 구간이 있어야 시끄러운 구간이 무섭다.
+        ///    캐는 동안은 마음 놓고 캐고, **보스 앞에서만** 조심하면 된다.
+        ///
+        ///    ⚠️ 맞아도 죽지 않는다. **연료가 닳을 뿐**이다 — 그건 곧 "이번 판이 짧아진다"이고,
+        ///       인크리멘탈에서 그게 딱 맞는 벌이다. 죽음은 여전히 없다.
+        /// </summary>
+        void CheckBossShots()
         {
-            if (ActiveCombo != null) return;
-            if (Stats.OwnedWeaponCount < 2) return;
+            if (Phase != FloorPhase.BossActive) return;
 
-            Stats.OwnedPair(out int a, out int b);
-            if (a < 0 || b < 0) return;
+            Vector2 shipPos = ship.transform.position;
+            const float hit = 1.0f;
 
-            int need = Mathf.Max(1, config.comboLevel - Stats.comboLevelDown);
-            if (Stats.weaponLevel[a] < need || Stats.weaponLevel[b] < need) return;
+            for (int i = 0; i < field.Shots.Count; i++)
+            {
+                var sh = field.Shots[i];
+                if (!sh.Alive) continue;
+                if (((Vector2)sh.transform.position - shipPos).sqrMagnitude > hit * hit) continue;
 
-            if (!Stats.OwnedTags(content, out var ta, out var tb)) return;
+                sh.Despawn();
 
-            var combo = content.FindCombo(ta, tb);
-            if (combo == null) return;
+                float cost = config.bossShotFuelCost * Tuning.IncomingCostMul
+                           * (1f - Mathf.Clamp01(Stats != null ? Stats.bossShotResist : 0f));
 
-            ActiveCombo = combo;
-            Stats.combo = combo.effect;
+                ship.ConsumeFuel(cost);
+                BossHits++;
 
-            AddPopup(ship.transform.position, $"★ {combo.title}", combo.color);
-            LastMessage = $"조합 발동 — {combo.title}: {combo.description}";
-            Juice.LevelUp();
+                Fx.Spark(shipPos, 0.6f, new Color(1f, 0.5f, 0.35f), 0.18f);
+                AddPopup(shipPos, $"피격 -{cost:0}", new Color(1f, 0.55f, 0.45f));
+                Juice.Contact();
 
-            // 🔴 조합은 이 게임의 차별점이다. 열리는 순간이 **화면에서 사건이어야** 한다.
-            //    팝업 한 줄로 지나가면 플레이어는 뭐가 달라졌는지 모른 채 계속 한다.
-            Vector2 at = ship.transform.position;
-            for (int i = 0; i < 3; i++)
-                Fx.Shockwave(at, 6f + i * 3.5f, new Color(combo.color.r, combo.color.g, combo.color.b, 0.9f), 0.5f + i * 0.15f);
-            Fx.Spark(at, 5f, combo.color, 0.45f);
-
-            comboFlashLeft = 2.2f;
+                if (ship.OutOfFuel) { Finish("연료 소진 — 자동 귀환"); return; }
+            }
         }
+
+        /// <summary>이번 판에 보스 탄에 맞은 횟수. 결과 화면이 읽는다.</summary>
+        public int BossHits { get; private set; }
+
+        /// <summary>
+        /// 🔴 **검사 전용.** 보스 국면으로 바로 넘긴다.
+        ///    스모크가 보스 탄 판정을 재려면 42초를 기다려야 하는데,
+        ///    그 사이 다른 것이 섞여 **무엇을 잰 건지 흐려진다.**
+        /// </summary>
+        public void ForceBossPhaseForTest() => Phase = FloorPhase.BossActive;
 
         // ---------------------------------------------------------------- 보스 = 부위 3개
 
@@ -798,8 +835,13 @@ namespace SalvageRun.Run
         {
             if (boss != null) boss.End();
 
-            // ⬜ 예전에는 여기서 다음 구역을 열었다. 2026-08-26부터 **구역은 재화로 산다** —
-            //    보스를 잡는 것은 이제 해금이 아니라 그냥 한 바퀴를 잘 끝낸 것이다.
+            // 🔴 **보스를 부숴야 다음 구역이 열린다** (2026-08-26 사장님 지시:
+            //    *"이 맵의 다음을 넘어가기 위해선 외계 우주선을 다 부숴야 나갈 수 있는 거지"*).
+            //
+            //    낮에 잠깐 **재화 구매**로 바꿨었다. 보스가 300초에 나오는데 연료가 짧아
+            //    도달이 불가능했기 때문이다. 이제 웨이브를 7초로 줄여 **40초 안에 닿으므로**
+            //    원래 자리로 돌려놓는다 — 벽이 둘이면 어느 쪽도 안 급하다.
+            MetaSave.UnlockStage(content, MapIndex + 1, true);
             Cleared = true;
             Finish($"{Stage.displayName} 클리어");
         }

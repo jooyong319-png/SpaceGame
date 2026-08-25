@@ -63,6 +63,14 @@ namespace SalvageRun.Run
             if (!active || def == null || director == null || ship == null) return;
             if (!director.FieldActive || RunDirector.WorldPaused) return;
 
+            // 🔴 **모든 보스가 쏜다** (2026-08-26 사장님 지시:
+            //    *"보스가 투사체를 던지는거야. 그걸 맞으면 플레이어의 연료가 닳고"*).
+            //
+            //    종류별 방해(반발장·EMP 등)는 그 위에 얹히는 개성이고,
+            //    **쏘는 것은 공통**이다 — 그래야 "보스는 위험하다"를 한 번만 배우면 된다.
+            //    종류마다 위협의 종류가 다르면 여섯 번 배워야 한다.
+            Barrage();
+
             switch (def.kind)
             {
                 case BossKind.Inert:     break;                    // 첫 보스는 해체만 가르친다
@@ -73,6 +81,53 @@ namespace SalvageRun.Run
                 case BossKind.Rift:      Periodic(RiftPulse, 2.4f); break;
             }
         }
+
+        /// <summary>
+        /// 🔴 **보스가 탄을 던진다.** 살아 있는 부위 하나가 배를 향해 쏜다.
+        ///
+        ///    🔴 **예고 없이 쏘지 않는다** — 발사 직전에 그 부위가 밝아진다.
+        ///       예고 없는 위협은 회피 기회가 아니라 기습이고, 플레이어는
+        ///       "왜 연료가 줄었는지" 모른 채 당하기만 한다.
+        ///
+        ///    🔴 **배를 정확히 겨누지 않는다.** 조금 어긋나게 쏜다 —
+        ///       정확히 겨누면 가만히 있는 게 죽음이고 움직이는 게 정답이 되어
+        ///       회피가 아니라 반사신경 시험이 된다. 어긋나게 쏘면
+        ///       **어디에 서 있을지**가 답이 된다. 이 게임의 유일한 동사와 맞다.
+        /// </summary>
+        void Barrage()
+        {
+            if (field == null || ship == null) return;
+
+            shotClock -= Time.deltaTime;
+            if (shotClock > 0f) return;
+
+            // 부위가 적게 남을수록 빨리 쏜다 — 끝이 가까울수록 조여야 마무리에 긴장이 있다
+            int alive = 0;
+            JunkPiece shooter = null;
+            for (int i = 0; i < field.Pieces.Count; i++)
+            {
+                var p = field.Pieces[i];
+                if (!p.Alive || !p.IsBossPart) continue;
+                alive++;
+                if (shooter == null || Random01() < 0.4f) shooter = p;
+            }
+
+            if (shooter == null) return;
+
+            shotClock = Mathf.Lerp(0.8f, 2.2f, Mathf.Clamp01((alive - 1) / 3f));
+
+            Vector2 from = shooter.transform.position;
+            Vector2 to = (Vector2)ship.transform.position
+                       + new Vector2(Random01() - 0.5f, Random01() - 0.5f) * 4f;
+
+            Vector2 dir = to - from;
+            if (dir.sqrMagnitude < 0.01f) return;
+
+            field.FireEnemyShot(shooter, from, dir.normalized);
+            Fx.Spark(from, 0.5f, new Color(1f, 0.6f, 0.4f), 0.14f);
+        }
+
+        float shotClock = 1.5f;
 
         /// <summary>
         /// 🔴 주기형 행동은 **반드시 예고한다.**

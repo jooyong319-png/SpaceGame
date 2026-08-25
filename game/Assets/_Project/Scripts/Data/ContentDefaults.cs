@@ -32,7 +32,7 @@ namespace SalvageRun.Data
                           float hp, float contactDamage, int fragments, Color color,
                           int weight = 10, int groupSize = 1, string splitInto = null, int splitCount = 0,
                           bool hazard = false, float fuelBonus = 0f, float fuelPenalty = 0f,
-                          bool anchor = false)
+                          bool anchor = false, JunkShape shape = JunkShape.Debris)
         {
             return new JunkType
             {
@@ -42,7 +42,7 @@ namespace SalvageRun.Data
                 spawnWeight = weight, groupSize = groupSize, splitInto = splitInto,
                 splitCount = splitCount > 0 ? splitCount : 2,
                 isHazard = hazard, fuelBonus = fuelBonus, fuelPenalty = fuelPenalty,
-                isAnchor = anchor
+                isAnchor = anchor, shape = shape
             };
         }
 
@@ -66,38 +66,58 @@ namespace SalvageRun.Data
             //    웨이브마다 추가로 1.35배씩 더 붙는다 (RunDirector.CheckContact).
             c.junk = new[]
             {
-                // ---- 티어 0 : 잡몹. 🔴 "파바바박"의 주력이다 ----
-                //     HP 1 = 닿는 족족 터진다. 단단한 것만 있으면 리듬이 죽는다.
-                J("미세 파편",   0,   4, 0.46f, 7.0f, 1.6f, MoveKind.Chase,   1f, 10f, 2.4f, 1, C(150,160,175), weight: 26, groupSize: 5),
-                J("우주 먼지",   0,   5, 0.53f, 6.1f, 1.2f, MoveKind.Zigzag,  1.6f, 10f, 2.4f, 1, C(130,145,160), weight: 12, groupSize: 4),
-                J("볼트 다발",   0,   8, 0.62f, 5.3f, 1.4f, MoveKind.Chase,   1f, 28f, 4.0f, 1, C(170,165,140), weight: 14),
-                J("찌그러진 캔", 0,  10, 0.68f, 4.5f, 1.0f, MoveKind.Drift,   1f, 30f, 4.0f, 1, C(160,175,180), weight: 12),
-                J("폐배선",      0,  12, 0.65f, 5.7f, 1.5f, MoveKind.Zigzag,  1.3f, 40f, 4.8f,  2, C(200,150,90),  weight: 10),
-                J("단열 타일",   0,  14, 0.78f, 3.7f, 0.8f, MoveKind.Drift,   1f, 55f, 4.8f,  2, C(210,205,190), weight:  9),
-                J("파쇄 패널",   0,  16, 0.81f, 4.9f, 1.2f, MoveKind.Chase,   1f, 60f, 5.6f, 2, C(150,170,190), weight: 10),
-                J("산소 탱크",   0,  20, 0.90f, 3.3f, 0.6f, MoveKind.Drift,   1f, 80f, 5.6f, 2, C(120,200,190), weight:  7, fuelBonus: 6f),
+                // ==================================================================
+                //  🔴 **쓰레기는 실제 사물이다** (2026-08-26 사장님 지시).
+                //
+                //     위성 · 작은 우주선 · 전함 · 거대 우주선 · (외계 우주선 = 보스)
+                //
+                //     전에는 "볼트 다발 · 폐배선 · 파쇄 패널" 같은 **조각**이었다.
+                //     조각은 크기와 색만 다를 뿐 **무엇을 부수고 있는지가 안 읽힌다** —
+                //     사물이어야 "저건 전함이다, 단단하겠다"가 보자마자 온다.
+                //
+                //  🔴 다섯 범주가 **한눈에 갈리는 축**을 하나씩 갖는다:
+                //     · 위성      = 작고 흔하다. 고철
+                //     · 작은 우주선 = 중간. 빠르고 수가 많다. 회로
+                //     · 전함      = 크고 단단하다. 느리다. 코어
+                //     · 거대 우주선 = 아주 크다. 부수면 **조각이 여럿** 나온다
+                // ==================================================================
 
-                // ---- 티어 1 : 중형. 패턴이 갈리기 시작한다 ----
-                //     🔴 Charger는 돌진할 때 속도가 2.4배가 된다. 기본값을 낮게 잡아야 한다.
-                J("추진기 노즐", 1,  28, 0.96f, 6.6f, 1.6f, MoveKind.Charger, 1.2f, 95f, 8.0f,  3, C(220,140,100), weight:  9),
-                J("과열 전지",   1,  32, 0.87f, 7.4f, 1.4f, MoveKind.Charger, 1.6f, 85f, 11.2f,  2, C(255,170,80),  weight:  7),
-                J("정찰 드론",   1,  36, 0.93f, 7.0f, 1.8f, MoveKind.Orbiter, 1.2f, 100f, 8.0f,  3, C(160,200,255), weight: 13),
-                J("통신 위성",   1,  42, 1.12f, 4.5f, 0.9f, MoveKind.Orbiter, 0.8f, 150f, 8.0f, 3, C(190,190,220), weight: 10, splitInto: "폐배선", splitCount: 2),
-                J("화물 컨테이너",1, 55, 1.33f, 3.7f, 0.9f, MoveKind.Chase,   1f, 240f, 9.6f,  4, C(200,170,110), weight:  9, splitInto: "파쇄 패널", splitCount: 3),
-                J("함교 잔해",   1,  60, 1.27f, 4.9f, 1.2f, MoveKind.Chase,   1f, 260f, 9.6f,  4, C(150,180,200), weight:  8, splitInto: "폐배선", splitCount: 4),
+                // ---- 위성 (티어 0) : 잡몹. "파바바박"의 주력 ----
+                //      HP가 낮아 닿는 족족 터진다. 단단한 것만 있으면 리듬이 죽는다
+                J("소형 위성",     0,   6, 0.62f, 2.2f, 0.9f, MoveKind.Chase,  1f,  10f, 2.4f, 1, C(150,160,175), weight: 24, groupSize: 4, shape: JunkShape.Satellite),
+                J("통신 위성",     0,  10, 0.78f, 1.8f, 0.7f, MoveKind.Orbiter, 0.8f, 26f, 3.2f, 1, C(190,190,220), weight: 16, groupSize: 2, shape: JunkShape.Satellite),
+                J("기상 위성",     0,  14, 0.86f, 1.6f, 0.6f, MoveKind.Drift,  1f,  42f, 4.0f, 2, C(170,200,210), weight: 12, shape: JunkShape.Satellite),
+                J("정찰 위성",     0,  18, 0.92f, 2.6f, 1.2f, MoveKind.Zigzag, 1.2f, 55f, 4.0f, 2, C(160,200,255), weight: 10, shape: JunkShape.Satellite),
 
-                // ---- 티어 2 : 대형. 느리지만 아프고, 부수면 크게 터진다 ----
-                J("엔진 블록",   2,  95, 1.55f, 3.3f, 0.8f, MoveKind.Chase,   1f, 330f, 14.4f,  5, C(190,120,90),  weight: 12, splitInto: "추진기 노즐", splitCount: 3),
-                J("침몰 격벽",   2, 110, 1.71f, 2.6f, 0.6f, MoveKind.Drift,   1f, 380f, 14.4f,  5, C(140,150,170), weight: 10, splitInto: "파쇄 패널", splitCount: 5),
-                J("포탑 잔해",   2, 130, 1.49f, 5.3f, 1.4f, MoveKind.Charger, 1.0f, 300f, 19.2f, 6, C(210,110,110), weight:  9, splitInto: "볼트 다발", splitCount: 4),
-                J("반응로 코어", 2, 180, 1.40f, 3.7f, 1.0f, MoveKind.Orbiter, 0.9f, 420f, 16.0f, 6, C(255,200,120), weight:  7, fuelBonus: 14f, splitInto: "과열 전지", splitCount: 3),
+                // ---- 작은 우주선 (티어 1) : 중형. 빠르고 수가 많다 ----
+                J("구조정",        1,  30, 1.10f, 2.4f, 1.0f, MoveKind.Chase,   1f,  95f, 6.4f, 3, C(200,170,110), weight: 14, groupSize: 2, shape: JunkShape.Vessel),
+                J("정찰선",        1,  36, 1.04f, 3.0f, 1.4f, MoveKind.Zigzag,  1.3f, 85f, 6.4f, 3, C(160,210,255), weight: 12, shape: JunkShape.Vessel),
+                J("화물선",        1,  48, 1.30f, 1.7f, 0.7f, MoveKind.Drift,   1f, 150f, 8.0f, 4, C(210,180,120), weight: 11,
+                  splitInto: "소형 위성", splitCount: 2, shape: JunkShape.Vessel),
+                J("채굴선",        1,  54, 1.24f, 2.0f, 0.9f, MoveKind.Charger, 1.1f, 140f, 8.0f, 4, C(220,140,100), weight:  9, shape: JunkShape.Vessel),
 
-                // ---- 위험물 : 크레딧 0. 🔴 닿으면 "특히" 아프다 ----
-                //     피하라고 만든 것이므로 **피할 수 있는 속도**여야 한다.
-                J("냉각수 유출",  1,  0, 1.02f, 5.7f, 1.4f, MoveKind.Chase,  1f, 70f, 22.4f, 0, C(120,255,200), weight: 12, hazard: true, fuelPenalty: 10f),
-                J("방사성 폐기물",2,  0, 1.15f, 4.9f, 1.2f, MoveKind.Zigzag, 1.4f, 100f, 28.8f, 0, C(180,255,110), weight: 10, hazard: true, fuelPenalty: 14f),
-                J("불안정 폭약",  2,  0, 1.08f, 6.6f, 1.6f, MoveKind.Charger,1.8f, 55f, 35.2f, 0, C(255,110,90),  weight:  8, hazard: true, fuelPenalty: 18f),
-                J("자기 폭풍",    2,  0, 1.36f, 4.1f, 1.0f, MoveKind.Orbiter,1.3f, 130f, 25.6f, 0, C(200,140,255), weight:  9, hazard: true, fuelPenalty: 12f),
+                // ---- 전함 (티어 2) : 크고 단단하다. 느리다 ----
+                J("호위함",        2,  90, 1.55f, 1.5f, 0.7f, MoveKind.Chase,   1f, 300f, 11.2f, 5, C(150,180,200), weight: 12,
+                  splitInto: "구조정", splitCount: 2, shape: JunkShape.Warship),
+                J("구축함",        2, 120, 1.72f, 1.3f, 0.6f, MoveKind.Drift,   1f, 380f, 12.8f, 5, C(140,150,170), weight: 10,
+                  splitInto: "정찰선", splitCount: 3, shape: JunkShape.Warship),
+                J("포격함",        2, 145, 1.66f, 1.7f, 0.9f, MoveKind.Charger, 1.0f, 340f, 14.4f, 6, C(210,110,110), weight:  8,
+                  splitInto: "소형 위성", splitCount: 4, shape: JunkShape.Warship),
+
+                // ---- 거대 우주선 (티어 2) : 아주 크다. 부수면 조각이 여럿 ----
+                //      🔴 이게 화면에 하나 뜨면 **그쪽으로 갈 이유**가 된다.
+                //         느리고 단단해서 시간을 들여야 하고, 그만큼 쏟아진다
+                J("수송 모함",     2, 240, 2.20f, 0.9f, 0.5f, MoveKind.Drift,   1f, 620f, 16.0f, 8, C(190,175,140), weight:  6,
+                  splitInto: "화물선", splitCount: 3, shape: JunkShape.Hulk),
+                J("난파 순양함",   2, 300, 2.45f, 0.8f, 0.4f, MoveKind.Drift,   1f, 780f, 16.0f, 9, C(160,170,190), weight:  5,
+                  splitInto: "호위함", splitCount: 2, shape: JunkShape.Hulk),
+
+                // ---- 위험물 : 크레딧 0 ----
+                //      ⬜ 지금은 **닿아도 아프지 않다** (플레이어 무적, 2026-08-23).
+                //         `fuelPenalty`는 아무 데서도 안 읽는다.
+                //         남겨 둔 이유: 보스 투사체와 함께 위협을 되살릴 때 쓸 자리다.
+                J("냉각수 유출",   1,   0, 1.15f, 2.0f, 1.0f, MoveKind.Chase,   1f,  70f, 22.4f, 0, C(120,255,200), weight:  8, hazard: true, fuelPenalty: 10f),
+                J("방사성 폐기물", 2,   0, 1.28f, 1.7f, 0.9f, MoveKind.Zigzag,  1.2f, 100f, 28.8f, 0, C(180,255,110), weight:  7, hazard: true, fuelPenalty: 14f),
 
                 // ---- 계류 장치 (rev.10 최종 지역) ----
                 //  🔴 스폰 풀에 들어가지 않는다 (`spawnWeight = 0`).
@@ -236,7 +256,7 @@ namespace SalvageRun.Data
             c.stages = new[]
             {
                 new StageDef {
-                    displayName="기지 궤도", rank=1, mapHalfSize=new Vector2(52f,34f), waveCount=6,  waveSeconds=50f, description="모선 바로 아래. 위성 파편이 천천히 돈다.",
+                    displayName="기지 궤도", rank=1, mapHalfSize=new Vector2(52f,34f), waveCount=6,  waveSeconds=7f, description="모선 바로 아래. 위성 파편이 천천히 돈다.",
                     junkCount=110, initialFill=16, spawnPerSecond=2.5f, hazardRatio=0f,
                     baseDrainPerSecond=3.5f, travelFuelCost=180f,
                     minTier=0, maxTier=0,
@@ -245,7 +265,7 @@ namespace SalvageRun.Data
                         integrity=90f,  reward=300,  fragments=12, size=3.0f, color=C(170,180,195) } },
 
                 new StageDef {
-                    displayName="폐선 항로", rank=2, mapHalfSize=new Vector2(58f,38f), waveCount=7,  waveSeconds=50f, description="버려진 항로. 빠른 파편이 섞인다.",
+                    displayName="폐선 항로", rank=2, mapHalfSize=new Vector2(58f,38f), waveCount=7,  waveSeconds=7f, description="버려진 항로. 빠른 파편이 섞인다.",
                     unlockScrap=800,
                     junkCount=150, initialFill=20, spawnPerSecond=3.2f, hazardRatio=0.10f,
                     baseDrainPerSecond=5.0f, travelFuelCost=260f,
@@ -255,7 +275,7 @@ namespace SalvageRun.Data
                         integrity=170f, reward=800,  fragments=16, size=3.4f, color=C(120,190,220), interferePower=13f } },
 
                 new StageDef {
-                    displayName="잔해장", rank=3, mapHalfSize=new Vector2(64f,42f), waveCount=8,  waveSeconds=50f, description="함대가 침몰한 자리. 값나가는 것이 많다.",
+                    displayName="잔해장", rank=3, mapHalfSize=new Vector2(64f,42f), waveCount=8,  waveSeconds=7f, description="함대가 침몰한 자리. 값나가는 것이 많다.",
                     unlockScrap=2400, unlockCircuit=20,
                     junkCount=180, initialFill=22, spawnPerSecond=7.5f, hazardRatio=0.12f,
                     baseDrainPerSecond=6.5f, travelFuelCost=340f,
@@ -265,7 +285,7 @@ namespace SalvageRun.Data
                         integrity=280f, reward=1800, fragments=20, size=4.0f, color=C(230,150,110), interferePower=1.6f } },
 
                 new StageDef {
-                    displayName="파괴된 정거장", rank=4, mapHalfSize=new Vector2(70f,46f), waveCount=9,  waveSeconds=50f, description="거대 구조물의 잔해. 절단 없이는 손대지 못하는 것들.",
+                    displayName="파괴된 정거장", rank=4, mapHalfSize=new Vector2(70f,46f), waveCount=9,  waveSeconds=7f, description="거대 구조물의 잔해. 절단 없이는 손대지 못하는 것들.",
                     unlockScrap=6000, unlockCircuit=60, unlockCore=4,
                     junkCount=210, initialFill=24, spawnPerSecond=5.0f,  hazardRatio=0.13f,
                     baseDrainPerSecond=8.0f, travelFuelCost=430f,
@@ -275,7 +295,7 @@ namespace SalvageRun.Data
                         integrity=430f, reward=4200, fragments=24, size=4.4f, color=C(140,170,255), interferePower=4.5f } },
 
                 new StageDef {
-                    displayName="심연", rank=5, mapHalfSize=new Vector2(76f,50f), waveCount=10, waveSeconds=50f, description="아무도 회수하러 오지 않는 곳.",
+                    displayName="심연", rank=5, mapHalfSize=new Vector2(76f,50f), waveCount=10, waveSeconds=7f, description="아무도 회수하러 오지 않는 곳.",
                     unlockScrap=14000, unlockCircuit=140, unlockCore=14,
                     junkCount=240, initialFill=26, spawnPerSecond=6.0f,  hazardRatio=0.14f,
                     baseDrainPerSecond=9.5f, travelFuelCost=520f,
@@ -285,7 +305,7 @@ namespace SalvageRun.Data
                         integrity=640f, reward=9000, fragments=30, size=4.8f, color=C(200,90,140), interferePower=7f } },
 
                 new StageDef {
-                    displayName="균열", rank=6, mapHalfSize=new Vector2(84f,56f), waveCount=12, waveSeconds=50f, description="여기까지 온 우주선은 거의 없다.",
+                    displayName="균열", rank=6, mapHalfSize=new Vector2(84f,56f), waveCount=12, waveSeconds=7f, description="여기까지 온 우주선은 거의 없다.",
                     unlockScrap=32000, unlockCircuit=320, unlockCore=40,
                     junkCount=270, initialFill=28, spawnPerSecond=4.0f,  hazardRatio=0.16f,
                     baseDrainPerSecond=11.0f, travelFuelCost=620f,

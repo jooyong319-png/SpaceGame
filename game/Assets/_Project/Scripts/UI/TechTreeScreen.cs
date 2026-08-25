@@ -148,7 +148,7 @@ namespace SalvageRun.UI
             }
 
             GUI.Label(new Rect(20f * s, 34f * s, 700f * s, 20f * s),
-                "드래그 = 이동 · 클릭 = 강화 · 연 무기를 다시 누르면 장착 · T/Esc = 닫기", small);
+                "드래그 = 이동 · 클릭 = 강화 · 연 무기는 전부 배에 붙는다 · T/Esc = 닫기", small);
         }
 
         void DrawMat(ref float x, float s, MatKind m, int amount)
@@ -351,7 +351,6 @@ namespace SalvageRun.UI
                 //    지금 무엇을 들고 나가는지가 트리에서 바로 보여야 한다
                 bool isWeapon = n.effect == TechEffect.UnlockWeapon;
                 bool wOpen = isWeapon && MetaSave.WeaponUnlocked(content, n.weapon);
-                bool equipped = wOpen && MetaSave.CurrentWeapon(content, n.weapon) == n.weapon;
                 if (wOpen) { rank = Mathf.Max(rank, 1); maxed = true; }
                 bool can = MetaSave.CanBuy(n, content, out string why);
                 // ⬜ "선행 필요"로 잠긴 상태는 이제 화면에 안 온다 — `VisOf`가 걸러낸다.
@@ -367,12 +366,11 @@ namespace SalvageRun.UI
                 Box(r, fill);
 
                 // 테두리 — 찍은 것은 밝게, 지금 살 수 있는 것은 흰 테두리
-                Color edge = equipped ? Color.white
-                           : maxed ? bc
+                Color edge = maxed ? bc
                            : can ? Color.white
                            : rank > 0 ? new Color(bc.r, bc.g, bc.b, 0.7f)
                            : new Color(0.3f, 0.33f, 0.4f, 0.8f);
-                Frame(r, edge, equipped ? 3.5f * s : (can || maxed) ? 2.5f * s : 1.5f * s);
+                Frame(r, edge, (can || maxed) ? 2.5f * s : 1.5f * s);
 
                 // 이름
                 GUI.color = Color.white;
@@ -390,11 +388,10 @@ namespace SalvageRun.UI
                 }
                 else if (isWeapon)
                 {
-                    GUI.color = equipped ? new Color(0.7f, 1f, 0.85f)
-                              : wOpen ? new Color(0.72f, 0.78f, 0.9f)
-                                      : new Color(0.62f, 0.55f, 0.45f);
+                    // 🔴 **연 무기는 배에 그대로 붙어 있다** (2026-08-26). 고르는 게 아니다
+                    GUI.color = wOpen ? new Color(0.7f, 1f, 0.85f) : new Color(0.62f, 0.55f, 0.45f);
                     GUI.Label(new Rect(r.x, r.yMax - 18f * s, r.width, 16f * s),
-                              equipped ? "장착 중" : wOpen ? "누르면 장착" : "열기", center);
+                              wOpen ? "장착됨" : "열기", center);
                     GUI.color = Color.white;
                 }
                 else if (rank > 0)
@@ -425,16 +422,8 @@ namespace SalvageRun.UI
 
         void TryBuy(TechNodeDef n, bool can, bool maxed, string why)
         {
-            // 🔴 **연 무기를 다시 누르면 그걸 골라 든다** (2026-08-23).
-            //    여는 것과 고르는 것을 같은 노드에서 한다 — 화면을 하나 더 만들지 않으려는 것이다.
-            //    그래서 무기 노드는 "이미 최대다"로 튕기지 않는다.
-            if (n.effect == TechEffect.UnlockWeapon
-                && MetaSave.WeaponUnlocked(content, n.weapon))
-            {
-                MetaSave.SelectWeapon(content, n.weapon);
-                Flash($"{Weapons.Name(n.weapon)} 장착", BranchColor(n.branch));
-                return;
-            }
+            // ⬜ 예전에는 연 무기를 다시 누르면 **골라 드는** 분기가 여기 있었다.
+            //    2026-08-26부터 연 무기는 전부 붙으므로 고를 일이 없다 — 분기를 뺐다.
 
             if (maxed) { Flash("이미 최대다", new Color(0.7f, 0.75f, 0.85f)); return; }
             if (!can) { Flash(why ?? "아직 안 된다", new Color(1f, 0.55f, 0.45f)); return; }

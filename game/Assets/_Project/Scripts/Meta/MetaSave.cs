@@ -49,10 +49,10 @@ namespace SalvageRun.Meta
         public string selectedShip = "";
 
         /// <summary>
-        /// 🔴 지금 들고 시작할 무기 (`WeaponKind`의 정수값). -1이면 아직 안 골랐다.
-        ///    2026-08-23부터 무기는 **테크트리 노드**로 열고 고른다.
-        ///    ⚠️ 이름이 아니라 정수로 저장하므로, `WeaponKind`의 순서를 바꾸면
-        ///       저장된 값이 다른 무기를 가리킨다. 순서는 함부로 안 바꾼다.
+        /// ⬜ **더 이상 안 쓴다** (2026-08-26). 무기를 하나 골라 드는 방식이었는데,
+        ///    사장님 지시로 **연 무기가 전부 동시에 붙는** 방식이 됐다 — 고를 일이 없다.
+        ///    지우지 않고 남긴 이유: 저장된 파일에 값이 들어 있고, JsonUtility가
+        ///    없는 필드를 만나면 조용히 0으로 두기 때문에 지워도 손해는 없지만 얻는 것도 없다.
         /// </summary>
         public int selectedWeapon = -1;
 
@@ -148,6 +148,10 @@ namespace SalvageRun.Meta
         /// </summary>
         const string PrefsKey = "salvagerun.meta";
 
+        // 🔴 `UsePrefs`가 **컴파일 시각 상수**라 반대쪽 분기가 도달 불가로 잡힌다(CS0162).
+        //    의도한 것이다 — WebGL은 파일을 못 쓰고, 데스크톱은 PlayerPrefs를 안 쓴다.
+        //    경고를 끄는 이유: 이 셋이 목록에 상주하면 **진짜 경고가 묻힌다.**
+#pragma warning disable CS0162
 #if UNITY_WEBGL && !UNITY_EDITOR
         const bool UsePrefs = true;
 #else
@@ -276,17 +280,6 @@ namespace SalvageRun.Meta
 
         // ---------------------------------------------------------------- 무기
 
-        /// <summary>
-        /// 🔴 **무기를 골라 든다.** 이미 연 무기 노드를 다시 누르면 여기로 온다.
-        ///    연 적 없는 무기는 못 고른다 — 노드를 안 찍고 저장을 손대도 안 넘어간다.
-        /// </summary>
-        public static void SelectWeapon(GameContent content, WeaponKind k)
-        {
-            if (!WeaponUnlocked(content, k)) return;
-            Data.selectedWeapon = (int)k;
-            Save();
-        }
-
         /// <summary>이 무기를 여는 노드를 찍었는가.</summary>
         public static bool WeaponUnlocked(GameContent content, WeaponKind k)
         {
@@ -305,24 +298,25 @@ namespace SalvageRun.Meta
         }
 
         /// <summary>
-        /// 🔴 지금 들고 시작할 무기.
+        /// 🔴 **연 무기는 전부 붙는다** (2026-08-26 사장님 지시:
+        ///    *"무기는 장착이 아니라 추가다. 우주선에 부품이 붙는 방식이고 개수 제한은 없다"*).
         ///
-        ///    고른 것이 없거나 **잠긴 것을 가리키고 있으면**(데이터가 바뀌었을 수 있다)
-        ///    열려 있는 것 중 첫 번째로 되돌린다. 그것도 없으면 `fallback`.
-        ///    ⚠️ 여기서 안 막으면 **무기 없이 판이 시작된다** — 아무것도 못 하고 3분을 본다.
+        ///    고르는 방식이었을 때는 무기를 사도 **하나만 쓸 수 있어서**
+        ///    두 번째 무기를 사는 순간 첫 번째가 창고로 갔다 — 산 보람이 없다.
+        ///    이제 살 때마다 배에 하나씩 더 붙고 **전부 같이 쏜다.**
+        ///
+        ///    ⚠️ 하나도 안 열렸으면 `fallback`을 준다. 무기가 없으면
+        ///       아무것도 못 하고 40초를 구경만 한다.
         /// </summary>
-        public static WeaponKind CurrentWeapon(GameContent content, WeaponKind fallback)
+        public static void FillOwnedWeapons(GameContent content, System.Collections.Generic.List<WeaponKind> into,
+                                            WeaponKind fallback)
         {
-            if (Data.selectedWeapon >= 0 && Data.selectedWeapon < Weapons.Count)
-            {
-                var picked = (WeaponKind)Data.selectedWeapon;
-                if (WeaponUnlocked(content, picked)) return picked;
-            }
+            into.Clear();
 
             for (int i = 0; i < Weapons.Count; i++)
-                if (WeaponUnlocked(content, (WeaponKind)i)) return (WeaponKind)i;
+                if (WeaponUnlocked(content, (WeaponKind)i)) into.Add((WeaponKind)i);
 
-            return fallback;
+            if (into.Count == 0) into.Add(fallback);
         }
 
         public static void SelectShip(ShipDef s)
@@ -445,8 +439,23 @@ namespace SalvageRun.Meta
             return true;
         }
 
-        public static bool UnlockStage(GameContent content, int index)
+        /// <param name="free">
+        /// 🔴 보스를 부숴서 여는 경우. 재화를 안 받고, 앞 구역·비용 확인도 건너뛴다
+        /// (보스를 잡았다는 것 자체가 앞 구역을 지났다는 증거다).
+        /// </param>
+        public static bool UnlockStage(GameContent content, int index, bool free = false)
         {
+            if (index <= 0 || content == null) return false;
+            if (index >= content.StageCount) return false;
+            if (StageUnlocked(content, index)) return false;
+
+            if (free)
+            {
+                if (Data.unlockedMaps < index + 1) Data.unlockedMaps = index + 1;
+                Save();
+                return true;
+            }
+
             if (!CanUnlockStage(content, index, out _)) return false;
 
             var st = content.Stage(index);
@@ -481,5 +490,6 @@ namespace SalvageRun.Meta
         {
             cached = data ?? new MetaData();
         }
+#pragma warning restore CS0162
     }
 }

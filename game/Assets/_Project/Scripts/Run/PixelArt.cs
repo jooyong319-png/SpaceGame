@@ -110,6 +110,150 @@ namespace SalvageRun.Run
             return ToSprite(tex);
         }
 
+        // ==============================================================================
+        //  🔴 **쓰레기는 실제 사물이다** (2026-08-26 사장님 지시).
+        //     전에는 전부 `Debris`(찌그러진 사각형)라 **무엇을 부수는지 안 읽혔다.**
+        //     네 실루엣이 **멀리서 한눈에 갈리게** 만든다 —
+        //     위성=십자 · 작은 배=화살 · 전함=긴 상자 · 거대선=덩어리+블록.
+        // ==============================================================================
+
+        /// <summary>위성 — 가운데 몸통에 **좌우 날개(태양광)**. 십자로 읽힌다.</summary>
+        public static Sprite Satellite(int size, int seed)
+        {
+            var rng = new System.Random(seed);
+            var tex = NewTex(size);
+            float c = (size - 1) * 0.5f;
+
+            float bw = size * (0.26f + 0.10f * (float)rng.NextDouble());   // 몸통 반폭
+            float bh = size * (0.20f + 0.08f * (float)rng.NextDouble());
+            float panelH = size * 0.10f;
+            float panelX = size * 0.46f;
+
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float dx = x - c, dy = y - c;
+                bool body  = Mathf.Abs(dx) <= bw && Mathf.Abs(dy) <= bh;
+                bool panel = Mathf.Abs(dx) <= panelX && Mathf.Abs(dy) <= panelH;
+                bool mast  = Mathf.Abs(dx) <= size * 0.05f && Mathf.Abs(dy) <= size * 0.40f;
+
+                if (!body && !panel && !mast) { tex.SetPixel(x, y, Clear); continue; }
+
+                // 패널에는 격자무늬를 넣어 "태양광"으로 읽히게
+                float k = body ? 1f : (panel && (x % 3 == 0) ? 0.55f : 0.82f);
+                tex.SetPixel(x, y, new Color(k, k, k, 1f));
+            }
+
+            tex.Apply();
+            return ToSprite(tex);
+        }
+
+        /// <summary>작은 우주선 — 앞이 뾰족한 화살. 어느 쪽이 앞인지 보인다.</summary>
+        public static Sprite Vessel(int size, int seed)
+        {
+            var rng = new System.Random(seed);
+            var tex = NewTex(size);
+            float c = (size - 1) * 0.5f;
+
+            float nose = 0.10f + 0.10f * (float)rng.NextDouble();
+            float tail = 0.42f + 0.12f * (float)rng.NextDouble();
+
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float t = x / (float)(size - 1);              // 0 = 뒤, 1 = 앞
+                float half = Mathf.Lerp(size * tail, size * nose, t) * 0.5f;
+                float dy = Mathf.Abs(y - c);
+
+                bool hull = dy <= half;
+                bool wing = t < 0.42f && dy <= size * 0.44f && dy > half;
+
+                if (!hull && !wing) { tex.SetPixel(x, y, Clear); continue; }
+
+                float k = hull ? (t > 0.72f ? 1f : 0.88f) : 0.62f;   // 앞머리를 밝게
+                tex.SetPixel(x, y, new Color(k, k, k, 1f));
+            }
+
+            tex.Apply();
+            return ToSprite(tex);
+        }
+
+        /// <summary>전함 — 길고 각진 상자에 포탑 돌기. 단단해 보여야 한다.</summary>
+        public static Sprite Warship(int size, int seed)
+        {
+            var rng = new System.Random(seed);
+            var tex = NewTex(size);
+            float c = (size - 1) * 0.5f;
+
+            float half = size * (0.20f + 0.06f * (float)rng.NextDouble());
+            int turrets = 2 + rng.Next(2);
+
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float t = x / (float)(size - 1);
+                float dy = Mathf.Abs(y - c);
+
+                // 앞쪽만 살짝 좁아지는 각진 선체
+                float h = half * (t > 0.78f ? 0.62f : 1f);
+                bool hull = dy <= h;
+
+                // 등에 붙은 포탑 — 일정 간격으로 튀어나온다
+                bool turret = false;
+                for (int i = 0; i < turrets && !turret; i++)
+                {
+                    float tx = Mathf.Lerp(size * 0.22f, size * 0.72f, i / (float)Mathf.Max(1, turrets - 1));
+                    turret = Mathf.Abs(x - tx) <= size * 0.06f
+                          && y - c > h - 1f && y - c <= h + size * 0.12f;
+                }
+
+                if (!hull && !turret) { tex.SetPixel(x, y, Clear); continue; }
+
+                float k = turret ? 0.6f : (x % 5 == 0 ? 0.72f : 1f);   // 세로 패널 선
+                tex.SetPixel(x, y, new Color(k, k, k, 1f));
+            }
+
+            tex.Apply();
+            return ToSprite(tex);
+        }
+
+        /// <summary>거대 우주선 — 큰 덩어리에 블록이 붙었다. 화면에서 제일 크게 읽힌다.</summary>
+        public static Sprite Hulk(int size, int seed)
+        {
+            var rng = new System.Random(seed);
+            var tex = NewTex(size);
+            float c = (size - 1) * 0.5f;
+
+            float half = size * 0.30f;
+            int blocks = 3 + rng.Next(3);
+            var bx = new float[blocks]; var by = new float[blocks]; var br = new float[blocks];
+            for (int i = 0; i < blocks; i++)
+            {
+                bx[i] = size * (0.22f + 0.56f * (float)rng.NextDouble());
+                by[i] = c + (rng.NextDouble() < 0.5 ? 1f : -1f) * half * 0.9f;
+                br[i] = size * (0.10f + 0.08f * (float)rng.NextDouble());
+            }
+
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float dy = Mathf.Abs(y - c);
+                bool hull = dy <= half && x > size * 0.10f && x < size * 0.92f;
+
+                bool block = false;
+                for (int i = 0; i < blocks && !block; i++)
+                    block = Mathf.Abs(x - bx[i]) <= br[i] && Mathf.Abs(y - by[i]) <= br[i];
+
+                if (!hull && !block) { tex.SetPixel(x, y, Clear); continue; }
+
+                float k = block ? 0.66f : (y % 4 == 0 ? 0.78f : 1f);   // 가로 갑판선
+                tex.SetPixel(x, y, new Color(k, k, k, 1f));
+            }
+
+            tex.Apply();
+            return ToSprite(tex);
+        }
+
         /// <summary>작은 파편 — 마름모. 잔해와 실루엣이 확실히 갈려야 한다.</summary>
         public static Sprite Shard(int size)
         {

@@ -1,4 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
+using SalvageRun.Data;
+using SalvageRun.Meta;
 
 namespace SalvageRun.Run
 {
@@ -33,6 +36,60 @@ namespace SalvageRun.Run
             builtFor = def.id;
             // 🔴 배마다 흡입구 크기가 다르다 — nose가 작을수록(뾰족할수록) 입도 작다
             body.sprite = PixelArt.Cleaner(24, Mathf.Clamp01(0.25f + def.nose), def.tail, def.wing);
+        }
+
+        // ---------------------------------------------------------------- 무기 부품
+
+        /// <summary>
+        /// 🔴 **무기를 열면 배에 부품이 붙는다** (2026-08-26 사장님 지시:
+        ///    *"추가되는 방식으로 하자. 추가되면 우주선에 부품이 붙는 방식인거지"*).
+        ///
+        ///    무기가 트리 노드일 뿐이면 산 것이 **화면 어디에도 안 남는다** —
+        ///    숫자만 바뀌면 "늘었다"가 안 느껴진다. 배에 붙어야 산 보람이 있다.
+        ///
+        ///    🔴 **좌우로 번갈아 붙인다.** 한쪽에만 달면 배가 기운 것처럼 보이고,
+        ///       개수 제한이 없으므로 곧 한쪽이 넘친다.
+        /// </summary>
+        readonly List<Transform> parts = new List<Transform>();
+
+        public void SyncWeaponParts(RunStats stats, SalvageRun.Data.GameContent content)
+        {
+            if (stats == null || content == null || bodyRoot == null) return;
+
+            int want = 0;
+            for (int i = 0; i < Weapons.Count; i++) if (stats.Has((WeaponKind)i)) want++;
+
+            // 개수가 그대로면 다시 만들지 않는다 — 런마다 오브젝트가 쌓인다
+            if (parts.Count == want) return;
+
+            for (int i = 0; i < parts.Count; i++)
+                if (parts[i] != null) Destroy(parts[i].gameObject);
+            parts.Clear();
+
+            int slot = 0;
+            for (int i = 0; i < Weapons.Count; i++)
+            {
+                var k = (WeaponKind)i;
+                if (!stats.Has(k)) continue;
+
+                var def = content.Weapon(k);
+                var go = new GameObject("Part_" + k);
+                go.transform.SetParent(bodyRoot, false);
+
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = PixelArt.Blade(5, 9);
+                sr.color = def != null ? def.color : Color.white;
+                sr.sortingOrder = 10;
+
+                // 좌우 번갈아, 뒤로 갈수록 바깥쪽
+                float side = (slot % 2 == 0) ? 1f : -1f;
+                float lane = 0.34f + (slot / 2) * 0.20f;
+                go.transform.localPosition = new Vector3(-0.12f, side * lane, 0f);
+                go.transform.localScale = Vector3.one * 0.55f;
+
+                parts.Add(go.transform);
+                slot++;
+            }
         }
 
         /// <summary>

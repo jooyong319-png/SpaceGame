@@ -84,11 +84,23 @@ namespace SalvageRun.Run
             transform.position = pos;
             // 🔴 밭이 된 이상 **멀리서도 보여야** 찾아갈 마음이 생긴다 (2026-08-22 피드백)
             transform.localScale = Vector3.one * (t.size * Tuning.JunkSize * (bossPart ? 1.9f : 1f));
+            // 🔴 **실루엣은 스폰할 때 정한다** (2026-08-26). 풀을 만들 때 정하면
+            //    그 슬롯이 다른 종류로 재사용될 때 전함이 위성 그림으로 나온다
+            if (body != null && field != null)
+            {
+                // ⚠️ 변형 고르기에 **문자열 해시를 쓰지 않는다** — 실행마다 값이 달라질 수 있고
+                //    그러면 밸런스 시뮬이 같은 빌드에서 다른 결과를 낸다.
+                //    스폰 좌표에서 뽑으면 조각마다 다르면서도 **항상 같은 값**이 나온다.
+                int variant = Mathf.Abs((int)(pos.x * 7f) + (int)(pos.y * 13f));
+                var spr = field.SpriteFor(t, variant);
+                if (spr != null) body.sprite = spr;
+            }
             if (body != null) body.color = t.color;
 
             if (highlight != null)
             {
                 hlSr = highlight.GetComponent<SpriteRenderer>();
+                if (body != null) hlSr.sprite = body.sprite;   // 테두리는 몸통과 같은 모양이어야 한다
                 highlight.gameObject.SetActive(true);
             }
             gameObject.SetActive(true);

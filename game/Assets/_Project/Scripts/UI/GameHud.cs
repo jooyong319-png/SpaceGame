@@ -20,6 +20,9 @@ namespace SalvageRun.UI
         public Camera cam;
         public TechTreeScreen tech;
 
+        /// <summary>지금 열려 있는 무기. 준비 화면이 목록으로 그린다.</summary>
+        readonly List<WeaponKind> ownedWeapons = new List<WeaponKind>();
+
         Texture2D px;
         GUIStyle label, small, big, huge, center, popup, centerSmall, rightSmall;
 
@@ -417,6 +420,9 @@ namespace SalvageRun.UI
             var md = MetaSave.Data;
             float bw = 340f * s;
 
+            MetaSave.FillOwnedWeapons(content,
+                ownedWeapons, config != null ? config.startingWeapon : WeaponKind.Harpoon);
+
             // 🔴 재화는 색을 각자 준다 — 어느 게 귀한 건지 색으로 배우게 한다.
             //    6종이 되면서(2026-08-26) 한 줄에 셋씩 **두 줄**로 깐다 —
             //    여섯을 한 줄에 밀어 넣으면 글씨가 줄어 이름이 안 읽힌다.
@@ -458,38 +464,38 @@ namespace SalvageRun.UI
             GUI.color = Color.white;
             y += 26f * s;
 
-            // ---- 지금 든 무기 ----
+            // ---- 지금 붙어 있는 무기 ----
             //
-            // 🔴 **여기서 고르지 않는다** (2026-08-23 사장님 지시).
-            //    무기를 열고 고르는 것은 **테크트리 안**으로 옮겼다 —
-            //    무기가 영구 강화의 일부가 되어야 "강화를 살까, 무기를 열까"가 한 저울이 된다.
-            //    여기서는 **지금 무엇을 들고 있는지만** 보여준다.
+            // 🔴 **여기서 고르지 않는다.** 무기는 테크트리에서 열고,
+            //    연 것은 **전부 배에 붙는다** (2026-08-26). 여기서는 목록만 보여준다.
             {
-                var wep = MetaSave.CurrentWeapon(content, config != null
-                                                          ? config.startingWeapon
-                                                          : WeaponKind.Harpoon);
-                var wdef = content.Weapon(wep);
-                var wc = wdef != null ? wdef.color : Accent;
-
                 float sw = Mathf.Min(340f * s, Screen.width * 0.86f);
-                var sr = new Rect(cx - sw * 0.5f, y, sw, 46f * s);
-
-                Box(sr, new Color(wc.r * 0.22f, wc.g * 0.22f, wc.b * 0.22f, 0.92f));
-                Frame(sr, new Color(wc.r, wc.g, wc.b, 0.6f), 1.5f * s);
-
-                GUI.color = wc;
-                Fit(new Rect(sr.x + 8f * s, sr.y + 5f * s, sr.width - 16f * s, 18f * s),
-                    Weapons.Name(wep), center);
-                GUI.color = new Color(0.80f, 0.86f, 0.95f);
-                Fit(new Rect(sr.x + 8f * s, sr.y + 24f * s, sr.width - 16f * s, 18f * s),
-                    wdef != null ? wdef.description : "", centerSmall);
-                GUI.color = Color.white;
-
-                y += 50f * s;
 
                 GUI.color = TextDim;
                 Fit(new Rect(cx - sw * 0.5f, y, sw, 18f * s),
-                    "다른 무기는 정비소의 테크트리에서 연다  [T]", centerSmall);
+                    $"장착된 무기 {ownedWeapons.Count}개", centerSmall);
+                GUI.color = Color.white;
+                y += 20f * s;
+
+                for (int i = 0; i < ownedWeapons.Count; i++)
+                {
+                    var wdef = content.Weapon(ownedWeapons[i]);
+                    var wc = wdef != null ? wdef.color : Accent;
+                    var wr = new Rect(cx - sw * 0.5f, y, sw, 24f * s);
+
+                    Box(wr, new Color(wc.r * 0.20f, wc.g * 0.20f, wc.b * 0.20f, 0.92f));
+                    Frame(wr, new Color(wc.r, wc.g, wc.b, 0.5f), 1.2f * s);
+
+                    GUI.color = wc;
+                    Fit(new Rect(wr.x + 8f * s, wr.y + 3f * s, wr.width - 16f * s, 18f * s),
+                        Weapons.Name(ownedWeapons[i]), center);
+                    GUI.color = Color.white;
+                    y += 26f * s;
+                }
+
+                GUI.color = TextDim;
+                Fit(new Rect(cx - sw * 0.5f, y, sw, 18f * s),
+                    "무기는 정비소 테크트리에서 연다 — 열면 계속 붙는다  [T]", centerSmall);
                 GUI.color = Color.white;
                 y += 24f * s;
             }
@@ -668,7 +674,8 @@ namespace SalvageRun.UI
                 wy += 18f * s;
             }
 
-            // 🔴 조합은 이 게임의 차별점이다. 열렸으면 반드시 보여야 한다.
+            // ⬜ 조합은 2026-08-26에 껐다 (무기가 쌓이면 전제가 사라진다).
+            //    되살릴 때를 위해 그리는 쪽은 남겨 뒀다 — 지금은 `ActiveCombo`가 항상 null이다.
             if (director.ActiveCombo != null)
             {
                 GUI.color = director.ActiveCombo.color;
@@ -678,15 +685,9 @@ namespace SalvageRun.UI
                 GUI.color = Color.white;
                 wy += 38f * s;
             }
-            else if (director.Stats.OwnedWeaponCount >= 2)
-            {
-                // 조건만 알려준다. 무엇이 열리는지는 알려주지 않는다 — 발견이 보상이다
-                GUI.color = new Color(0.55f, 0.55f, 0.62f);
-                GUI.Label(new Rect(pad, wy, 340f * s, 20f * s),
-                    $"두 무기를 Lv.{director.ComboLevel}까지 올리면 ???", small);
-                GUI.color = Color.white;
-                wy += 18f * s;
-            }
+            // ⬜ "두 무기를 Lv.N까지 올리면 ???" 안내가 있었다.
+            //    조합을 끄면서(2026-08-26) 영영 안 열리므로 뺐다 —
+            //    안 열리는 조건을 계속 보여주는 건 거짓말이다.
 
 
             // 수익

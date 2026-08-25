@@ -188,6 +188,9 @@ namespace SalvageRun.Data
         /// <summary>🔴 **끌 수 있는 개수 +N.** 무게 감소와 달리 **벽 자체를 밀어낸다.</summary>
         TowCapacity,
 
+        /// <summary>🔴 **보스 탄 피해 -N%.** 위협이 보스에만 있으므로 방어도 여기만 있다.</summary>
+        BossShotResist,
+
         /// <summary>
         /// 🔴 **회수 드론 +N대.** 한 대가 배 옆에 떠서 제 줄을 끈다 (`RunDirector.DroneCarry`칸).
         ///    칸 노드와 달리 **화면에 보인다** — 산 것이 눈에 보여야 강해진 게 남는다.

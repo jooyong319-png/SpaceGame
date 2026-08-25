@@ -11,6 +11,25 @@ namespace SalvageRun.Data
     /// 🔴 이동 패턴. 숫자만 다르면 종류가 아무리 많아도 한 종류로 느껴진다 —
     ///    적이 다르게 느껴지는 건 속도·HP가 아니라 **어떻게 움직이는가**다.
     /// </summary>
+    /// <summary>
+    /// 🔴 **쓰레기가 무엇으로 보이는가** (2026-08-26 사장님 지시:
+    ///    *"쓰레기라는 게 이런 거거든? 위성 · 작은 우주선 · 전함 · 거대 우주선 · 외계 우주선"*).
+    ///
+    ///    전에는 전부 `PixelArt.Debris`(찌그러진 사각형)라
+    ///    **무엇을 부수고 있는지 안 읽혔다.** 실루엣이 갈려야 "저건 전함이다"가 보자마자 온다.
+    ///
+    ///    ⚠️ 크기·HP와 **따로** 둔 이유: 같은 실루엣으로 여러 크기를 쓸 수 있어야
+    ///       종류를 늘릴 때 그림을 매번 새로 안 그린다.
+    /// </summary>
+    public enum JunkShape
+    {
+        Satellite = 0,   // 위성 — 십자 (몸통 + 태양광 날개)
+        Vessel,          // 작은 우주선 — 화살
+        Warship,         // 전함 — 긴 상자 + 포탑
+        Hulk,            // 거대 우주선 — 덩어리 + 블록
+        Debris           // 그 밖(위험물·로봇) — 찌그러진 잔해
+    }
+
     public enum MoveKind
     {
         // ⚠️ 아래 다섯은 **쓰레기**의 흐름이다. 이름이 "쫓는다"처럼 들리지만
@@ -122,6 +141,9 @@ namespace SalvageRun.Data
         ///    본래 리듬 그대로다 — 기지 앞 한 자리에서 끝나는 보스전이 아니다.
         /// </summary>
         public bool isAnchor;
+
+        /// <summary>이 쓰레기가 어떤 실루엣으로 보이는가. `StageField`가 스프라이트를 고른다.</summary>
+        public JunkShape shape = JunkShape.Debris;
 
         /// <summary>
         /// 🔴 **이건 밭이 아니라 적이다.**

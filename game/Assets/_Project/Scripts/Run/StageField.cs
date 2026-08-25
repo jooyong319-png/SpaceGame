@@ -571,6 +571,56 @@ namespace SalvageRun.Run
             return debrisSprites[Mathf.Abs(index) % debrisSprites.Length];
         }
 
+        // ---------------------------------------------------------------- 실루엣
+
+        /// <summary>
+        /// 🔴 **종류마다 실루엣이 다르다** (2026-08-26 사장님 지시).
+        ///    전에는 전부 `Debris`(찌그러진 사각형)라 **무엇을 부수는지 안 읽혔다.**
+        ///
+        ///    ⚠️ 스프라이트는 **스폰할 때** 정한다. 풀을 만들 때 정하면
+        ///       그 슬롯이 다른 종류로 재사용될 때 **전함이 위성 그림으로 나온다.**
+        ///
+        ///    한 범주에 세 벌씩 만들어 돌려 쓴다 — 전부 똑같으면 화면이 복사·붙여넣기로 보이고,
+        ///    전부 다르면 텍스처가 종류 수만큼 쌓인다.
+        /// </summary>
+        Sprite ShapeSprite(JunkShape shape, int variant)
+        {
+            if (shapeSets == null) shapeSets = new Sprite[5][];
+
+            int si = (int)shape;
+            if (si < 0 || si >= shapeSets.Length) si = (int)JunkShape.Debris;
+
+            if (shapeSets[si] == null)
+            {
+                var set = new Sprite[3];
+                for (int i = 0; i < set.Length; i++)
+                {
+                    int seed = 2200 + si * 91 + i * 17;
+                    switch ((JunkShape)si)
+                    {
+                        case JunkShape.Satellite: set[i] = PixelArt.Satellite(18, seed); break;
+                        case JunkShape.Vessel:    set[i] = PixelArt.Vessel(20, seed);    break;
+                        case JunkShape.Warship:   set[i] = PixelArt.Warship(24, seed);   break;
+                        case JunkShape.Hulk:      set[i] = PixelArt.Hulk(28, seed);      break;
+                        default:                  set[i] = PixelArt.Debris(16, seed, 0.3f); break;
+                    }
+                }
+                shapeSets[si] = set;
+            }
+
+            var arr = shapeSets[si];
+            return arr[Mathf.Abs(variant) % arr.Length];
+        }
+
+        Sprite[][] shapeSets;
+
+        /// <summary>이 종류가 지금 쓸 스프라이트. `JunkPiece.Spawn`이 부른다.</summary>
+        public Sprite SpriteFor(JunkType t, int variant)
+        {
+            if (t == null) return sprite;
+            return ShapeSprite(t.shape, variant);
+        }
+
         JunkType FindType(string name)
         {
             if (content.junk == null) return null;
