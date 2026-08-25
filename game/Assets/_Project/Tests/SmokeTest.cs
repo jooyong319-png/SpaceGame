@@ -249,7 +249,11 @@ namespace SalvageRun.Tests
             float bossAt = st.waveCount * st.waveSeconds;
             float budget = director.ship.FuelMax / director.Config.idleFuelPerSecond;
 
-            t.AppendLine($"  보스 등장 {bossAt:0}초 · 연료 {budget:0}초");
+            // 🔴 **여유를 같이 찍는다.** "42 vs 48"만 보면 통과라서 넘어가는데,
+            //    실제로 보스전에 쓸 수 있는 시간은 **6초**다.
+            //    이 줄이 없어서 *"보스에 닿는다"*를 *"보스를 깬다"*로 오래 착각했다.
+            t.AppendLine($"  보스 등장 {bossAt:0}초 · 판 길이 {budget:0}초 " +
+                         $"→ 보스전 여유 **{budget - bossAt:0.0}초**");
 
             Assert.Less(bossAt, budget,
                 $"🔴 보스가 {bossAt:0}초에 나오는데 연료는 {budget:0}초뿐이다 — 깰 수 없는 게임이다");
@@ -699,6 +703,109 @@ namespace SalvageRun.Tests
                 sb.Append('|');
             }
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// 🔴 **보스를 부수는 데 몇 초가 필요한가.**
+        ///
+        ///    2026-08-26 밸런스 시뮬에서 **보스를 3판 중 0판 클리어**했다.
+        ///    닿기는 하는데 도착할 때 연료가 이미 0이라 부술 시간이 없었다.
+        ///    그런데 *"몇 초가 있어야 부술 수 있는가"*를 재는 곳이 어디에도 없었다 —
+        ///    그 숫자가 없으면 **웨이브를 줄일지 HP를 낮출지 고를 수가 없다.**
+        ///
+        ///    ⚠️ 여기서 연료를 계속 채워 준다. 연료가 떨어져 판이 끝나면
+        ///       *"보스가 얼마나 단단한가"*가 아니라 *"연료가 얼마나 짧은가"*를 재게 된다.
+        ///       두 개를 한 번에 재면 어느 쪽을 고쳐야 할지 알 수 없다.
+        ///
+        ///    ⚠️ 무기는 **중반 상태**(3종 · Lv.5)로 맞춘다. 초반 무기로 재면
+        ///       "안 부서진다"만 나오고, 실제로 보스를 만나는 시점은 초반이 아니다.
+        /// </summary>
+        [UnityTest, Timeout(600000)]
+        public IEnumerator BossTakesHowLongToKill()
+        {
+            var t = new StringBuilder();
+            t.AppendLine();
+            t.AppendLine("=========== 스모크: 보스를 부수는 데 몇 초 ===========");
+
+            director.StartRun(0);
+            yield return null;
+
+            var ship = director.ship;
+            var field = director.field;
+            var stats = director.Stats;
+
+            // 중반 화력으로 맞춘다
+            for (int i = 0; i < stats.weaponLevel.Length; i++) stats.weaponLevel[i] = 5;
+            director.arms.stats = stats;
+            director.arms.Rebuild();
+
+            field.Spawning = false;                    // 잡것이 섞이면 무엇을 잰 건지 흐려진다
+
+            // 🔴 **실전과 같은 값으로 세운다.** RunDirector가 쓰는 식 그대로:
+            //    부위 4개 · hpScale = 55 + rank * 45
+            float hpScale = 55f + director.Stage.rank * 45f;
+            int parts = field.SpawnBossParts(4, hpScale);
+            Assert.Greater(parts, 0, "🔴 보스 부위가 하나도 안 생겼다");
+            director.ForceBossPhaseForTest();
+            yield return null;
+
+            int total = 0;
+            for (int i = 0; i < field.Pieces.Count; i++)
+                if (field.Pieces[i].Alive && field.Pieces[i].IsBossPart) total++;
+
+            float startFuel = ship.Fuel;
+            float t0 = Time.realtimeSinceStartup;
+            int frames = 0, alive = total;
+            float clearedAt = -1f;
+            const int Cap = 30 * 120;                  // 120초까지만 본다
+
+            while (frames < Cap && alive > 0)
+            {
+                AutoPilot.Drive(director, ship);
+                ship.Refuel(999f);                     // 연료 축은 여기서 재지 않는다
+                frames++;
+                yield return null;
+
+                alive = 0;
+                for (int i = 0; i < field.Pieces.Count; i++)
+                    if (field.Pieces[i].Alive && field.Pieces[i].IsBossPart) alive++;
+
+                if (alive == 0 && clearedAt < 0f) clearedAt = frames * StepSeconds;
+            }
+            AutoPilot.Release(ship);
+
+            float spent = frames * StepSeconds;
+            t.AppendLine($"  부위 {total}개 · 부위당 HP {hpScale:0}");
+            t.AppendLine($"  부순 것 {total - alive}/{total} · 걸린 시간 " +
+                         (clearedAt >= 0f ? $"{clearedAt:0.0}초" : $"{spent:0.0}초 안에 못 부숨"));
+
+            // 🔴 **연료 예산과 나란히 놓는다.** 이 숫자 하나만 보면 판단이 안 선다 —
+            //    "보스가 몇 초에 나오고, 그때부터 몇 초가 남는가"와 붙어야 뜻이 생긴다
+            //    ⚠️ **연료는 초가 아니다.** 처음에 `fuelMax`를 그대로 초로 적었다가
+            //       *"78초 남는다"*고 찍혔는데 실제로는 6초였다 —
+            //       연료 120이 48초다(초당 2.5씩 준다). 나눠야 초가 된다.
+            float bossAt = director.Stage.waveCount * director.Stage.waveSeconds;
+            float runSeconds = ship.FuelMax / director.Config.idleFuelPerSecond;
+            float budget = runSeconds - bossAt;
+            t.AppendLine($"  보스 등장 {bossAt:0.0}초 · 판 길이 {runSeconds:0.0}초 " +
+                         $"→ 보스전에 쓸 수 있는 시간 {budget:0.0}초");
+            t.AppendLine(clearedAt >= 0f && clearedAt <= budget
+                ? $"  ✅ {budget:0.0}초 안에 {clearedAt:0.0}초면 끝난다"
+                : $"  🔴 **연료로 {budget:0.0}초가 남는데 부수는 데 " +
+                  (clearedAt >= 0f ? $"{clearedAt:0.0}초" : "120초 넘게") + "가 든다**");
+
+            Debug.Log("[SMOKE]" + t);
+
+            // 단언은 하나만 — **무기가 보스에 닿기는 하는가.**
+            // 몇 초냐는 밸런스라 여기서 실패시키지 않는다 (실패시키면 값을 만질 때마다 빨개진다)
+            Assert.Less(alive, total,
+                "🔴 중반 화력으로 120초를 때렸는데 보스 부위가 하나도 안 부서졌다 — 닿지 않는다");
+
+            director.ReturnNow();
+            yield return null;
+            director.BackToReady();
+            yield return null;
+            Assert.Pass();
         }
 
         /// <summary>밭(로봇·위험물 제외) 중 아무거나 하나. 없으면 null.</summary>
