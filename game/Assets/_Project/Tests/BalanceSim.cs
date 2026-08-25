@@ -272,9 +272,32 @@ namespace SalvageRun.Tests
         {
             var f = director.field;
             int junk = 0, frag = 0;
+
+            // 🔴 **세상의 지문.** 개수만 세면 "쓰레기 159개"가 같아도
+            //    *어느* 159개인지는 모른다. 위치까지 접어 넣어야
+            //    "세상이 같은가 / 배만 다른가"를 한 줄로 가른다.
+            //    (2026-08-26에 이 구분이 없어서 물리 누산기를 찾는 데 다섯 바퀴를 썼다)
+            //    🔴 **두 가지를 따로 낸다** — 이걸 안 나누면 아무것도 못 가린다:
+            //       · `내용` = 순서와 무관한 합. **어떤 것들이 어디 있는가**
+            //       · `순서` = 풀 순서를 곱해 접은 값. **목록에 어떤 차례로 들어 있는가**
+            //
+            //    내용이 같은데 순서가 다르면 **풀 재사용**이다 —
+            //    `AutoPilot.BestThreat`과 `CollectByTouch`가 이 목록을 훑어
+            //    가장 가까운 것을 고르므로, 순서가 다르면 **같은 자리에서 다른 것을 문다.**
+            long sumHash = 0, ordHash = 0;
             if (f != null)
             {
-                for (int i = 0; i < f.Pieces.Count; i++) if (f.Pieces[i].Alive) junk++;
+                for (int i = 0; i < f.Pieces.Count; i++)
+                {
+                    var pc = f.Pieces[i];
+                    if (!pc.Alive) continue;
+                    junk++;
+                    var pp = pc.transform.position;
+                    long one = Mathf.RoundToInt(pp.x * 50f) * 7919L
+                             + Mathf.RoundToInt(pp.y * 50f) * 104729L;
+                    sumHash = (sumHash + one) & 0xFFFFFFFL;
+                    ordHash = (ordHash * 31 + one) & 0xFFFFFFFL;
+                }
                 for (int i = 0; i < f.Fragments.Count; i++) if (f.Fragments[i].Alive) frag++;
             }
 
@@ -295,7 +318,8 @@ namespace SalvageRun.Tests
                    // 🔴 **풀 크기와 배 좌표.** 결정론이 깨졌을 때 "세상이 다른가 / 배가 다른가"를
                    //    가르는 두 값이다. 풀 크기가 다르면 `EnsurePool` 성장이 런 사이에 남은 것이고,
                    //    풀은 같은데 좌표가 다르면 물리·조종 쪽이다.
-                   $"풀={(f != null ? f.Pieces.Count : -1)}/{(f != null ? f.Fragments.Count : -1)} " +
+                   $"내용={sumHash:x7} 순서={ordHash:x7} " +
+                   $"풀={(f != null ? f.Pieces.Count : -1)} " +
                    $"좌표=({(sh != null ? sh.transform.position.x : 0f),6:0.00},{(sh != null ? sh.transform.position.y : 0f),6:0.00})";
         }
 
@@ -640,8 +664,9 @@ namespace SalvageRun.Tests
                 // 🔴 **초반을 촘촘히 찍는다.** 30초마다만 찍으면 "두 번이 다르다"만 알고
                 //    *언제부터* 갈렸는지를 모른다 — 첫 프레임부터 다르면 시작 상태가 샌 것이고,
                 //    중간부터 갈리면 판이 도는 중에 남는 것이 있다는 뜻이다. 원인이 완전히 다르다.
-                if (trace != null && (frames == 1 || frames == 15 || frames == 60
-                                      || frames == 150 || frames % 900 == 0))
+                if (trace != null && (frames == 1 || frames == 15 || frames == 30
+                                      || frames == 45 || frames == 60 || frames == 75
+                                      || frames == 90 || frames == 150 || frames % 900 == 0))
                     trace.AppendLine($"         " + Snapshot($"+{frames}f"));
 
                 yield return null;

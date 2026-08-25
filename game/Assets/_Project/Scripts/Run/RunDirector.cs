@@ -177,6 +177,25 @@ namespace SalvageRun.Run
             field.circuitFind = Stats.circuitFind;
             field.coreFind = Stats.coreFind;
             for (int i = 0; i < field.MatsThisRun.Length; i++) field.MatsThisRun[i] = 0;
+            // 🔴 **배를 먼저 제자리로 돌린 다음에 밭을 짓는다** (2026-08-27).
+            //
+            //    `StageField.SpawnInside`는 **배 코앞(8유닛)을 피해서** 자리를 뽑는다 —
+            //    가까우면 최대 8번까지 다시 뽑는다. 즉 **난수를 몇 번 쓰는지가
+            //    배가 어디 있느냐에 달려 있다.**
+            //
+            //    그런데 `Build`가 `ResetShip`보다 먼저 불리고 있었다.
+            //    그래서 밭을 짓는 순간 배는 **앞 런이 끝난 자리**에 서 있었고,
+            //    앞 런이 어디서 끝났느냐가 **이번 판의 쓰레기 배치를 통째로 바꿨다.**
+            //
+            //    실측: 같은 빌드 두 번이 **프레임 1에 이미** 쓰레기 16개의 자리가 달랐다
+            //    (개수는 같고 내용 해시가 달랐다). 결정론 3.2%의 마지막 원인이다.
+            //
+            //    ⚠️ 이건 검사만의 문제가 아니다. 실제 플레이에서도
+            //       **앞판을 어디서 끝냈느냐가 다음 판 첫 화면을 바꾼다** — 뜻 없는 연결이다.
+            if (!ship.gameObject.activeSelf) ship.gameObject.SetActive(true);
+            ship.ResetShip(Vector2.zero,
+                Stats.fuelMax * Tuning.ShipFuelMul * Mathf.Clamp(Stats.startFuelRatio, 0.1f, 1f));
+
             field.Build(Stage, MapHalf);
             UpdateStageBounds(MapHalf);
 
@@ -201,9 +220,7 @@ namespace SalvageRun.Run
             //    2026-08-21 시뮬에서 결정론 91.8% 차이로 잡혔다.
             //    1회차 Lv.14 / 파편 2462 → 2회차 Lv.0 / 파편 201.
             //    밸런스 표 21줄이 통째로 못 쓰게 된 원인이 이 한 줄이었다.
-            if (!ship.gameObject.activeSelf) ship.gameObject.SetActive(true);
-
-            ship.ResetShip(Vector2.zero, Stats.fuelMax * Tuning.ShipFuelMul * Mathf.Clamp(Stats.startFuelRatio, 0.1f, 1f));
+            // 배 되살리기·되돌리기는 위에서 이미 했다 (밭을 짓기 전에 해야 하므로)
             ship.ControlEnabled = true;
 
             State = GameState.Field;
