@@ -34,8 +34,15 @@ namespace SalvageRun.Run
             if (body == null || builtFor == def.id) return;
 
             builtFor = def.id;
-            // 🔴 배마다 흡입구 크기가 다르다 — nose가 작을수록(뾰족할수록) 입도 작다
-            body.sprite = PixelArt.Cleaner(24, Mathf.Clamp01(0.25f + def.nose), def.tail, def.wing);
+
+            // 🔴 **예인선으로 갈아탔다** (2026-08-26). 전에는 `Cleaner` —
+            //    앞이 나팔처럼 벌어진 **흡입구**였다. 자석이 있던 시절의 그림이다.
+            //    자석을 없앤 지금 이 배는 빨아들이지 않는다. **부수고 뒤에 매달아 끈다.**
+            //    실루엣이 하는 일과 달라지면 화면이 조용히 거짓말을 한다.
+            //
+            //    해상도도 24 → 32로 올렸다. 조종석·이음매·견인 고리가
+            //    24픽셀에서는 서로 뭉개져서 안 읽힌다.
+            body.sprite = PixelArt.Tug(32, Mathf.Clamp01(def.nose), def.tail, def.wing);
         }
 
         // ---------------------------------------------------------------- 무기 부품

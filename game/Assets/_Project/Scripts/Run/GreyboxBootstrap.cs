@@ -54,7 +54,7 @@ namespace SalvageRun.Run
             //    진짜 아트가 들어오면 PixelArt.cs만 지우면 된다 — 밖으로 안 새게 짰다.
             square = PixelArt.Square();
             // 🔴 청소선 — 앞이 벌어진 흡입구. 형태가 곧 설명이다 (2026-08-22)
-            shipArt = PixelArt.Cleaner(24);
+            shipArt = PixelArt.Tug(32);
             bladeArt = PixelArt.Blade(20, 7);
             glowArt = PixelArt.Glow(32);
 

@@ -329,6 +329,91 @@ namespace SalvageRun.Run
         }
 
         /// <summary>
+        /// 🔴 **예인선 실루엣** (2026-08-26 · 사장님: *"우주선 디자인도 한 차례 업그레이드해 줘"*).
+        ///
+        ///    그때까지 쓰던 `Cleaner`는 **앞이 나팔처럼 벌어진 흡입구**였다.
+        ///    자석이 있던 시절에는 그게 맞았다 — 배가 빨아들이는 물건이었으니까.
+        ///    **자석을 없앤 지금 그 실루엣은 거짓말이다.** 이 배가 하는 일은
+        ///    *빨아들이는 것*이 아니라 **부수고 뒤에 매달아 끌고 가는 것**이다.
+        ///
+        ///    그래서 다시 그렸다. 실루엣이 말해야 하는 것 넷:
+        ///    1. **앞이 뾰족하다** — 어디로 가는 배인지가 한눈에 (방향 = 속도)
+        ///    2. **조종석이 밝다** — 작아도 "여기가 앞"이 읽힌다
+        ///    3. **엔진이 둘로 갈라진다** — 뒤가 뒤처럼 보인다
+        ///    4. 🔴 **뒤에 견인 고리가 있다** — 짐이 매달리는 자리가 배에 그려져 있다.
+        ///       이 게임의 특색이 배 그림에 남아야 한다
+        ///
+        ///    `nose` 앞이 얼마나 뾰족한가 · `tail` 뒤가 얼마나 넓은가 · `wing` 옆구리 포드 크기
+        /// </summary>
+        public static Sprite Tug(int size, float nose = 0.30f, float tail = 0.9f, float wing = 0.2f)
+        {
+            var tex = NewTex(size);
+            float c = (size - 1) * 0.5f;
+
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+            {
+                float ny = y / (float)(size - 1);          // 0 = 뒤, 1 = 앞
+                float dx = Mathf.Abs(x - c);
+                Color put = Clear;
+
+                // ---- 견인 고리: 맨 뒤 가운데 작은 돌기. 짐 줄이 여기서 시작한다
+                if (ny < 0.09f)
+                {
+                    if (dx < c * 0.16f) put = new Color(0.72f, 0.72f, 0.72f, 1f);
+                    tex.SetPixel(x, y, put);
+                    continue;
+                }
+
+                // ---- 선체 폭
+                float halfWidth;
+                if (ny < 0.24f)                            // 엔진 블록 — 뭉툭하게
+                    halfWidth = c * tail * 0.78f;
+                else if (ny < 0.70f)                       // 본체 — 뒤에서 앞으로 좁아진다
+                    halfWidth = Mathf.Lerp(c * tail * 0.78f, c * Mathf.Max(nose, 0.30f),
+                                           (ny - 0.24f) / 0.46f);
+                else                                        // 뱃머리 — 한 점으로 모은다
+                    halfWidth = c * Mathf.Max(nose, 0.30f) * (1f - (ny - 0.70f) / 0.30f);
+
+                // 옆구리 포드 — 중간(ny≈0.38)에서 가장 두껍다
+                if (wing > 0.001f)
+                {
+                    float w = 1f - Mathf.Abs(ny - 0.38f) / 0.26f;
+                    if (w > 0f) halfWidth += c * wing * w * w;
+                }
+
+                if (dx > halfWidth) { tex.SetPixel(x, y, Clear); continue; }
+
+                // ---- 엔진 노즐 둘: 뒤쪽 가운데를 비워 갈라 보이게 한다
+                if (ny < 0.17f && dx < c * 0.16f) { tex.SetPixel(x, y, Clear); continue; }
+
+                float shade;
+                if (halfWidth - dx < 1.0f) shade = 0.50f;              // 외곽선 — 어둡게
+                else if (dx < halfWidth * 0.30f) shade = 0.86f;        // 등뼈
+                else shade = 0.72f;
+
+                if (ny < 0.22f) shade = Mathf.Min(1f, shade * 1.25f);  // 엔진부는 달군 듯이
+
+                // ---- 장갑판 이음매 — 가로로 살짝 어두운 한 줄씩. 배의 크기 감이 생긴다
+                //     ⚠️ 처음엔 0.72배로 넣었다가 **배가 두 동강 난 것처럼 보였다.**
+                //        이음매는 눈치채면 안 되고 느껴지기만 해야 한다
+                if (Mathf.Abs(ny - 0.32f) * size < 0.5f ||
+                    Mathf.Abs(ny - 0.52f) * size < 0.5f) shade *= 0.84f;
+
+                // ---- 조종석 — 앞쪽 밝은 점 하나. "여기가 앞"을 한 점으로 말한다
+                //     ⚠️ 처음엔 반경을 크게 잡아 **배 앞 절반이 통째로 하얘졌다.**
+                //        조종석은 작아야 조종석으로 읽힌다
+                float cy = (ny - 0.63f) / 0.075f, cx = dx / Mathf.Max(0.001f, c * 0.20f);
+                if (cx * cx + cy * cy < 1f) shade = 1f;
+
+                tex.SetPixel(x, y, new Color(shade, shade, shade, 1f));
+            }
+
+            tex.Apply();
+            return ToSprite(tex);
+        }
+
+        /// <summary>
         /// 🔴 선체 실루엣. 배마다 **형태가 달라야** 한다 —
         ///    색만 다르면 여섯 척이 사실상 한 척이고, 배를 고른 의미가 화면에 안 남는다.
         ///

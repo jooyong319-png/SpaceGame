@@ -542,7 +542,8 @@ namespace SalvageRun.Run
             {
                 var go = new GameObject("TowDrone" + drones.Count);
                 var sr = go.AddComponent<SpriteRenderer>();
-                sr.sprite = PixelArt.Ship(12, 0.28f, 0.7f, 0.2f);
+                // 드론도 같은 계열로 — 작은 예인선이다. 배와 다른 그림이면 남의 물건처럼 보인다
+                sr.sprite = PixelArt.Tug(16, 0.30f, 0.75f, 0.15f);
                 sr.color = new Color(0.75f, 0.9f, 1f);
                 sr.sortingOrder = 9;
                 go.transform.localScale = Vector3.one * 0.55f;
