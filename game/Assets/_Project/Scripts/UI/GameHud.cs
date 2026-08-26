@@ -242,6 +242,48 @@ namespace SalvageRun.UI
             style.wordWrap = wrapWas;
         }
 
+        // ================================================================ 화면 뼈대
+        //
+        // 🔴 **화면마다 여백과 제목 크기가 제각각이었다** (2026-08-27 사장님:
+        //    *"각 페이지 어색한 UI가 많다. 구조적으로 챙겨 달라"*).
+        //
+        //    실제로 이랬다: 시작 y가 **0.26 / 0.06 / 0.16**, 제목이 **60 / 44 / 없음**.
+        //    화면을 옮길 때마다 글자가 위아래로 튀어서 **같은 게임이 아닌 것처럼 보인다.**
+        //
+        //    그래서 값을 한 곳에 모으고 `PageHeader`가 그 값으로만 그린다.
+        //    ⚠️ 타이틀(첫 화면)은 **일부러 뺐다.** 거기는 페이지가 아니라 **간판**이라
+        //       가운데 크게 놓는 게 맞다 — 같은 규칙을 억지로 씌우면 오히려 어색해진다.
+
+        const float PageTop    = 0.075f;   // 화면 높이 대비 제목 y
+        const float PageTitleH = 44f;      // 제목 줄 높이
+        const float PageSubH   = 20f;      // 부제 줄 높이
+        const float PageGap    = 16f;      // 제목 묶음과 내용 사이
+
+        /// <summary>제목(+부제)을 그리고 **내용이 시작될 y**를 돌려준다.</summary>
+        float PageHeader(float s, string title, Color titleColor, string subtitle = null)
+        {
+            float y = Screen.height * PageTop;
+
+            GUI.color = titleColor;
+            GUI.Label(new Rect(0, y, Screen.width, PageTitleH * s), title, big);
+            GUI.color = Color.white;
+            y += PageTitleH * s;
+
+            if (!string.IsNullOrEmpty(subtitle))
+            {
+                GUI.color = TextDim;
+                GUI.Label(new Rect(0, y, Screen.width, PageSubH * s), subtitle, center);
+                GUI.color = Color.white;
+                y += PageSubH * s;
+            }
+
+            // 제목 아래 가는 줄 — 제목과 내용이 어디서 갈리는지 눈이 바로 안다
+            float lw = Mathf.Min(Screen.width * 0.62f, 720f * s);
+            Box(new Rect((Screen.width - lw) * 0.5f, y + 6f * s, lw, 1f), Edge);
+
+            return y + PageGap * s;
+        }
+
         // ================================================================ 키보드 메뉴
         //
         // 🔴 **이동이 키보드 전용이 된 뒤로 메뉴만 마우스인 것은 앞뒤가 안 맞는다**
@@ -421,14 +463,8 @@ namespace SalvageRun.UI
             Box(0, 0, Screen.width, Screen.height, BgDeep);
             DrawTitleStars(s);
 
-            float y = Screen.height * 0.06f;
             float cx = Screen.width * 0.5f;
-
-            // ---- 제목 ----
-            GUI.color = Accent;
-            GUI.Label(new Rect(0, y, Screen.width, 44f * s), "SALVAGE RUN", big);
-            GUI.color = Color.white;
-            y += 46f * s;
+            float y = PageHeader(s, "출항 준비", Accent, "구역을 고르고 나간다");
 
             // 🔴 **첫 화면이 장르를 말한다** (rev.12).
             //
@@ -829,17 +865,11 @@ namespace SalvageRun.UI
             DrawTitleStars(s);
 
             float cx = Screen.width * 0.5f;
-            float y = Screen.height * 0.16f;
 
-            // ---- 결과 한 줄 ----
             // 🔴 **정산 화면이지 패배 화면이 아니다** (2026-08-26).
             //    붉은색은 "뭘 잘못했다"로 읽힌다 — 한 바퀴를 무사히 마친 것이므로 따뜻한 색으로.
-            var head = Warm;
-            GUI.color = head;
-            GUI.Label(new Rect(0, y, Screen.width, 44f * s),
-                director.Cleared ? "구역 정리 완료" : "귀환 — 정산", big);
-            GUI.color = Color.white;
-            y += 48f * s;
+            float y = PageHeader(s, director.Cleared ? "구역 정리 완료" : "귀환 — 정산", Warm,
+                                 director.Cleared ? "다음 구역이 열렸다" : "가져온 것을 정산한다");
 
             GUI.color = TextDim;
             Fit(new Rect(Screen.width * 0.06f, y, Screen.width * 0.88f, 24f * s), director.LastMessage, center);
