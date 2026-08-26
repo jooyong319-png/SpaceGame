@@ -491,6 +491,12 @@ namespace SalvageRun.Tests
             yield return MeasureRun(t, "첫 판 (아무것도 없음)", stage1: false);
             yield return MeasureRun(t, "1구역 천장 (11노드 최대)", stage1: true);
 
+            // 🔴 **2구역도 잰다** (2026-08-27). 1구역은 **고철만** 떨어져서
+            //    68개 중 11개를 골라도 **전부 같은 물건**이다 — 선택이 원래 성립하지 않는다.
+            //    사장님 특색(*"이걸 가져갈까 저걸 가져갈까"*)이 실제로 사는 곳은
+            //    **재화가 섞이기 시작하는 2구역**이다. 거기를 한 번도 안 재봤다.
+            yield return MeasureRun(t, "2구역 (회로가 섞인다)", stage1: true, map: 1);
+
             t.AppendLine("==========================================");
             Debug.Log("[SIM]" + t);
             director.BackToReady();
@@ -499,7 +505,9 @@ namespace SalvageRun.Tests
         }
 
         /// <summary>한 상태로 한 판 굴리고 견인 리듬·수입을 적는다.</summary>
-        IEnumerator MeasureRun(StringBuilder t, string label, bool stage1)
+        int mapForRun;
+
+        IEnumerator MeasureRun(StringBuilder t, string label, bool stage1, int map = 0)
         {
             // ⚠️ 노드는 **StartRun 전에** 찍어야 한다 — `RebuildStats`가 그 안에서 돈다
             var savedNodes = new List<NodeRank>(MetaSave.Data.nodes);
@@ -535,6 +543,7 @@ namespace SalvageRun.Tests
 
             t.AppendLine();
             t.AppendLine($"───────── {label} ─────────");
+            mapForRun = map;
 
             // 🔴 2026-08-26: 여기는 원래 **레벨 곡선**을 쟀다. 레벨업이 없어진 뒤로는
             //    `TowedCount`(지금 매달린 개수)를 `Lv`라고 찍고
@@ -545,7 +554,7 @@ namespace SalvageRun.Tests
             //      · **6칸이 처음 꽉 차는 시각** — 이 순간부터 모든 획득이 맞바꾸기가 된다
             //      · 꽉 찬 채로 보낸 시간 비율 — *"선택과 집중"이 실제로 얼마나 오래 켜져 있나*
             //      · 밀려난 횟수 — 몇 번이나 버렸나
-            director.StartRun(0);
+            director.StartRun(mapForRun);
             var marks = new List<(int level, float at)>();
             int lastTow = director.TowedCount;
             float firstPick = -1f, firstFull = -1f, fullSeconds = 0f;
@@ -556,9 +565,25 @@ namespace SalvageRun.Tests
             int frames = 0;
             var ship = director.ship;
 
+            // 🔴 **고를 여지가 화면에 있는가.**
+            //    봇은 고르지 않는다(가장 가까운 것을 줍는다) — 그러니 *"봇이 잘 골랐나"*는
+            //    잴 수 없다. 대신 **동시에 몇 종류가 떠 있는지**를 센다.
+            //    한 종류만 떠 있으면 사람이 아무리 잘해도 **고를 것이 없다.**
+            int kindsSum = 0, kindsMax = 0, twoPlus = 0;
+            var seen = new bool[Mats.Count];
+
             while (director.State != GameState.Result && frames < MaxFramesPerRun)
             {
                 DriveBot(ship);
+
+                for (int i = 0; i < seen.Length; i++) seen[i] = false;
+                for (int i = 0; i < f.Fragments.Count; i++)
+                    if (f.Fragments[i].Alive) seen[(int)f.Fragments[i].mat] = true;
+                int kinds = 0;
+                for (int i = 0; i < seen.Length; i++) if (seen[i]) kinds++;
+                kindsSum += kinds;
+                kindsMax = Mathf.Max(kindsMax, kinds);
+                if (kinds >= 2) twoPlus++;
 
 
                 int tow = director.TowedCount;
@@ -610,6 +635,9 @@ namespace SalvageRun.Tests
                          "    (= '버릴까 말까'가 켜져 있던 시간)");
             t.AppendLine($"  → 밀려난 것          {pushed,6}개" +
                          "   (주움 - 가져옴. 몇 번이나 버렸나)");
+            t.AppendLine($"  → 화면에 뜬 종류      평균 {kindsSum / (float)Mathf.Max(1, frames):0.00}" +
+                         $" · 최대 {kindsMax} · **2종 이상이던 시간 {twoPlus * 100f / Mathf.Max(1, frames):0}%**");
+            t.AppendLine("     🔴 이게 낮으면 고를 것이 없다 — 칸이 몇이든 '선택'이 성립하지 않는다");
 
             t.AppendLine();
             t.AppendLine($"런 결과: {director.RunTime:0.0}초 · 가져옴 {director.BankedCount} · " +
