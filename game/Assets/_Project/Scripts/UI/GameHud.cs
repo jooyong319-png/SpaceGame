@@ -115,10 +115,11 @@ namespace SalvageRun.UI
 
             switch (director.State)
             {
-                case GameState.Title: DrawTitle(s); break;
-                case GameState.Ready: DrawReady(s); break;
-                case GameState.Field: DrawField(s); break;
-                case GameState.Result: DrawResult(s); break;
+                // 🔴 화면마다 이름을 준다 — 바뀌면 고른 항목이 처음으로 되돌아간다
+                case GameState.Title:  MenuBegin("title");  DrawTitle(s);  break;
+                case GameState.Ready:  MenuBegin("ready");  DrawReady(s);  break;
+                case GameState.Field:  DrawField(s); break;
+                case GameState.Result: MenuBegin("result"); DrawResult(s); break;
             }
             DrawDiagnostics(s);
             DrawBotBanner(s);
@@ -241,10 +242,62 @@ namespace SalvageRun.UI
             style.wordWrap = wrapWas;
         }
 
-        bool Btn(Rect r, string text, float s, bool enabled = true, Color? tint = null)
+        // ================================================================ 키보드 메뉴
+        //
+        // 🔴 **이동이 키보드 전용이 된 뒤로 메뉴만 마우스인 것은 앞뒤가 안 맞는다**
+        //    (2026-08-27 사장님: *"어색한 UI가 많다. UX도 구조적으로 챙겨 달라"*).
+        //    손을 WASD에 올려 두고 버튼만 마우스로 누르게 하면 손이 계속 오간다.
+        //
+        //    구조: 화면마다 `MenuBegin()` → `MenuBtn(...)`을 순서대로 부른다.
+        //    `MenuBtn`이 **몇 번째인지 스스로 세므로** 화면이 바뀌어도 번호를 손으로 안 맞춰도 된다.
+        //    ⚠️ 마우스 클릭은 그대로 산다 — 빼앗는 게 아니라 **더하는** 것이다.
+
+        int menuFocus;          // 지금 고른 항목
+        int menuCount;          // 이번 프레임에 그린 항목 수
+        string menuScreen = ""; // 화면이 바뀌면 focus를 처음으로 되돌린다
+
+        /// <summary>화면을 그리기 전에 부른다. 항목 번호를 0으로 되돌린다.</summary>
+        void MenuBegin(string screen)
+        {
+            // 🔴 화면이 바뀌면 focus를 0으로. 안 그러면 **보이지도 않는 항목이 골라진 채**
+            //    다음 화면이 시작되어 Enter가 엉뚱한 걸 누른다
+            if (menuScreen != screen) { menuScreen = screen; menuFocus = 0; }
+
+            if (menuCount > 0)
+            {
+                if (Core.InputReader.MenuDownPressed) menuFocus = (menuFocus + 1) % menuCount;
+                if (Core.InputReader.MenuUpPressed)   menuFocus = (menuFocus + menuCount - 1) % menuCount;
+            }
+            menuCount = 0;
+        }
+
+        /// <summary>키보드로 고를 수 있는 버튼. 마우스 클릭도 그대로 받는다.</summary>
+        bool MenuBtn(Rect r, string text, float s, bool enabled = true, Color? tint = null)
+        {
+            int idx = menuCount++;
+            bool focused = enabled && idx == menuFocus;
+
+            bool clicked = Btn(r, text, s, enabled, tint, focused);
+
+            // 🔴 고른 항목에 **테두리를 한 겹 더** 그린다. 색만 바꾸면
+            //    비활성 버튼과 구별이 안 된다 — 눈이 "지금 여기"를 못 찾는다
+            if (focused)
+            {
+                Frame(new Rect(r.x - 3f * s, r.y - 3f * s, r.width + 6f * s, r.height + 6f * s),
+                      tint ?? Accent, 2f * s);
+                GUI.color = tint ?? Accent;
+                GUI.Label(new Rect(r.x - 22f * s, r.y, 20f * s, r.height), "▸", center);
+                GUI.color = Color.white;
+            }
+
+            return clicked || (focused && Core.InputReader.MenuConfirmPressed);
+        }
+
+        bool Btn(Rect r, string text, float s, bool enabled = true, Color? tint = null,
+                 bool focused = false)
         {
             var mouse = Event.current.mousePosition;
-            bool hot = enabled && r.Contains(mouse);
+            bool hot = enabled && (r.Contains(mouse) || focused);
             Color c = tint ?? Accent;
 
             Box(r, enabled ? (hot ? PanelHi : Panel) : new Color(0.05f, 0.06f, 0.09f, 0.9f));
@@ -306,17 +359,17 @@ namespace SalvageRun.UI
 
             if (hasSave)
             {
-                if (Btn(new Rect(cx - bw * 0.5f, y, bw, bh), "이어하기", s, true, Accent))
+                if (MenuBtn(new Rect(cx - bw * 0.5f, y, bw, bh), "이어하기", s, true, Accent))
                     director.LeaveTitle();
                 y += bh + 8f * s;
 
-                if (Btn(new Rect(cx - bw * 0.5f, y, bw, bh), "새로 시작", s, true, Warm))
+                if (MenuBtn(new Rect(cx - bw * 0.5f, y, bw, bh), "새로 시작", s, true, Warm))
                     director.StartNewMission();
                 y += bh + 8f * s;
             }
             else
             {
-                if (Btn(new Rect(cx - bw * 0.5f, y, bw, bh), "임무 시작", s, true, Accent))
+                if (MenuBtn(new Rect(cx - bw * 0.5f, y, bw, bh), "임무 시작", s, true, Accent))
                     director.StartNewMission();
                 y += bh + 8f * s;
             }
@@ -424,7 +477,7 @@ namespace SalvageRun.UI
             }
             y += 22f * s * Mathf.CeilToInt(Mats.Count / 3f) + 4f * s;
 
-            if (Btn(new Rect(cx - bw * 0.5f, y, bw, 34f * s), "정비소 — 우주선 · 영구 강화  [T]", s, true, Warm))
+            if (MenuBtn(new Rect(cx - bw * 0.5f, y, bw, 34f * s), "정비소 — 우주선 · 영구 강화  [T]", s, true, Warm))
                 tech?.Toggle();
             y += 38f * s;
 
@@ -433,7 +486,7 @@ namespace SalvageRun.UI
 
             GUI.color = TextDim;
             GUI.Label(new Rect(cx - bw * 0.5f, y, bw, 18f * s),
-                "WASD · 방향키로 이동 · 조준은 자동",
+                "메뉴: W/S로 고르고 Enter · 판에서: WASD 이동 · Space 줍기 · 조준은 자동",
                 centerSmall);
             GUI.color = Color.white;
             y += 26f * s;
@@ -491,7 +544,7 @@ namespace SalvageRun.UI
 
                 if (MetaSave.StageUnlocked(content, i))
                 {
-                    if (Btn(r, $"{st.displayName}   ·   난이도 {st.rank}", s, true))
+                    if (MenuBtn(r, $"{st.displayName}   ·   난이도 {st.rank}", s, true))
                         director.StartRun(i);
                 }
                 else
@@ -503,7 +556,7 @@ namespace SalvageRun.UI
                         ? "???"
                         : $"{st.displayName} 열기   ·   {StageCostText(st)}";
 
-                    if (Btn(r, t, s, can, can ? Warm : TextDim) && can)
+                    if (MenuBtn(r, t, s, can, can ? Warm : TextDim) && can)
                         MetaSave.UnlockStage(content, i);
                 }
                 y += mh + 5f * s;
@@ -836,7 +889,7 @@ namespace SalvageRun.UI
 
             // ---- 버튼 ----
             float bw = 260f * s, bh = 42f * s;
-            if (Btn(new Rect(cx - bw * 0.5f, y, bw, bh), "맵 선택으로", s)) director.BackToReady();
+            if (MenuBtn(new Rect(cx - bw * 0.5f, y, bw, bh), "맵 선택으로", s)) director.BackToReady();
         }
 
         void StatCell(float x, float y, float w, float s, string label, string value)

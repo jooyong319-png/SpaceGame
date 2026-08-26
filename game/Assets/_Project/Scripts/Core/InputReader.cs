@@ -257,6 +257,57 @@ namespace SalvageRun.Core
             return 0;
         }
 
+        // ================================================================ 메뉴 조작
+        //
+        // 🔴 **이동이 키보드 전용이 된 뒤로 메뉴만 마우스인 것은 앞뒤가 안 맞는다**
+        //    (2026-08-27 사장님: *"어색한 UI가 많다. UX도 구조적으로 챙겨 달라"*).
+        //    손을 WASD에 올려 두고 버튼만 마우스로 누르게 하면 **손이 계속 오간다.**
+        //    ⚠️ 마우스 클릭도 그대로 둔다 — 빼앗을 이유는 없다. **더하는** 것이다.
+
+        /// <summary>메뉴에서 위로. W·↑</summary>
+        public static bool MenuUpPressed => KeyOnce(
+#if ENABLE_INPUT_SYSTEM
+            Keyboard.current != null && (Keyboard.current.wKey.wasPressedThisFrame
+                                      || Keyboard.current.upArrowKey.wasPressedThisFrame),
+#endif
+            KeyCode.W, KeyCode.UpArrow);
+
+        /// <summary>메뉴에서 아래로. S·↓</summary>
+        public static bool MenuDownPressed => KeyOnce(
+#if ENABLE_INPUT_SYSTEM
+            Keyboard.current != null && (Keyboard.current.sKey.wasPressedThisFrame
+                                      || Keyboard.current.downArrowKey.wasPressedThisFrame),
+#endif
+            KeyCode.S, KeyCode.DownArrow);
+
+        /// <summary>메뉴에서 왼쪽. A·←</summary>
+        public static bool MenuLeftPressed => KeyOnce(
+#if ENABLE_INPUT_SYSTEM
+            Keyboard.current != null && (Keyboard.current.aKey.wasPressedThisFrame
+                                      || Keyboard.current.leftArrowKey.wasPressedThisFrame),
+#endif
+            KeyCode.A, KeyCode.LeftArrow);
+
+        /// <summary>메뉴에서 오른쪽. D·→</summary>
+        public static bool MenuRightPressed => KeyOnce(
+#if ENABLE_INPUT_SYSTEM
+            Keyboard.current != null && (Keyboard.current.dKey.wasPressedThisFrame
+                                      || Keyboard.current.rightArrowKey.wasPressedThisFrame),
+#endif
+            KeyCode.D, KeyCode.RightArrow);
+
+        /// <summary>
+        /// 메뉴에서 고른다. **Enter와 Space 둘 다** 받는다 —
+        /// 판에서 Space가 "줍기"라 손이 이미 거기 있고, Enter는 메뉴의 표준이다.
+        /// </summary>
+        public static bool MenuConfirmPressed => KeyOnce(
+#if ENABLE_INPUT_SYSTEM
+            Keyboard.current != null && (Keyboard.current.enterKey.wasPressedThisFrame
+                                      || Keyboard.current.numpadEnterKey.wasPressedThisFrame
+                                      || Keyboard.current.spaceKey.wasPressedThisFrame),
+#endif
+            KeyCode.Return, KeyCode.KeypadEnter, KeyCode.Space);
+
         public static bool EscapePressed => KeyOnce(
 #if ENABLE_INPUT_SYSTEM
             Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame,
