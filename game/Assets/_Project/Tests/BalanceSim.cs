@@ -738,31 +738,28 @@ namespace SalvageRun.Tests
             var tree = director.content.techTree;
             if (tree == null || tree.Length == 0) return;
 
-            long totScrap = 0, totCircuit = 0, totCore = 0;
+            // 🔴 **여섯 종류를 다 센다** (2026-08-27). 셋만 세면
+            //    초합금 이상이 드는 노드의 값이 **표에서 사라진다.**
+            var tot = new long[Mats.Count];
             for (int i = 0; i < tree.Length; i++)
             {
                 var n = tree[i];
                 for (int r = 1; r <= n.maxRank; r++)
-                {
-                    totScrap += n.CostAt(MatKind.Scrap, r);
-                    totCircuit += n.CostAt(MatKind.Circuit, r);
-                    totCore += n.CostAt(MatKind.Core, r);
-                }
+                    for (int m = 0; m < Mats.Count; m++)
+                        tot[m] += n.CostAt((MatKind)m, r);
             }
-
-            float perMinScrap = f.MatsThisRun[0] / minutes;
-            float perMinCircuit = f.MatsThisRun[1] / minutes;
-            float perMinCore = f.MatsThisRun[2] / minutes;
 
             t.AppendLine();
             t.AppendLine("테크트리 전체 완주 비용 (모든 노드 최대 랭크)");
-            t.AppendLine($"  고철 {totScrap:N0} · 회로 {totCircuit:N0} · 코어 {totCore:N0}");
-            t.AppendLine("  → 이 수입이 유지된다면");
-            t.AppendLine($"     고철 {Hours(totScrap, perMinScrap):0.0}시간 · " +
-                         $"회로 {Hours(totCircuit, perMinCircuit):0.0}시간 · " +
-                         (perMinCore <= 0.0001f ? "코어 —(이 맵에선 안 나온다)"
-                                                : $"코어 {Hours(totCore, perMinCore):0.0}시간"));
-            t.AppendLine("  🔴 셋 중 가장 긴 것이 실제 플레이타임이다. 셋이 크게 다르면 병목이 하나뿐이라는 뜻");
+            for (int m = 0; m < Mats.Count; m++)
+            {
+                if (tot[m] <= 0) continue;
+                float perMin = f.MatsThisRun[m] / minutes;
+                t.AppendLine($"  {Pad(Mats.Name((MatKind)m), 6)} {tot[m],8:N0}  →  " +
+                             (perMin <= 0.0001f ? "이 맵에선 안 나온다"
+                                                : $"{Hours(tot[m], perMin):0.0}시간"));
+            }
+            t.AppendLine("  🔴 **제일 긴 것이 실제 플레이타임이다.** 크게 다르면 병목이 하나뿐이라는 뜻");
             t.AppendLine("  ⚠️ 코어는 티어 2 쓰레기에서만 나온다 — 맵 1에서 0인 건 **의도**다.");
             t.AppendLine("     우주선 해금이 '깊은 맵까지 가라'는 뜻이어야 하기 때문. 맵 3+에서 다시 재야 한다.");
         }

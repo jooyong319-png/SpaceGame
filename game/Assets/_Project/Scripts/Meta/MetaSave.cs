@@ -364,10 +364,14 @@ namespace SalvageRun.Meta
                 }
             }
 
+            // 🔴 **여섯 종류를 다 본다** (2026-08-27). 셋만 보면
+            //    초합금 이상이 드는 노드가 **공짜로 사진다.**
             int next = rank + 1;
-            if (Data.scrap   < n.CostAt(MatKind.Scrap, next))   { why = "고철 부족"; return false; }
-            if (Data.circuit < n.CostAt(MatKind.Circuit, next)) { why = "회로 부족"; return false; }
-            if (Data.core    < n.CostAt(MatKind.Core, next))    { why = "코어 부족"; return false; }
+            for (int i = 0; i < Mats.Count; i++)
+            {
+                var m = (MatKind)i;
+                if (Data.Mat(m) < n.CostAt(m, next)) { why = Mats.Name(m) + " 부족"; return false; }
+            }
             return true;
         }
 
@@ -376,9 +380,12 @@ namespace SalvageRun.Meta
             if (!CanBuy(n, content, out _)) return false;
 
             int next = Data.RankOf(n.id) + 1;
-            Data.scrap   -= n.CostAt(MatKind.Scrap, next);
-            Data.circuit -= n.CostAt(MatKind.Circuit, next);
-            Data.core    -= n.CostAt(MatKind.Core, next);
+            for (int i = 0; i < Mats.Count; i++)
+            {
+                var m = (MatKind)i;
+                int c = n.CostAt(m, next);
+                if (c > 0) Data.AddMat(m, -c);
+            }
             Data.SetRank(n.id, next);
             Save();
             return true;

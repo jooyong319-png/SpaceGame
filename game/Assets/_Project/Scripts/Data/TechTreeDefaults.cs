@@ -58,6 +58,25 @@ namespace SalvageRun.Data
         }
 
         /// <summary>무기 **하나에만** 붙는 노드. 어느 무기인지는 `weapon`이 정한다.</summary>
+        /// <summary>
+        /// 🔴 **깊은 구역 재화를 값으로 붙인다** (2026-08-27).
+        ///
+        ///    `N(...)`이 노드를 돌려주므로 뒤에 이어 붙인다: `N(...).Deep(alloy: 3);`
+        ///    이렇게 한 이유는 **호출 108곳을 안 건드리기 위해서**다 —
+        ///    `N`에 선택 인자를 더 넣으면 `params requires`와 자리가 엉켜 전부 깨진다.
+        ///
+        ///    🔴 어디에 붙이나: **그 재화가 나오는 구역 이후에 쓰는 노드**에만.
+        ///       4구역 재화(초합금)를 1구역 노드에 붙이면 그 노드는 영영 못 산다.
+        /// </summary>
+        static TechNodeDef Deep(this TechNodeDef n,
+                                int alloy = 0, int crystal = 0, int isotope = 0)
+        {
+            n.costAlloy = alloy;
+            n.costCrystal = crystal;
+            n.costIsotope = isotope;
+            return n;
+        }
+
         static TechNodeDef Won(string id, string title, string desc, WeaponKind k,
                                int x, int y, TechEffect effect, float value,
                                int scrap, int circuit = 0, int core = 0,
@@ -407,20 +426,20 @@ namespace SalvageRun.Data
               TechEffect.StartWeaponLevel, 1f, 360, 10, 2, 3, 2.1f, "sp_card1");
 
             N("sp_combo1", "정제 압축", "가져온 재화 +15%", TechBranch.Special, 0, 4,
-              TechEffect.MatFindAll, 0.15f, 560, 15, 4, 3, 2.3f, "sp_lv1", "sp_wlv1");
+              TechEffect.MatFindAll, 0.15f, 560, 15, 4, 3, 2.3f, "sp_lv1", "sp_wlv1").Deep(alloy: 2);
 
             // ---- 계열 끝 노드 (코어를 크게 요구한다) ----
             N("sp_power", "과부하 정비", "전 무기 피해 +25%", TechBranch.Special, 2, 3,
-              TechEffect.WeaponPower, 0.25f, 800, 22, 6, 2, 2.4f, "pow8");
+              TechEffect.WeaponPower, 0.25f, 800, 22, 6, 2, 2.4f, "pow8").Deep(alloy: 3, crystal: 1);
 
             N("sp_hull", "불침 설계", "최대 연료 +150", TechBranch.Special, -2, 3,
-              TechEffect.FuelMax, 150f, 720, 20, 5, 2, 2.4f, "hull6");
+              TechEffect.FuelMax, 150f, 720, 20, 5, 2, 2.4f, "hull6").Deep(alloy: 2);
 
             N("sp_value", "암거래망", "크레딧 +30%", TechBranch.Special, 3, 3,
-              TechEffect.ValueMul, 0.30f, 880, 24, 6, 2, 2.4f, "mat4");
+              TechEffect.ValueMul, 0.30f, 880, 24, 6, 2, 2.4f, "mat4").Deep(alloy: 3, crystal: 1);
 
             N("sp_speed", "곡예 기동", "이동 속도 +15%", TechBranch.Special, -3, 3,
-              TechEffect.MoveSpeed, 0.15f, 760, 21, 5, 2, 2.4f, "drv7");
+              TechEffect.MoveSpeed, 0.15f, 760, 21, 5, 2, 2.4f, "drv7").Deep(alloy: 2);
 
 
             // ==========================================================================
@@ -438,7 +457,7 @@ namespace SalvageRun.Data
               TechEffect.KillBlast, 0.08f, 300, 8, 1, 5, 1.9f, "pr2");
 
             N("pr9", "연쇄 기폭", "부술 때 터질 확률 +11%p", TechBranch.Power, 3, 5,
-              TechEffect.KillBlast, 0.11f, 700, 19, 4, 4, 2.05f, "pr8");
+              TechEffect.KillBlast, 0.11f, 700, 19, 4, 4, 2.05f, "pr8").Deep(alloy: 2);
 
             N("pr10", "고속 사출", "투사체 속도 +18%", TechBranch.Power, 4, 5,
               TechEffect.ShotSpeed, 0.18f, 190, 5, 0, 5, 1.8f, "pow2");
@@ -453,7 +472,7 @@ namespace SalvageRun.Data
               TechEffect.WeaponRange, 0.12f, 460, 13, 2, 4, 1.95f, "pr2");
 
             N("pr14", "관통 탄자", "전 무기 관통 +1", TechBranch.Power, 7, 3,
-              TechEffect.WeaponPierceOne, 1f, 540, 15, 3, 3, 2.2f, "pr13");
+              TechEffect.WeaponPierceOne, 1f, 540, 15, 3, 3, 2.2f, "pr13").Deep(alloy: 2);
 
             // ---- 드롭형 2차 (오른쪽 맨 아래 줄) ----
             N("dr7", "잔해 선별", "재화 드랍률 +12%", TechBranch.Salvage, 3, -6,
@@ -466,13 +485,13 @@ namespace SalvageRun.Data
               TechEffect.LumpLife, 25f, 400, 11, 2, 3, 1.9f, "dr6");
 
             N("dr10", "삼중 회수", "두 배로 나올 확률 +12%p", TechBranch.Salvage, 6, -6,
-              TechEffect.MatDoubleChance, 0.12f, 940, 26, 6, 3, 2.2f, "dr2");
+              TechEffect.MatDoubleChance, 0.12f, 940, 26, 6, 3, 2.2f, "dr2").Deep(alloy: 3);
 
             N("dr11", "감정 숙련", "가져온 재화 값어치 +14%", TechBranch.Salvage, 7, -6,
               TechEffect.MatValue, 0.14f, 700, 19, 4, 4, 2.0f, "dr5");
 
             N("dr12", "희귀광 감별", "희귀 재화 확률 +55%p", TechBranch.Salvage, 8, -3,
-              TechEffect.RareMatChance, 0.55f, 1200, 32, 8, 3, 2.3f, "dr4");
+              TechEffect.RareMatChance, 0.55f, 1200, 32, 8, 3, 2.3f, "dr4").Deep(alloy: 4, crystal: 2);
 
             // ---- 견인형 2차 (아래 가운데) ----
             N("tw4", "화물 격벽", "끌 수 있는 칸 +1", TechBranch.Salvage, 2, -6,
@@ -487,14 +506,14 @@ namespace SalvageRun.Data
               TechEffect.TowAuto, 1f, 1100, 30, 8, 1, 1f, "tw4");
 
             N("tw7", "예비 드론 II", "드론이 한 대 더 붙는다", TechBranch.Salvage, 3, -7,
-              TechEffect.CarrierDrone, 1f, 1600, 44, 12, 2, 2.6f, "tw3");
+              TechEffect.CarrierDrone, 1f, 1600, 44, 12, 2, 2.6f, "tw3").Deep(alloy: 5, crystal: 2, isotope: 1);
 
             // ---- 보스형 2차 (오른쪽 바깥 기둥) ----
             N("bs4", "탄막 예측", "보스 탄 피해 -16%p", TechBranch.Hull, 8, 1,
               TechEffect.BossShotResist, 0.16f, 580, 16, 3, 4, 2.0f, "bs1");
 
             N("bs5", "약점 조준", "보스에게 주는 피해 +22%p", TechBranch.Power, 8, 2,
-              TechEffect.BossDamage, 0.22f, 820, 22, 6, 4, 2.1f, "bs2");
+              TechEffect.BossDamage, 0.22f, 820, 22, 6, 4, 2.1f, "bs2").Deep(alloy: 3);
 
             // 🔴 보스전은 연료가 제일 빨리 새는 구간이다. 여기에 숨통을 하나 둔다 —
             //    없으면 "보스에 닿았는데 연료가 없어 못 끝낸다"가 반복된다.
@@ -502,7 +521,7 @@ namespace SalvageRun.Data
               TechEffect.BossFuel, 6f, 660, 18, 4, 4, 2.05f, "bs1");
 
             N("bs7", "전리품 분류", "보스에서 나오는 재화 +45%p", TechBranch.Salvage, 8, -1,
-              TechEffect.BossMatBonus, 0.45f, 1250, 34, 9, 3, 2.3f, "bs3");
+              TechEffect.BossMatBonus, 0.45f, 1250, 34, 9, 3, 2.3f, "bs3").Deep(alloy: 4, crystal: 2);
 
             // ---- 연료형 2차 (왼쪽 바깥 기둥) ----
             N("fu4", "저온 순환", "연료 감소 -8%p", TechBranch.Hull, -7, -3,
@@ -515,7 +534,7 @@ namespace SalvageRun.Data
               TechEffect.FuelPickupBonus, 0.28f, 560, 15, 3, 3, 2.0f, "fu2");
 
             N("fu7", "장기 조업", "최대 연료 +200", TechBranch.Hull, -7, -1,
-              TechEffect.FuelMax, 200f, 900, 25, 6, 3, 2.2f, "fu3");
+              TechEffect.FuelMax, 200f, 900, 25, 6, 3, 2.2f, "fu3").Deep(alloy: 3, crystal: 1);
 
             // ---- 기동 2차 (왼쪽 아래) ----
             N("mv1", "긴급 분사", "대시 쿨다운 -9%", TechBranch.Drive, -8, -3,

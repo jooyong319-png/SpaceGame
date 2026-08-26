@@ -493,9 +493,15 @@ namespace SalvageRun.UI
                 $"다음 랭크 {next}/{n.maxRank}", small);
             ty += 20f * s;
 
-            CostLine(r, ref ty, s, MatKind.Scrap, n.CostAt(MatKind.Scrap, next), meta.scrap);
-            CostLine(r, ref ty, s, MatKind.Circuit, n.CostAt(MatKind.Circuit, next), meta.circuit);
-            CostLine(r, ref ty, s, MatKind.Core, n.CostAt(MatKind.Core, next), meta.core);
+            // 🔴 **여섯 종류를 다 훑는다** (2026-08-27). 셋만 그리면
+            //    초합금 이상이 드는 노드가 **값이 없는 것처럼 보인다** —
+            //    사고 나서야 "왜 초합금이 줄었지?"가 된다.
+            //    (`CostLine`이 0은 알아서 건너뛰므로 빈 줄은 안 생긴다)
+            for (int i = 0; i < Mats.Count; i++)
+            {
+                var mk = (MatKind)i;
+                CostLine(r, ref ty, s, mk, n.CostAt(mk, next), meta.Mat(mk));
+            }
 
             // ⬜ "선행 노드를 먼저 찍어야 한다" 줄이 있었다. 안 열린 노드는 이제
             //    화면에 안 나오므로(`VisOf`) 그 안내를 볼 일 자체가 없다.

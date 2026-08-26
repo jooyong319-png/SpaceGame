@@ -335,6 +335,36 @@ namespace SalvageRun.Data
         public int costCircuit;
         public int costCore;
 
+        /// <summary>
+        /// 🔴 **깊은 구역 재화도 값으로 쓴다** (2026-08-27).
+        ///
+        ///    8/26에 재화를 3종 → 6종으로 늘리면서 **버는 쪽만 만들고 쓰는 쪽을 안 만들었다.**
+        ///    초합금·냉각결정·동위원소는 떨어지기만 하고 쓸 데가 없었다 —
+        ///    깊이 갈 이유가 *"여기서만 나오는 게 있다"*인데 그게 아무 데도 안 쓰이면
+        ///    **깊이 가는 이유 자체가 없어진다.**
+        ///
+        ///    ⚠️ 기존 108개 노드는 이 값을 안 쓴다(0). `Deep(...)`으로 붙인 것만 쓴다 —
+        ///       그래야 호출 108곳을 안 건드린다.
+        /// </summary>
+        public int costAlloy;
+        public int costCrystal;
+        public int costIsotope;
+
+        /// <summary>이 재화의 1랭크 기본 비용. **여섯 종류가 한 곳에서 답한다.**</summary>
+        public int BaseCost(MatKind m)
+        {
+            switch (m)
+            {
+                case MatKind.Scrap:   return costScrap;
+                case MatKind.Circuit: return costCircuit;
+                case MatKind.Core:    return costCore;
+                case MatKind.Alloy:   return costAlloy;
+                case MatKind.Crystal: return costCrystal;
+                case MatKind.Isotope: return costIsotope;
+            }
+            return 0;
+        }
+
         [Tooltip("🔴 랭크마다 비용이 이 배수로 는다. 1.0이면 균일 — " +
                  "균일하면 후반에 잔돈이 남아 아무 의미 없이 다 찍게 된다")]
         public float costGrowth = 1.55f;
@@ -350,12 +380,21 @@ namespace SalvageRun.Data
         /// <summary>랭크 n(1부터)을 찍는 데 드는 비용.</summary>
         public int CostAt(MatKind m, int nextRank)
         {
-            int b = m == MatKind.Scrap ? costScrap : m == MatKind.Circuit ? costCircuit : costCore;
+            int b = BaseCost(m);
             if (b <= 0) return 0;
             float mul = Mathf.Pow(Mathf.Max(1f, costGrowth), Mathf.Max(0, nextRank - 1));
             return Mathf.Max(1, Mathf.RoundToInt(b * mul));
         }
 
-        public bool IsFree => costScrap <= 0 && costCircuit <= 0 && costCore <= 0;
+        /// <summary>⚠️ **여섯 종류를 다 본다.** 셋만 보면 깊은 재화만 드는 노드가 공짜가 된다.</summary>
+        public bool IsFree
+        {
+            get
+            {
+                for (int i = 0; i < Mats.Count; i++)
+                    if (BaseCost((MatKind)i) > 0) return false;
+                return true;
+            }
+        }
     }
 }

@@ -786,7 +786,7 @@ namespace SalvageRun.Tests
                     {
                         var n = all[i];
                         if (ok.Contains(n.id)) continue;
-                        if (n.costCircuit > 0 || n.costCore > 0) continue;
+                        if (!ScrapOnly(n)) continue;
                         bool reqOk = true;
                         if (n.requires != null)
                             for (int r = 0; r < n.requires.Length; r++)
@@ -1007,16 +1007,13 @@ namespace SalvageRun.Tests
             }
 
             // 🔴 **떨어지기만 하고 쓸 곳이 없는 재화가 있는가.**
-            //    `TechNodeDef`의 비용 필드는 `costScrap`·`costCircuit`·`costCore` **셋뿐**이다.
             //    재화를 6종으로 늘리면서 **버는 쪽만 만들고 쓰는 쪽을 안 만들면**
             //    깊은 구역의 재화가 영원히 쌓이기만 한다 — 주워도 아무 일이 안 난다.
+            //    (8/26~27에 실제로 그랬다: 초합금·냉각결정·동위원소가 쓸 데가 없었다)
             var sink = new HashSet<MatKind>();
             for (int i = 0; i < tree.Length; i++)
-            {
-                if (tree[i].costScrap   > 0) sink.Add(MatKind.Scrap);
-                if (tree[i].costCircuit > 0) sink.Add(MatKind.Circuit);
-                if (tree[i].costCore    > 0) sink.Add(MatKind.Core);
-            }
+                for (int m = 0; m < Mats.Count; m++)
+                    if (tree[i].BaseCost((MatKind)m) > 0) sink.Add((MatKind)m);
             var dead = new List<string>();
             for (int m = 0; m < Mats.Count; m++)
                 if (!sink.Contains((MatKind)m)) dead.Add(Mats.Name((MatKind)m));
@@ -1044,8 +1041,21 @@ namespace SalvageRun.Tests
         /// <summary>이 구역 등급에서 나오는 재화만으로 이 노드를 살 수 있는가.</summary>
         static bool Affordable(TechNodeDef n, int rank)
         {
-            if (n.costCircuit > 0 && rank < Mats.FirstRank(MatKind.Circuit)) return false;
-            if (n.costCore    > 0 && rank < Mats.FirstRank(MatKind.Core))    return false;
+            // 🔴 **여섯 종류를 다 본다** (2026-08-27). 셋만 보면
+            //    초합금 이상이 드는 노드가 **1구역에서도 살 수 있는 것처럼** 세어진다.
+            for (int i = 0; i < Mats.Count; i++)
+            {
+                var m = (MatKind)i;
+                if (n.BaseCost(m) > 0 && rank < Mats.FirstRank(m)) return false;
+            }
+            return true;
+        }
+
+        /// <summary>고철 말고는 아무것도 안 드는가 (= 1구역에서 살 수 있는가).</summary>
+        static bool ScrapOnly(TechNodeDef n)
+        {
+            for (int i = 1; i < Mats.Count; i++)
+                if (n.BaseCost((MatKind)i) > 0) return false;
             return true;
         }
 
