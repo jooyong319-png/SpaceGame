@@ -117,9 +117,22 @@ namespace SalvageRun.UI
             DrawHeader(s);
             HandlePan(56f * s);      // 머리말 아래에서만 끌린다
 
-            Vector2 origin = new Vector2(Screen.width * 0.5f, Screen.height * 0.52f) + pan;
+            HandleKeyboard();
+
             float cell = CellBase * s;
             float node = NodeBase * s;
+
+            // 🔴 **고른 노드가 늘 화면 가운데 있게 판을 움직인다.**
+            //    안 그러면 키로 옮겼는데 화면 밖으로 나가서 **어디로 갔는지 모른다.**
+            //    ⚠️ `cell`을 쓰므로 반드시 그 뒤에 온다
+            if (cursor >= 0 && cursor < content.techTree.Length)
+            {
+                var c = content.techTree[cursor].cell;
+                pan = Vector2.Lerp(pan, new Vector2(-c.x * cell, c.y * cell),
+                                   12f * Time.unscaledDeltaTime);
+            }
+
+            Vector2 origin = new Vector2(Screen.width * 0.5f, Screen.height * 0.52f) + pan;
 
             DrawLinks(origin, cell, node, s);
             DrawNodes(origin, cell, node, s);
@@ -148,7 +161,7 @@ namespace SalvageRun.UI
             }
 
             GUI.Label(new Rect(20f * s, 34f * s, 700f * s, 20f * s),
-                "드래그 = 이동 · 클릭 = 강화 · 연 무기는 전부 배에 붙는다 · T/Esc = 닫기", small);
+                "WASD·방향키 = 이동 · Enter = 강화 · 드래그·클릭도 됨 · T/Esc = 닫기", small);
         }
 
         void DrawMat(ref float x, float s, MatKind m, int amount)
@@ -157,6 +170,85 @@ namespace SalvageRun.UI
             GUI.Label(new Rect(x, 14f * s, 105f * s, 26f * s), $"{Mats.Name(m)} {amount}", label);
             GUI.color = Color.white;
             x += 105f * s;
+        }
+
+        // ---------------------------------------------------------------- 키보드 이동
+
+        /// <summary>키보드로 고른 노드. `-1`이면 아직 아무것도 안 골랐다.</summary>
+        int cursor = -1;
+
+        /// <summary>
+        /// 🔴 **정비소도 키보드로 돈다** (2026-08-27 사장님: *"UX도 구조적으로 챙겨 달라"*).
+        ///
+        ///    이동이 키보드 전용이 된 뒤로 **여기만 드래그+클릭이면 손이 계속 오간다.**
+        ///    타이틀·준비 화면은 목록이라 위/아래로 끝나는데
+        ///    **여기는 격자**라 상하좌우가 다 필요하다 — 그래서 따로 만든다.
+        ///
+        ///    🔴 **격자 좌표(`n.cell`)로 고른다. 화면 좌표가 아니다.**
+        ///       화면 좌표로 하면 확대·이동 상태에 따라 "오른쪽"이 달라져서
+        ///       **같은 키를 눌렀는데 매번 다른 데로 간다.**
+        /// </summary>
+        void HandleKeyboard()
+        {
+            var tree = content.techTree;
+            if (tree == null || tree.Length == 0) return;
+
+            int dx = 0, dy = 0;
+            if (Core.InputReader.MenuRightPressed) dx = 1;
+            else if (Core.InputReader.MenuLeftPressed) dx = -1;
+            else if (Core.InputReader.MenuUpPressed) dy = 1;
+            else if (Core.InputReader.MenuDownPressed) dy = -1;
+
+            if (dx != 0 || dy != 0)
+            {
+                if (cursor < 0 || cursor >= tree.Length)
+                {
+                    // 처음엔 뿌리에서 시작한다 — 모든 것이 거기서 갈라지므로 헤매지 않는다
+                    cursor = 0;
+                    for (int i = 0; i < tree.Length; i++)
+                        if (tree[i].id == "root") { cursor = i; break; }
+                }
+                else MoveCursor(dx, dy);
+            }
+
+            if (cursor >= 0 && Core.InputReader.MenuConfirmPressed)
+            {
+                var n = tree[cursor];
+                bool can = MetaSave.CanBuy(n, content, out string why);
+                bool maxed = MetaSave.Data.RankOf(n.id) >= n.maxRank;
+                TryBuy(n, can, maxed, why);
+            }
+        }
+
+        /// <summary>격자에서 그 방향으로 제일 가까운 노드로 옮긴다.</summary>
+        void MoveCursor(int dx, int dy)
+        {
+            var tree = content.techTree;
+            var from = tree[cursor].cell;
+
+            int best = -1;
+            float bestScore = float.MaxValue;
+
+            for (int i = 0; i < tree.Length; i++)
+            {
+                if (i == cursor) continue;
+                if (VisOf(tree[i]) == Vis.Hidden) continue;      // 안 보이는 데로는 못 간다
+
+                var d = tree[i].cell - from;
+                if (dx != 0 && (dx > 0 ? d.x <= 0 : d.x >= 0)) continue;
+                if (dy != 0 && (dy > 0 ? d.y <= 0 : d.y >= 0)) continue;
+
+                // 🔴 진행 방향 거리 + **옆으로 벗어난 정도에 가중치**.
+                //    가중치가 없으면 저 멀리 대각선에 있는 것으로 튄다 —
+                //    "오른쪽을 눌렀는데 오른쪽 위 끝으로 간다"가 된다
+                float along = dx != 0 ? Mathf.Abs(d.x) : Mathf.Abs(d.y);
+                float off   = dx != 0 ? Mathf.Abs(d.y) : Mathf.Abs(d.x);
+                float score = along + off * 3f;
+
+                if (score < bestScore) { bestScore = score; best = i; }
+            }
+
+            if (best >= 0) cursor = best;
         }
 
         // ---------------------------------------------------------------- 이동
@@ -402,6 +494,14 @@ namespace SalvageRun.UI
                 }
 
                 if (r.Contains(mouse)) hovered = i;
+
+                // 🔴 고른 노드에 테두리를 한 겹 더. 색만 바꾸면 완료된 노드와 구별이 안 된다
+                if (i == cursor)
+                {
+                    Frame(new Rect(r.x - 4f * s, r.y - 4f * s, r.width + 8f * s, r.height + 8f * s),
+                          new Color(1f, 0.95f, 0.6f), 2.5f * s);
+                    if (hovered < 0) hovered = i;      // 상세 패널이 커서를 따라간다
+                }
 
                 if (Event.current.type == EventType.MouseUp && Event.current.button == 0
                     && r.Contains(mouse) && !Dragged)
