@@ -92,6 +92,23 @@ namespace SalvageRun.Run
         bool inEchoExplosion;
 
         /// <summary>
+        /// 🔴 **발동형(폭발·연쇄)이 자기를 다시 부르는 것을 막는다** (2026-08-27).
+        ///
+        ///    `Explode` → `HitAround` → `Hit` → (여기서 또 `Explode`) → … 무한 재귀다.
+        ///    2026-08-27 트리 완주 상태를 재다가 **StackOverflowException으로 죽었다.**
+        ///    검사가 아니라 **게임이 죽는 버그**다 — `ProcExplode`를 몇 랭크만 찍어도
+        ///    확률이 올라가 언젠가 반드시 터진다.
+        ///
+        ///    `inEchoExplosion`은 조합 메아리 한 갈래만 막고 있었다.
+        ///    발동형 셋(`ProcExplode`·`ProcChain`·`KillBlast`)은 **아무 가드도 없었다.**
+        ///
+        ///    ⚠️ 확률을 낮추는 것으로는 못 고친다. 확률이 아무리 낮아도
+        ///       **한 번 걸리면 그 안에서 또 걸릴 수 있어** 사슬이 끊기지 않는다.
+        ///       깊이로 막아야 한 번에 끝난다.
+        /// </summary>
+        int procDepth;
+
+        /// <summary>
         /// 🔴 런이 시작될 때마다 난수를 되감는다.
         ///
         ///    이게 없으면 **앞 런이 얼마나 길었는지가 다음 런의 결과를 바꾼다.**
@@ -114,6 +131,7 @@ namespace SalvageRun.Run
             for (int i = 0; i < fxLife.Count; i++) { fxLife[i] = 0f; fx[i].gameObject.SetActive(false); }
 
             inEchoExplosion = false;
+            procDepth = 0;
         }
 
         // ---------------------------------------------------------------- 준비
@@ -714,8 +732,13 @@ namespace SalvageRun.Run
             // 🔴 **맞힐 때 터진다** (테크트리 `ProcExplode`).
             //    부술 때가 아니라 **맞힐 때**인 이유: 큰 것에 붙어 있으면 계속 터져서
             //    "이 무기가 세졌다"가 매 순간 보인다. 부술 때만 터지면 잔몹에서만 보인다.
-            if (stats.procExplode > 0f && Rand() < stats.procExplode)
+            //    ⚠️ `procDepth`로 막는다 — 폭발이 부순 것이 또 폭발하면 무한 재귀다
+            if (procDepth == 0 && stats.procExplode > 0f && Rand() < stats.procExplode)
+            {
+                procDepth++;
                 Explode(at, 2.0f * stats.rangeMul, dmg * 0.9f, d, lv);
+                procDepth--;
+            }
 
             if (!p.Chip(dmg)) return;
 
@@ -724,12 +747,20 @@ namespace SalvageRun.Run
             // 🔴 **부순 자리가 터진다** (테크트리 `KillBlast`).
             //    `ProcExplode`가 큰 것에 꽂히는 값이라면 이건 **잔해가 몰린 곳**에서 산다 —
             //    하나가 터져 옆을 부수고 그게 또 터진다.
-            if (stats.killBlast > 0f && Rand() < stats.killBlast)
+            if (procDepth == 0 && stats.killBlast > 0f && Rand() < stats.killBlast)
+            {
+                procDepth++;
                 Explode(at, 2.6f * stats.rangeMul, dmg * 1.15f, d, lv);
+                procDepth--;
+            }
 
             // 🔴 **부술 때 번개가 옮겨붙는다** (테크트리 `ProcChain`)
-            if (stats.procChain > 0f && Rand() < stats.procChain)
+            if (procDepth == 0 && stats.procChain > 0f && Rand() < stats.procChain)
+            {
+                procDepth++;
                 ArcFrom(at, 3, 6f * stats.rangeMul, dmg * 0.6f, d, lv);
+                procDepth--;
+            }
 
             // 🔴 **부수면 잠깐 빨라진다** (테크트리 `KillSpeed`).
             //    치우는 리듬에 보상을 붙인다 — 잘 부술수록 다음 것으로 빨리 간다

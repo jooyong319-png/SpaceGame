@@ -734,8 +734,87 @@ namespace SalvageRun.Tests
             var field = director.field;
             var stats = director.Stats;
 
-            // 중반 화력으로 맞춘다
-            for (int i = 0; i < stats.weaponLevel.Length; i++) stats.weaponLevel[i] = 5;
+            // 🔴 **두 가지 상태로 잰다** (2026-08-27 사장님: *"강화해서 잡게 해야지
+            //    왜 시간을 늘리려고 하냐"*). 맞는 말이라 질문을 바꿨다 —
+            //    *"보스가 6초에 맞나"*가 아니라 **"플레이어가 자라서 보스에 닿나"**다.
+            //
+            //    · `1구역 천장` = 1구역에서 살 수 있는 것을 **전부 최대로** 찍은 상태.
+            //      작살 1종 + `pow1` 8랭크(+32%)가 끝이다 — 다른 무기는 회로가 들어 못 산다
+            //    · `중반`     = 무기 3종 Lv.5 (2구역 이후를 가정)
+            //
+            //    1구역 천장에서 얼마나 모자라는지가 **"강화로 닿을 수 있는가"의 답**이다.
+            //    · `트리 완주`  = **108노드 전부 최대 랭크.** 더 자랄 데가 없는 상태다.
+            //      여기서도 못 닿으면 *"강화해서 잡는다"*가 구조적으로 불가능하다는 뜻이다
+            yield return MeasureBoss(t, "1구역 천장", stage1: true);
+            yield return MeasureBoss(t, "중반 3종",   mid: true);
+            yield return MeasureBoss(t, "트리 완주",  fullTree: true);
+
+            Debug.Log("[SMOKE]" + t);
+            director.ReturnNow();
+            yield return null;
+            director.BackToReady();
+            yield return null;
+            Assert.Pass();
+        }
+
+        /// <summary>보스를 한 상태로 때려 보고 몇 초 걸리는지 적는다.</summary>
+        IEnumerator MeasureBoss(StringBuilder t, string label,
+                                bool stage1 = false, bool mid = false, bool fullTree = false)
+        {
+            // 🔴 **노드를 실제로 찍어서 만든다.** 처음엔 `powerBonus: 0.32f`처럼
+            //    손으로 흉내 냈는데, 그러면 **연료 노드가 빠진다** —
+            //    그리고 연료가 곧 판 길이라 *"보스전에 몇 초 쓸 수 있나"*가 통째로 틀린다.
+            //    (1구역 천장을 48초로 재고 있었는데 실제로는 연료 노드까지 찍으면 훨씬 길다)
+            //
+            //    ⚠️ **StartRun 전에** 찍어야 한다 — `RebuildStats`가 StartRun 안에서 돈다.
+            var savedNodes = new List<NodeRank>(MetaSave.Data.nodes);
+            var all = director.content.techTree;
+
+            if (stage1)
+            {
+                // 1구역에서 살 수 있는 것 = 회로·코어가 안 드는 것 (선행조건까지 따라간다)
+                var ok = new HashSet<string>();
+                bool changed = true;
+                while (changed)
+                {
+                    changed = false;
+                    for (int i = 0; i < all.Length; i++)
+                    {
+                        var n = all[i];
+                        if (ok.Contains(n.id)) continue;
+                        if (n.costCircuit > 0 || n.costCore > 0) continue;
+                        bool reqOk = true;
+                        if (n.requires != null)
+                            for (int r = 0; r < n.requires.Length; r++)
+                                if (!ok.Contains(n.requires[r])) { reqOk = false; break; }
+                        if (reqOk) { ok.Add(n.id); changed = true; }
+                    }
+                }
+                for (int i = 0; i < all.Length; i++)
+                    if (ok.Contains(all[i].id))
+                        MetaSave.Data.SetRank(all[i].id, Mathf.Max(1, all[i].maxRank));
+            }
+            else if (fullTree)
+            {
+                for (int i = 0; i < all.Length; i++)
+                    MetaSave.Data.SetRank(all[i].id, Mathf.Max(1, all[i].maxRank));
+            }
+
+            director.StartRun(0);
+            yield return null;
+
+            var ship = director.ship;
+            var field = director.field;
+            var stats = director.Stats;
+
+            // `중반`만 손으로 맞춘다 (2구역 이후를 가정한 가상의 상태라 노드로 표현이 안 된다)
+            if (mid)
+                for (int i = 0; i < stats.weaponLevel.Length; i++) stats.weaponLevel[i] = 5;
+
+            int wCount = 0, wLvSum = 0;
+            for (int i = 0; i < stats.weaponLevel.Length; i++)
+                if (stats.weaponLevel[i] > 0) { wCount++; wLvSum += stats.weaponLevel[i]; }
+
             director.arms.stats = stats;
             director.arms.Rebuild();
 
@@ -753,11 +832,12 @@ namespace SalvageRun.Tests
             for (int i = 0; i < field.Pieces.Count; i++)
                 if (field.Pieces[i].Alive && field.Pieces[i].IsBossPart) total++;
 
-            float startFuel = ship.Fuel;
-            float t0 = Time.realtimeSinceStartup;
             int frames = 0, alive = total;
             float clearedAt = -1f;
-            const int Cap = 30 * 120;                  // 120초까지만 본다
+            // 🔴 40초면 초당 깎는 양을 재는 데 충분하다. 어차피 **비율로 늘려 쓰므로**
+            //    120초를 봐도 답이 더 정확해지지 않는다 — 검사만 세 배 느려진다
+            //    (120초 × 세 상태로 뒀더니 스모크 한 바퀴가 748초 걸렸다)
+            const int Cap = 30 * 40;
 
             while (frames < Cap && alive > 0)
             {
@@ -775,9 +855,23 @@ namespace SalvageRun.Tests
             AutoPilot.Release(ship);
 
             float spent = frames * StepSeconds;
-            t.AppendLine($"  부위 {total}개 · 부위당 HP {hpScale:0}");
-            t.AppendLine($"  부순 것 {total - alive}/{total} · 걸린 시간 " +
-                         (clearedAt >= 0f ? $"{clearedAt:0.0}초" : $"{spent:0.0}초 안에 못 부숨"));
+            t.AppendLine($"  [{label}] 무기 {wCount}종(합 Lv.{wLvSum}) · 피해배수 {stats.powerMul:0.00} · " +
+                         $"부순 것 {total - alive}/{total}");
+
+            // 🔴 **못 부숴도 얼마나 깎았는지는 봐야 한다.**
+            //    부순 *개수*로만 재면 하나도 못 부순 경우가 전부 "영원히"로 뭉개진다 —
+            //    5% 남은 것과 95% 남은 것이 같아 보여서 **얼마나 모자라는지를 알 수 없다.**
+            //    그래서 **남은 HP 비율**로 잰다.
+            float leftRatio = 0f;
+            for (int i = 0; i < field.Pieces.Count; i++)
+                if (field.Pieces[i].Alive && field.Pieces[i].IsBossPart)
+                    leftRatio += field.Pieces[i].HpRatio;
+
+            float doneRatio = total - leftRatio;                 // 부위 단위로 몇 개어치 깎았나
+            float dps = spent > 0.01f ? doneRatio * hpScale / spent : 0f;
+            float need = dps > 0.01f ? total * hpScale / dps : -1f;
+            t.AppendLine($"       {spent:0}초 동안 {doneRatio:0.00}부위어치 깎음 · 초당 {dps:0.0} → " +
+                         "4부위 전부에 " + (need > 0f ? $"약 {need:0}초" : "영원히") + " 필요");
 
             // 🔴 **연료 예산과 나란히 놓는다.** 이 숫자 하나만 보면 판단이 안 선다 —
             //    "보스가 몇 초에 나오고, 그때부터 몇 초가 남는가"와 붙어야 뜻이 생긴다
@@ -792,20 +886,15 @@ namespace SalvageRun.Tests
             t.AppendLine(clearedAt >= 0f && clearedAt <= budget
                 ? $"  ✅ {budget:0.0}초 안에 {clearedAt:0.0}초면 끝난다"
                 : $"  🔴 **연료로 {budget:0.0}초가 남는데 부수는 데 " +
-                  (clearedAt >= 0f ? $"{clearedAt:0.0}초" : "120초 넘게") + "가 든다**");
-
-            Debug.Log("[SMOKE]" + t);
-
-            // 단언은 하나만 — **무기가 보스에 닿기는 하는가.**
-            // 몇 초냐는 밸런스라 여기서 실패시키지 않는다 (실패시키면 값을 만질 때마다 빨개진다)
-            Assert.Less(alive, total,
-                "🔴 중반 화력으로 120초를 때렸는데 보스 부위가 하나도 안 부서졌다 — 닿지 않는다");
+                  (clearedAt >= 0f ? $"{clearedAt:0.0}초" : $"{need:0}초") + "가 든다**");
 
             director.ReturnNow();
             yield return null;
             director.BackToReady();
+
+            MetaSave.Data.nodes.Clear();
+            MetaSave.Data.nodes.AddRange(savedNodes);   // 다음 검사에 새지 않게 되돌린다
             yield return null;
-            Assert.Pass();
         }
 
         /// <summary>
