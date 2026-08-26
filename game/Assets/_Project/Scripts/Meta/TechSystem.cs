@@ -102,6 +102,12 @@ namespace SalvageRun.Meta
         /// <summary>🔴 회수 드론 대수. `RunDirector.SyncDrones`가 읽는다.</summary>
         public int carrierDrones;
 
+        /// <summary>
+        /// 🔴 직송 드론이 **집으로 보낼 수 있는 최고 등급**. `-1`이면 드론이 없다.
+        ///    0 = 고철만 · 1 = 회로까지 · … · 5 = 전부.
+        /// </summary>
+        public int haulerGrade = -1;
+
         /// <summary>🔴 보스 탄 피해 감소(0~1). `RunDirector.CheckBossShots`가 읽는다.</summary>
         public float bossShotResist;
 
@@ -341,6 +347,9 @@ namespace SalvageRun.Meta
                     case TechEffect.TowWeight:      s.towWeightMul += v; break;
                     case TechEffect.TowCapacity:    s.towCapacityBonus += Mathf.RoundToInt(v); break;
                     case TechEffect.CarrierDrone:   s.carrierDrones += Mathf.RoundToInt(v); break;
+                    // 랭크 1 → 등급 0(고철). 랭크가 오를수록 더 값진 것까지 보낸다
+                    case TechEffect.HaulerGrade:
+                        s.haulerGrade = Mathf.Max(s.haulerGrade, rank - 1); break;
                     case TechEffect.BossShotResist: s.bossShotResist = Mathf.Min(0.75f, s.bossShotResist + v); break;
                     case TechEffect.BossMatBonus:   s.bossMatBonus += v; break;
 

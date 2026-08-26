@@ -624,7 +624,12 @@ namespace SalvageRun.Tests
                 t.AppendLine($"  {marks[i].level,2}칸  {marks[i].at,6:0.0}s");
 
             float runTime = Mathf.Max(0.01f, director.RunTime);
-            int pushed = Mathf.Max(0, director.RunCollected - director.BankedCount);
+            // 🔴 **직송 드론이 생기면서 셈이 달라졌다** (2026-08-27).
+            //    `BankedCount`는 이제 *손으로 실은 것 + 드론이 보낸 것*이다.
+            //    그대로 빼면 음수가 되어 **밀려난 것이 항상 0으로 보인다** — 표가 거짓말한다.
+            //    손으로 실었다가 밀려난 것 = 주움 − (정산 − 직송).
+            int byHand = director.BankedCount - director.HauledCount;
+            int pushed = Mathf.Max(0, director.RunCollected - byHand);
 
             t.AppendLine();
             t.AppendLine($"  → 첫 획득까지        {(firstPick >= 0f ? firstPick : -1f),6:0.0}s" +
@@ -640,8 +645,9 @@ namespace SalvageRun.Tests
             t.AppendLine("     🔴 이게 낮으면 고를 것이 없다 — 칸이 몇이든 '선택'이 성립하지 않는다");
 
             t.AppendLine();
-            t.AppendLine($"런 결과: {director.RunTime:0.0}초 · 가져옴 {director.BankedCount} · " +
-                         $"주움 {director.RunCollected} · 크레딧 {director.RunValue}");
+            t.AppendLine($"런 결과: {director.RunTime:0.0}초 · 가져옴 {director.BankedCount}" +
+                         $" (손 {byHand} + 드론 {director.HauledCount})" +
+                         $" · 주움 {director.RunCollected} · 크레딧 {director.RunValue}");
 
             t.AppendLine();
             t.AppendLine("재화 수입 (🔴 테크 비용의 기준. 지금 노드 값은 전부 추측이다)");

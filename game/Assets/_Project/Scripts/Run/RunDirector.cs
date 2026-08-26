@@ -158,6 +158,9 @@ namespace SalvageRun.Run
             FloorCollected = 0;
             BossPartsLeft = 0;
             BossHits = 0;
+            HauledCount = 0;
+            haulTarget = null;
+            haulCd = 0f;
             Wave = 1;
             NextBossIn = 0f;
             Phase = FloorPhase.Collecting;
@@ -249,6 +252,7 @@ namespace SalvageRun.Run
 
             TidyTow();
             UpdateDrones();
+            UpdateHauler();
             CheckBossShots();
 
             Stats.TickBursts(Time.deltaTime);
@@ -726,16 +730,113 @@ namespace SalvageRun.Run
                 var f = towed[i];
                 if (f == null || !f.Alive) continue;
 
-                field.MatsThisRun[(int)f.mat] += f.matAmount;
-                MetaSave.AddMaterial(f.mat, f.matAmount);
-                // 🔴 가져온 재화의 값어치 (테크트리 `MatValue`)
-                RunValue += Mathf.RoundToInt(f.value * Stats.valueMultiplier * Stats.matValue);
-                BankedCount++;
-
-                f.Despawn();
+                BankOne(f);
             }
             towed.Clear();
         }
+
+        /// <summary>
+        /// 재화 하나를 집으로 넣는다. **견인과 직송 드론이 같은 셈을 쓴다** —
+        /// 두 곳에 따로 적으면 표가 조용히 어긋난다.
+        /// </summary>
+        void BankOne(Fragment f)
+        {
+            field.MatsThisRun[(int)f.mat] += f.matAmount;
+            MetaSave.AddMaterial(f.mat, f.matAmount);
+            // 🔴 가져온 재화의 값어치 (테크트리 `MatValue`)
+            RunValue += Mathf.RoundToInt(f.value * Stats.valueMultiplier * Stats.matValue);
+            BankedCount++;
+            f.Despawn();
+        }
+
+        // ================================================================ 직송 드론
+
+        Transform hauler;
+        float haulCd;
+        Fragment haulTarget;
+
+        /// <summary>이번 판에 드론이 직접 보낸 개수. HUD·측정이 읽는다.</summary>
+        public int HauledCount { get; private set; }
+
+        /// <summary>
+        /// 🔴 **직송 드론** (2026-08-27 사장님 지시). 견인 줄에 **안 들어간다** —
+        ///    주워서 그대로 집으로 보낸다.
+        ///
+        ///    실측이 필요를 짚어 줬다: 2구역에서 **주움 116 · 가져옴 11**.
+        ///    한 판 수입이 *칸 수 × 덩어리*로 고정이라 부술수록 버리기만 했다.
+        ///
+        ///    ⚠️ **등급 제한이 이 기능의 핵심이다.** 처음엔 고철만 보낸다.
+        ///       드론이 처음부터 다 가져가면 *"가져갈까 버릴까"*가 사라진다 —
+        ///       **값진 것은 한동안 직접 실어야 한다.**
+        /// </summary>
+        void UpdateHauler()
+        {
+            int grade = Stats != null ? Stats.haulerGrade : -1;
+
+            if (grade < 0)
+            {
+                if (hauler != null) { Destroy(hauler.gameObject); hauler = null; }
+                return;
+            }
+
+            if (hauler == null)
+            {
+                var go = new GameObject("HaulerDrone");
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = PixelArt.Tug(14, 0.34f, 0.7f, 0.10f);
+                sr.color = new Color(1f, 0.86f, 0.55f);      // 견인 드론(푸른색)과 구분
+                sr.sortingOrder = 9;
+                go.transform.localScale = Vector3.one * 0.5f;
+                go.transform.position = ship.transform.position;
+                hauler = go.transform;
+            }
+
+            // 표적이 사라졌으면 놓는다
+            if (haulTarget != null && (!haulTarget.Alive || !haulTarget.Collectable)) haulTarget = null;
+
+            if (haulCd > 0f) haulCd -= Time.deltaTime;
+
+            if (haulTarget == null && haulCd <= 0f)
+            {
+                // 🔴 **등급 안에서 제일 값진 것**부터 보낸다. 가까운 것이 아니라.
+                //    가까운 것부터 집으면 고철만 실어 나르다 판이 끝난다
+                Vector2 from = hauler.position;
+                int bestMat = -1; float bestSq = float.MaxValue;
+                for (int i = 0; i < field.Fragments.Count; i++)
+                {
+                    var f = field.Fragments[i];
+                    if (!f.Collectable) continue;
+                    if ((int)f.mat > grade) continue;                 // 아직 못 드는 등급
+                    float sq = ((Vector2)f.transform.position - from).sqrMagnitude;
+                    if (sq > HaulReach * HaulReach) continue;
+                    if ((int)f.mat < bestMat) continue;
+                    if ((int)f.mat == bestMat && sq >= bestSq) continue;
+                    bestMat = (int)f.mat; bestSq = sq; haulTarget = f;
+                }
+            }
+
+            Vector2 want = haulTarget != null
+                ? (Vector2)haulTarget.transform.position
+                : (Vector2)ship.transform.position + Vector2.up * 1.4f;
+
+            hauler.position = Vector2.MoveTowards(hauler.position, want, HaulSpeed * Time.deltaTime);
+
+            if (haulTarget != null &&
+                ((Vector2)hauler.position - (Vector2)haulTarget.transform.position).sqrMagnitude < 0.36f)
+            {
+                Fx.Spark(haulTarget.transform.position, 0.3f, Mats.ColorOf(haulTarget.mat), 0.14f);
+                AddPopup(haulTarget.transform.position,
+                         $"{Mats.Name(haulTarget.mat)} 직송", new Color(1f, 0.86f, 0.55f));
+                BankOne(haulTarget);
+                HauledCount++;
+                haulTarget = null;
+                haulCd = HaulInterval;
+            }
+        }
+
+        const float HaulReach = 18f;      // 이 안에서만 찾는다 — 맵 전체를 훑으면 드론이 만능이 된다
+        const float HaulSpeed = 9f;
+        const float HaulInterval = 1.6f;  // 한 번 보내고 쉰다. 안 그러면 화면을 진공청소기처럼 훑는다
 
         public int WreckCount { get; private set; }
 
