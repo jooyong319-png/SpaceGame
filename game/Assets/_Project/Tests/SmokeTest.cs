@@ -746,7 +746,11 @@ namespace SalvageRun.Tests
             //    · `트리 완주`  = **108노드 전부 최대 랭크.** 더 자랄 데가 없는 상태다.
             //      여기서도 못 닿으면 *"강화해서 잡는다"*가 구조적으로 불가능하다는 뜻이다
             yield return MeasureBoss(t, "1구역 천장", stage1: true);
-            yield return MeasureBoss(t, "중반 3종",   mid: true);
+            //    ⚠️ `무기만3종`은 **노드를 하나도 안 찍은** 인위적 상태다 (무기만 손으로 Lv.5).
+            //       연료 노드가 없어 판이 48초뿐이라 🔴가 뜨는데, **그건 당연한 것이고
+            //       밸런스 신호가 아니다.** 화력만 따로 보기 위한 대조군이다 —
+            //       실제 플레이어가 무기 3종을 가질 무렵이면 연료 노드도 찍혀 있다.
+            yield return MeasureBoss(t, "무기만3종·노드0", mid: true);
             yield return MeasureBoss(t, "트리 완주",  fullTree: true);
 
             Debug.Log("[SMOKE]" + t);
@@ -925,10 +929,14 @@ namespace SalvageRun.Tests
             float budget = runSeconds - bossAt;
             t.AppendLine($"  보스 등장 {bossAt:0.0}초 · 판 길이 {runSeconds:0.0}초 " +
                          $"→ 보스전에 쓸 수 있는 시간 {budget:0.0}초");
-            t.AppendLine(clearedAt >= 0f && clearedAt <= budget
-                ? $"  ✅ {budget:0.0}초 안에 {clearedAt:0.0}초면 끝난다"
-                : $"  🔴 **연료로 {budget:0.0}초가 남는데 부수는 데 " +
-                  (clearedAt >= 0f ? $"{clearedAt:0.0}초" : $"{need:0}초") + "가 든다**");
+            // 🔴 **판정은 "재는 창(40초) 안에 끝냈나"가 아니라 "연료 안에 끝나나"다.**
+            //    창을 못 넘겼다는 이유로 🔴를 찍으면, 계산상 되는 것도 안 되는 것처럼 보인다 —
+            //    실제로 1구역 천장이 *"86초면 되는데"* 🔴로 찍혀 있었다. 검사가 거짓말한 것이다.
+            float takes = clearedAt >= 0f ? clearedAt : need;
+            t.AppendLine(takes > 0f && takes <= budget
+                ? $"  ✅ 연료로 {budget:0.0}초가 남고 부수는 데 {takes:0.0}초" +
+                  (clearedAt >= 0f ? "" : " (재는 창 밖이라 추정)") + " — **깰 수 있다**"
+                : $"  🔴 **연료로 {budget:0.0}초가 남는데 부수는 데 {takes:0}초가 든다**");
 
             director.ReturnNow();
             yield return null;

@@ -100,9 +100,17 @@ namespace SalvageRun.Data
                 "곧게 쏴서 꿰뚫는다. 관통이 오르면 한 발이 여러 개를 지난다",
                 0, -3, 0);
 
+            // 🔴 **고철만으로 산다** (2026-08-27). 전에는 회로 14가 들어
+            //    **1구역에서는 절대 못 샀다** — 회로는 2구역부터 나오는데
+            //    2구역은 보스를 깨야 열리고, 보스는 무기 하나로는 못 깬다. 갇힌다.
+            //
+            //    실측이 이유를 딱 짚어 줬다: 무기 **1종 → 3종이 초당 0.4 → 13.1(32배)**.
+            //    피해배수는 1구역 천장 쪽이 오히려 높은데도 그렇다 —
+            //    **무기 개수가 곱으로 들어간다.** 화력 노드 열 개보다 무기 하나가 크다.
+            //    사장님 지시(*"무기는 추가다, 개수 제한 없다"*)가 곧 주 성장축이라는 뜻이다.
             Wep("wep_arc", "정전기 방출", WeaponKind.Arc,
                 "가까운 것들에게 옮겨붙는다. 한 방은 약하지만 쉴 새 없다",
-                -2, -3, 1000, 14, 0, "wep_harpoon");
+                -2, -3, 420, 0, 0, "wep_harpoon");
 
             Wep("wep_discus", "회수 원반", WeaponKind.Discus,
                 "던지면 돌아온다. 오가며 두 번 벤다",
@@ -263,13 +271,14 @@ namespace SalvageRun.Data
 
             // ---- 견인 작살 (0,-3에서 아래로) ----
             Won("hp1", "강화 미늘", "작살 관통 +1", WeaponKind.Harpoon, 0, -4,
-                TechEffect.WeaponPierceOne, 1f, 120, 3, 0, 4, 1.75f, "wep_harpoon");
+                // 🔴 첫 무기의 가지는 **1구역의 일**이다 — 회로를 빼서 고철만으로 키운다
+                TechEffect.WeaponPierceOne, 1f, 120, 0, 0, 4, 1.75f, "wep_harpoon");
 
             Won("hp2", "연장 탄창", "작살 발사 수 +1", WeaponKind.Harpoon, 0, -5,
-                TechEffect.WeaponCountOne, 1f, 260, 7, 1, 3, 1.95f, "hp1");
+                TechEffect.WeaponCountOne, 1f, 300, 0, 0, 3, 1.95f, "hp1");
 
             Won("hp3", "관통 장약", "작살 피해 +12%", WeaponKind.Harpoon, 1, -5,
-                TechEffect.WeaponPowerOne, 0.12f, 180, 5, 0, 5, 1.7f, "hp1");
+                TechEffect.WeaponPowerOne, 0.12f, 180, 0, 0, 5, 1.7f, "hp1");
 
             // ---- 정전기 방출 (-2,-3에서 아래로) ----
             Won("ac1", "분기 회로", "방전 대상 +1", WeaponKind.Arc, -2, -4,
