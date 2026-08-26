@@ -484,6 +484,58 @@ namespace SalvageRun.Tests
 
             yield return Warmup();
 
+            // 🔴 **두 상태로 잰다** (2026-08-27).
+            //    첫 판만 재면 *"견인 제한이 안 켜진다"*가 영원히 참으로 보인다 —
+            //    그건 **아무것도 안 산 상태**의 이야기다. 1구역을 다 사면 무기가 둘이 되고
+            //    부수는 속도가 붙는다. **사장님 특색이 언제부터 켜지는지**가 이 표의 질문이다.
+            yield return MeasureRun(t, "첫 판 (아무것도 없음)", stage1: false);
+            yield return MeasureRun(t, "1구역 천장 (11노드 최대)", stage1: true);
+
+            t.AppendLine("==========================================");
+            Debug.Log("[SIM]" + t);
+            director.BackToReady();
+            yield return null;
+            Assert.Pass();
+        }
+
+        /// <summary>한 상태로 한 판 굴리고 견인 리듬·수입을 적는다.</summary>
+        IEnumerator MeasureRun(StringBuilder t, string label, bool stage1)
+        {
+            // ⚠️ 노드는 **StartRun 전에** 찍어야 한다 — `RebuildStats`가 그 안에서 돈다
+            var savedNodes = new List<NodeRank>(MetaSave.Data.nodes);
+            if (stage1)
+            {
+                var all = director.content.techTree;
+                var ok = new HashSet<string>();
+                bool ch = true;
+                while (ch)
+                {
+                    ch = false;
+                    for (int i = 0; i < all.Length; i++)
+                    {
+                        var nd = all[i];
+                        if (ok.Contains(nd.id)) continue;
+
+                        bool scrapOnly = true;              // 고철 말고는 아무것도 안 드는가
+                        for (int mm = 1; mm < Mats.Count; mm++)
+                            if (nd.BaseCost((MatKind)mm) > 0) { scrapOnly = false; break; }
+                        if (!scrapOnly) continue;
+
+                        bool reqOk = true;
+                        if (nd.requires != null)
+                            for (int r = 0; r < nd.requires.Length; r++)
+                                if (!ok.Contains(nd.requires[r])) { reqOk = false; break; }
+                        if (reqOk) { ok.Add(nd.id); ch = true; }
+                    }
+                }
+                for (int i = 0; i < all.Length; i++)
+                    if (ok.Contains(all[i].id))
+                        MetaSave.Data.SetRank(all[i].id, Mathf.Max(1, all[i].maxRank));
+            }
+
+            t.AppendLine();
+            t.AppendLine($"───────── {label} ─────────");
+
             // 🔴 2026-08-26: 여기는 원래 **레벨 곡선**을 쟀다. 레벨업이 없어진 뒤로는
             //    `TowedCount`(지금 매달린 개수)를 `Lv`라고 찍고
             //    *"첫 레벨업까지 5.9초"*라고 부르고 있었다 — **아무 뜻이 없는 문장**이다.
@@ -574,12 +626,10 @@ namespace SalvageRun.Tests
 
             AppendTechCostEstimate(t, f, mins);
 
-            t.AppendLine("==========================================");
-            Debug.Log("[SIM]" + t);
-
             director.BackToReady();
+            MetaSave.Data.nodes.Clear();
+            MetaSave.Data.nodes.AddRange(savedNodes);   // 다음 상태에 새지 않게
             yield return null;
-            Assert.Pass();
         }
 
         // ==============================================================================
