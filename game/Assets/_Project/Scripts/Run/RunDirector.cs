@@ -1013,9 +1013,19 @@ namespace SalvageRun.Run
             Phase = FloorPhase.BossActive;
             field.Spawning = false;                 // 보스전 동안 일반 유입 정지
 
-            // 🔴 HP를 크게 올렸다. 2026-08-22 시뮬에서 **보스가 0.3~3.2초 만에 죽었다** —
-            //    관문이 아니라 통과 의례였다. 맵 등급에 따라 가파르게 오른다.
-            float hpScale = 55f + Stage.rank * 45f;
+            // 🔴 **HP가 지수로 오른다** (2026-08-27 사장님: *"보스가 너무 쉬움"*).
+            //
+            //    전에는 `55 + rank * 45`로 **선형**이었다 (1구역 100 → 6구역 325, 3.3배).
+            //    그런데 플레이어 화력은 **1구역 천장 4.6 → 트리 완주 631로 137배** 큰다.
+            //    선형 벽에 지수 화력을 부으면 **곡선 끝이 완전히 평평해진다** —
+            //    실측에서 트리 완주가 보스를 **0.6초**에 부쉈다. 관문이 아니라 장식이다.
+            //
+            //    ⚠️ **1구역 값(100)은 그대로 뒀다.** 거기는 지금 잘 맞는다
+            //       (86초 필요 / 136초 여유). 고쳐야 하는 것은 **뒤로 갈수록 벌어지는 격차**다.
+            //
+            //    2.1배씩: 1구역 100 · 2구역 210 · 3구역 441 · 4구역 926 · 5구역 1945 · 6구역 4084.
+            //    트리 완주(초당 631)로 6구역 보스가 **약 26초** 걸린다 — 싸움이 된다.
+            float hpScale = BossPartHp(Stage.rank);
             BossPartsLeft = field.SpawnBossParts(4, hpScale);
 
             if (BossPartsLeft <= 0) { Clear(); return; }
@@ -1029,6 +1039,16 @@ namespace SalvageRun.Run
             //    아무도 안 읽어서, 보스가 HP 큰 덩어리일 뿐이었다.
             if (boss != null) boss.Begin(Stage.boss);
         }
+
+        /// <summary>
+        /// 🔴 **보스 부위 하나의 HP. 여기가 유일한 답이다.**
+        ///
+        ///    검사가 이 식을 **복사해서** 갖고 있었다 (2026-08-27 발견).
+        ///    그러면 게임 값을 고쳐도 검사는 옛 값으로 재고, **표가 조용히 거짓말한다.**
+        ///    이 프로젝트에서 같은 종류의 사고를 여러 번 겪었으므로 한 곳으로 모은다.
+        /// </summary>
+        public static float BossPartHp(int rank)
+            => 100f * Mathf.Pow(2.1f, Mathf.Max(0, rank - 1));
 
         public void OnBossPartBroken()
         {

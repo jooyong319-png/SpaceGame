@@ -114,7 +114,12 @@ namespace SalvageRun.Run
 
             if (shooter == null) return;
 
-            shotClock = Mathf.Lerp(0.8f, 2.2f, Mathf.Clamp01((alive - 1) / 3f));
+            // 🔴 **깊은 구역일수록 더 자주 쏜다** (2026-08-27).
+            //    HP만 올리면 싸움이 길어지기만 하고 **긴장은 그대로**다 —
+            //    긴 싸움에 위협이 안 붙으면 그냥 지루한 벽이다.
+            //    측정에서 보스탄에 맞은 횟수가 판당 **0~3회**였다. 위협이 사실상 없었다.
+            float rankRush = 1f / (1f + (director.Stage != null ? director.Stage.rank - 1 : 0) * 0.18f);
+            shotClock = Mathf.Lerp(0.8f, 2.2f, Mathf.Clamp01((alive - 1) / 3f)) * rankRush;
 
             Vector2 from = shooter.transform.position;
             Vector2 to = (Vector2)ship.transform.position

@@ -745,13 +745,18 @@ namespace SalvageRun.Tests
             //    1구역 천장에서 얼마나 모자라는지가 **"강화로 닿을 수 있는가"의 답**이다.
             //    · `트리 완주`  = **108노드 전부 최대 랭크.** 더 자랄 데가 없는 상태다.
             //      여기서도 못 닿으면 *"강화해서 잡는다"*가 구조적으로 불가능하다는 뜻이다
+            // 🔴 **트리 완주는 6구역에서 재야 뜻이 있다** (2026-08-27).
+            //    셋 다 1구역에서 재고 있었다 — 다 자란 플레이어가 첫 보스를 뭉개는 건
+            //    **정상**이지 문제가 아니다. *"보스가 너무 쉽다"*는 말이 겨누는 곳은
+            //    **끝까지 자란 뒤 만나는 마지막 보스**다.
             yield return MeasureBoss(t, "1구역 천장", stage1: true);
             //    ⚠️ `무기만3종`은 **노드를 하나도 안 찍은** 인위적 상태다 (무기만 손으로 Lv.5).
             //       연료 노드가 없어 판이 48초뿐이라 🔴가 뜨는데, **그건 당연한 것이고
             //       밸런스 신호가 아니다.** 화력만 따로 보기 위한 대조군이다 —
             //       실제 플레이어가 무기 3종을 가질 무렵이면 연료 노드도 찍혀 있다.
             yield return MeasureBoss(t, "무기만3종·노드0", mid: true);
-            yield return MeasureBoss(t, "트리 완주",  fullTree: true);
+            yield return MeasureBoss(t, "트리 완주·1구역", fullTree: true);
+            yield return MeasureBoss(t, "트리 완주·6구역", fullTree: true, map: 5);
 
             Debug.Log("[SMOKE]" + t);
             director.ReturnNow();
@@ -763,7 +768,8 @@ namespace SalvageRun.Tests
 
         /// <summary>보스를 한 상태로 때려 보고 몇 초 걸리는지 적는다.</summary>
         IEnumerator MeasureBoss(StringBuilder t, string label,
-                                bool stage1 = false, bool mid = false, bool fullTree = false)
+                                bool stage1 = false, bool mid = false, bool fullTree = false,
+                                int map = 0)
         {
             // 🔴 **노드를 실제로 찍어서 만든다.** 처음엔 `powerBonus: 0.32f`처럼
             //    손으로 흉내 냈는데, 그러면 **연료 노드가 빠진다** —
@@ -804,7 +810,7 @@ namespace SalvageRun.Tests
                     MetaSave.Data.SetRank(all[i].id, Mathf.Max(1, all[i].maxRank));
             }
 
-            director.StartRun(0);
+            director.StartRun(map);
             yield return null;
 
             var ship = director.ship;
@@ -825,8 +831,9 @@ namespace SalvageRun.Tests
             field.Spawning = false;                    // 잡것이 섞이면 무엇을 잰 건지 흐려진다
 
             // 🔴 **실전과 같은 값으로 세운다.** RunDirector가 쓰는 식 그대로:
-            //    부위 4개 · hpScale = 55 + rank * 45
-            float hpScale = 55f + director.Stage.rank * 45f;
+            //    ⚠️ 식을 **복사하지 않는다.** 예전엔 여기 `55 + rank * 45`를 적어 뒀는데
+            //       게임 쪽 값을 고쳐도 검사는 옛 값으로 재서 **표가 조용히 거짓말했다.**
+            float hpScale = RunDirector.BossPartHp(director.Stage.rank);
             int parts = field.SpawnBossParts(4, hpScale);
             Assert.Greater(parts, 0, "🔴 보스 부위가 하나도 안 생겼다");
 
