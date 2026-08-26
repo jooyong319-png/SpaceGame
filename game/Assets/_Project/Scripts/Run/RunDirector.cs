@@ -326,8 +326,24 @@ namespace SalvageRun.Run
             // 🔴 **후보는 수집기를 끈 채로도 계산한다** (2026-08-26).
             //    누르기 **전에** 무엇이 걸리는지 보여야 고르는 것이 된다 —
             //    켠 뒤에 알려주면 그건 통보지 선택이 아니다.
+            // 🔴 **봇은 값진 것을 먼저 고른다** (2026-08-27).
+            //
+            //    전에는 봇도 **가장 가까운 것**을 집었다. *"봇은 못 고르니 '다 줍는 경우'를
+            //    기준선으로 잡는 게 낫다"*고 적어 뒀는데, **그 기준선이 2구역부터 거짓말을 한다.**
+            //
+            //    실측(2026-08-27): 2구역에서 회로가 화면에 **85%의 시간** 떠 있었는데
+            //    봇이 가져온 회로는 **0개**였다. 고철이 훨씬 많아 회로가 주웠다 밀려난 것이다.
+            //    → **깊은 구역 수입이 영원히 0으로 측정된다.** 3~6구역은 아예 잴 수가 없다.
+            //
+            //    사람은 그렇게 안 한다. 회로를 집고 고철을 버린다 — **그게 이 게임의 결정**이다.
+            //    그러니 봇도 그렇게 둬야 *"사람이 할 만한 플레이"*를 재는 것이 된다.
+            //
+            //    ⚠️ **사람 조작 경로는 안 바뀐다.** `CollectOverride`가 켜진 봇에게만 적용된다.
+            bool botDriving = CollectOverride == true;
+
             Fragment best = null;
             float bestSq = float.MaxValue;
+            int bestTier = -1;
 
             for (int i = 0; i < field.Fragments.Count; i++)
             {
@@ -337,9 +353,21 @@ namespace SalvageRun.Run
                 if (!f.Collectable) continue;      // 이미 끌고 있거나, 방금 버린 것은 건너뛴다
 
                 float sq = ((Vector2)f.transform.position - shipPos).sqrMagnitude;
-                if (sq > reach2 || sq >= bestSq) continue;
+                if (sq > reach2) continue;
 
-                bestSq = sq; best = f;
+                if (botDriving)
+                {
+                    // 등급이 높은 것 우선, 같으면 가까운 것
+                    int tier = (int)f.mat;
+                    if (tier < bestTier) continue;
+                    if (tier == bestTier && sq >= bestSq) continue;
+                    bestTier = tier; bestSq = sq; best = f;
+                }
+                else
+                {
+                    if (sq >= bestSq) continue;
+                    bestSq = sq; best = f;
+                }
             }
 
             PickTarget = best;
@@ -354,6 +382,17 @@ namespace SalvageRun.Run
             //       거기까지 자동이 되면 이 게임의 특색이 통째로 사라진다.
             //    그래서 이 노드가 지우는 건 "빈 칸인데도 Space를 눌러야 하는 번거로움"뿐이다.
             if (Stats != null && Stats.towAuto && towed.Count < MaxTow) pressed = true;
+
+            // 🔴 **봇은 꽉 찼으면 더 값진 것만 바꿔 싣는다.**
+            //    안 그러면 코어를 싣고 다니다가 고철로 밀어내 버린다 —
+            //    사람은 그런 짓을 안 하므로 그대로 두면 **사람보다 못한 플레이**를 재게 된다.
+            //    ⚠️ 비교 대상은 **실제로 밀려날 것 = 맨 앞(가장 오래된 것)**이다.
+            //       "제일 싼 것"과 비교하면 어긋난다 — `PushOutOldest`는 `towed[0]`을 버리므로
+            //       회로를 실으려다 코어를 잃을 수 있다.
+            //       사람도 같은 제약을 받는다(버리기 버튼이 없다). 그러니 이게 공정한 모사다.
+            if (botDriving && towed.Count >= MaxTow && best != null
+                && towed[0] != null && (int)best.mat <= (int)towed[0].mat)
+                pressed = false;
 
             if (pressed) { Absorb(best); PickTarget = null; }
         }
