@@ -893,8 +893,12 @@ namespace SalvageRun.Run
             //    확률로만 뿌리면 부수고도 아무것도 안 떨어지는 일이 잦고,
             //    그러면 "부쉈다"와 "벌었다"가 따로 논다 — 인크리멘탈에서 그건 치명적이다.
             //    큰 쓰레기일수록 여러 덩어리로 나온다.
+            //    🔴 **덩어리 하나에 담기는 양은 `Mats.LumpOf`가 정한다** (2026-08-27).
+            //       전에는 `(1 + tier)`라 1~2였고, 6칸을 꽉 채워도 한 판 수입이 6이었다.
+            //       큰 쓰레기일수록 덩어리도 굵다 — 전함 하나가 위성 하나보다 값져야 한다.
             int lumps = Mathf.Clamp(1 + t.tier + (t.fragments >= 4 ? 1 : 0), 1, 3);
-            int per = Mathf.Max(1, Mathf.RoundToInt((1 + t.tier) * scrapFind));
+            int per = Mathf.Max(1, Mathf.RoundToInt(
+                          Mats.LumpOf(MatKind.Scrap) * (1 + t.tier * 0.6f) * scrapFind));
             for (int i = 0; i < lumps; i++)
                 DropMat(MatKind.Scrap, per, at);
 
@@ -929,7 +933,9 @@ namespace SalvageRun.Run
                         : m == MatKind.Core    ? coreFind
                                                : 1f;
 
-                TryMat(m, chance, 1, at);
+                // 깊은 재화도 덩어리로 나온다 — 다만 자릿수가 달라 개수는 훨씬 적다
+                TryMat(m, chance, Mathf.Max(1, Mathf.RoundToInt(
+                           Mats.LumpOf(m) * (1 + t.tier * 0.4f))), at);
             }
         }
 

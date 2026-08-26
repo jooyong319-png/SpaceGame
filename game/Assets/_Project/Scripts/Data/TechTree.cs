@@ -75,6 +75,35 @@ namespace SalvageRun.Data
         }
 
         /// <summary>덩어리 크기. 값진 것일수록 크게 — 멀리서 "저기 있다"가 보여야 한다.</summary>
+        /// <summary>
+        /// 🔴 **덩어리 하나에 담기는 양** (2026-08-27 · 사장님이 고르신 *"덩어리 값어치를 키운다"*).
+        ///
+        ///    한 판 수입이 **견인 칸(6개) × 덩어리당 양**으로 정해진다 —
+        ///    판이 길어져도, 많이 부숴도 수입이 안 는다. **칸이 딱딱한 천장**이기 때문이다.
+        ///    그래서 수입을 올리는 길은 *칸을 늘리거나 덩어리를 키우거나* 둘뿐이고,
+        ///    칸을 늘리면 사장님이 넣으신 *"가져갈까 버릴까"*가 무뎌진다. **덩어리를 키운다.**
+        ///
+        ///    ⚠️ 실측: 덩어리당 1~2였을 때 한 판 고철 **6개**. 1구역 전부 사는 데 **190판**이었다.
+        ///
+        ///    🔴 깊은 재화일수록 **덩어리는 작다.** 값이 비싸서가 아니라
+        ///       **노드 비용의 자릿수가 다르기 때문**이다 (고철 1600 vs 코어 12).
+        ///       그래서 코어 두 개가 고철 수백 개만큼 무겁다 —
+        ///       6칸에 무엇을 실을지가 여기서 갈린다.
+        /// </summary>
+        public static int LumpOf(MatKind m)
+        {
+            switch (m)
+            {
+                case MatKind.Scrap:   return 6;
+                case MatKind.Circuit: return 3;
+                case MatKind.Core:    return 2;
+                case MatKind.Alloy:   return 1;
+                case MatKind.Crystal: return 1;
+                case MatKind.Isotope: return 1;
+            }
+            return 1;
+        }
+
         public static float ScaleOf(MatKind m)
         {
             switch (m)
