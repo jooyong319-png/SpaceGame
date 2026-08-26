@@ -825,7 +825,10 @@ namespace SalvageRun.Tests
             float hpScale = 55f + director.Stage.rank * 45f;
             int parts = field.SpawnBossParts(4, hpScale);
             Assert.Greater(parts, 0, "🔴 보스 부위가 하나도 안 생겼다");
-            director.ForceBossPhaseForTest();
+
+            // 🔴 **부위 수를 같이 넘긴다.** 안 넘기면 첫 부위를 부수는 순간
+            //    `Clear()`가 돌아 배 조종이 꺼진다 — 세게 만들수록 빨리 얼어붙는다.
+            director.ForceBossPhaseForTest(parts);
             yield return null;
 
             int total = 0;
@@ -839,12 +842,37 @@ namespace SalvageRun.Tests
             //    (120초 × 세 상태로 뒀더니 스모크 한 바퀴가 748초 걸렸다)
             const int Cap = 30 * 40;
 
+            // 🔴 **왜 느린지도 같이 잰다.** 초당 깎는 양만 보면
+            //    *"화력이 약한가 / 못 붙는가 / 짐이 무거운가"*를 못 가른다.
+            //    트리를 다 찍었는데 초당이 절반이라 원인을 좁혀야 한다.
+            float distSum = 0f, speedSum = 0f, throttleSum = 0f, aimSum = 0f;
+            int towMax = 0, inRange = 0, atWall = 0;
+
             while (frames < Cap && alive > 0)
             {
                 AutoPilot.Drive(director, ship);
                 ship.Refuel(999f);                     // 연료 축은 여기서 재지 않는다
                 frames++;
                 yield return null;
+
+                AutoPilot.NearestBossPart(director, ship.transform.position, out float bd);
+                if (bd < 900f)
+                {
+                    distSum += bd;
+                    if (bd <= 6f) inRange++;           // 대략 무기 사거리 안
+                }
+                speedSum += ship.Velocity.magnitude;
+                towMax = Mathf.Max(towMax, director.TowedCount);
+
+                // 🔴 **밀고는 있는가.** 순항 165짜리 배가 0.3으로 움직이면
+                //    힘이 약한 게 아니라 **아예 안 밀고 있는** 것이다.
+                //    `AimPoint`는 맵 경계로 잘린다(`ClampToBounds`) — 배가 가장자리에 있으면
+                //    조준점이 배 자신한테로 잘려 거리가 0이 되고 스로틀이 0이 된다.
+                throttleSum += ship.ThrottleNow;
+                aimSum += ((Vector2)ship.AimPoint - (Vector2)ship.transform.position).magnitude;
+                Vector2 sp = ship.transform.position;
+                if (Mathf.Abs(Mathf.Abs(sp.x) - director.MapHalf.x) < 0.5f ||
+                    Mathf.Abs(Mathf.Abs(sp.y) - director.MapHalf.y) < 0.5f) atWall++;
 
                 alive = 0;
                 for (int i = 0; i < field.Pieces.Count; i++)
@@ -872,6 +900,20 @@ namespace SalvageRun.Tests
             float need = dps > 0.01f ? total * hpScale / dps : -1f;
             t.AppendLine($"       {spent:0}초 동안 {doneRatio:0.00}부위어치 깎음 · 초당 {dps:0.0} → " +
                          "4부위 전부에 " + (need > 0f ? $"약 {need:0}초" : "영원히") + " 필요");
+            t.AppendLine($"       평균거리 {distSum / Mathf.Max(1, frames):0.0} · " +
+                         $"사거리 안 {inRange * 100f / Mathf.Max(1, frames):0}% · " +
+                         $"평균속도 {speedSum / Mathf.Max(1, frames):0.0} · 최대 짐 {towMax}개");
+
+            // 🔴 **움직임의 재료를 그대로 찍는다.** 순항 속도 = 힘 ÷ 감쇠 인데
+            //    계산상으로는 트리 완주가 더 빨라야 한다 — 그런데 실측이 0.3이다.
+            //    어느 값이 예상과 다른지는 **값을 봐야** 안다. 또 추측하면 또 헛짚는다.
+            t.AppendLine($"       힘 {stats.thrustForce:0} · 감쇠 {stats.damping:0.00} · " +
+                         $"속도배수 {stats.speedMul:0.00} → 순항 " +
+                         $"{stats.thrustForce * stats.speedMul / Mathf.Max(0.01f, stats.damping):0.0} · " +
+                         $"쿨배수 {stats.cooldownMul:0.00} · 사거리배수 {stats.rangeMul:0.00}");
+            t.AppendLine($"       평균스로틀 {throttleSum / Mathf.Max(1, frames):0.00} · " +
+                         $"조준점까지 {aimSum / Mathf.Max(1, frames):0.0} · " +
+                         $"경계에 붙어있던 시간 {atWall * 100f / Mathf.Max(1, frames):0}%");
 
             // 🔴 **연료 예산과 나란히 놓는다.** 이 숫자 하나만 보면 판단이 안 선다 —
             //    "보스가 몇 초에 나오고, 그때부터 몇 초가 남는가"와 붙어야 뜻이 생긴다

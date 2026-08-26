@@ -804,7 +804,23 @@ namespace SalvageRun.Run
         ///    스모크가 보스 탄 판정을 재려면 42초를 기다려야 하는데,
         ///    그 사이 다른 것이 섞여 **무엇을 잰 건지 흐려진다.**
         /// </summary>
-        public void ForceBossPhaseForTest() => Phase = FloorPhase.BossActive;
+        /// <summary>
+        /// 🔴 검사용 — 보스 국면으로 바로 넘긴다.
+        ///
+        ///    ⚠️ **부위 수를 반드시 같이 넘길 것.** `BossPartsLeft`가 0인 채로 부위를 세우면
+        ///       **첫 부위를 부수는 순간** `OnBossPartBroken`이 0 이하로 내려가
+        ///       `Clear()` → `Finish()`가 돌고 **배 조종이 꺼진다.**
+        ///
+        ///    2026-08-27에 이걸로 한 번 속았다: 세 상태를 재는데 강한 상태일수록
+        ///    부위를 빨리 부수고, 빨리 부술수록 빨리 얼어붙어서
+        ///    **"강화할수록 보스전이 느려진다"**는 엉뚱한 결론이 나왔다.
+        ///    측정이 거꾸로였던 것이지 게임이 그런 게 아니었다.
+        /// </summary>
+        public void ForceBossPhaseForTest(int parts = 0)
+        {
+            Phase = FloorPhase.BossActive;
+            if (parts > 0) BossPartsLeft = parts;
+        }
 
         // ---------------------------------------------------------------- 보스 = 부위 3개
 
