@@ -27,6 +27,21 @@ namespace SalvageRun.Data
         Boomerang = 0,  // 던져서 돌아온다 (원반)
         Projectile,     // 조준 방향 발사 (작살)
         Chain,          // 가까운 것들에게 연쇄 (방전)
+
+        /// <summary>
+        /// 🔴 **미사일** — 던져서 유도되고, 닿으면 **터진다** (2026-08-27 사장님 지시:
+        ///    *"투척류였으면 좋겠는데, 미사일 같은 거"*).
+        ///
+        ///    기존 셋과 겹치지 않게 성격을 잡았다:
+        ///      · 원반 = **돌아온다** (오가며 두 번)
+        ///      · 작살 = **뚫는다** (빠르고 곧다)
+        ///      · 방전 = **옮겨붙는다** (여럿에게 조금씩)
+        ///      · **미사일 = 느리지만 반드시 맞고, 범위로 터진다**
+        ///
+        ///    그래서 이 무기의 값은 *"조준이 필요 없다"*와 *"뭉친 것에 강하다"*다.
+        ///    빠른 무기가 빗나가는 자리를 메운다.
+        /// </summary>
+        Missile,
     }
 
     /// <summary>
@@ -66,6 +81,7 @@ namespace SalvageRun.Data
         Discus = 0,     // 회수 원반     Boomerang    Cut
         Harpoon,        // 견인 작살     Projectile   Pierce
         Arc,            // 정전기 방출   Chain        Shock
+        Missile,        // 유도 미사일   Missile      Blast
     }
 
     /// <summary>
@@ -203,6 +219,7 @@ namespace SalvageRun.Data
                 case WeaponKind.Discus:  return "회수 원반";
                 case WeaponKind.Harpoon: return "견인 작살";
                 case WeaponKind.Arc:     return "정전기 방출";
+                case WeaponKind.Missile: return "유도 미사일";
             }
             return "?";
         }

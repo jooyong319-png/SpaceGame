@@ -174,6 +174,7 @@ namespace SalvageRun.Run
             switch (d.pattern)
             {
                 case WeaponPattern.Projectile:
+                case WeaponPattern.Missile:
                 case WeaponPattern.Boomerang: n += stats.projectileCountBonus; break;
                 case WeaponPattern.Chain:     n += stats.chainTargetBonus; break;
             }
@@ -323,6 +324,7 @@ namespace SalvageRun.Run
                 case WeaponPattern.Projectile:  FireProjectile(d, lv, shipPos, false); break;
                 case WeaponPattern.Boomerang:   FireProjectile(d, lv, shipPos, true); break;
                 case WeaponPattern.Chain:       RunChain(d, lv, shipPos); break;
+                case WeaponPattern.Missile:     FireProjectile(d, lv, shipPos, false); break;
             }
         }
 
@@ -443,14 +445,20 @@ namespace SalvageRun.Run
                         s.vel = Vector2.Lerp(s.vel, back.normalized * def.projectileSpeed, 6f * Time.deltaTime);
                     }
                 }
-                else if (def.HasTraitAt(WeaponTrait.Homing, s.level))
+                else if (def.pattern == WeaponPattern.Missile
+                         || def.HasTraitAt(WeaponTrait.Homing, s.level))
                 {
-                    var target = Nearest((Vector2)s.tr.position, 9f);
+                    // 🔴 **미사일은 특성이 없어도 항상 따라간다.** 그게 이 무기의 값이다 —
+                    //    느린 대신 안 빗나간다. 특성(`정밀 유도`)은 **더 급하게** 꺾게 해 준다.
+                    float reach = def.pattern == WeaponPattern.Missile ? 16f : 9f;
+                    var target = Nearest((Vector2)s.tr.position, reach);
                     if (target != null)
                     {
                         Vector2 want = ((Vector2)target.transform.position - (Vector2)s.tr.position).normalized
                                      * s.vel.magnitude;
-                        float turn = def.TraitValue(WeaponTrait.Homing, s.level);
+                        float turn = def.HasTraitAt(WeaponTrait.Homing, s.level)
+                                   ? def.TraitValue(WeaponTrait.Homing, s.level)
+                                   : 2.2f;
                         s.vel = Vector2.Lerp(s.vel, want, turn * Time.deltaTime);
                     }
                 }
@@ -484,7 +492,17 @@ namespace SalvageRun.Run
                     float touch = 0.5f + p.transform.localScale.x * 0.5f;
                     if (((Vector2)p.transform.position - (Vector2)s.tr.position).sqrMagnitude > touch * touch) continue;
 
-                    Hit(p, s.dmg, def, s.level, s.tr.position);
+                    // 🔴 **미사일은 닿으면 터진다** — 한 대상이 아니라 **자리**에 피해를 준다.
+                    //    `procDepth`로 감싼 이유: `Explode` → `HitAround` → `Hit`로 다시 들어오는데
+                    //    그 안에서 또 터지면 무한 재귀다 (8/27에 StackOverflow로 한 번 겪었다).
+                    if (def.pattern == WeaponPattern.Missile && procDepth == 0)
+                    {
+                        procDepth++;
+                        Explode(s.tr.position, 2.4f * stats.rangeMul, s.dmg, def, s.level);
+                        procDepth--;
+                    }
+                    else Hit(p, s.dmg, def, s.level, s.tr.position);
+
                     s.pierce--;
 
                     Fx.Spark(s.tr.position, 0.8f, Tint(Fade(def.color, 0.9f)), 0.13f);

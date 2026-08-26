@@ -44,6 +44,27 @@ namespace SalvageRun.Data
                     }
                 },
 
+                // ---------------------------------------------------------- 폭발 (Blast)
+                // 🔴 **느리지만 반드시 맞고, 터진다.** 빠른 무기가 빗나가는 자리를 메운다.
+                //    쿨다운을 길게 잡은 이유: 한 발이 **사건**이어야 한다 —
+                //    쉴 새 없이 나가면 그냥 느린 작살이다.
+                new WeaponDef {
+                    kind = WeaponKind.Missile, displayName = "유도 미사일", tag = WeaponTag.Blast,
+                    pattern = WeaponPattern.Missile,
+                    description = "느리게 날아가 목표를 따라간다. 닿으면 터진다",
+                    damage = 22f, cooldown = 2.2f, range = 14f, count = 1,
+                    projectileSpeed = 11f, pierce = 1,
+                    damagePerLevel = 9f, rangePerLevel = 0.5f, cooldownPerLevel = 0.92f,
+                    countEveryLevels = 4,
+                    color = C(255,170,120),
+                    traits = new[] {
+                        T(3,  WeaponTrait.Homing,          "정밀 유도",  "더 급하게 꺾는다", 3f),
+                        T(5,  WeaponTrait.Detonate,        "고폭탄두",   "터질 때 더 아프다", 12f),
+                        T(7,  WeaponTrait.ExtraProjectile, "연장 발사관", "미사일을 하나 더 쏜다"),
+                        T(10, WeaponTrait.Knockback,       "충격파",     "터질 때 주변을 밀어낸다", 6f),
+                    }
+                },
+
                 // ---------------------------------------------------------- 관통 (Pierce)
                 new WeaponDef {
                     kind = WeaponKind.Harpoon, displayName = "견인 작살", tag = WeaponTag.Pierce,
