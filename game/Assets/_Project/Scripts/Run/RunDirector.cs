@@ -149,7 +149,6 @@ namespace SalvageRun.Run
             RunCollected = 0;
             BankedCount = 0;
             towed.Clear();
-            SyncDrones();
             WreckCount = 0;
 
             if (field != null) field.BaseCenter = Vector2.zero;
@@ -195,6 +194,12 @@ namespace SalvageRun.Run
             if (!ship.gameObject.activeSelf) ship.gameObject.SetActive(true);
             ship.ResetShip(Vector2.zero,
                 Stats.fuelMax * Tuning.ShipFuelMul * Mathf.Clamp(Stats.startFuelRatio, 0.1f, 1f));
+
+            // 🔴 **드론도 배가 제자리로 간 다음에 맞춘다.**
+            //    `SyncDrones`가 드론을 배 옆으로 되돌리는데, `ResetShip`보다 먼저 부르면
+            //    **앞 런이 끝난 자리**에 놓인다 — 되돌리는 뜻이 없어진다.
+            //    (드론은 견인 줄의 시작점이라 매달린 것들의 위치를 정한다)
+            SyncDrones();
 
             field.Build(Stage, MapHalf);
             UpdateStageBounds(MapHalf);
