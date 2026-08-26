@@ -124,7 +124,18 @@ namespace SalvageRun.Core
             }
         }
 
-        public static bool UsingKeyboard => Control == Scheme.Keyboard;
+        /// <summary>
+        /// 🔴 **조작은 키보드뿐이다** (2026-08-27 사장님 지시:
+        ///    *"일단 마우스 조작은 없애고 키보드로만 가자"*).
+        ///
+        ///    마우스 추종은 *"커서 쪽으로 간다"*라 **목적지**를 주는 조작이고,
+        ///    키보드는 *"이쪽으로 민다"*라 **방향**을 주는 조작이다. 둘은 감각이 다르다 —
+        ///    둘 다 지원하면 밸런스를 **두 번 잡아야 하고**, 실제로는 한쪽만 제대로 잡힌다.
+        ///
+        ///    `Scheme`과 `Control`은 저장 호환 때문에 남겨 두지만 **아무도 안 읽는다.**
+        ///    (나중에 마우스를 되살리려면 여기 한 줄만 되돌리면 된다)
+        /// </summary>
+        public static bool UsingKeyboard => true;
 
         /// <summary>
         /// 키보드 이동 입력. WASD와 방향키를 함께 받는다.

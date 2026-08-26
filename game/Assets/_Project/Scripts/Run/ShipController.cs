@@ -190,9 +190,11 @@ namespace SalvageRun.Run
 
             // 🔴 화면 흔들림이 조준을 흔들지 않게, 흔들리기 전 카메라 위치를 기준으로 계산한다
             var follow = cam != null ? cam.GetComponent<CameraFollow>() : null;
-            Vector2 world = AimOverride ?? InputReader.WorldMouse(
-                cam, transform.position.z,
-                follow != null ? (Vector3?)follow.BasePosition : null);
+            // 🔴 봇(`AimOverride`)이 없으면 **배 자신**이 조준점이다 —
+            //    키보드 전용이 된 뒤로 마우스 좌표는 아무 데도 안 쓰인다 (2026-08-27).
+            //    `WorldMouse`를 계속 부르면 카메라 변환만 낭비하고,
+            //    무엇보다 **마우스를 안 쓰는데 마우스를 읽는 코드**가 남아 오해를 부른다.
+            Vector2 world = AimOverride ?? (Vector2)transform.position;
             AimPoint = ClampToBounds(world);
 
             if (InputReader.DashPressed) TryDash();

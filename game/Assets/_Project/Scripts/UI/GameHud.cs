@@ -321,26 +321,14 @@ namespace SalvageRun.UI
                 y += bh + 8f * s;
             }
 
-            // 🔴 **조작 방식은 첫 화면에 있어야 한다.**
-            //    랩톱 터치패드로 시작했다가 못 움직이면 그대로 닫는다.
-            //    시작한 뒤에 설정을 찾게 하면 늦다.
-            bool kb = Core.InputReader.UsingKeyboard;
-            float half = bw * 0.5f;
-
-            if (Btn(new Rect(cx - bw * 0.5f, y, half - 3f * s, bh * 0.8f),
-                    "마우스 이동", s, true, kb ? TextDim : Accent))
-                Core.InputReader.Control = Core.InputReader.Scheme.Mouse;
-
-            if (Btn(new Rect(cx + 3f * s, y, half - 3f * s, bh * 0.8f),
-                    "키보드 이동", s, true, kb ? Accent : TextDim))
-                Core.InputReader.Control = Core.InputReader.Scheme.Keyboard;
-
-            y += bh * 0.8f + 22f * s;
+            // ⬜ **조작 방식 고르는 버튼을 뺐다** (2026-08-27 사장님: *"마우스는 없애고
+            //    키보드로만"*). 고를 것이 없는데 버튼을 두면 **화면이 거짓말을 한다.**
+            bool kb = true;
 
             GUI.color = TextDim;
             GUI.Label(new Rect(0, y, Screen.width, 20f * s),
                 kb ? "WASD 이동 · Shift 대시 · Q 화물 버리기 · E 출발"
-                   : "좌클릭 홀드 이동 · Shift 대시 · Q 화물 버리기 · E 출발", center);
+                   : "WASD 이동 · Shift 대시 · Q 화물 버리기 · E 출발", center);
             GUI.color = Color.white;
         }
 
@@ -411,7 +399,7 @@ namespace SalvageRun.UI
                 "많이 달수록 느려진다 — 무엇을 싣고 갈지가 이 게임의 전부다", center);
             y += 22f * s;
             Fit(new Rect(Screen.width * 0.06f, y, Screen.width * 0.88f, 22f * s),
-                (Core.InputReader.UsingKeyboard ? "WASD = 이동" : "좌클릭 홀드 = 이동")
+                "WASD = 이동"
                 + " · Shift = 대시 · Space = 줍기 · T = 정비소", center);
             GUI.color = Color.white;
             y += 34f * s;
@@ -440,26 +428,12 @@ namespace SalvageRun.UI
                 tech?.Toggle();
             y += 38f * s;
 
-            // 🔴 **조작 방식 선택** (2026-08-21 요청: "키보드랑 마우스 선택 할 수 있게").
-            //    마우스 추종이 이 장르의 표준이지만 모두에게 맞지는 않는다 —
-            //    특히 랩톱 터치패드에서는 키보드가 훨씬 낫다.
-            //    준비 화면에 둔 이유: 판이 시작된 뒤에 바꾸려고 메뉴를 뒤지게 하면 안 된다.
-            bool kb = Core.InputReader.UsingKeyboard;
-            float half = bw * 0.5f;
-
-            if (Btn(new Rect(cx - bw * 0.5f, y, half - 2f * s, 30f * s),
-                    "마우스 이동", s, true, kb ? TextDim : Accent))
-                Core.InputReader.Control = Core.InputReader.Scheme.Mouse;
-
-            if (Btn(new Rect(cx + 2f * s, y, half - 2f * s, 30f * s),
-                    "키보드 이동", s, true, kb ? Accent : TextDim))
-                Core.InputReader.Control = Core.InputReader.Scheme.Keyboard;
-
-            y += 32f * s;
+            // ⬜ 조작 방식 선택을 뺐다 (2026-08-27) — 키보드뿐이다
+            bool kb = true;
 
             GUI.color = TextDim;
             GUI.Label(new Rect(cx - bw * 0.5f, y, bw, 18f * s),
-                kb ? "WASD · 방향키로 이동 · 조준은 자동" : "좌클릭 홀드로 커서 쪽 이동 · 조준은 자동",
+                "WASD · 방향키로 이동 · 조준은 자동",
                 centerSmall);
             GUI.color = Color.white;
             y += 26f * s;
