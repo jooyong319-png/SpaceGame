@@ -298,5 +298,7 @@
 
 - [ ] 한 판 끝까지 플레이 (조작이 여러 번 바뀌었다 — 손으로 확인 필요)
 - [ ] 텍스트 잘림 (`Fit`을 넣었지만 6종 재화·긴 노드 이름에서 다시 볼 것)
-- [ ] Galmuri 폰트 OFL 라이선스 파일
+- [x] **Galmuri 폰트 OFL 라이선스 파일** — `Assets/_Project/Resources/OFL.txt` (2026-09-02)
+      ⚠️ 폰트가 `Resources`에 들어가 빌드에 실려 나가므로 **라이선스도 같이 배포돼야 한다.**
+      itch 페이지 설명에도 한 줄 넣을 것 (SIL OFL 1.1 · Lee Minseo)
 - [ ] itch.io 페이지
