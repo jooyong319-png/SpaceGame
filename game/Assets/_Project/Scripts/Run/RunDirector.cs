@@ -211,12 +211,10 @@ namespace SalvageRun.Run
             if (follow != null) { follow.target = ship.transform; follow.mapHalf = MapHalf; }
 
             ship.boundsHalf = MapHalf;
-            // 🔴 고른 배를 화면에 반영한다. 색과 크기가 안 바뀌면 배를 고른 의미가 안 보인다
-            CurrentShip = MetaSave.CurrentShip(content);
             var vis = ship.GetComponentInChildren<ShipVisual>();
             if (vis != null)
             {
-                vis.ApplyShip(CurrentShip);
+                vis.ApplyHull();
                 // 🔴 연 무기만큼 배에 부품이 붙는다 — 산 것이 배에 보여야 "늘었다"가 남는다
                 vis.SyncWeaponParts(Stats, content);
             }
@@ -233,14 +231,12 @@ namespace SalvageRun.Run
 
             State = GameState.Field;
             WorldPaused = false;
-            ActiveCombo = null;
         }
 
         void Update()
         {
             HandleDebugKeys();
             KeepArenaInSync();
-            if (comboFlashLeft > 0f) comboFlashLeft -= Time.deltaTime;
             UpdatePopups();
 
             if (State != GameState.Field) return;
@@ -255,7 +251,6 @@ namespace SalvageRun.Run
             UpdateHauler();
             CheckBossShots();
 
-            Stats.TickBursts(Time.deltaTime);
 
             if (Phase == FloorPhase.BossIncoming) UpdateBossIntro();
 
@@ -843,56 +838,23 @@ namespace SalvageRun.Run
         /// <summary>이번 귀환에 실제로 가져온 덩어리 수. 결과 화면이 읽는다.</summary>
         public int BankedCount { get; private set; }
 
-        /// <summary>
-        /// 🔴 **닿아도 아프지 않다 — 플레이어는 무적이다** (2026-08-23 사장님:
-        ///    *"플레이어를 공격하는 것도 없애고, 플레이어는 무적이야.
-        ///      죽는 건 연료가 다 닳아서 죽는 것 말곤 없음"*).
-        ///
-        ///    그래서 접촉 판정(`CheckContact`)과 적 탄 판정(`CheckEnemyShots`)을 통째로 뺐다.
-        ///    배리어·격침·부활도 같이 의미를 잃었다.
-        ///
-        /// 🔴 **그러면 긴장은 어디서 오나 — 연료다.**
-        ///    이제 시계가 하나뿐이다: 나가면 닳고, 안 나가면 못 캔다.
-        ///    맞아 죽는 게 없어진 만큼 **연료가 진짜 압박이어야** 판이 성립한다.
-        ///    그래서 추진 소모를 되돌렸고(rev.12 초안에서 1/4로 눌러 뒀었다),
-        ///    쓰레기의 `fuelBonus`를 처음으로 실제로 물렸다.
-        ///
-        ///    되찾는 길은 둘이다 — **모선에 들어가 채우거나, 연료가 나오는 쓰레기를 캐거나.**
-        ///
-        ///    ⚠️ 되살리려면 `rev11-voyage` 브랜치나 이 커밋 직전을 보면 된다.
-
-        // ---------------------------------------------------------------- 레벨업 · 카드
-
-        // ⬜ **무기 상한을 없앴다** (2026-08-26 사장님: *"개수 제한은 없다"*).
-        //    연 무기가 전부 배에 붙으므로 셀 상한이 없다.
-        public int ComboLevel => config != null ? config.comboLevel : 5;
-
-        /// <summary>지금 판에서 열린 조합. 아직이면 null.</summary>
-        public ComboDef ActiveCombo { get; private set; }
-
-        /// <summary>이번 런에 탄 배.</summary>
-        public ShipDef CurrentShip { get; private set; }
-
-        /// <summary>조합이 막 열렸을 때 HUD가 크게 알리는 시간.</summary>
-        public float comboFlashLeft;
-
-        /// <summary>
-        /// ⬜ **조합을 껐다** (2026-08-26).
-        ///
-        ///    조합은 *"한 판에 무기를 딱 둘만 갖는다"*는 전제 위에 있었다 —
-        ///    그 둘을 무엇으로 고르느냐가 그 판의 성격이었고, 태그 쌍이 그 답이었다.
-        ///
-        ///    사장님 지시로 **연 무기가 전부 붙게** 되면서 그 전제가 사라졌다.
-        ///    무기를 다 가지면 조합도 전부 성립하므로 **고른 보람이 없다** —
-        ///    남겨 두면 "열렸다"는 팝업만 뜨고 아무 결정도 안 만든다.
-        ///
-        ///    🔴 그 자리를 대신하는 것이 **테크트리의 발동형 노드**다
-        ///       (*"공격 시 N% 폭발"* 같은 것). 사장님이 요청하신 방향이기도 하다.
-        ///
-        ///    ⚠️ `ComboDef` 표와 `WeaponRig`의 조합 처리는 **그대로 뒀다.**
-        ///       무기를 다시 제한하는 날 이 함수만 되살리면 된다.
-        /// </summary>
-        void CheckCombo() { }
+        // ---- 왜 접촉 피해가 없나 ----
+        // 🔴 **닿아도 아프지 않다 — 플레이어는 무적이다** (2026-08-23 사장님:
+        //    *"플레이어를 공격하는 것도 없애고, 플레이어는 무적이야.
+        //      죽는 건 연료가 다 닳아서 죽는 것 말곤 없음"*).
+        //
+        //    그래서 접촉 판정(`CheckContact`)과 적 탄 판정(`CheckEnemyShots`)을 통째로 뺐다.
+        //    배리어·격침·부활도 같이 의미를 잃었다.
+        //
+        // 🔴 **그러면 긴장은 어디서 오나 — 연료다.**
+        //    이제 시계가 하나뿐이다: 나가면 닳고, 안 나가면 못 캔다.
+        //    맞아 죽는 게 없어진 만큼 **연료가 진짜 압박이어야** 판이 성립한다.
+        //    그래서 추진 소모를 되돌렸고(rev.12 초안에서 1/4로 눌러 뒀었다),
+        //    쓰레기의 `fuelBonus`를 처음으로 실제로 물렸다.
+        //
+        //    되찾는 길은 둘이다 — **모선에 들어가 채우거나, 연료가 나오는 쓰레기를 캐거나.**
+        //
+        //    ⚠️ 되살리려면 `rev11-voyage` 브랜치나 이 커밋 직전을 보면 된다.
 
         /// <summary>
         /// 🔴 **보스가 던지는 것에 맞으면 연료가 닳는다** (2026-08-26 사장님 지시:

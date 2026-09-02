@@ -30,6 +30,10 @@ namespace SalvageRun.Tests
     /// </summary>
     public class BalanceSim
     {
+        /// <summary>강화된 무기로 재는 검사가 쓰는 무기 레벨.
+        /// (예전엔 `RunConfig.comboLevel`을 빌려 썼는데, 조합을 없애면서 여기로 옮겼다)</summary>
+        const int StrongWeaponLevel = 5;
+
         /// <summary>
         /// 🔴 배치 모드는 프레임이 매우 빨라 `Time.timeScale`을 올려도
         ///    프레임당 deltaTime이 미세하다 — 12,000프레임을 돌려도 게임 시간은 5초뿐이다.
@@ -152,116 +156,6 @@ namespace SalvageRun.Tests
         }
 
         // ==============================================================================
-        //  1. 조합 21가지 — 어느 게 압도적이고 어느 게 쓸모없는가
-        // ==============================================================================
-
-        /// <summary>
-        /// 🔴 **조합마다 여러 번 돌려 평균을 낸다.**
-        ///
-        ///    한 번씩만 재던 시절, 손대지도 않은 조합의 결과가 런마다 2배씩 흔들렸다
-        ///    (`견인 분쇄` 1727 → 802). 그걸 내 수정 효과로 착각하고
-        ///    **노이즈를 보고 밸런스를 만졌다.**
-        ///
-        ///    결정론 검사는 한 조합만 두 번 재므로 "그 조합이 안정적이다"만 말해 준다.
-        ///    표 전체가 안정적이라는 뜻이 아니다 — 조합마다 흔들림의 크기가 다르다.
-        ///
-        ///    그래서 여기서는 **반복해서 평균과 편차를 같이 찍는다.**
-        ///    편차가 크면 그 줄은 **읽지 말라고** 표시한다.
-        /// </summary>
-        const int Repeats = 3;
-
-        // 🔴 21조합 × 3회 × 최대 600초는 기본 제한(180초)을 훌쩍 넘는다.
-        //    제한에 걸리면 표가 **중간에 잘린 채 실패**로 끝나서 아무것도 못 읽는다.
-        [UnityTest, Timeout(3600000)]
-        public IEnumerator MeasureCombos()
-        {
-            var content = director.content;
-            Assert.IsNotNull(content.combos, "조합 데이터가 없다");
-
-            var t = new StringBuilder();
-            t.AppendLine();
-            // 🔴 **rev.7에서 재는 것이 바뀌었다.**
-            //    전에는 "얼마나 오래 살아남아 얼마나 주웠나"를 쟀다.
-            //    이제 지는 조건은 **기지 상실**이므로, 그게 첫 칸이어야 한다.
-            //    파편 수는 여전히 화력의 대리 지표지만 **더 이상 목적이 아니다** —
-            //    입금하지 않은 파편은 레벨도 수리도 되지 않는다.
-            t.AppendLine($"=========== 조합 21가지 시뮬 ({Repeats}회 평균 · 맵 1) ===========");
-            t.AppendLine();
-            t.AppendLine("🔴 **첫 칸은 `가져옴`이다** — 매달고 돌아온 재화 개수.");
-            t.AppendLine("   이게 한 판의 진짜 수입이다. 부순 양도, 주운 양도 아니다 —");
-            t.AppendLine("   **견인 칸이 곧 상한**이라 잘 부순다고 수입이 늘지 않는다.");
-            t.AppendLine("   `주움`과 `가져옴`이 크게 벌어질수록 **밀려 떨어진 것이 많았다**는 뜻이다.");
-            t.AppendLine();
-            t.AppendLine("조합            | 무기 조합              | 가져옴 | 주움 | 편차 | 보스탄 | 보스");
-            t.AppendLine("----------------|------------------------|--------|------|------|--------|------");
-
-            yield return Warmup();
-
-            var rows = new List<(string name, float perMin, float time, int level)>();
-
-            for (int i = 0; i < content.combos.Length; i++)
-            {
-                var combo = content.combos[i];
-                if (!PickPairFor(combo, out var a, out var b)) continue;
-
-                // 🔴 2026-08-26: 칸을 갈아엎었다. 전에는 **기지생존 · 잔여연료 · 격침**을 쟀는데
-                //    **셋 다 지금 게임에 없다.** (기지도, 격침도 없고 연료는 항상 0으로 끝난다)
-                //    없어진 것을 재는 표는 통과하면서 아무것도 안 알려준다 —
-                //    이 프로젝트에서 네 번 겪은 사고다.
-                int bankSum = 0, bankMin = int.MaxValue, bankMax = 0;
-                int pickSum = 0, cleared = 0, hitSum = 0;
-
-                for (int r = 0; r < Repeats; r++)
-                {
-                    yield return RunWith(a, b, director.ComboLevel);
-
-                    // 🔴 **매달고 돌아온 것만 수입이다.** 주운 것(`RunCollected`)은
-                    //    밀려 떨어진 것까지 포함하므로 수입이 아니다.
-                    int bank = director.BankedCount;
-                    bankSum += bank;
-                    bankMin = Mathf.Min(bankMin, bank);
-                    bankMax = Mathf.Max(bankMax, bank);
-
-                    pickSum += director.RunCollected;
-                    hitSum += director.BossHits;
-                    if (director.Cleared) cleared++;
-
-                    director.BackToReady();
-                    yield return null;
-                }
-
-                float bankAvg = bankSum / (float)Repeats;
-
-                // 🔴 편차 = (최대-최소) ÷ 평균. 이게 크면 그 줄은 못 믿는다
-                float spread = bankAvg > 0.01f ? (bankMax - bankMin) / bankAvg * 100f : 0f;
-                string flag = spread > 40f ? "🔴" : spread > 20f ? "🟡" : "  ";
-
-                t.AppendLine(
-                    $"{Pad(combo.title, 15)} | {Pad(Weapons.Name(a) + "+" + Weapons.Name(b), 22)} | " +
-                    $"{bankAvg,6:0.0} | {pickSum / (float)Repeats,4:0} | " +
-                    $"{flag}{spread,3:0}% | {hitSum / (float)Repeats,6:0.0} | {cleared}/{Repeats}");
-
-                rows.Add((combo.title, bankAvg, pickSum / (float)Repeats, cleared));
-            }
-
-            AppendSpread(t, rows, "개 가져옴",
-                "⚠️ **가져옴은 견인 칸 수에서 거의 안 벗어난다.** 무기가 셀수록 늘어나는 값이 아니다. " +
-                "무기 차이는 `주움`에서 보인다 — 두 칸을 같이 봐야 한 조합이 뭘 잘하는지 읽힌다.");
-            t.AppendLine("편차 🔴40%+ / 🟡20%+ 인 줄은 **한 번의 결과로 판단하지 말 것.**");
-            t.AppendLine();
-            t.AppendLine("🔴 읽는 법:");
-            t.AppendLine("   · **가져옴**이 첫 칸이다 — 매달고 돌아온 재화. 이게 한 판의 수입이다");
-            t.AppendLine("   · **주움**과 벌어질수록 **밀려 떨어진 것**이 많았다는 뜻이다");
-            t.AppendLine("     (견인이 꽉 차면 맨 앞이 밀려난다 — 부수는 속도가 칸을 넘어섰다는 신호)");
-            t.AppendLine("   · **가져옴이 전 조합에서 칸 수에 붙어 있으면** 무기 강화가 수입에 안 닿는다.");
-            t.AppendLine("     그때 올려야 하는 건 화력이 아니라 **칸 · 값어치 · 드론**이다");
-            t.AppendLine("   · **보스**가 0/N이면 다른 칸을 볼 필요가 없다 — 구역이 안 열린다");
-            t.AppendLine("   · **보스탄**은 맞은 횟수다. 0.0이면 위협이 실제로는 없다는 뜻이다");
-            Debug.Log("[SIM]" + t);
-            Assert.Pass();
-        }
-
-        // ==============================================================================
         //  1-b. 🔴 결정론 검사 — 같은 빌드를 두 번 돌려 결과가 같은지 본다
 
         /// <summary>
@@ -357,7 +251,7 @@ namespace SalvageRun.Tests
             t.AppendLine("       " + Snapshot("A 전"));
 
             trace = t;
-            yield return RunWith(WeaponKind.Discus, WeaponKind.Harpoon, director.ComboLevel);
+            yield return RunWith(WeaponKind.Discus, WeaponKind.Harpoon, StrongWeaponLevel);
             trace = null;
             a = (director.RunTime, director.BankedCount, director.RunCollected, director.RunValue);
             t.AppendLine("       " + Snapshot("A 후"));
@@ -366,14 +260,14 @@ namespace SalvageRun.Tests
 
             // 사이에 전혀 다른 조합을 한 번 돌린다
             t.AppendLine("       " + Snapshot("끼움 전"));
-            yield return RunWith(WeaponKind.Harpoon, WeaponKind.Arc, director.ComboLevel);
+            yield return RunWith(WeaponKind.Harpoon, WeaponKind.Arc, StrongWeaponLevel);
             t.AppendLine("       " + Snapshot("끼움 후"));
             director.BackToReady();
             yield return null;
 
             t.AppendLine("       " + Snapshot("B 전"));
             trace = t;
-            yield return RunWith(WeaponKind.Discus, WeaponKind.Harpoon, director.ComboLevel);
+            yield return RunWith(WeaponKind.Discus, WeaponKind.Harpoon, StrongWeaponLevel);
             trace = null;
             b = (director.RunTime, director.BankedCount, director.RunCollected, director.RunValue);
             t.AppendLine("       " + Snapshot("B 후"));
@@ -415,58 +309,6 @@ namespace SalvageRun.Tests
             }
             t.AppendLine("==========================================");
 
-            Debug.Log("[SIM]" + t);
-            Assert.Pass();
-        }
-
-        // ==============================================================================
-        //  2. 우주선 6척 — 맞바꾸기가 실제로 균형이 맞는가
-        // ==============================================================================
-
-        [UnityTest, Timeout(1800000)]
-        public IEnumerator MeasureShips()
-        {
-            var content = director.content;
-            Assert.IsNotNull(content.ships, "우주선 데이터가 없다");
-
-            var t = new StringBuilder();
-            t.AppendLine();
-            t.AppendLine("=========== 우주선 6척 시뮬 (두 번째 무기 = 절단날 고정) ===========");
-            t.AppendLine("우주선              | 시작 무기      | 생존   | Lv | 파편 | 크레딧 | 피격 | 크레딧/분");
-            t.AppendLine("--------------------|----------------|--------|----|------|--------|------|----------");
-
-            yield return Warmup();
-
-            var rows = new List<(string name, float perMin, float time, int level)>();
-
-            for (int i = 0; i < content.ships.Length; i++)
-            {
-                var ship = content.ships[i];
-
-                // 🔴 두 번째 무기를 고정해야 **배의 차이만** 남는다.
-                //    절단날은 근접 상시라 어느 배와도 붙어서 기준선으로 쓰기 좋다.
-                var second = ship.startingWeapon == WeaponKind.Harpoon ? WeaponKind.Discus : WeaponKind.Harpoon;
-
-                UnlockAndSelect(ship);
-                yield return RunWith(ship.startingWeapon, second, director.ComboLevel);
-
-                float minutes = Mathf.Max(0.01f, director.RunTime / 60f);
-                float perMin = director.RunValue / minutes;
-
-                t.AppendLine(
-                    $"{Pad(ship.displayName, 19)} | {Pad(Weapons.Name(ship.startingWeapon), 14)} | " +
-                    $"{director.RunTime,5:0.0}s | {director.BankedCount,2} | {director.RunCollected,4} | " +
-                    $"{director.RunValue,6} | {director.FuelRecovered,4:0} | {perMin,8:0}");
-
-                rows.Add((ship.displayName, perMin, director.RunTime, director.BankedCount));
-
-                director.BackToReady();
-                yield return null;
-            }
-
-            AppendSpread(t, rows, "/분",
-                "⚠️ 클리어한 조합은 300초에 끝나고 못 깬 조합은 더 오래 가므로,\n" +
-                "   크레딧/분은 **클리어 여부에 오염된다.** 진짜 신호는 '클리어했는가'다.");
             Debug.Log("[SIM]" + t);
             Assert.Pass();
         }
@@ -609,7 +451,7 @@ namespace SalvageRun.Tests
             ClearBot(ship);
 
             // 🔴 **무기 레벨을 같이 찍는다.** 이 측정은 `StartRun`이 준 그대로(초반 무기)이고,
-            //    위의 조합 표는 `ComboLevel`(강화된 무기)로 돈다. 같은 `주움`인데
+            //    결정론 검사는 `StrongWeaponLevel`(강화된 무기)로 돈다. 같은 `주움`인데
             //    6과 74로 나온다 — 조건을 안 적어 두면 **다음에 표 둘을 나란히 놓고
             //    "숫자가 안 맞는다"고 엉뚱한 데를 뒤지게 된다.**
             var sSt = director.Stats;
@@ -680,35 +522,6 @@ namespace SalvageRun.Tests
             yield return RunWith(WeaponKind.Discus, WeaponKind.Harpoon, 3, 900);
             director.BackToReady();
             yield return null;
-        }
-
-        /// <summary>이 조합을 만들 수 있는 무기 한 쌍을 찾는다.</summary>
-        bool PickPairFor(ComboDef combo, out WeaponKind a, out WeaponKind b)
-        {
-            a = WeaponKind.Discus; b = WeaponKind.Discus;
-
-            var weapons = director.content.weapons;
-            if (weapons == null) return false;
-
-            WeaponDef first = null, second = null;
-            for (int i = 0; i < weapons.Length; i++)
-            {
-                if (first == null && weapons[i].tag == combo.a) { first = weapons[i]; continue; }
-                // 같은 계열 조합이면 두 번째도 같은 태그에서, 단 다른 무기로
-                if (second == null && weapons[i].tag == combo.b && weapons[i] != first) second = weapons[i];
-            }
-            if (first == null || second == null) return false;
-
-            a = first.kind; b = second.kind;
-            return true;
-        }
-
-        void UnlockAndSelect(ShipDef ship)
-        {
-            var meta = new MetaData();
-            meta.unlockedShips.Add(ship.id);
-            meta.selectedShip = ship.id;
-            MetaSave.ReplaceInMemory(meta);
         }
 
         /// <summary>

@@ -35,20 +35,17 @@ namespace SalvageRun.Run
 
         // ---------------------------------------------------------------- 배리어
 
-        /// <summary>
-        /// 🔴 **배리어** (2026-08-21 요청: *"우주선에 배리어가 있고, 1대 맞으면 사라지고,
-        ///    시간이 지나면 다시 생성되는 방식(5초 정도)"*).
-        ///
-        ///    피해량을 줄이는 게 아니라 **한 대를 통째로 없앤다.**
-        ///    그래서 "몇 대 맞았나"가 아니라 **"지금 배리어가 있나"**를 보게 된다 —
-        ///    수치가 아니라 상태라서 화면만 보고 판단할 수 있다.
-        ///
-        ///    5초는 짧지 않다. 배리어를 깨고 들어갔으면 **그 다음 5초는 진짜 위험**이어야
-        ///    붙었다 빠지는 리듬이 생긴다.
-        /// </summary>
-        /// <summary>드릴이 물고 있을 때의 속도 배율. 0이 아닌 이유는 위 주석 참고.</summary>
-
-        /// <summary>드릴이 무언가를 물고 있는가. `WeaponRig`이 매 프레임 넣어 준다.</summary>
+        // ----
+        // 🔴 **배리어** (2026-08-21 요청: *"우주선에 배리어가 있고, 1대 맞으면 사라지고,
+        //    시간이 지나면 다시 생성되는 방식(5초 정도)"*).
+        //
+        //    피해량을 줄이는 게 아니라 **한 대를 통째로 없앤다.**
+        //    그래서 "몇 대 맞았나"가 아니라 **"지금 배리어가 있나"**를 보게 된다 —
+        //    수치가 아니라 상태라서 화면만 보고 판단할 수 있다.
+        //
+        //    5초는 짧지 않다. 배리어를 깨고 들어갔으면 **그 다음 5초는 진짜 위험**이어야
+        //    붙었다 빠지는 리듬이 생긴다.
+        // ----
 
         /// <summary>
         /// 🔴 **부활 무적 시간** (2026-08-23 플레이 피드백:
@@ -192,8 +189,7 @@ namespace SalvageRun.Run
             var follow = cam != null ? cam.GetComponent<CameraFollow>() : null;
             // 🔴 봇(`AimOverride`)이 없으면 **배 자신**이 조준점이다 —
             //    키보드 전용이 된 뒤로 마우스 좌표는 아무 데도 안 쓰인다 (2026-08-27).
-            //    `WorldMouse`를 계속 부르면 카메라 변환만 낭비하고,
-            //    무엇보다 **마우스를 안 쓰는데 마우스를 읽는 코드**가 남아 오해를 부른다.
+            //    마우스 배관은 2026-09-02에 전부 걷어냈다.
             Vector2 world = AimOverride ?? (Vector2)transform.position;
             AimPoint = ClampToBounds(world);
 
@@ -239,7 +235,8 @@ namespace SalvageRun.Run
             if (!ControlEnabled) { ThrottleNow = 0f; return; }
 
             // 🔴 누르고 있는 동안만 추진한다
-            bool held = ThrustOverride ?? InputReader.LeftHeld;
+            // 🔴 봇이 조종할 때만 값이 들어온다. 사람은 아래 키보드 분기가 정한다
+            bool held = ThrustOverride ?? false;
 
             Vector2 toCursor = AimPoint - (Vector2)transform.position;
             float dist = toCursor.magnitude;
@@ -249,7 +246,7 @@ namespace SalvageRun.Run
             //
             //    마우스는 "여기로 가라"(목적지)이고 키보드는 "이쪽으로 밀어라"(방향)다.
             //    그래서 거리 기반 감속이 없다 — 누르면 최대 추력, 놓으면 관성으로 미끄러진다.
-            if (InputReader.UsingKeyboard && ThrustOverride == null && AimOverride == null)
+            if (ThrustOverride == null && AimOverride == null)
             {
                 Vector2 axis = InputReader.MoveAxis;
                 held = axis.sqrMagnitude > 0.0001f;

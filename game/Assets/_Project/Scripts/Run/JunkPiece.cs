@@ -157,7 +157,7 @@ namespace SalvageRun.Run
 
         bool fleeing;
 
-        /// <summary>저격기 사격 타이머 · 매복기 각성 여부. 스폰마다 초기화된다.</summary>
+        // 저격기 사격 타이머 · 매복기 각성 여부. 스폰마다 초기화된다.
         /// <summary>
         /// ⬜ 저격기 발사 간격. 2026-08-23에 **쏘는 쪽을 막으면서** 읽는 데가 없어졌다.
         ///    되살릴 때 같이 필요하므로 지우지 않고 남긴다 (`ApplyMovePattern`의 Sniper 참고).

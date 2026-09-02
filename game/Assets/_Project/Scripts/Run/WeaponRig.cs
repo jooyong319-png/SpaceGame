@@ -13,7 +13,7 @@ namespace SalvageRun.Run
     ///    무기는 `WeaponDef`(데이터)이고, 여기는 **패턴 11가지**만 구현한다.
     ///    새 무기를 넣는 일 = 데이터 한 줄 추가.
     ///
-    /// 피해는 전부 <see cref="Hit"/>를 지난다. 특성(traits)과 조합(combo)이
+    /// 피해는 전부 <see cref="Hit"/>를 지난다. 특성(traits)이
     /// 거기 한 곳에서 붙으므로, 새 특성을 넣어도 패턴 코드는 안 건드린다.
     /// </summary>
     public class WeaponRig : MonoBehaviour
@@ -47,7 +47,6 @@ namespace SalvageRun.Run
             public int pierce;
             public WeaponKind owner;
             public int level;
-            public bool resolved;
             public bool returning;      // 부메랑
             public float travel, maxTravel;
             public float trailCd;
@@ -64,15 +63,7 @@ namespace SalvageRun.Run
             public float life, radius, dps, pull;
             public float armDelay;      // 지뢰: 이 시간 뒤부터 터진다
             public float blink;         // 깜빡임 · 입자 타이머
-            public bool detonateOnEnd;
-            public float detonateDamage;
 
-            /// <summary>
-            /// 🔴 이 구역이 **연쇄 폭발이 낳은 것**인가.
-            ///    메아리가 또 메아리를 낳으면 반경이 매 번 1.2배로 불어나 무한대가 된다.
-            ///    메아리는 한 번까지다.
-            /// </summary>
-            public bool isEcho;
             public WeaponKind owner;
             public int level;
         }
@@ -89,7 +80,6 @@ namespace SalvageRun.Run
         readonly float[] moteCd = new float[Weapons.Count];
 
         float rngSeed = RngStart;
-        bool inEchoExplosion;
 
         /// <summary>
         /// 🔴 **발동형(폭발·연쇄)이 자기를 다시 부르는 것을 막는다** (2026-08-27).
@@ -99,8 +89,7 @@ namespace SalvageRun.Run
         ///    검사가 아니라 **게임이 죽는 버그**다 — `ProcExplode`를 몇 랭크만 찍어도
         ///    확률이 올라가 언젠가 반드시 터진다.
         ///
-        ///    `inEchoExplosion`은 조합 메아리 한 갈래만 막고 있었다.
-        ///    발동형 셋(`ProcExplode`·`ProcChain`·`KillBlast`)은 **아무 가드도 없었다.**
+        ///    발동형 셋(`ProcExplode`·`ProcChain`·`KillBlast`)에는 **아무 가드도 없었다.**
         ///
         ///    ⚠️ 확률을 낮추는 것으로는 못 고친다. 확률이 아무리 낮아도
         ///       **한 번 걸리면 그 안에서 또 걸릴 수 있어** 사슬이 끊기지 않는다.
@@ -130,7 +119,6 @@ namespace SalvageRun.Run
             for (int i = 0; i < zones.Count; i++) { zones[i].life = 0f; zones[i].tr.gameObject.SetActive(false); }
             for (int i = 0; i < fxLife.Count; i++) { fxLife[i] = 0f; fx[i].gameObject.SetActive(false); }
 
-            inEchoExplosion = false;
             procDepth = 0;
         }
 
@@ -183,21 +171,6 @@ namespace SalvageRun.Run
 
         static Color Fade(Color c, float a) => new Color(c.r, c.g, c.b, a);
 
-        /// <summary>
-        /// 🔴 조합이 열렸으면 **색이 바뀐다.**
-        ///    조합은 이 게임의 차별점인데, 열려도 화면이 똑같으면 열린 줄을 모른다.
-        ///    이펙트를 따로 만드는 대신 색을 조합 색 쪽으로 섞어 **한눈에 달라 보이게** 한다.
-        ///    (임시 처방이다. 조합마다 고유 이펙트가 최종 목표 — 🟡 [[weapons]])
-        /// </summary>
-        Color Tint(Color c)
-        {
-            if (director == null || director.ActiveCombo == null) return c;
-            var cc = director.ActiveCombo.color;
-            return new Color(
-                Mathf.Lerp(c.r, cc.r, 0.45f),
-                Mathf.Lerp(c.g, cc.g, 0.45f),
-                Mathf.Lerp(c.b, cc.b, 0.45f), c.a);
-        }
 
         Transform MakeSprite(string name, Color c, int order, Vector3 scale)
         {
@@ -272,6 +245,30 @@ namespace SalvageRun.Run
         ///    ⚠️ 거리가 비슷한 둘 사이에서 표적이 오갈 수 있다.
         ///       그건 실제로 둘 다 사거리 안이라는 뜻이므로 어느 쪽을 쏘든 손해가 아니다.
         /// </summary>
+        /// <summary>
+        /// 🔴 **맵 밖은 안 친다** (2026-09-02 사장님 신고: *"맵 밖에 있는 게 공격이 됨"*).
+        ///
+        ///    쓰레기는 **화면 밖에서 흘러들어와** 가로질러 간다(`StageField`).
+        ///    그런데 조준·연쇄·폭발이 전부 *"가장 가까운 것"*만 보고 **화면 안인지는 안 봤다.**
+        ///    그래서 배가 **보이지도 않는 것**을 계속 쐈다 —
+        ///    플레이어 눈에는 **아무것도 없는 쪽으로 총알이 날아가는** 그림이다.
+        ///
+        ///    ⚠️ 여백을 조금 준다(`EdgeSlack`). 딱 경계로 자르면
+        ///       **화면 가장자리에 반쯤 걸친 것**이 안 맞아서 그것도 고장으로 보인다.
+        ///
+        ///    ⚠️ 컬링(`CullMargin`)과 다른 값이다. 저건 *"언제 지울까"*이고
+        ///       이건 *"언제 칠까"*다. 지우는 범위가 더 넓어야 화면 밖에서 살아 있다가
+        ///       다시 들어올 수 있다.
+        /// </summary>
+        const float EdgeSlack = 1.2f;
+
+        bool InArena(Vector2 pos)
+        {
+            var half = field != null ? field.MapHalf : new Vector2(19f, 11f);
+            return Mathf.Abs(pos.x) <= half.x + EdgeSlack
+                && Mathf.Abs(pos.y) <= half.y + EdgeSlack;
+        }
+
         void UpdateAutoAim(Vector2 shipPos)
         {
             aimTarget = null;
@@ -282,6 +279,7 @@ namespace SalvageRun.Run
             {
                 var p = field.Pieces[i];
                 if (!p.Alive) continue;
+                if (!InArena(p.transform.position)) continue;   // 화면 밖은 안 겨눈다
 
                 float sq = ((Vector2)p.transform.position - shipPos).sqrMagnitude;
                 if (sq >= bestSq) continue;
@@ -336,27 +334,26 @@ namespace SalvageRun.Run
             if (cooldown[i] > 0f) return false;
 
             float cd = d.cooldown * Mathf.Pow(d.cooldownPerLevel, lv - 1)
-                     * stats.CooldownOf(d.kind) * stats.BurstHasteMul;
+                     * stats.CooldownOf(d.kind);
             if (d.HasTraitAt(WeaponTrait.DoubleTap, lv)) cd *= 0.5f;
 
             // 🔴 **N% 확률로 한 번 더** (테크트리 `ProcDoubleShot`).
             //    쿨다운을 아주 짧게 만들어 다음 프레임에 또 나가게 한다 —
-            //    별도 경로를 만들면 특성·조합이 그 경로를 안 타서 조용히 어긋난다
+            //    별도 경로를 만들면 특성이 그 경로를 안 타서 조용히 어긋난다
             if (stats.procDoubleShot > 0f && Rand() < stats.procDoubleShot) cd = 0.02f;
             cooldown[i] = Mathf.Max(0.08f, cd);
             return true;
         }
 
-        /// <summary>🔴 단발성 버프(카드)가 여기에 곱해진다 — 한 곳만 지나게 해서 빠뜨릴 일이 없게.</summary>
         // 🔴 **공용 × 무기별.** 화력 가지는 어느 무기든 올리고,
         //    무기 가지는 그 무기만 올린다 (2026-08-23). `PowerOf`가 둘을 곱한다.
         float Damage(WeaponDef d, int lv)
-            => (d.damage + d.damagePerLevel * (lv - 1)) * stats.PowerOf(d.kind) * stats.BurstPowerMul;
+            => (d.damage + d.damagePerLevel * (lv - 1)) * stats.PowerOf(d.kind);
 
-        /// <summary>🔴 보스의 EMP가 사거리를 줄이고, 단발성 '확장'이 늘린다.</summary>
+        /// <summary>🔴 보스의 EMP가 사거리를 줄인다.</summary>
         float Range(WeaponDef d, int lv)
             => (d.range + d.rangePerLevel * (lv - 1)) * stats.RangeOf(d.kind)
-             * stats.BurstSizeMul * BossBehaviour.RangeChoke;
+             * BossBehaviour.RangeChoke;
 
         /// <summary>압축 붕괴 예고 시간. 이보다 짧으면 예고가 아니라 그냥 번쩍임이다.</summary>
         const float CollapseTell = 0.40f;
@@ -374,7 +371,6 @@ namespace SalvageRun.Run
             int pierce = d.pierce + Mathf.RoundToInt(d.TraitValue(WeaponTrait.ExtraPierce, lv))
                        + stats.pierceBonus + stats.wPierce[(int)d.kind];
             if (d.HasTraitAt(WeaponTrait.Pierceless, lv)) pierce = 999;
-            if (stats.HasCombo(ComboEffect.PierceP)) pierce += 6;      // ★ 관통 정렬
 
             for (int i = 0; i < count; i++)
             {
@@ -406,7 +402,6 @@ namespace SalvageRun.Run
             s.dmg = dmg;
             s.owner = d.kind;
             s.level = lv;
-            s.resolved = false;
             s.returning = false;
             s.travel = 0f;
             s.maxTravel = maxTravel;
@@ -481,7 +476,7 @@ namespace SalvageRun.Run
                 if (s.trailCd <= 0f)
                 {
                     s.trailCd = 0.04f;
-                    Fx.Trail(s.tr.position, s.vel, Tint(Fade(def.color, 0.55f)));
+                    Fx.Trail(s.tr.position, s.vel, Fade(def.color, 0.55f));
                 }
 
                 for (int j = 0; j < field.Pieces.Count && s.pierce > 0; j++)
@@ -505,7 +500,7 @@ namespace SalvageRun.Run
 
                     s.pierce--;
 
-                    Fx.Spark(s.tr.position, 0.8f, Tint(Fade(def.color, 0.9f)), 0.13f);
+                    Fx.Spark(s.tr.position, 0.8f, Fade(def.color, 0.9f), 0.13f);
 
                     // ★ 분열 원반 — 명중할 때마다 작은 것이 갈라져 나간다
                     if (def.HasTraitAt(WeaponTrait.Split, s.level) && s.generation == 0)
@@ -520,45 +515,16 @@ namespace SalvageRun.Run
                             if (child != null) child.generation = 1;
                         }
                     }
-
-                    if (stats.HasCombo(ComboEffect.PierceShock))        // ★ 번개 관통
-                        ArcFrom(p.transform.position, 2, 5f * stats.rangeMul, s.dmg * 0.5f, def, s.level);
-
-                    if (stats.HasCombo(ComboEffect.PierceGravity))      // ★ 견인 관통
-                        p.Tug(ship.transform.position, 5.5f);
                 }
 
-                bool spent = s.pierce <= 0 || s.life <= 0f;
-                if (spent && !s.resolved)
-                {
-                    s.resolved = true;
-                    ResolveShotEnd(s.tr.position, s.dmg, def, s.level);
-                }
                 if (s.pierce <= 0) s.life = 0f;
             }
-        }
-
-        /// <summary>
-        /// 발사체가 멈춘 자리에서 일어나는 일. 🔴 **조합에 따라 다르다** —
-        /// 같은 무기인데 무엇과 짝지었느냐로 성격이 바뀌는 게 이 구조의 핵심이다.
-        /// </summary>
-        void ResolveShotEnd(Vector2 at, float dmg, WeaponDef d, int lv)
-        {
-            if (stats.HasCombo(ComboEffect.PierceBlast))            // ★ 작렬 관통
-                Explode(at, 2.6f * stats.rangeMul, dmg * 1.3f, d, lv);
-
-            if (stats.HasCombo(ComboEffect.PierceField))            // ★ 회수 관통
-                AddZone(at, 2.4f * stats.rangeMul, dmg * 1.1f, 1.6f, 0f, d, lv, Fade(d.color, 0.28f));
-
-            if (stats.HasCombo(ComboEffect.CutPierce))              // ★ 절개
-                AddZone(at, 1.6f * stats.rangeMul, dmg * 0.8f, 2.4f, 0f, d, lv, Fade(d.color, 0.22f));
         }
 
         // ---- Chain: 연쇄 방전 ----
         void RunChain(WeaponDef d, int lv, Vector2 shipPos)
         {
             int targets = CountOf(d, lv);
-            if (stats.HasCombo(ComboEffect.ShockShock)) targets *= 2;   // ★ 과부하
 
             ArcFrom(shipPos, targets, Range(d, lv), Damage(d, lv), d, lv);
             Juice.Chip(1f);
@@ -578,6 +544,7 @@ namespace SalvageRun.Run
                 {
                     var p = field.Pieces[i];
                     if (!p.Alive || p.ArcMark) continue;
+                    if (!InArena(p.transform.position)) continue;   // 화면 밖으로는 안 옮겨붙는다
 
                     float sq = ((Vector2)p.transform.position - from).sqrMagnitude;
                     if (sq >= bestSq) continue;
@@ -587,8 +554,8 @@ namespace SalvageRun.Run
 
                 Vector2 to = best.transform.position;
                 best.ArcMark = true;
-                Fx.Line(from, to, Tint(d.color), 0.16f, 0.18f);
-                Fx.Spark(to, 0.9f, Tint(Fade(d.color, 0.9f)), 0.14f);
+                Fx.Line(from, to, d.color, 0.16f, 0.18f);
+                Fx.Spark(to, 0.9f, Fade(d.color, 0.9f), 0.14f);
                 Hit(best, dmg, d, lv, to);
                 from = to;
             }
@@ -616,8 +583,7 @@ namespace SalvageRun.Run
             }
 
             z.at = at; z.radius = radius; z.dps = dps; z.life = life; z.pull = pull;
-            z.armDelay = 0f; z.detonateOnEnd = false; z.detonateDamage = 0f;
-            z.isEcho = false;
+            z.armDelay = 0f;
             z.owner = d.kind; z.level = lv;
 
             z.tr.gameObject.SetActive(true);
@@ -663,21 +629,12 @@ namespace SalvageRun.Run
 
                 if (z.dps > 0f) HitAround(z.at, z.radius, z.dps * Time.deltaTime, def, z.level);
 
-                if (z.life <= 0f && z.detonateOnEnd)
-                {
-                    // 🔴 **메아리는 메아리를 낳지 않는다.**
-                    //    이게 없으면 연쇄 폭발(★ BlastBlast)이 매 번 반경 1.2배짜리 구역을
-                    //    새로 낳고, 그게 또 낳아서 **반경이 지수적으로 불어나 무한대**가 된다.
-                    //    `inEchoExplosion` 가드는 *같은 호출 안*만 막는다 —
-                    //    메아리는 **다음 프레임에** 터지므로 그 가드로는 안 잡힌다.
-                    Explode(z.at, z.radius * 1.2f, z.detonateDamage, def, z.level, !z.isEcho);
-                }
             }
         }
 
         // ================================================================ 피해 한 곳
 
-        void Explode(Vector2 at, float r, float dmg, WeaponDef d, int lv, bool allowEcho = true)
+        void Explode(Vector2 at, float r, float dmg, WeaponDef d, int lv)
         {
             if (dmg <= 0f) return;
             if (float.IsNaN(r) || float.IsInfinity(r)) return;
@@ -689,22 +646,8 @@ namespace SalvageRun.Run
             Fx.Shockwave(at, r, Fade(d.color, 0.85f));
             Fx.Spark(at, r * 0.8f, Fade(d.color, 0.7f));
 
-            if (stats.HasCombo(ComboEffect.ShockBlast))                 // ★ 감전 폭탄
-                ArcFrom(at, 3, r * 2.2f, dmg * 0.45f, d, lv);
-
             float kb = d.TraitValue(WeaponTrait.Knockback, lv);
             if (kb > 0f) PushAround(at, r, kb);
-
-            // ★ 연쇄 폭발 — 한 박자 뒤에 한 번 더. 재진입을 막지 않으면 무한히 갈라진다
-            if (allowEcho && stats.HasCombo(ComboEffect.BlastBlast) && !inEchoExplosion)
-            {
-                inEchoExplosion = true;
-                var z = AddZone(at, r, 0f, 0.35f, 0f, d, lv, Fade(d.color, 0.18f));
-                z.detonateOnEnd = true;
-                z.detonateDamage = dmg * 0.7f;
-                z.isEcho = true;
-                inEchoExplosion = false;
-            }
         }
 
         void HitAround(Vector2 pos, float radius, float dmg, WeaponDef d, int lv)
@@ -713,6 +656,7 @@ namespace SalvageRun.Run
             {
                 var p = field.Pieces[i];
                 if (!p.Alive) continue;
+                if (!InArena(p.transform.position)) continue;   // 화면 밖은 안 터뜨린다
 
                 float touch = radius + p.transform.localScale.x * 0.5f;
                 if (((Vector2)p.transform.position - pos).sqrMagnitude > touch * touch) continue;
@@ -723,7 +667,7 @@ namespace SalvageRun.Run
 
         /// <summary>
         /// 🔴 **모든 피해가 이 함수를 지난다.**
-        ///    특성과 조합이 여기 한 곳에서 붙기 때문에, 새 특성을 넣어도
+        ///    특성이 여기 한 곳에서 붙기 때문에, 새 특성을 넣어도
         ///    패턴 코드(11가지)는 손대지 않는다. 무기가 20종이 돼도 마찬가지다.
         /// </summary>
         void Hit(JunkPiece p, float dmg, WeaponDef d, int lv, Vector2 at)
@@ -734,14 +678,9 @@ namespace SalvageRun.Run
             float shred = d.TraitValue(WeaponTrait.Shred, lv);
             if (shred > 0f) dmg *= 1f + shred * p.HpRatio;
 
-            // ★ 난도질 — 같은 대상을 벨수록 깊게 들어간다
-            if (stats.HasCombo(ComboEffect.CutCut) && d.tag == WeaponTag.Cut)
-                dmg *= 1f + 0.55f * (1f - p.HpRatio);
-
             if (p.IsBossPart) dmg *= 1f + stats.bossDamageMul;
 
             float slow = d.TraitValue(WeaponTrait.Slow, lv);
-            if (stats.HasCombo(ComboEffect.FieldGravity)) slow = Mathf.Max(slow, 0.5f);
             if (slow > 0f) p.Slow(slow, 0.6f);
 
             float pull = d.TraitValue(WeaponTrait.Pull, lv);
@@ -794,19 +733,6 @@ namespace SalvageRun.Run
 
             if (d.HasTraitAt(WeaponTrait.Magnetize, lv))
                 field.RushFragmentsNear(at, 4.5f);
-
-            // ★ 절삭 계열이 부순 자리에서 일어나는 것
-            if (d.tag == WeaponTag.Cut)
-            {
-                if (stats.HasCombo(ComboEffect.CutShock))
-                    ArcFrom(at, 2, 5.5f * stats.rangeMul, dmg * 0.5f, d, lv);
-                if (stats.HasCombo(ComboEffect.CutBlast))
-                    Explode(at, 1.6f * stats.rangeMul, dmg * 1.1f, d, lv);
-            }
-
-            // ★ 자기 폭풍 — 모여 있는 것들이 서로 감전된다
-            if (stats.HasCombo(ComboEffect.ShockGravity))
-                ArcFrom(at, 3, 4.5f * stats.rangeMul, dmg * 0.4f, d, lv);
         }
 
         // ================================================================ 공용
@@ -861,6 +787,7 @@ namespace SalvageRun.Run
             {
                 var p = field.Pieces[i];
                 if (!p.Alive) continue;
+                if (!InArena(p.transform.position)) continue;   // 화면 밖은 안 문다
                 float sq = ((Vector2)p.transform.position - at).sqrMagnitude;
                 if (sq >= bestSq) continue;
                 bestSq = sq; best = p;
@@ -877,7 +804,7 @@ namespace SalvageRun.Run
 
             var sr = tr.GetComponent<SpriteRenderer>();
             if (glowSprite != null) sr.sprite = glowSprite;   // 폭발은 둥글게 번져야 한다
-            sr.color = Tint(c);
+            sr.color = c;
         }
 
         Transform GetFx()

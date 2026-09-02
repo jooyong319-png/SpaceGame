@@ -697,21 +697,17 @@ namespace SalvageRun.Run
 
         // ---------------------------------------------------------------- 보스 = HP 큰 쓰레기 여러 개
 
-        /// <summary>보스를 부위 N개로 낸다. 별도 시스템이 아니라 HP 큰 JunkPiece 묶음이다.</summary>
-        /// <summary>
-        /// 보스 부위를 놓는다.
-        ///
-        /// 🔴 **배 주변에 놓는다.** 예전엔 월드 원점(0,0)에 놓았는데,
-        ///    맵이 반경 52×34라 배가 멀리 있으면 **보스가 화면 밖에 생기고**
-        ///    그 순간 일반 유입도 멈춰서 화면이 텅 빈다.
-        ///    2026-08-22 플레이 피드백: *"보스가 안 나왔어. 진짜 그냥 안 생겼어."*
-        ///
-        /// 🔴 부위는 **가장 큰 쓰레기 종류**로 만든다. 잡몹 모양이면 보스로 안 보인다.
-        /// </summary>
-        /// <summary>
-        /// 🔴 보스가 위험물을 토해낼 때 쓴다. 일반 스폰과 달리 **지정한 자리**에 놓는다.
-        ///    위험물 종류가 없는 맵(1맵)이면 아무것도 안 한다 — 조용히 실패하는 게 맞다.
-        /// </summary>
+        // ----보스를 부위 N개로 낸다. 별도 시스템이 아니라 HP 큰 JunkPiece 묶음이다.</summary>
+        // ----
+        // 보스 부위를 놓는다.
+        //
+        // 🔴 **배 주변에 놓는다.** 예전엔 월드 원점(0,0)에 놓았는데,
+        //    맵이 반경 52×34라 배가 멀리 있으면 **보스가 화면 밖에 생기고**
+        //    그 순간 일반 유입도 멈춰서 화면이 텅 빈다.
+        //    2026-08-22 플레이 피드백: *"보스가 안 나왔어. 진짜 그냥 안 생겼어."*
+        //
+        // 🔴 부위는 **가장 큰 쓰레기 종류**로 만든다. 잡몹 모양이면 보스로 안 보인다.
+        // ----
         // ---------------------------------------------------------------- 적 탄
 
         public readonly List<EnemyShot> Shots = new List<EnemyShot>();
@@ -772,6 +768,22 @@ namespace SalvageRun.Run
                 if (Pieces[i].Alive) { Pieces[i].Despawn(); }
             AliveCount = 0;
             ClearShots();
+        }
+
+        /// <summary>
+        /// 🔴 **검사용 — 원하는 자리에 쓰레기 하나를 세운다.**
+        ///    `SpawnHazardAt`은 위험물 풀에서만 뽑아서 *"맵 밖을 안 친다"*를 재기에 안 맞다.
+        /// </summary>
+        public JunkPiece SpawnOneForTest(Vector2 pos)
+        {
+            if (normalPool.Count == 0) return null;
+            var p = FreePiece();
+            if (p == null) return null;
+
+            p.Spawn(this, normalPool[0], pos, Vector2.zero, hpMul);   // 안 움직이게 둔다
+            AliveCount++;
+            SpawnedTotal++;
+            return p;
         }
 
         public void SpawnHazardAt(Vector2 pos)

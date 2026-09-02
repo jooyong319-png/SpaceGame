@@ -123,9 +123,7 @@ namespace SalvageRun.UI
             }
             DrawDiagnostics(s);
             DrawBotBanner(s);
-            DrawComboFlash(s);
             DrawBossIntro(s);
-            DrawBurstTimer(s);
             DrawBossArrow(s);
             DrawTunePanel(s);
         }
@@ -416,14 +414,12 @@ namespace SalvageRun.UI
                 y += bh + 8f * s;
             }
 
-            // ⬜ **조작 방식 고르는 버튼을 뺐다** (2026-08-27 사장님: *"마우스는 없애고
-            //    키보드로만"*). 고를 것이 없는데 버튼을 두면 **화면이 거짓말을 한다.**
-            bool kb = true;
-
+            // ⬜ 조작 방식 고르는 버튼을 뺐다 (2026-08-27 — 키보드뿐이다).
+            // 🔴 안내는 **실제로 있는 키만** 적는다. `Q 화물 버리기`가 오래 적혀 있었는데
+            //    `Q`는 바인딩된 적이 없다 (2026-09-02에 발견). 화면이 거짓말을 하고 있었다.
             GUI.color = TextDim;
             GUI.Label(new Rect(0, y, Screen.width, 20f * s),
-                kb ? "WASD 이동 · Shift 대시 · Q 화물 버리기 · E 출발"
-                   : "WASD 이동 · Shift 대시 · Q 화물 버리기 · E 출발", center);
+                "WASD 이동 · Shift 대시 · Space 줍기 · E 출발", center);
             GUI.color = Color.white;
         }
 
@@ -516,9 +512,6 @@ namespace SalvageRun.UI
             if (MenuBtn(new Rect(cx - bw * 0.5f, y, bw, 34f * s), "정비소 — 우주선 · 영구 강화  [T]", s, true, Warm))
                 tech?.Toggle();
             y += 38f * s;
-
-            // ⬜ 조작 방식 선택을 뺐다 (2026-08-27) — 키보드뿐이다
-            bool kb = true;
 
             GUI.color = TextDim;
             GUI.Label(new Rect(cx - bw * 0.5f, y, bw, 18f * s),
@@ -737,17 +730,6 @@ namespace SalvageRun.UI
                 wy += 18f * s;
             }
 
-            // ⬜ 조합은 2026-08-26에 껐다 (무기가 쌓이면 전제가 사라진다).
-            //    되살릴 때를 위해 그리는 쪽은 남겨 뒀다 — 지금은 `ActiveCombo`가 항상 null이다.
-            if (director.ActiveCombo != null)
-            {
-                GUI.color = director.ActiveCombo.color;
-                GUI.Label(new Rect(pad, wy, 320f * s, 20f * s), $"★ {director.ActiveCombo.title}", small);
-                GUI.color = new Color(0.75f, 0.75f, 0.8f);
-                GUI.Label(new Rect(pad, wy + 17f * s, 340f * s, 20f * s), director.ActiveCombo.description, small);
-                GUI.color = Color.white;
-                wy += 38f * s;
-            }
             // ⬜ "두 무기를 Lv.N까지 올리면 ???" 안내가 있었다.
             //    조합을 끄면서(2026-08-26) 영영 안 열리므로 뺐다 —
             //    안 열리는 조건을 계속 보여주는 건 거짓말이다.
@@ -1007,41 +989,6 @@ namespace SalvageRun.UI
         }
 
         /// <summary>
-        /// 🔴 단발성 버프가 켜져 있는 동안 **남은 시간을 크게** 띄운다.
-        ///    몇 초짜리 카드를 골랐는데 언제 끝나는지 모르면 쓸 수가 없다 —
-        ///    "지금 몰아쳐야 한다"가 보여야 그 카드를 고른 값어치가 생긴다.
-        /// </summary>
-        void DrawBurstTimer(float s)
-        {
-            if (director.State != GameState.Field || director.Stats == null) return;
-
-            float left = director.Stats.BurstLeft;
-            if (left <= 0f) return;
-
-            string name = director.Stats.BurstName;
-            if (string.IsNullOrEmpty(name)) return;
-
-            // 끝나기 직전엔 빠르게 깜빡인다
-            float blink = left < 3f ? 0.55f + 0.45f * Mathf.Sin(Time.time * 14f) : 1f;
-            var c = new Color(1f, 0.62f, 0.22f, blink);
-
-            float w = 340f * s, h = 40f * s;
-            var r = new Rect(Screen.width * 0.5f - w * 0.5f, Screen.height * 0.14f, w, h);
-
-            Box(r, new Color(0.18f, 0.10f, 0.03f, 0.85f));
-            Frame(r, c, 2f * s);
-
-            // 남은 시간 막대
-            Box(r.x, r.yMax - 4f * s, r.width * Mathf.Clamp01(left / 12f), 4f * s, c);
-
-            GUI.color = c;
-            GUI.Label(new Rect(r.x, r.y + 4f * s, r.width, 20f * s), name, center);
-            GUI.color = new Color(1f, 0.9f, 0.7f, blink);
-            GUI.Label(new Rect(r.x, r.y + 20f * s, r.width, 18f * s), $"{left:0.0}초", center);
-            GUI.color = Color.white;
-        }
-
-        /// <summary>
         /// 🔴 보스 등장. **"보스인 줄도 몰랐다"**는 피드백을 받고 만들었다 (2026-08-22).
         ///    웨이브가 끝나자마자 조용히 덩어리 4개가 생기니 알 방법이 없었다.
         /// </summary>
@@ -1070,33 +1017,6 @@ namespace SalvageRun.UI
         }
 
         /// <summary>
-        /// 🔴 조합이 열리는 순간을 화면 한가운데에 크게 띄운다.
-        ///    조합은 이 게임이 뱀서와 갈리는 지점인데, 팝업 한 줄로 지나가면
-        ///    플레이어는 **무엇이 달라졌는지 모른 채** 계속하게 된다.
-        /// </summary>
-        void DrawComboFlash(float s)
-        {
-            if (director.comboFlashLeft <= 0f || director.ActiveCombo == null) return;
-
-            var combo = director.ActiveCombo;
-            float a = Mathf.Clamp01(director.comboFlashLeft / 0.6f);
-
-            float h = 92f * s;
-            float y = Screen.height * 0.30f;
-
-            Box(0, y, Screen.width, h, new Color(combo.color.r * 0.16f, combo.color.g * 0.16f, combo.color.b * 0.16f, 0.88f * a));
-            Box(0, y, Screen.width, 2f * s, new Color(combo.color.r, combo.color.g, combo.color.b, a));
-            Box(0, y + h - 2f * s, Screen.width, 2f * s, new Color(combo.color.r, combo.color.g, combo.color.b, a));
-
-            GUI.color = new Color(combo.color.r, combo.color.g, combo.color.b, a);
-            GUI.Label(new Rect(0, y + 10f * s, Screen.width, 22f * s), "★  계 열  조 합  발 동", center);
-            GUI.Label(new Rect(0, y + 30f * s, Screen.width, 34f * s), combo.title, big);
-            GUI.color = new Color(0.9f, 0.94f, 1f, a);
-            GUI.Label(new Rect(0, y + 66f * s, Screen.width, 22f * s), combo.description, center);
-            GUI.color = Color.white;
-        }
-
-        /// <summary>
         /// 🔴 봇이 조종 중이면 크게 알린다. 입력이 안 먹는 걸로 오해하면 안 되기 때문이다.
         /// </summary>
         void DrawBotBanner(float s)
@@ -1117,13 +1037,11 @@ namespace SalvageRun.UI
         {
             if (ship == null) return;
 
-            Vector2 ms = SalvageRun.Core.InputReader.MouseScreen;
             float h = 20f * s;
             Box(0, Screen.height - h, Screen.width, h, new Color(0f, 0f, 0f, 0.6f));
             GUI.color = new Color(0.6f, 1f, 0.8f);
             GUI.Label(new Rect(10f * s, Screen.height - h, Screen.width, h),
-                $"[진단] 입력 {SalvageRun.Core.InputReader.LastPath} · 커서 {ms.x:0},{ms.y:0} · " +
-                $"목표 {ship.AimPoint.x:0.0},{ship.AimPoint.y:0.0} · 함선 {ship.transform.position.x:0.0},{ship.transform.position.y:0.0} · " +
+                $"[진단] 목표 {ship.AimPoint.x:0.0},{ship.AimPoint.y:0.0} · 함선 {ship.transform.position.x:0.0},{ship.transform.position.y:0.0} · " +
                 $"출력 {(ship.ThrottleNow * 100f):0}% · 상태 {director.State} · " +
                 $"흔들림 {(Juice.ShakeScale > 0f ? "켜짐" : "꺼짐")}(K) · " +
                 $"봇 {(AutoPilot.Engaged ? "조종 중" : "꺼짐")}(B)", small);

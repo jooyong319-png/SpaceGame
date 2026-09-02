@@ -16,11 +16,8 @@ namespace SalvageRun.Data
         {
             FillJunk(c);
             WeaponDefaults.FillWeapons(c);
-            WeaponDefaults.FillCombos(c);
             TechTreeDefaults.Fill(c);
-            ShipDefaults.Fill(c);
             FillStages(c);
-            FillCards(c);
         }
 
         // ---------------------------------------------------------------- 쓰레기 22종
@@ -156,95 +153,6 @@ namespace SalvageRun.Data
                 J("저격 포탑",     1, 34, 0.98f,  5.6f, 1.2f, MoveKind.Sniper,   1.2f, 40f, 24f, 2, C(255,180, 90), weight:  8),
                 J("매복 기뢰",     1, 28, 0.86f, 11.0f, 2.0f, MoveKind.Ambusher, 1f,  26f, 30f, 1, C(230, 90,150), weight:  7),
                 J("선회 감시기",   2, 44, 1.14f,  7.8f, 1.6f, MoveKind.Circler,  1f,  62f, 26f, 2, C(220, 70, 90), weight:  6),
-            };
-        }
-
-        // ---------------------------------------------------------------- 패시브 카드 17장
-        //  🔴 **무기 카드는 여기 없다.** RunDirector가 `content.weapons`에서 직접 만든다 —
-        //     무기를 추가할 때마다 카드도 같이 써야 하면 반드시 어긋난다.
-        //     여기 있는 건 무기와 무관한 상시 효과뿐이다.
-        static CardDef P(string title, string desc, CardEffect eff, float value, int weight,
-                         CardRarity rarity = CardRarity.Common)
-        {
-            return new CardDef
-            {
-                title = title, description = desc, effect = eff,
-                value = value, weight = weight, rarity = rarity,
-                color = Cards.ColorOf(rarity)
-            };
-        }
-
-        static void FillCards(GameContent c)
-        {
-            c.cards = new[]
-            {
-                // ---- 무기 공통 강화 ----
-                P("출력 증폭",   "전 무기 피해 +25%",   CardEffect.ToolPower,   0.25f, 16),
-                P("고출력 회로", "전 무기 피해 +45%",   CardEffect.ToolPower,   0.45f,  7, CardRarity.Rare),
-                P("임계 반응로", "전 무기 피해 +80%",   CardEffect.ToolPower,   0.80f,  2, CardRarity.Legend),
-
-                P("확장 코일",   "전 무기 사거리 +25%", CardEffect.ToolRange,   0.25f, 15),
-                P("광역 증폭기", "전 무기 사거리 +45%", CardEffect.ToolRange,   0.45f,  6, CardRarity.Rare),
-
-                P("냉각 개선",   "전 무기 쿨다운 -18%", CardEffect.Cooldown,    0.18f, 14),
-                P("초전도 냉각", "전 무기 쿨다운 -32%", CardEffect.Cooldown,    0.32f,  6, CardRarity.Rare),
-                P("영점 냉각",   "전 무기 쿨다운 -50%", CardEffect.Cooldown,    0.50f,  2, CardRarity.Epic),
-
-                // ---- 무기 패턴별 (2026-08-22 피드백: "절단날 회전 속도·크기 카드 등 다양함이 필요") ----
-                //  🔴 무기 **이름**이 아니라 **패턴**에 붙인다. 무기가 늘어도 카드를 다시 안 쓴다.
-                P("추가 궤도",   "궤도체(절단날·방벽) +1개", CardEffect.OrbitCount, 1f,  9, CardRarity.Rare),
-                P("고속 회전",   "궤도 회전 속도 +30%",      CardEffect.OrbitSpin,  0.30f, 12),
-                P("확장 날",     "궤도체 궤도 반경 +25%",    CardEffect.OrbitRadius,0.25f, 12),
-                P("연장 탄창",   "발사체(작살·원반) +1발",   CardEffect.ProjectileCount, 1f, 9, CardRarity.Rare),
-                P("관통 탄두",   "관통 +2",                  CardEffect.PierceBonus, 2f, 11),
-                P("추가 탄두",   "폭발물(폭탄·지뢰) +1개",   CardEffect.BlastCount, 1f,  9, CardRarity.Rare),
-                P("분기 회로",   "연쇄 대상 +2",             CardEffect.ChainTargets, 2f, 11),
-
-                // ---- 단발성 (2026-08-22 요청) ----
-                //  🔴 카드는 원래 영구 성장인데 이것만 몇 초짜리다.
-                //     그래서 수치를 아주 크게 잡는다 — 어중간하면 "고르면 손해인 카드"가 되고,
-                //     손해인 선택지는 선택지가 아니다.
-                //     가중치도 낮게 둬서 **가끔 나오는 도박**으로 만든다.
-                P("과부하 주입", "10초 동안 피해 +500%",      CardEffect.BurstPower, 10f, 5, CardRarity.Legend),
-                P("공진 확장",   "10초 동안 무기 범위 +500%", CardEffect.BurstSize,  10f, 5, CardRarity.Legend),
-                P("냉각 폭주",   "12초 동안 쿨다운 -75%",     CardEffect.BurstHaste, 12f, 5, CardRarity.Legend),
-
-                // ---- 수집 ----
-                P("자기 수집기", "파편 흡수 반경 +35%", CardEffect.IntakeRadius,0.35f, 14),
-                P("광역 회수기", "파편 흡수 반경 +60%", CardEffect.IntakeRadius,0.60f,  6, CardRarity.Rare),
-                P("자동 분류기", "파편 가치 +25%",      CardEffect.ValueMul,    0.25f, 13),
-                P("암거래 회로", "파편 가치 +55%",      CardEffect.ValueMul,    0.55f,  4, CardRarity.Epic),
-                P("분석 모듈",   "경험치 획득 +30%",    CardEffect.XpGain,      0.30f, 12),
-                P("연료 정제기", "파편마다 연료 +0.3",  CardEffect.RefineOnCollect, 0.3f, 11),
-
-                // ---- 생존 · 기동 ----
-                P("보조 추진기", "이동 속도 +15%",      CardEffect.MoveSpeed,   0.15f, 14),
-                P("관성 제어기", "이동 속도 +28%",      CardEffect.MoveSpeed,   0.28f,  6, CardRarity.Rare),
-                P("차폐 도장",   "충돌 피해 -22%",      CardEffect.ContactResist,0.22f, 14),
-                P("중장갑 판재", "충돌 피해 -35%",      CardEffect.ContactResist,0.35f,  6, CardRarity.Rare),
-                P("불침 격벽",   "충돌 피해 -55%",      CardEffect.ContactResist,0.55f,  2, CardRarity.Epic),
-                P("보조 탱크",   "최대 연료 +60",       CardEffect.FuelMax,     60f,   13),
-                P("대형 탱크",   "최대 연료 +120",      CardEffect.FuelMax,     120f,   6, CardRarity.Rare),
-
-                // ---- 기지 (2026-08-21 요청: "레벨업 보상으로 기지 무기 강화") ----
-                //  🔴 rev.7에서 지는 조건은 기지 상실인데, 정작 기지를 키울 방법이 없었다.
-                //     '방어 포탑'을 먹기 전에는 기지가 **아무것도 안 쏜다** —
-                //     스스로 싸우는 기지는 처음부터 주는 게 아니라 **보상**이어야 한다.
-                //     그래야 초반의 "혼자 다 막아야 한다"는 긴장이 살아 있다.
-                //
-                //  🔴 가중치를 높게(16) 준 이유: 이 카드가 안 나오면 후반에 기지가 그냥 무너진다.
-                //     "가끔 나오면 좋은 것"이 아니라 **후반의 필수 축**이다.
-                P("방어 포탑",   "기지가 스스로 쓰레기를 쏜다",  CardEffect.BaseTurretLevel, 1f, 16),
-                P("포탑 증설",   "기지 포탑 레벨 +2",           CardEffect.BaseTurretLevel, 2f,  8, CardRarity.Rare),
-                P("포신 증설",   "기지 포탑이 목표 +1개 동시",   CardEffect.BaseTurretCount, 1f,  7, CardRarity.Rare),
-                P("포탑 증폭기", "기지 포탑 피해 +45%",         CardEffect.BaseTurretPower, 0.45f, 12),
-                P("장거리 조준", "기지 포탑 사거리 +40%",       CardEffect.BaseTurretRange, 0.40f, 11),
-                P("속사 장전기", "기지 포탑 쿨다운 -30%",       CardEffect.BaseTurretHaste, 0.30f, 10),
-                P("포탑 관제소", "기지 포탑 피해 +90%",          CardEffect.BaseTurretPower, 0.90f, 3, CardRarity.Epic),
-                // 🔴 rev.8: 기지에 체력이 없다. 대신 **가동 시간을 줄인다** —
-                //    무방비로 서 있어야 하는 시간이 곧 위험이므로, 그걸 깎는 게 보상이다.
-                P("가동 촉진기", "기지 가동 시간 -8초",         CardEffect.BaseHpMax,       8f,  12),
-                P("과부하 기동", "기지 가동 시간 -18초",        CardEffect.BaseHpMax,      18f,   5, CardRarity.Epic),
             };
         }
 

@@ -125,45 +125,6 @@ namespace SalvageRun.Tests
             Assert.Pass();
         }
 
-        // ==============================================================================
-        //  2. 카드 전 종류 — 적용하면 죽지 않는가
-        // ==============================================================================
-
-        [UnityTest, Timeout(600000)]
-        public IEnumerator EveryCardApplies()
-        {
-            var t = new StringBuilder();
-            t.AppendLine();
-            t.AppendLine("=========== 스모크: 카드 전 종류 ===========");
-
-            director.StartRun(0);
-            yield return null;
-
-            var cards = director.content.cards;
-            Assert.IsNotNull(cards, "카드 목록이 비어 있다");
-
-            for (int i = 0; i < cards.Length; i++)
-            {
-                TechSystem.ApplyCard(director.Stats, cards[i]);
-                director.arms.stats = director.Stats;
-                director.arms.Rebuild();
-                yield return null;
-            }
-
-            t.AppendLine($"카드 {cards.Length}장 전부 적용 — 예외 없음");
-
-            // 🔴 개별로는 멀쩡한데 **다 겹쳤을 때** 터지는 경우가 있다
-            //    (0 나눗셈, 무한대 반경 — 2026-08-21 연쇄 폭발이 정확히 그랬다)
-            for (int f = 0; f < 90; f++) yield return null;
-
-            t.AppendLine("전부 적용한 상태로 3초 — 예외 없음");
-            director.ReturnNow();
-            yield return null;
-
-            Debug.Log("[SMOKE]" + t);
-            Assert.Pass();
-        }
-
         /// <summary>
         /// 🔴 **주우면 곧바로 경험치가 되고, 쌓이면 레벨이 오른다** (rev.12).
         ///
@@ -1064,6 +1025,72 @@ namespace SalvageRun.Tests
             for (int i = 1; i < Mats.Count; i++)
                 if (n.BaseCost((MatKind)i) > 0) return false;
             return true;
+        }
+
+        /// <summary>
+        /// 🔴 **맵 밖에 있는 것은 안 친다** (2026-09-02 사장님 신고:
+        ///    *"맵 밖에 있는 게 공격이 됨"*).
+        ///
+        ///    쓰레기는 **화면 밖에서 흘러들어와** 가로질러 간다. 그런데 조준·연쇄·폭발이
+        ///    전부 *"가장 가까운 것"*만 보고 **화면 안인지는 안 봤다.**
+        ///    배가 **보이지도 않는 것**을 계속 쐈다 —
+        ///    플레이어 눈에는 아무것도 없는 쪽으로 총알이 날아가는 그림이다.
+        ///
+        ///    ⚠️ 이건 **눈으로만 보이는 종류의 버그**다. 숫자는 다 멀쩡했다
+        ///       (부수기도 하고 재화도 나왔다). 그래서 검사로 박아 둔다.
+        /// </summary>
+        [UnityTest, Timeout(600000)]
+        public IEnumerator DoesNotShootOutsideMap()
+        {
+            var t = new StringBuilder();
+            t.AppendLine();
+            t.AppendLine("=========== 스모크: 맵 밖은 안 친다 ===========");
+
+            director.StartRun(0);
+            yield return null;
+
+            var field = director.field;
+            var ship = director.ship;
+
+            field.Spawning = false;                 // 흘러드는 것이 섞이면 무엇을 잰 건지 흐려진다
+            field.ClearAllJunk();
+            yield return null;
+
+            // 무기를 세게 줘서 "안 쏴서 안 맞은 것"과 구별되게 한다
+            for (int i = 0; i < director.Stats.weaponLevel.Length; i++)
+                director.Stats.weaponLevel[i] = 5;
+            director.arms.stats = director.Stats;
+            director.arms.Rebuild();
+
+            var half = director.MapHalf;
+            ship.ResetShip(Vector2.zero, director.Stats.fuelMax);
+
+            // 🔴 **맵 밖 한참 바깥**에 하나 세운다 (경계 여백보다 훨씬 멀리)
+            var far = new Vector2(half.x + 8f, 0f);
+            var outside = field.SpawnOneForTest(far);
+            Assert.IsNotNull(outside, "🔴 검사용 쓰레기를 못 세웠다");
+            yield return null;
+
+            float hp0 = outside.Hp;
+
+            for (int i = 0; i < 150; i++) yield return null;   // 5초
+
+            t.AppendLine($"  맵 반경 {half.x:0.0} · 세운 자리 x={far.x:0.0} (밖으로 8)");
+            t.AppendLine($"  5초 뒤 HP {hp0:0.0} → {outside.Hp:0.0}");
+
+            bool untouched = outside.Alive && outside.Hp >= hp0 - 0.01f;
+            t.AppendLine(untouched
+                ? "  ✅ 맵 밖은 건드리지 않았다"
+                : "  🔴 **맵 밖에 있는 것을 쳤다** — 보이지도 않는 걸 쏘고 있다");
+
+            Debug.Log("[SMOKE]" + t);
+            Assert.IsTrue(untouched,
+                "🔴 맵 밖에 있는 것이 공격당했다 — 자동 조준이 화면 밖을 문다");
+
+            director.ReturnNow();
+            yield return null;
+            director.BackToReady();
+            yield return null;
         }
 
         /// <summary>밭(로봇·위험물 제외) 중 아무거나 하나. 없으면 null.</summary>

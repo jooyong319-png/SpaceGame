@@ -105,7 +105,6 @@ namespace SalvageRun.Run
             rig.glowSprite = glowArt;
             rig.ringSprite = PixelArt.Ring(48, 0.14f);
 
-            BuildAimCursor(ship, director);
 
             var follow = cam.gameObject.AddComponent<CameraFollow>();
             follow.target = ship.transform;
@@ -311,22 +310,6 @@ namespace SalvageRun.Run
             vis.flame = flameGo.GetComponent<SpriteRenderer>();
 
             return ship;
-        }
-
-        void BuildAimCursor(ShipController ship, RunDirector director)
-        {
-            var root = new GameObject("AimCursor");
-            var cursor = root.AddComponent<AimCursor>();
-            cursor.ship = ship;
-            cursor.director = director;
-
-            var c = new Color(1f, 1f, 1f, 0.5f);
-            var h = NewSprite("H", Vector3.zero, new Vector3(0.9f, 0.06f, 1f), c, 20);
-            var v = NewSprite("V", Vector3.zero, new Vector3(0.06f, 0.9f, 1f), c, 20);
-            h.transform.SetParent(root.transform, false);
-            v.transform.SetParent(root.transform, false);
-
-            cursor.parts = new[] { h.GetComponent<SpriteRenderer>(), v.GetComponent<SpriteRenderer>() };
         }
 
         // 카메라가 고정이라 시차(Parallax)는 의미가 없다 — 정적 별 배경으로 대체했다.

@@ -187,7 +187,6 @@ namespace SalvageRun.Data
         // ---- 수집 · 경제 ----
         IntakeRadius,       // 흡수 반경 +N%
         ValueMul,           // 크레딧 +N%
-        XpMul,              // 경험치 +N%
         RefineOnCollect,    // 파편마다 연료 +N
         ItemDropChance,     // 아이템 드랍률 +N%p
         FuelPickupBonus,    // 연료 아이템 회복량 +N%
@@ -305,10 +304,10 @@ namespace SalvageRun.Data
         HaulerGrade,
 
         // ---- 런 시작 상태 ----
-        StartLevel,         // ⬜ 레벨업이 없다 (2026-08-26). 읽는 곳 없음
-        StartWeaponLevel,   // 시작 무기 레벨 +N
-        CardChoices,        // 카드 선택지 +N
-        ComboLevelDown      // 조합 발동 요구 레벨 -N
+        StartWeaponLevel    // 시작 무기 레벨 +N
+
+        // ⬜ 2026-09-02에 셋을 뺐다: StartLevel(레벨업 없음) · CardChoices(카드 없음) ·
+        //    ComboLevelDown(조합 없음). 전부 맨 뒤였거나 읽는 곳이 없어 정수가 안 밀린다.
     }
 
     /// <summary>표시 계열. 색과 묶음에만 쓴다.</summary>

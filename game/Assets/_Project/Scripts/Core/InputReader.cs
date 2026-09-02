@@ -7,136 +7,14 @@ namespace SalvageRun.Core
 {
     /// <summary>
     /// 입력 한 곳. Input System(신) / Input Manager(구) 어느 설정이든 동작하게 전처리기로 분기한다.
-    /// 조작은 마우스 추종이라 실제로 필요한 건 커서 위치와 클릭뿐이다.
     ///
-    /// ⚠️ 어느 경로로 읽혔는지 <see cref="LastPath"/>에 남긴다 — 입력이 안 잡힐 때
-    ///    "설정 문제인가 좌표 변환 문제인가"를 가르는 유일한 단서다.
+    /// 🔴 **키보드뿐이다** (2026-08-27 사장님 지시: *"마우스 조작은 없애고 키보드로만"*).
+    ///    마우스 배관(커서 좌표·좌클릭·조작방식 저장)은 2026-09-02에 전부 걷어냈다 —
+    ///    아무도 안 읽는데 남아 있으면 **"마우스도 되나"** 하고 오해를 부른다.
+    ///    (메뉴 클릭은 여기가 아니라 `OnGUI`의 `Event.current`가 받는다. 그건 살아 있다)
     /// </summary>
     public static class InputReader
     {
-        /// <summary>마지막으로 마우스를 읽은 경로: NEW / OLD / NONE</summary>
-        public static string LastPath { get; private set; } = "?";
-
-        /// <summary>화면 픽셀 좌표. 게임 창 밖이면 화면 안으로 잘라낸다.</summary>
-        public static Vector2 MouseScreen
-        {
-            get
-            {
-                Vector2 p;
-
-#if ENABLE_INPUT_SYSTEM
-                var m = Mouse.current;
-                if (m != null)
-                {
-                    LastPath = "NEW";
-                    p = m.position.ReadValue();
-                    return ClampToScreen(p);
-                }
-#endif
-#if ENABLE_LEGACY_INPUT_MANAGER
-                LastPath = "OLD";
-                p = Input.mousePosition;
-                return ClampToScreen(p);
-#else
-                LastPath = "NONE";
-                return new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
-#endif
-            }
-        }
-
-        /// <summary>
-        /// 🔴 커서가 게임 창 밖에 있으면 좌표가 화면 밖으로 나간다.
-        ///    추적 카메라와 만나면 목표점이 영원히 도망가므로 반드시 잘라낸다.
-        /// </summary>
-        static Vector2 ClampToScreen(Vector2 p)
-        {
-            p.x = Mathf.Clamp(p.x, 0f, Mathf.Max(1f, Screen.width));
-            p.y = Mathf.Clamp(p.y, 0f, Mathf.Max(1f, Screen.height));
-            return p;
-        }
-
-        /// <summary>
-        /// 커서의 월드 좌표(2D 평면).
-        /// 카메라의 실제 픽셀 영역(pixelRect)을 기준으로 직접 계산한다 —
-        /// Pixel Perfect Camera 등이 끼어 화면과 카메라 뷰포트가 어긋나도 어긋나지 않게.
-        /// </summary>
-        /// <param name="originOverride">
-        /// 카메라 위치 대신 쓸 기준점. 화면 흔들림이 조준을 흔들지 않게 하려면
-        /// 흔들리기 전 위치를 넘긴다.
-        /// </param>
-        public static Vector2 WorldMouse(Camera cam, float planeZ, Vector3? originOverride = null)
-        {
-            if (cam == null) cam = Camera.main;
-            if (cam == null) return Vector2.zero;
-
-            Vector2 sp = MouseScreen;
-            Vector3 origin = originOverride ?? cam.transform.position;
-
-            if (cam.orthographic)
-            {
-                var r = cam.pixelRect;
-                float nx = r.width > 1f ? (sp.x - r.x) / r.width : 0.5f;
-                float ny = r.height > 1f ? (sp.y - r.y) / r.height : 0.5f;
-
-                float halfH = cam.orthographicSize;
-                float halfW = halfH * cam.aspect;
-
-                return new Vector2(
-                    origin.x + (nx - 0.5f) * 2f * halfW,
-                    origin.y + (ny - 0.5f) * 2f * halfH);
-            }
-
-            Vector3 v = sp;
-            v.z = Mathf.Abs(cam.transform.position.z - planeZ);
-            return cam.ScreenToWorldPoint(v);
-        }
-
-        // ================================================================ 조작 방식
-
-        /// <summary>
-        /// 🔴 **조작 방식** (2026-08-21 요청: *"키보드랑 마우스 선택 할 수 있게"*).
-        ///
-        ///    마우스 추종은 뱀서류의 표준이지만 **모두에게 맞지는 않는다.**
-        ///    · 마우스: 커서로 목적지를 찍는다. 정밀하고, 손목만 쓴다
-        ///    · 키보드: WASD/방향키로 민다. 익숙하고, 랩톱 터치패드에서 훨씬 낫다
-        ///
-        ///    저장은 `PlayerPrefs` — WebGL에서도 유지된다.
-        /// </summary>
-        public enum Scheme { Mouse = 0, Keyboard = 1 }
-
-        const string SchemeKey = "sr_scheme";
-
-        static Scheme? cachedScheme;
-
-        public static Scheme Control
-        {
-            get
-            {
-                if (cachedScheme == null)
-                    cachedScheme = (Scheme)PlayerPrefs.GetInt(SchemeKey, 0);
-                return cachedScheme.Value;
-            }
-            set
-            {
-                cachedScheme = value;
-                PlayerPrefs.SetInt(SchemeKey, (int)value);
-                PlayerPrefs.Save();
-            }
-        }
-
-        /// <summary>
-        /// 🔴 **조작은 키보드뿐이다** (2026-08-27 사장님 지시:
-        ///    *"일단 마우스 조작은 없애고 키보드로만 가자"*).
-        ///
-        ///    마우스 추종은 *"커서 쪽으로 간다"*라 **목적지**를 주는 조작이고,
-        ///    키보드는 *"이쪽으로 민다"*라 **방향**을 주는 조작이다. 둘은 감각이 다르다 —
-        ///    둘 다 지원하면 밸런스를 **두 번 잡아야 하고**, 실제로는 한쪽만 제대로 잡힌다.
-        ///
-        ///    `Scheme`과 `Control`은 저장 호환 때문에 남겨 두지만 **아무도 안 읽는다.**
-        ///    (나중에 마우스를 되살리려면 여기 한 줄만 되돌리면 된다)
-        /// </summary>
-        public static bool UsingKeyboard => true;
-
         /// <summary>
         /// 키보드 이동 입력. WASD와 방향키를 함께 받는다.
         /// 대각선이 빨라지지 않도록 정규화한다.
@@ -168,22 +46,6 @@ namespace SalvageRun.Core
                 return lv.sqrMagnitude > 1f ? lv.normalized : lv;
 #else
                 return Vector2.zero;
-#endif
-            }
-        }
-
-        public static bool LeftHeld
-        {
-            get
-            {
-#if ENABLE_INPUT_SYSTEM
-                var m = Mouse.current;
-                if (m != null) return m.leftButton.isPressed;
-#endif
-#if ENABLE_LEGACY_INPUT_MANAGER
-                return Input.GetMouseButton(0);
-#else
-                return false;
 #endif
             }
         }

@@ -41,13 +41,6 @@ namespace SalvageRun.Meta
         /// <summary>구 버전(v2)의 해금 목록. v3에서 <see cref="nodes"/>로 옮겨간다.</summary>
         public List<string> unlockedNodes = new List<string>();
 
-        // ---- 우주선 ----
-        /// <summary>해금한 우주선 id. 첫 배는 항상 열려 있으므로 여기 없어도 된다.</summary>
-        public List<string> unlockedShips = new List<string>();
-
-        /// <summary>지금 고른 배. 비어 있으면 첫 배.</summary>
-        public string selectedShip = "";
-
         /// <summary>
         /// ⬜ **더 이상 안 쓴다** (2026-08-26). 무기를 하나 골라 드는 방식이었는데,
         ///    사장님 지시로 **연 무기가 전부 동시에 붙는** 방식이 됐다 — 고를 일이 없다.
@@ -92,9 +85,6 @@ namespace SalvageRun.Meta
         }
 
         public bool HasNode(string id) => RankOf(id) > 0;
-
-        public bool HasShip(string id)
-            => !string.IsNullOrEmpty(id) && unlockedShips != null && unlockedShips.Contains(id);
 
         public int Mat(MatKind m)
         {
@@ -177,7 +167,6 @@ namespace SalvageRun.Meta
                     cached = JsonUtility.FromJson<MetaData>(json) ?? new MetaData();
                     if (cached.unlockedNodes == null) cached.unlockedNodes = new List<string>();
                     if (cached.nodes == null) cached.nodes = new List<NodeRank>();
-                    if (cached.unlockedShips == null) cached.unlockedShips = new List<string>();
                     Migrate(cached);
                     return;
                 }
@@ -216,67 +205,6 @@ namespace SalvageRun.Meta
         }
 
         // ---------------------------------------------------------------- 재화 · 노드
-
-        // ---------------------------------------------------------------- 우주선
-
-        /// <summary>이 배를 쓸 수 있는가. 무료 배는 해금 목록에 없어도 열려 있다.</summary>
-        public static bool ShipUnlocked(ShipDef s)
-            => s != null && (s.FreeFromStart || Data.HasShip(s.id));
-
-        public static bool CanBuyShip(ShipDef s, out string why)
-        {
-            why = null;
-            if (s == null) { why = "없는 배"; return false; }
-            if (ShipUnlocked(s)) { why = "이미 보유"; return false; }
-
-            if (Data.scrap   < s.costScrap)   { why = "고철 부족"; return false; }
-            if (Data.circuit < s.costCircuit) { why = "회로 부족"; return false; }
-            if (Data.core    < s.costCore)    { why = "코어 부족"; return false; }
-            return true;
-        }
-
-        public static bool BuyShip(ShipDef s)
-        {
-            if (!CanBuyShip(s, out _)) return false;
-
-            Data.scrap   -= s.costScrap;
-            Data.circuit -= s.costCircuit;
-            Data.core    -= s.costCore;
-
-            if (Data.unlockedShips == null) Data.unlockedShips = new List<string>();
-            Data.unlockedShips.Add(s.id);
-            Data.selectedShip = s.id;
-            Save();
-            return true;
-        }
-
-        /// <summary>
-        /// 🔴 **공짜이고 선행도 없는 노드는 저절로 찍힌다.**
-        ///
-        ///    그런 노드는 "살까 말까"가 아니다 — 누구나 즉시 누를 수 있으므로
-        ///    안 누를 이유가 없고, 안 누르면 **그 아래가 통째로 잠겨 보인다.**
-        ///    (뿌리와 첫 무기가 그렇다. 첫 무기를 안 찍으면 무기 가지가 다 안 보인다)
-        ///
-        ///    랭크를 실제로 채워 두면 `RankOf`를 보는 모든 곳이 한 가지로 답한다 —
-        ///    "여긴 공짜니까 사실 열린 거야" 같은 예외를 화면마다 따로 둘 필요가 없다.
-        /// </summary>
-        public static void EnsureFreeNodes(GameContent content)
-        {
-            if (content == null || content.techTree == null) return;
-
-            bool changed = false;
-            for (int i = 0; i < content.techTree.Length; i++)
-            {
-                var n = content.techTree[i];
-                if (n == null || !n.IsFree) continue;
-                if (n.requires != null && n.requires.Length > 0) continue;
-                if (Data.RankOf(n.id) > 0) continue;
-
-                Data.SetRank(n.id, 1);
-                changed = true;
-            }
-            if (changed) Save();
-        }
 
         // ---------------------------------------------------------------- 무기
 
@@ -317,24 +245,6 @@ namespace SalvageRun.Meta
                 if (WeaponUnlocked(content, (WeaponKind)i)) into.Add((WeaponKind)i);
 
             if (into.Count == 0) into.Add(fallback);
-        }
-
-        public static void SelectShip(ShipDef s)
-        {
-            if (!ShipUnlocked(s)) return;
-            Data.selectedShip = s.id;
-            Save();
-        }
-
-        public static ShipDef CurrentShip(GameContent content)
-        {
-            if (content == null) return null;
-
-            var s = content.ShipOrDefault(Data.selectedShip);
-            // 🔴 세이브에 적힌 배가 잠겨 있으면(데이터가 바뀌었을 수 있다) 첫 배로 되돌린다
-            if (s != null && !ShipUnlocked(s))
-                s = content.ships != null && content.ships.Length > 0 ? content.ships[0] : null;
-            return s;
         }
 
         public static void AddMaterial(MatKind m, int amount)

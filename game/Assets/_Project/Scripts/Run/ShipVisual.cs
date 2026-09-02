@@ -16,33 +16,30 @@ namespace SalvageRun.Run
         public SpriteRenderer body;
         public SpriteRenderer flame;
 
-        /// <summary>우주선 도색. RunDirector가 런 시작마다 넣어 준다.</summary>
-        public Color hullColor = Color.white;
+        /// <summary>선체 도색.</summary>
+        public Color hullColor = new Color(160f / 255f, 210f / 255f, 240f / 255f);
 
-        string builtFor;
+        bool built;
 
-        public void ApplyShip(SalvageRun.Data.ShipDef def)
+        /// <summary>
+        /// 선체를 찍는다. 🔴 값이 여기 박혀 있는 이유:
+        ///    우주선 3척(핸디·아크·타이탄)을 2026-09-02에 지웠다 — 데이터는 다 있었는데
+        ///    **UI에서 고를 수가 없어** 항상 첫 배(핸디)로 시작했다. 사거나 고르는 코드를
+        ///    부르는 곳이 없었다. 아래 값이 그 핸디의 것이라 **화면은 전과 똑같다.**
+        ///    (배를 되살리려면 이 값을 다시 데이터로 빼면 된다)
+        ///
+        /// 🔴 **예인선이다** (2026-08-26). 전에는 앞이 나팔처럼 벌어진 **흡입구**였다 —
+        ///    자석이 있던 시절의 그림이다. 자석을 없앤 지금 이 배는 빨아들이지 않는다.
+        ///    **부수고 뒤에 매달아 끈다.** 실루엣이 하는 일과 달라지면 화면이 조용히 거짓말을 한다.
+        ///
+        ///    해상도는 32다. 조종석·이음매·견인 고리가 24픽셀에서는 뭉개져서 안 읽힌다.
+        /// </summary>
+        public void ApplyHull()
         {
-            if (def == null) return;
-
-            hullColor = def.color;
-            if (bodyRoot != null)
-                bodyRoot.localScale = Vector3.one * Mathf.Max(0.5f, def.bodyScale);
-
-            // 🔴 실루엣은 배마다 새로 찍는다. 색만 바꾸면 여섯 척이 사실상 한 척이다.
-            //    같은 배로 다시 시작할 땐 다시 안 찍는다 — 런마다 텍스처가 쌓인다
-            if (body == null || builtFor == def.id) return;
-
-            builtFor = def.id;
-
-            // 🔴 **예인선으로 갈아탔다** (2026-08-26). 전에는 `Cleaner` —
-            //    앞이 나팔처럼 벌어진 **흡입구**였다. 자석이 있던 시절의 그림이다.
-            //    자석을 없앤 지금 이 배는 빨아들이지 않는다. **부수고 뒤에 매달아 끈다.**
-            //    실루엣이 하는 일과 달라지면 화면이 조용히 거짓말을 한다.
-            //
-            //    해상도도 24 → 32로 올렸다. 조종석·이음매·견인 고리가
-            //    24픽셀에서는 서로 뭉개져서 안 읽힌다.
-            body.sprite = PixelArt.Tug(32, Mathf.Clamp01(def.nose), def.tail, def.wing);
+            // 한 번만 찍는다 — 런마다 다시 찍으면 텍스처가 쌓인다
+            if (body == null || built) return;
+            built = true;
+            body.sprite = PixelArt.Tug(32, 0.16f, 0.92f, 0.10f);
         }
 
         // ---------------------------------------------------------------- 무기 부품
