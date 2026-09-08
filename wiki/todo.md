@@ -106,5 +106,7 @@ WebGL에서 **비용도 크다.** 다만 갈아엎는 크기라 제가 정할 �
 - [ ] 아트 — 지금은 전부 코드로 찍은 임시 도트
 - [ ] 게임 이름 (SALVAGE RUN은 임시명)
 - [ ] itch.io 페이지
-- [ ] 통합 위키(`d:/Gcalen/wiki/`)에 **Unity 페이지가 아직 없다** — 이 프로젝트가 처음 만든다.
-      대기 중인 것은 [[unified-wiki-inbox]]
+- [x] 통합 위키에 Unity 지식 넘기기 — `Gcalen/wiki/unity.md`·`windows-dev.md`로
+      5건 이관 완료 (2026-09-03). [[unified-wiki-inbox]] 대기함은 비었다
+- [ ] 🔴 **통합 위키(`d:/Gcalen/wiki/`)는 git 저장소가 아니다** — 기계를 옮기면 사라진다.
+      절차는 `Gcalen/wiki/machine-setup.md` §0·§5
