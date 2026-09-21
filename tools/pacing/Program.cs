@@ -42,6 +42,14 @@ static class Program
             }
             if (!sim.Has("autosell") && S.held >= 5) sim.Sell();
 
+            // ── 직접 파쇄: 충전이 다 차면 제일 빽빽한 궤도에 (greedy 만 — 사람이 부지런한 경우)
+            if (style == "greedy" && S.bought > 0 && S.blastCharge >= sim.BlastMax - 0.01)
+            {
+                int bb = -1; double bd = -1;
+                for (int i = 0; i < 3; i++) if (S.orbits[i].open && !S.orbits[i].locked && S.orbits[i].D > bd) { bd = S.orbits[i].D; bb = i; }
+                if (bb >= 0) sim.Blast(bb);
+            }
+
             // ── 인양 표적: 사람은 늘 보진 못한다
             if (S.salvage.active && S.salvage.life < 18 && rng.NextDouble() < 0.02) sim.ClaimSalvage();
 

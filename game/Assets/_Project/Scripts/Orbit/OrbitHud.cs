@@ -161,6 +161,8 @@ namespace SalvageRun.Orbit
             TopBar(left);
             DangerMeter(left);
             CinematicTitle(left);
+            BlastCharges(left);
+            SalvagePips();
             News(left);
             BannerDraw(left);
             if (PanelVisible) Panel();
@@ -247,6 +249,46 @@ namespace SalvageRun.Orbit
             GUI.color = blink ? Color.white : col;
             GUI.DrawTexture(new Rect(x, y, w * (float)d, 6), Texture2D.whiteTexture);
             GUI.color = c;
+        }
+
+        /// <summary>직접 파쇄 충전 — ●●●○○. 다음 칸이 차오르는 것까지 보인다.</summary>
+        void BlastCharges(float left)
+        {
+            if (!sim.BlastUsesCharge || sim.Finished) return;
+            float y = RefH - 34f - 24f - (string.IsNullOrEmpty(sim.S.pinned) ? 0f : 26f);
+            GUI.Label(new Rect(14, y, 90, 20), "직접 파쇄", head);
+            double c = sim.S.blastCharge;
+            for (int i = 0; i < sim.BlastMax; i++)
+            {
+                var r = new Rect(76 + i * 16, y + 3, 11, 11);
+                GUI.DrawTexture(r, texBarBg);
+                float fill = Mathf.Clamp01((float)(c - i));
+                if (fill <= 0f) continue;
+                var col = GUI.color;
+                GUI.color = fill >= 1f ? new Color(1f, 0.75f, 0.35f) : new Color(1f, 0.75f, 0.35f, 0.45f);
+                GUI.DrawTexture(new Rect(r.x, r.y + r.height * (1f - fill), r.width, r.height * fill), Texture2D.whiteTexture);
+                GUI.color = col;
+            }
+            GUI.Label(new Rect(76 + sim.BlastMax * 16 + 6, y, 260, 20), "궤도를 누르면 터진다 · 우클릭·1 2 3 은 함대", small);
+        }
+
+        /// <summary>큰 잔해 체력 — 몇 번 더 두드려야 하는지.</summary>
+        void SalvagePips()
+        {
+            var v = sim.S.salvage;
+            var cam = Camera.main;
+            if (!v.active || v.hpMax <= 1 || cam == null) return;
+            var at = game.Orbit(v.orbit, (float)v.angle);
+            Vector3 sp = cam.WorldToScreenPoint(at);
+            float gx = sp.x / scale, gy = (Screen.height - sp.y) / scale - (v.big ? 46f : 34f);
+            float w = v.hpMax * 7f;
+            for (int i = 0; i < v.hpMax; i++)
+            {
+                var col = GUI.color;
+                GUI.color = i < v.hp ? new Color(1f, 0.85f, 0.45f) : new Color(0.3f, 0.32f, 0.38f);
+                GUI.DrawTexture(new Rect(gx - w / 2 + i * 7f, gy, 5, 5), Texture2D.whiteTexture);
+                GUI.color = col;
+            }
         }
 
         void CinematicTitle(float left)
@@ -389,13 +431,21 @@ namespace SalvageRun.Orbit
             var S = sim.S;
             GUILayout.Space(4);
             GUILayout.Label("함대 배치", head);
+            int bestOrbit = -1; double bestV = -1;
+            for (int i = 0; i < 3; i++)
+            {
+                var o = S.orbits[i];
+                if (!o.open || o.locked) continue;
+                double v = sim.Density(i) * sim.Price(i);
+                if (v > bestV) { bestV = v; bestOrbit = i; }
+            }
             for (int i = 0; i < 3; i++)
             {
                 var o = S.orbits[i];
                 if (!o.open) continue;
                 Rect r = GUILayoutUtility.GetRect(w, 34, GUILayout.Width(w), GUILayout.Height(34));
                 GUI.DrawTexture(r, texCard);
-                string name = (o.warned && !o.locked ? "<color=#f08070>⚠ </color>" : "") + OrbitSim.Names[i];
+                string name = (o.warned && !o.locked ? "<color=#f08070>⚠ </color>" : i == bestOrbit ? "<color=#f0c070>★ </color>" : "") + OrbitSim.Names[i];
                 GUI.Label(new Rect(r.x + 10, r.y + 9, 130, 20), name, label);
                 if (o.locked)
                 {
@@ -407,11 +457,13 @@ namespace SalvageRun.Orbit
                     GUI.Label(new Rect(r.x + 100, r.y + 9, w - 212, 20), o.drones + "대", cost);
                     if (GUI.Button(new Rect(r.x + w - 102, r.y + 5, 46, 24), "전부", mini)) S_Move(i, false);
                     if (GUI.Button(new Rect(r.x + w - 52, r.y + 5, 46, 24), "절반", mini)) S_Move(i, true);
+                    if (GUI.Button(new Rect(r.x, r.y, w - 104, r.height), GUIContent.none, GUIStyle.none)) S_Move(i, false);   // 줄 어디를 눌러도 전부
                 }
                 GUILayout.Space(4);
             }
             int moving = sim.InTransit;
             if (moving > 0) GUILayout.Label($"이동 중 {moving}대 — 도착까지 줍지 못한다", small);
+            else GUILayout.Label("★ 지금 제일 값진 궤도 · 줄을 누르거나 1 2 3 · 궤도 우클릭", small);
             GUILayout.Space(4);
         }
 
@@ -486,6 +538,20 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(cx - 200, y, 220, 26), k, labelDim);
                 GUI.Label(new Rect(cx - 200, y, 400, 26), v, cost);
                 y += 30;
+            }
+            // 지난 판들 — 엔딩이 셋이라 「한 번 더」가 여기서 나온다
+            var hist = OrbitGame.History();
+            if (hist.Length > 1)
+            {
+                GUI.Label(new Rect(cx - 200, y + 6, 400, 20), "지난 판", head);
+                for (int i = 1; i < hist.Length; i++)
+                {
+                    var f = hist[i].Split('|');
+                    if (f.Length < 4) continue;
+                    int sec = int.TryParse(f[1], out var v) ? v : 0;
+                    GUI.Label(new Rect(cx - 200, y + 6 + i * 18, 400, 18), f[0] + " · " + sec / 60 + "분 · 최고 " + f[2] + " · 안 만들어도 됐던 파편 " + f[3], small);
+                }
+                y += 6 + hist.Length * 18;
             }
             if (GUI.Button(new Rect(cx - 80, y + 30, 160, 40), "처음부터", mini)) game.Restart();
         }

@@ -40,8 +40,8 @@ namespace SalvageRun.Orbit.Sim
     [Serializable]
     public class Salvage
     {
-        public bool active;
-        public int orbit;
+        public bool active, big;
+        public int orbit, hp, hpMax;
         public double angle, life, value;
     }
 
@@ -91,6 +91,7 @@ namespace SalvageRun.Orbit.Sim
         public bool endingsOpen;
         public double endingCostMax, endingCostShip;
         public int claimed = -1;
+        public double blastCharge = 3;      // 직접 파쇄 충전 (09-22 사장님: 「수동의 요소를 조금만」)
     }
 
     public enum SimEventKind { News, Collision, Warn, Lock, Unlock, ContractDone, Salvaged, Act, Ending, DroneLost, StationHit }
@@ -127,7 +128,7 @@ namespace SalvageRun.Orbit.Sim
         const double BasePrice = 3;
         const double DroneBase = 30, DroneGrowth = 1.10;
         const double CaptureLoss = 0.03;          // 줍다 놓쳐 생기는 파편 — 피할 수 없다
-        public const double TravelTime = 20;      // 함대가 궤도를 옮기는 동안은 논다
+        public const double TravelTime = 10;      // 함대가 궤도를 옮기는 동안은 논다 — 20초는 답답했다 (09-22 「그대로 두되 편하게」)
         const double CleanFrac = 0.12;            // 저궤도가 이 밑으로 내려가면 「정화 완료」
         const double LaunchBase = 110, LaunchTau = 480;   // 🔴 2막 초반부터 비운 궤도가 2~3분에 다시 찬다 — 그래야 옮길 이유가 생긴다 (09-21 투어: 20분에 세 궤도가 다 휑했다)
         public const int SellUnlockAt = 5;
@@ -264,6 +265,7 @@ namespace SalvageRun.Orbit.Sim
             FlushNews();
 
             for (int i = 0; i < 3; i++) S.orbits[i].angle += Speed[i] * dt;
+            S.blastCharge = Math.Min(BlastMax, S.blastCharge + dt / BlastRecharge);
             if (S.credits > S.peak) S.peak = S.credits;
         }
 
@@ -643,20 +645,83 @@ namespace SalvageRun.Orbit.Sim
             v.active = true;
             v.orbit = open[(int)(Rand() * open.Count) % open.Count];
             v.angle = Rand() * Math.PI * 2;
-            v.life = 25;
-            v.value = Math.Ceiling(Math.Max(60, Math.Max(IncomeRate, CollectIncome) * 30));
+            // 2막부터는 여러 번 두드려야 하는 큰 우주선 잔해도 나온다
+            v.big = S.act >= 2 && Rand() < 0.4;
+            v.hpMax = v.hp = v.big ? 10 : (S.act >= 2 ? 5 : 3);
+            v.life = v.big ? 35 : 28;
+            v.value = Math.Ceiling(Math.Max(60, Math.Max(IncomeRate, CollectIncome) * (v.big ? 90 : 30)));
         }
 
-        public void ClaimSalvage()
+        /// <summary>
+        /// 큰 잔해를 한 번 두드린다. 두드릴 때마다 조각값이 들어오고 마지막 한 방에 나머지 절반이 한꺼번에 들어온다.
+        /// 돌려주는 값 = 이번에 번 크레딧. 부서졌으면 broke = true.
+        /// </summary>
+        public double HitSalvage(out bool broke)
         {
+            broke = false;
             var v = S.salvage;
-            if (!v.active) return;
-            Earn(v.value);
+            if (!v.active || Finished) return 0;
+            if (v.hpMax <= 0) v.hpMax = v.hp = 1;          // 옛 저장
+            double chunk = Math.Ceiling(v.value * 0.5 / v.hpMax);
+            Earn(chunk);
+            v.hp--;
+            if (v.hp > 0) return chunk;
+            double fin = Math.Ceiling(v.value * 0.5);
+            Earn(fin);
+            broke = true;
             S.salvaged++;
             v.active = false;
             S.salvageTimer = 35 + Rand() * 25;
             Push(SimEventKind.Salvaged, v.orbit);
             if (S.act < 3) Fire("salv1", "대형 잔해 통째 인양 — 민간 업체 최초", true);
+            return chunk + fin;
+        }
+
+        /// <summary>봇용 — 부서질 때까지 두드린다.</summary>
+        public void ClaimSalvage()
+        {
+            int guard = 0;
+            while (S.salvage.active && guard++ < 50) HitSalvage(out _);
+        }
+
+        // ─────────────────────────────────────── 직접 파쇄 — 누르면 그 자리가 터진다 (09-22)
+
+        public int BlastMax => Has("charges") ? 5 : 3;
+        public double BlastRecharge => Has("charges") ? 2 : 3;
+
+        /// <summary>한 방의 크기 — 지금 함대가 1.5초 동안 줍는 양. 그래서 처음부터 끝까지 누를 값어치가 있다.</summary>
+        public double BlastPower
+        {
+            get
+            {
+                double fleet = 0;
+                for (int i = 0; i < 3; i++) fleet += Rate(i);
+                double p = Math.Max(1, fleet * 1.5);   // 2.5 는 부지런히 누르면 1막이 6분으로 줄었다 (09-22 봇)
+                if (Has("chainblast")) p *= 3;
+                if (S.act >= 3) p *= 2;
+                return Math.Ceiling(p);
+            }
+        }
+
+        /// <summary>드론을 사기 전엔 충전 없이 한 번에 하나씩 줍는다 (첫 60초 그대로).</summary>
+        public bool BlastUsesCharge => S.bought > 0;
+
+        public double Blast(int orbit)
+        {
+            var o = S.orbits[orbit];
+            if (!o.open || o.locked || o.D < 1 || Finished) return 0;
+            if (BlastUsesCharge)
+            {
+                if (S.blastCharge < 1) return 0;
+                S.blastCharge -= 1;
+            }
+            double amt = Math.Min(o.D, BlastPower);
+            o.D -= amt;
+            S.manual++;
+            Gain(amt, orbit);
+            double loss = amt * CaptureLoss;
+            o.D += loss; S.made += loss;
+            return amt;
         }
 
         // ─────────────────────────────────────── 자동화
@@ -777,6 +842,7 @@ namespace SalvageRun.Orbit.Sim
             U("scanner", "궤도 스캐너", "종류별로 골라 판다 · 값 ×1.5", 2400, s => s.Has("autosell"));
             U("wreck", "회로 회수", "죽은 위성이 가끔 뜬다 — 눌러서 통째로 인양 · 값 ×1.5", 5000, s => s.Has("scanner"));
             U("manager", "관리자 고용", "드론을 알아서 산다", 9000, s => s.Has("tow"));
+            U("charges", "파쇄 장약", "직접 파쇄 충전 5칸 · 더 빨리 찬다", 700, s => s.S.bought >= 3);
             U("board", "계약 게시판", "계약이 들어온다", 16000, s => s.Has("manager"));
             U("salvager", "대형 인양선", "드론 효율 ×2", 30000, s => s.Has("board"));
 
@@ -786,6 +852,7 @@ namespace SalvageRun.Orbit.Sim
             U("launch", "발사 대행", "위성 발사를 대신 해준다 · 계약에 발사가 섞인다", 80000, s => s.Has("meo"),
               s => s.Fire("launch", "발사 대행 수주 — 업계 진출", true));
             U("recycle", "재활용 공장", "값 ×2", 150000, s => s.Has("meo"));
+            U("chainblast", "연쇄 기폭", "직접 파쇄 한 방 ×3 · 터지면 옆으로 번진다", 120000, s => s.Has("meo"));
             U("grade2", "드론 등급 2", "효율 ×2", 300000, s => s.Has("recycle"));
             U("geo", "정지궤도 진출", "제일 값비싼 궤도 · 값 ×3", 500000, s => s.Has("grade2"),
               s => s.S.orbits[2].open = true);

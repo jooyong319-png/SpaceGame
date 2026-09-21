@@ -67,6 +67,10 @@ namespace SalvageRun.Orbit
         Sprite[] debris;
         Dot hover, blinkTarget;
         bool hoverSalvage;
+        int hoverBand = -1;
+        float salvageKick;
+        SpriteRenderer blastCursor;
+        Sprite bigWreckSprite;
         float t, saveTimer;
         bool restarting;
 
@@ -88,9 +92,9 @@ namespace SalvageRun.Orbit
 
             disc = MakeRing(128, 0f);
             thinRing = MakeRing(96, 0.86f);
-            debris = new[] { PixelArt.Debris(10, 1), PixelArt.Debris(10, 2), PixelArt.Debris(10, 3), PixelArt.Debris(10, 4) };
-            droneSprite = PixelArt.Cleaner(16);
-            satSprite = PixelArt.Satellite(18, 3);
+            debris = OrbitArt.Debris();          // 옛 게임 그림 대신 이 게임 전용 (09-22)
+            droneSprite = OrbitArt.Drone();
+            satSprite = OrbitArt.DeadSat();
 
             BuildStars(260);
             fx = gameObject.AddComponent<OrbitFx>();
@@ -112,6 +116,10 @@ namespace SalvageRun.Orbit
             salvageHalo.transform.SetParent(transform);
             salvageView.transform.SetParent(transform);
             salvageView.enabled = false;
+            bigWreckSprite = OrbitArt.BigWreck();
+            blastCursor = MakeSprite("조준", thinRing, earthPos, 1.2f, Color.clear, 26);
+            blastCursor.transform.SetParent(transform);
+            blastCursor.enabled = false;
 
             hud = gameObject.AddComponent<OrbitHud>();
             hud.game = this;
@@ -173,6 +181,24 @@ namespace SalvageRun.Orbit
             }
             sim = new OrbitSim(s);
         }
+
+        bool recorded;
+        const string HistoryKey = "orbit.history";
+
+        /// <summary>엔딩 기록 — 최근 다섯 판. 「처음부터」를 눌러도 안 사라진다.</summary>
+        void Record()
+        {
+            var S = sim.S;
+            string line = OrbitSim.EndingTitle(S.ending) + "|" + (int)S.t + "|" + KNum.Fmt(S.peak) + "|" + KNum.Fmt(S.avoidable);
+            var all = new System.Collections.Generic.List<string>(PlayerPrefs.GetString(HistoryKey, "").Split(';'));
+            all.RemoveAll(string.IsNullOrEmpty);
+            all.Insert(0, line);
+            if (all.Count > 5) all.RemoveRange(5, all.Count - 5);
+            PlayerPrefs.SetString(HistoryKey, string.Join(";", all));
+            PlayerPrefs.Save();
+        }
+
+        public static string[] History() => PlayerPrefs.GetString(HistoryKey, "").Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries);
 
         public void Save()
         {
@@ -242,6 +268,8 @@ namespace SalvageRun.Orbit
             JuiceFromSim(dt);
             fx.Tick(Time.deltaTime, dt);
 
+            if (sim.Finished && !recorded) { recorded = true; Record(); }
+
             saveTimer += Time.unscaledDeltaTime;
             if (saveTimer > 5f) { saveTimer = 0f; Save(); }
         }
@@ -270,10 +298,9 @@ namespace SalvageRun.Orbit
                     case SimEventKind.Salvaged:
                     {
                         var at = Orbit(e.orbit, (float)sim.S.salvage.angle);
-                        fx.BigBurst(at, new Color(1f, 0.85f, 0.5f), 26, 4f, 1.4f);
-                        fx.Pop(at, "+" + KNum.Fmt(sim.S.salvage.value), new Color(1f, 0.85f, 0.4f), 22f);
-                        fx.Coins(at, 8);
-                        lastEarned += sim.S.salvage.value;     // 아래 일반 「+금액」과 겹쳐 두 번 뜨지 않게
+                        bool big = sim.S.salvage.big;
+                        fx.BigBurst(at, new Color(1f, 0.85f, 0.5f), big ? 50 : 26, big ? 5f : 4f, big ? 2.2f : 1.4f);
+                        fx.Coins(at, big ? 14 : 8);
                         break;
                     }
                     case SimEventKind.Unlock:
@@ -386,8 +413,8 @@ namespace SalvageRun.Orbit
             for (int b = 0; b < 3; b++)
             {
                 var o = sim.S.orbits[b];
-                Color baseCol = o.open ? new Color(0.70f, 0.72f, 0.78f) : new Color(0.45f, 0.47f, 0.52f, 0.5f);
-                if (o.claimed) baseCol = new Color(0.80f, 0.74f, 0.62f);
+                Color baseCol = o.open ? Color.white : new Color(0.6f, 0.62f, 0.68f, 0.5f);   // 색은 그림이 갖는다 — 물들이지 않는다
+                if (o.claimed) baseCol = new Color(1f, 0.9f, 0.75f);
                 foreach (var d in dots[b])
                 {
                     d.angle += d.speed * dt;
@@ -395,7 +422,7 @@ namespace SalvageRun.Orbit
                     d.t.position = DotPos(d);
                     Color c = baseCol;
                     float s = 1f;
-                    if (d == hover) { c = Color.white; s = 1.5f; }
+                    if (d == hover) { c = new Color(1f, 1f, 0.8f); s = 1.7f; }
                     if (d == blinkTarget)
                     {
                         // 첫 과녁 — 색이 아니라 **움직임**으로 가리킨다
@@ -420,7 +447,7 @@ namespace SalvageRun.Orbit
                 var list = droneViews[b];
                 while (list.Count < n)
                 {
-                    var sr = MakeSprite("드론", droneSprite, earthPos, 0.16f, new Color(0.95f, 0.80f, 0.36f), 20);   // 0.34 는 목걸이처럼 띠를 덮었다 (09-21)
+                    var sr = MakeSprite("드론", droneSprite, earthPos, 0.27f, Color.white, 20);   // 0.2 는 알록달록한 쓰레기 사이에 묻혔다   // 0.34 는 목걸이처럼 띠를 덮었다 (09-21)
                     sr.transform.SetParent(transform);
                     list.Add(sr);
                 }
@@ -433,7 +460,7 @@ namespace SalvageRun.Orbit
                     float a = t * (float)OrbitSim.Speed[b] * (1.4f + 0.4f * jit) + i * (Mathf.PI * 2f / n) + jit;
                     float rr = Mathf.Sin(t * 0.9f + i * 1.7f) * BandW[b] * 0.6f;
                     list[i].transform.position = Orbit(b, a, rr);
-                    list[i].transform.rotation = Quaternion.Euler(0, 0, a * Mathf.Rad2Deg + 180f);
+                    list[i].transform.rotation = Quaternion.Euler(0, 0, a * Mathf.Rad2Deg + 90f);   // 그림이 오른쪽을 본다 → 도는 방향으로
                 }
             }
         }
@@ -444,7 +471,7 @@ namespace SalvageRun.Orbit
             foreach (var tr in sim.S.transit) need += Mathf.Min(tr.count, 10);
             while (transitViews.Count < need)
             {
-                var sr = MakeSprite("이동 중", droneSprite, earthPos, 0.18f, new Color(0.95f, 0.80f, 0.36f, 0.7f), 20);
+                var sr = MakeSprite("이동 중", droneSprite, earthPos, 0.2f, new Color(1f, 1f, 1f, 0.8f), 20);
                 sr.transform.SetParent(transform);
                 transitViews.Add(sr);
             }
@@ -474,16 +501,20 @@ namespace SalvageRun.Orbit
             salvageView.enabled = v.active;
             salvageHalo.enabled = v.active;
             if (!v.active) return;
-            salvageView.transform.position = Orbit(v.orbit, (float)v.angle);
-            salvageView.transform.rotation = Quaternion.Euler(0, 0, t * 25f);
+            salvageKick = Mathf.MoveTowards(salvageKick, 0f, Time.deltaTime);
+            var sprite = v.big ? bigWreckSprite : satSprite;
+            if (salvageView.sprite != sprite) salvageView.sprite = sprite;
+            float baseSize = v.big ? 1.3f : 0.8f;
+            salvageView.transform.position = Orbit(v.orbit, (float)v.angle) + (Vector3)(Random.insideUnitCircle * salvageKick * 0.3f);
+            salvageView.transform.rotation = Quaternion.Euler(0, 0, t * (v.big ? 8f : 25f));
             float blink = v.life < 5 ? (Mathf.Sin(t * 12f) > 0 ? 1f : 0.35f) : 1f;
             float glow = hoverSalvage ? 1f : 0.85f + 0.15f * Mathf.Sin(t * 3f);
             salvageView.color = new Color(1f, 0.95f, 0.85f, blink * glow);
-            salvageView.transform.localScale = Vector3.one * (hoverSalvage ? 1.2f : 1f) * (0.8f / Mathf.Max(0.01f, satSprite.bounds.size.x));
+            salvageView.transform.localScale = Vector3.one * (hoverSalvage ? 1.15f : 1f) * (1f + salvageKick) * (baseSize / Mathf.Max(0.01f, sprite.bounds.size.x));
             // 누를 수 있는 것은 둘레가 숨 쉰다 — 글 없이 「이건 누른다」를 말한다
             float br = 0.5f + 0.5f * Mathf.Sin(t * 3f);
             salvageHalo.transform.position = salvageView.transform.position;
-            salvageHalo.transform.localScale = Vector3.one * (1.0f + 0.25f * br) / Mathf.Max(0.01f, thinRing.bounds.size.x);
+            salvageHalo.transform.localScale = Vector3.one * (baseSize + 0.3f + 0.25f * br) / Mathf.Max(0.01f, thinRing.bounds.size.x);
             salvageHalo.color = new Color(1f, 0.85f, 0.5f, (hoverSalvage ? 0.9f : 0.35f + 0.3f * br) * blink);
         }
 
@@ -611,6 +642,18 @@ namespace SalvageRun.Orbit
         {
             hover = null;
             hoverSalvage = false;
+            hoverBand = -1;
+            blastCursor.enabled = false;
+
+            // 숫자키 1 2 3 — 함대를 그 궤도로 (09-22 「그대로 두되 편하게」)
+            var kb = Keyboard.current;
+            if (kb != null && !sim.Finished)
+            {
+                if (kb.digit1Key.wasPressedThisFrame) MoveFleet(0);
+                if (kb.digit2Key.wasPressedThisFrame) MoveFleet(1);
+                if (kb.digit3Key.wasPressedThisFrame) MoveFleet(2);
+            }
+
             var mouse = Mouse.current;
             if (mouse == null || sim.Finished || hud.BlocksWorld(mouse.position.ReadValue())) return;
 
@@ -619,15 +662,21 @@ namespace SalvageRun.Orbit
             w.z = 0f;
 
             var v = sim.S.salvage;
-            if (v.active && Vector2.Distance(Orbit(v.orbit, (float)v.angle), w) < 0.6f) hoverSalvage = true;
+            float grab = v.big ? 0.8f : 0.6f;
+            if (v.active && Vector2.Distance(Orbit(v.orbit, (float)v.angle), w) < grab) hoverSalvage = true;
             else
             {
-                float best = 0.3f;
+                float r = Vector2.Distance(w, earthPos);
                 for (int b = 0; b < 3; b++)
                 {
                     var o = sim.S.orbits[b];
                     if (!o.open || o.locked) continue;
-                    foreach (var d in dots[b])
+                    if (Mathf.Abs(r - BandR[b]) <= BandW[b] + 0.3f) { hoverBand = b; break; }
+                }
+                if (hoverBand >= 0)
+                {
+                    float best = 0.3f;
+                    foreach (var d in dots[hoverBand])
                     {
                         float dist = Vector2.Distance(d.t.position, w);
                         if (dist < best) { best = dist; hover = d; }
@@ -635,21 +684,101 @@ namespace SalvageRun.Orbit
                 }
             }
 
-            if (!mouse.leftButton.wasPressedThisFrame) return;
-            if (hoverSalvage) { sim.ClaimSalvage(); return; }
-            if (hover == null) return;
+            // 조준 원 — 드론을 산 뒤엔 누르는 게 「폭발」이 된다. 충전이 없으면 회색
+            if (hoverBand >= 0 && sim.BlastUsesCharge)
+            {
+                bool ready = sim.S.blastCharge >= 1;
+                blastCursor.enabled = true;
+                blastCursor.transform.position = w;
+                float pulse = ready ? 1f + 0.08f * Mathf.Sin(t * 8f) : 0.8f;
+                blastCursor.transform.localScale = Vector3.one * 1.2f * pulse / Mathf.Max(0.01f, thinRing.bounds.size.x);
+                blastCursor.color = ready ? new Color(1f, 0.75f, 0.35f, 0.9f) : new Color(0.6f, 0.62f, 0.68f, 0.5f);
+            }
 
-            // 점은 대표일 뿐이다 — 하나를 주워도 D 는 1 줄 뿐이라 띠는 곧 다시 채워진다.
-            // 🔴 그게 「34,000개? 평생 걸리겠는데」다. 드론을 원하게 만든다
-            var d0 = hover;
-            if (!sim.Pick(d0.band)) return;
-            fx.BigBurst(d0.t.position, new Color(0.9f, 0.92f, 1f), 8, 2.2f, 0.5f);
-            fx.Pop(d0.t.position, "+1", Color.white, 16f);
-            var ghost = MakeSprite("회수", d0.sr.sprite, d0.t.position, 0f, Color.white, 15);
-            ghost.transform.localScale = d0.t.localScale;
-            ghost.transform.SetParent(transform);
-            fxList.Add(new Fx { sr = ghost, from = d0.t.position, kind = 0, life = 0.6f });
-            FreeDot(d0);
+            if (mouse.rightButton.wasPressedThisFrame && hoverBand >= 0) { MoveFleet(hoverBand); return; }
+            if (!mouse.leftButton.wasPressedThisFrame) return;
+            if (hoverSalvage) { HitSalvage(); return; }
+            if (hoverBand < 0) return;
+            DoBlast(hoverBand, hover != null && !sim.BlastUsesCharge ? hover.t.position : w);
+        }
+
+        void MoveFleet(int b)
+        {
+            if (!sim.Has("meo")) return;
+            var o = sim.S.orbits[b];
+            if (!o.open || o.locked) return;
+            sim.Move(b, false);
+            fx.Pop(Orbit(b, Mathf.PI * 0.5f), "함대 → " + OrbitSim.Names[b], new Color(0.95f, 0.8f, 0.4f), 17f);
+        }
+
+        /// <summary>🔴 직접 파쇄 — 누른 자리가 터지며 파편을 한꺼번에 갈아버린다 (09-22 사장님 「수동의 요소」).</summary>
+        void DoBlast(int band, Vector3 at)
+        {
+            bool hand = !sim.BlastUsesCharge;      // 드론 전 — 한 번에 하나씩 줍는다
+            double price = sim.Price(band);
+            double amt = sim.Blast(band);
+            if (amt <= 0)
+            {
+                if (!hand) fx.Pop(at, "충전 중", new Color(0.6f, 0.62f, 0.68f), 14f);
+                return;
+            }
+
+            if (hand && hover != null)
+            {
+                var d0 = hover;
+                fx.BigBurst(d0.t.position, new Color(0.9f, 0.92f, 1f), 8, 2.2f, 0.5f);
+                fx.Pop(d0.t.position, "+1", Color.white, 16f);
+                var ghost = MakeSprite("회수", d0.sr.sprite, d0.t.position, 0f, Color.white, 15);
+                ghost.transform.localScale = d0.t.localScale;
+                ghost.transform.SetParent(transform);
+                fxList.Add(new Fx { sr = ghost, from = d0.t.position, kind = 0, life = 0.6f });
+                FreeDot(d0);
+                return;
+            }
+
+            // 크기는 한 방의 양을 따라간다
+            float size = Mathf.Clamp(Mathf.Log((float)amt + 1f, 2f), 1f, 14f);
+            fx.BigBurst(at, new Color(1f, 0.7f, 0.35f), Mathf.RoundToInt(10 + size * 3), 2.5f + size * 0.25f, 0.6f + size * 0.08f);
+            fx.shake = Mathf.Max(fx.shake, 0.04f);
+            // 근처 점이 갈려서 사라진다
+            foreach (var d in dots[band])
+                if (Vector2.Distance(d.t.position, at) < 0.8f) { d.fade = 0f; d.angle += Random.Range(1f, 5f); }
+            if (sim.Has("chainblast") || sim.S.act >= 3)
+            {
+                float a = Mathf.Atan2(at.y - earthPos.y, at.x - earthPos.x);
+                fx.Domino(band, a + 0.12f, 4, 0.12f, 0.05f, 0);
+                fx.Domino(band, a - 0.12f, 4, -0.12f, 0.05f, 0);
+            }
+            if (sim.Has("autosell"))
+            {
+                double got = amt * price;
+                lastEarned += got;                 // 아래 일반 「+금액」과 두 번 뜨지 않게
+                fx.Pop(at, "+" + KNum.Fmt(got), new Color(1f, 0.85f, 0.4f), 18f + size);
+                fx.Coins(at, Mathf.Clamp(Mathf.RoundToInt(size / 2), 1, 6));
+            }
+            else fx.Pop(at, "+" + KNum.Fmt(amt) + "개", Color.white, 17f);
+        }
+
+        /// <summary>큰 잔해 — 두드릴 때마다 조각과 돈이 튀고, 마지막 한 방에 크게 터진다.</summary>
+        void HitSalvage()
+        {
+            var v = sim.S.salvage;
+            var at = Orbit(v.orbit, (float)v.angle);
+            double got = sim.HitSalvage(out bool broke);
+            if (got <= 0) return;
+            lastEarned += got;
+            salvageKick = 0.25f;
+            if (!broke)
+            {
+                fx.BigBurst(at, new Color(1f, 0.85f, 0.55f), 12, 2.8f, 0.6f);
+                fx.Pop(at, "+" + KNum.Fmt(got), new Color(1f, 0.85f, 0.4f), 18f);
+                fx.Coins(at, 2);
+            }
+            else
+            {
+                fx.Pop(at, "+" + KNum.Fmt(got), new Color(1f, 0.85f, 0.4f), 28f);
+                fx.shake = Mathf.Max(fx.shake, v.big ? 0.2f : 0.1f);
+            }
         }
 
         // ───────────────────────────────── 연출

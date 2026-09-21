@@ -87,7 +87,7 @@ namespace SalvageRun.Orbit
         {
             game = g; cam = c; earthPos = earthAt;
             dot = disc; ring = thinRing; droneSprite = drone;
-            crossSprite = MakeCross();
+            crossSprite = OrbitArt.FriendlySat();
 
             // 🔴 지구 — 파란 원이 아니라 대륙이 도는 행성. 세상이 변하는 걸 보여줄 바탕이다
             atmo = Make("대기", MakeGlow(128), earthPos, 3.0f, new Color(0.35f, 0.6f, 1f, 0.35f), 4);
@@ -195,7 +195,7 @@ namespace SalvageRun.Orbit
         public void StationPass()
         {
             if (station == null)
-                station = Make("우주정거장", PixelArt.Satellite(40, 21), earthPos, 1.5f, new Color(0.9f, 0.93f, 1f), 30);
+                station = Make("우주정거장", OrbitArt.Station(), earthPos, 1.7f, Color.white, 30);
             station.enabled = true;
             stationAngle = Random.Range(0f, 6.28f);
             stationT = 0f;
@@ -305,12 +305,9 @@ namespace SalvageRun.Orbit
             foreach (var d in Defs)
             {
                 if (!game.sim.Has(d.id) || structures.Exists(s => s.id == d.id)) continue;
-                Sprite sp = d.kind == 0 ? PixelArt.Satellite(d.px + 6, d.seed)   // Station 은 작으면 색 네모로 뭉개졌다 (09-22 캡처)
-                          : d.kind == 1 ? PixelArt.Satellite(d.px, d.seed)
-                          : d.kind == 2 ? PixelArt.Vessel(d.px, d.seed)
-                          : PixelArt.Hulk(d.px, d.seed);
+                Sprite sp = OrbitArt.Structure(d.id);
                 var st = new Structure { id = d.id, angle = Random.Range(0f, 6.28f), radius = d.radius, speed = d.speed, spin = Random.Range(-20f, 20f) };
-                st.sr = Make("시설 " + d.id, sp, earthPos, d.size, d.c, 19);
+                st.sr = Make("시설 " + d.id, sp, earthPos, d.size * 1.15f, Color.white, 19);
                 structures.Add(st);
                 if (announce)
                 {
@@ -368,7 +365,7 @@ namespace SalvageRun.Orbit
                 s.sr.transform.position = Pos(s.angle, s.radius);
                 s.blink += dt;
                 float a = 0.55f + 0.45f * Mathf.Max(0f, Mathf.Sin(s.blink * 3f));
-                s.sr.color = new Color(0.75f, 0.9f, 1f, a);
+                s.sr.color = new Color(1f, 1f, 1f, a);
             }
         }
 
@@ -556,7 +553,7 @@ namespace SalvageRun.Orbit
         {
             float r = (at - earthPos).magnitude;
             float a = Mathf.Atan2(at.y - earthPos.y, at.x - earthPos.x);
-            var sr = Make("위성", crossSprite, at, 0.14f, new Color(0.75f, 0.9f, 1f), 9);
+            var sr = Make("위성", crossSprite, at, 0.2f, Color.white, 9);
             sats.Add(new Sat { sr = sr, angle = a, radius = r, speed = 0.4f / Mathf.Max(1f, r * 0.6f), blink = Random.value * 6f });
             Ring(at, 0.3f, new Color(0.7f, 0.9f, 1f), 0.35f);
         }
