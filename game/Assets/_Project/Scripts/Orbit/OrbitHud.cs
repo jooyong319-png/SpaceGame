@@ -166,7 +166,7 @@ namespace SalvageRun.Orbit
             News(left);
             BannerDraw(left);
             if (PanelVisible) Panel();
-            if (game.timeScale > 1f) GUI.Label(new Rect(12, RefH - 64, 240, 20), "<color=#f0c070>테스트 속도 ×" + game.timeScale + "</color>  (F2)", small);
+            if (game.timeScale > 1f) GUI.Label(new Rect((PanelVisible ? vw - PanelW : vw) - 150, 34, 140, 18), "<color=#f0c070>테스트 속도 ×" + game.timeScale + "</color> (F2)", costDim);   // 왼쪽 아래는 충전 칸 · 고정 뉴스와 겹쳤다 (루프 1)
             if (sim.Finished) EndScreen();
             else if (MenuOpen) Menu();
         }
@@ -240,6 +240,7 @@ namespace SalvageRun.Orbit
             Color col = d < 0.35 ? new Color(0.5f, 0.85f, 0.6f) : d < 0.6 ? new Color(0.95f, 0.8f, 0.4f) : new Color(0.95f, 0.4f, 0.35f);
             bool blink = d >= 0.8f && Mathf.Sin(Time.time * 8f) > 0f;
             float w = 200f, x = left / 2f - w / 2f, y = 88f;   // 60 은 튀는 숫자 · 시가총액과 겹쳤다
+            GUI.DrawTexture(new Rect(x - 10, y - 24, w + 20, 38), texDim);   // 튀는 숫자에 가렸다 (루프 1)
             GUI.Label(new Rect(x, y - 20, 120, 18), "궤도 위험도", head);
             var ws = new GUIStyle(head) { alignment = TextAnchor.UpperRight };
             ws.normal.textColor = col;
@@ -256,6 +257,7 @@ namespace SalvageRun.Orbit
         {
             if (!sim.BlastUsesCharge || sim.Finished) return;
             float y = RefH - 34f - 24f - (string.IsNullOrEmpty(sim.S.pinned) ? 0f : 26f);
+            GUI.DrawTexture(new Rect(6, y - 2, 76 + sim.BlastMax * 16 + 250, 20), texDim);   // 3막 하얀 궤도 위에서 안 읽혔다 (루프 2)
             GUI.Label(new Rect(14, y, 90, 20), "직접 파쇄", head);
             double c = sim.S.blastCharge;
             for (int i = 0; i < sim.BlastMax; i++)
@@ -453,8 +455,8 @@ namespace SalvageRun.Orbit
                 }
                 else
                 {
-                    GUI.Label(new Rect(r.x + 74, r.y + 11, 50, 20), o.claimed ? "<color=#d9c9a0>채굴권</color>" : DensityWord(i), small);
-                    GUI.Label(new Rect(r.x + 100, r.y + 9, w - 212, 20), o.drones + "대", cost);
+                    GUI.Label(new Rect(r.x + 90, r.y + 11, 40, 20), o.claimed ? "<color=#d9c9a0>채굴권</color>" : DensityWord(i), small);
+                    GUI.Label(new Rect(r.x + 124, r.y + 9, w - 230, 20), o.drones + "대", cost);
                     if (GUI.Button(new Rect(r.x + w - 102, r.y + 5, 46, 24), "전부", mini)) S_Move(i, false);
                     if (GUI.Button(new Rect(r.x + w - 52, r.y + 5, 46, 24), "절반", mini)) S_Move(i, true);
                     if (GUI.Button(new Rect(r.x, r.y, w - 104, r.height), GUIContent.none, GUIStyle.none)) S_Move(i, false);   // 줄 어디를 눌러도 전부
@@ -463,7 +465,7 @@ namespace SalvageRun.Orbit
             }
             int moving = sim.InTransit;
             if (moving > 0) GUILayout.Label($"이동 중 {moving}대 — 도착까지 줍지 못한다", small);
-            else GUILayout.Label("★ 지금 제일 값진 궤도 · 줄을 누르거나 1 2 3 · 궤도 우클릭", small);
+            else GUILayout.Label("★ 값진 궤도 · 줄 누르기 · 1 2 3 · 우클릭", small);
             GUILayout.Space(4);
         }
 
