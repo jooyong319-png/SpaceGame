@@ -146,7 +146,8 @@ namespace SalvageRun.Orbit
             var b = new Band { name = name, radius = r, width = w, speed = speed, D = d, D0 = d, open = open };
             float outer = r + w;
             b.ring = MakeSprite(name + " 띠", MakeRing(256, (r - w) / outer), earthPos, outer * 2f,
-                                new Color(1f, 1f, 1f, open ? 0.07f : 0.03f), 1);
+                                new Color(1f, 1f, 1f, open ? 0.025f : 0.012f), 1);
+            // ⚠️ 0.07/0.03 은 화면에서 트랙처럼 진했다 (09-21 첫 캡처). 띠는 파편이 그려야지 바탕이 그리면 안 된다
             b.ring.transform.SetParent(transform);
             bands.Add(b);
             SyncDots(b, true);
