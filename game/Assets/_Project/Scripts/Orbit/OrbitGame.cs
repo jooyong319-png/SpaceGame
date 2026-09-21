@@ -146,8 +146,23 @@ namespace SalvageRun.Orbit
 
         // ───────────────────────────────── 저장 — 이어하기만. 오프라인 수익은 없다 (wiki 1회차)
 
+        // ───────────────────────────────── 테스트 속도 (09-22 사장님: "게임 속도좀 늘려줘봐 · 테스트 해보게")
+
+        static readonly float[] Speeds = { 1f, 3f, 10f };
+        const string SpeedKey = "orbit.speed";
+
+        public void CycleSpeed()
+        {
+            int i = System.Array.IndexOf(Speeds, timeScale);
+            timeScale = Speeds[(i + 1) % Speeds.Length];
+            PlayerPrefs.SetFloat(SpeedKey, timeScale);
+            PlayerPrefs.Save();
+        }
+
         void Load()
         {
+            timeScale = PlayerPrefs.GetFloat(SpeedKey, 1f);
+            if (System.Array.IndexOf(Speeds, timeScale) < 0) timeScale = 1f;
             var s = OrbitSim.NewState();
             string json = PlayerPrefs.GetString(SaveKey, "");
             if (!string.IsNullOrEmpty(json))
@@ -198,7 +213,7 @@ namespace SalvageRun.Orbit
             var kb = Keyboard.current;
             if (kb != null)
             {
-                if (kb.f2Key.wasPressedThisFrame) timeScale = timeScale > 1f ? 1f : 5f;
+                if (kb.f2Key.wasPressedThisFrame) CycleSpeed();
                 if (kb.escapeKey.wasPressedThisFrame) hud.ToggleMenu();
             }
 

@@ -164,7 +164,7 @@ namespace SalvageRun.Orbit
             News(left);
             BannerDraw(left);
             if (PanelVisible) Panel();
-            if (game.timeScale > 1f) GUI.Label(new Rect(12, RefH - 64, 200, 20), "개발용 ×5 (F2)", small);
+            if (game.timeScale > 1f) GUI.Label(new Rect(12, RefH - 64, 240, 20), "<color=#f0c070>테스트 속도 ×" + game.timeScale + "</color>  (F2)", small);
             if (sim.Finished) EndScreen();
             else if (MenuOpen) Menu();
         }
@@ -493,7 +493,7 @@ namespace SalvageRun.Orbit
         void Menu()
         {
             float cx = vw / 2f;
-            var r = new Rect(cx - 150, 180, 300, 200);
+            var r = new Rect(cx - 150, 170, 300, 210);
             GUI.DrawTexture(new Rect(0, 0, vw, RefH), texDim);
             GUI.DrawTexture(r, texCard);
             GUI.Label(new Rect(r.x, r.y + 16, r.width, 24), "멈춤", center);
@@ -502,7 +502,8 @@ namespace SalvageRun.Orbit
             {
                 if (confirmRestart) game.Restart(); else confirmRestart = true;
             }
-            GUI.Label(new Rect(r.x, r.y + 150, r.width, 20), "진행은 5초마다 저장된다 · Esc", small);
+            if (GUI.Button(new Rect(r.x + 50, r.y + 140, 200, 30), "속도 ×" + game.timeScale + "  (F2)", mini)) game.CycleSpeed();
+            GUI.Label(new Rect(r.x, r.y + 176, r.width, 20), "진행은 5초마다 저장된다 · Esc", small);
         }
     }
 }
