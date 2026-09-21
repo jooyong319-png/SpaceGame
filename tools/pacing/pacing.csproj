@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- 궤도 청소부 45분 흐름 재기. 게임 규칙은 복사하지 않고 Unity 쪽 Sim 폴더를 그대로 컴파일한다 -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <NoWarn>CS0414;CS0169</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../game/Assets/_Project/Scripts/Orbit/Sim/*.cs" />
+  </ItemGroup>
+</Project>

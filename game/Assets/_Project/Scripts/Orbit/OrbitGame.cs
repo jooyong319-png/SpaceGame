@@ -1,88 +1,67 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
 using SalvageRun.Run;
+using SalvageRun.Orbit.Sim;
 
 namespace SalvageRun.Orbit
 {
     /// <summary>
-    /// 🔴 **궤도 청소부 (rev15) — 1단계 그레이박스: 보는 화면 + 첫 60초.**
+    /// 🔴 **궤도 청소부 (rev15) — 보는 화면 + 저장.** 규칙은 전부 Sim/OrbitSim.cs 에 있다.
     ///
-    /// 설계 정본은 wiki/rev15-design.md. 이 파일은 그중 두 가지만 세운다:
-    ///   · 화면 — 지구 + 궤도 띠 셋 + 파편이 실제로 돈다. 🔴 숫자표가 되면 진다
-    ///   · 첫 60초 — 줍기 → 판매 → 드론. 🔴 UI 는 처음부터 있지 않다, 개념을 만날 때 생긴다
+    /// 이 파일은 규칙을 **다시 적지 않는다.** 시뮬이 말하는 D · 드론 · 봉쇄를 그림으로 옮길 뿐이다.
+    /// (같은 규칙을 두 곳에 두면 반드시 어긋난다 — Wiki_gm verification.md ⑥)
     ///
-    /// 조종은 없다. 누르는 건 파편(화면)과 오른쪽 패널뿐.
-    /// 입력은 OnGUI 이벤트로 받는다 — 프로젝트가 새 Input System 전용(activeInputHandler 1)이라
-    /// 레거시 Input 을 부르면 예외가 난다.
-    ///
-    /// ⚠️ 흰 네모 단계. 수치는 전부 「모양만」이고 손으로 돌려서 맞춘다.
+    /// 조종은 없다. 누르는 건 파편 · 죽은 위성(화면)과 오른쪽 패널(OrbitHud)뿐.
+    /// ⚠️ 흰 네모 단계. 그림은 전부 코드로 찍는다.
     /// </summary>
     public class OrbitGame : MonoBehaviour
     {
-        // ───────────────────────────────── 수치 (모양만)
-        const double PerDot = 100;          // 화면의 점 하나 = 파편 100개
-        const double SellPrice = 4;         // 회수 1개 = 크레딧 4
-        const double DroneBase = 30;        // 첫 드론 값 (0:35에 회색으로 보이고 1:00에 산다)
-        const double DroneGrowth = 1.15;
-        const double DroneRate = 0.5;       // 드론 1대가 D=처음값일 때 초당 줍는 개수
-        const int SellUnlockAt = 5;         // 회수 5개면 「판매」가 생긴다
+        public OrbitSim sim;
+        public OrbitHud hud;
+        public float timeScale = 1f;            // F2 — 개발용 ×5
+        public bool seenCollect;                // 첫 파편이 지구에 닿았다 → 「회수」가 생긴다
 
-        // ───────────────────────────────── 궤도
-        class Band
-        {
-            public string name;
-            public float radius, width, speed;
-            public double D, D0;
-            public bool open;
-            public SpriteRenderer ring;
-            public readonly List<Dot> dots = new List<Dot>();
-        }
+        const string SaveKey = "orbit.save.v1";
+        const float PerDot = 100f;              // 화면의 점 하나 = 파편 100개
+        const int MaxDots = 460;                // 띠 하나에 그리는 점 상한 — 넘치면 하얗게 덮는다
+        public static readonly float[] BandR = { 2.0f, 3.4f, 4.8f };
+        static readonly float[] BandW = { 0.34f, 0.30f, 0.26f };
+        public readonly Vector3 earthPos = new Vector3(-2.8f, 0f, 0f);
 
         class Dot
         {
             public Transform t;
             public SpriteRenderer sr;
             public float angle, rOff, speed, fade;
-            public Band band;
+            public int band;
         }
 
-        class Falling
+        class Fx
         {
-            public Transform t;
+            public SpriteRenderer sr;
             public Vector3 from;
-            public float time;
+            public float time, life;
+            public int kind;        // 0 끌려 내려감 · 1 섬광 · 2 꺼지는 드론
         }
 
-        readonly List<Band> bands = new List<Band>();
-        readonly List<Falling> falling = new List<Falling>();
-        readonly List<Transform> droneViews = new List<Transform>();
+        readonly List<Dot>[] dots = { new List<Dot>(), new List<Dot>(), new List<Dot>() };
         readonly Stack<Dot> pool = new Stack<Dot>();
+        readonly SpriteRenderer[] rings = new SpriteRenderer[3];
+        readonly SpriteRenderer[] hazes = new SpriteRenderer[3];
+        readonly List<SpriteRenderer>[] droneViews = { new List<SpriteRenderer>(), new List<SpriteRenderer>(), new List<SpriteRenderer>() };
+        readonly List<SpriteRenderer> transitViews = new List<SpriteRenderer>();
+        readonly List<Fx> fx = new List<Fx>();
+        SpriteRenderer salvageView, salvageHalo;
 
-        readonly Vector3 earthPos = new Vector3(-2.8f, 0f, 0f);
         Camera cam;
-        Sprite disc;
+        Sprite disc, thinRing, droneSprite, satSprite;
         Sprite[] debris;
-        Sprite droneSprite;
-
-        // ───────────────────────────────── 상태
-        double held;        // 회수했지만 아직 안 판 것
-        double collected;   // 누적 회수 (해금 판정용)
-        double credits;
-        int drones;
-        double droneCarry;
-        float droneEatTimer;
-
-        bool seenCollect, seenSell, seenDroneOffer, seenD;
-        Dot blinkTarget;
-        Dot hover;
-        Vector2 mouseGui;
-        float t;
-
-        GUIStyle label, big, button, buttonOff;
-        Font font;
-
-        const float PanelW = 280f;
+        Dot hover, blinkTarget;
+        bool hoverSalvage;
+        float t, saveTimer;
+        bool restarting;
 
         // ───────────────────────────────── 부팅
 
@@ -95,26 +74,41 @@ namespace SalvageRun.Orbit
 
         void Awake()
         {
+            Application.targetFrameRate = 60;
+            Load();
             SetupCamera();
             EnsureLight();
 
             disc = MakeRing(128, 0f);
-            debris = new[] { PixelArt.Debris(10, 1), PixelArt.Debris(10, 2),
-                             PixelArt.Debris(10, 3), PixelArt.Debris(10, 4) };
+            thinRing = MakeRing(96, 0.86f);
+            debris = new[] { PixelArt.Debris(10, 1), PixelArt.Debris(10, 2), PixelArt.Debris(10, 3), PixelArt.Debris(10, 4) };
             droneSprite = PixelArt.Cleaner(16);
+            satSprite = PixelArt.Satellite(18, 3);
 
             BuildStars(260);
-
-            var earth = MakeSprite("지구", disc, earthPos, 2.2f, new Color(0.28f, 0.52f, 0.86f), 5);
+            var earth = MakeSprite("지구", disc, earthPos, 2.2f, new Color(0.30f, 0.53f, 0.86f), 5);
             earth.transform.SetParent(transform);
 
-            // 시작 D 합계 34,000 — 🔴 지금 지구 궤도에서 실제로 추적되는 10cm 이상 파편 수와 비슷하다
-            AddBand("저궤도", 2.0f, 0.34f, 0.35f, 20000, true);
-            AddBand("중궤도", 3.4f, 0.30f, 0.20f, 9000, false);
-            AddBand("정지궤도", 4.8f, 0.26f, 0.12f, 5000, false);
+            for (int i = 0; i < 3; i++)
+            {
+                float outer = BandR[i] + BandW[i];
+                var ring = MakeRing(256, (BandR[i] - BandW[i]) / outer);
+                rings[i] = MakeSprite(OrbitSim.Names[i] + " 띠", ring, earthPos, outer * 2f, Color.clear, 1);
+                rings[i].transform.SetParent(transform);
+                hazes[i] = MakeSprite(OrbitSim.Names[i] + " 덮임", ring, earthPos, outer * 2f, Color.clear, 12);
+                hazes[i].transform.SetParent(transform);
+                SyncDots(i, true);
+            }
 
-            // 첫 과녁: 저궤도에서 하나가 혼자 깜빡인다 — 색이 아니라 **움직임**으로 가리킨다
-            blinkTarget = bands[0].dots[bands[0].dots.Count / 3];
+            salvageView = MakeSprite("죽은 위성", satSprite, earthPos, 0.8f, Color.white, 18);
+            salvageHalo = MakeSprite("죽은 위성 둘레", thinRing, earthPos, 1.2f, Color.clear, 17);
+            salvageHalo.transform.SetParent(transform);
+            salvageView.transform.SetParent(transform);
+            salvageView.enabled = false;
+
+            hud = gameObject.AddComponent<OrbitHud>();
+            hud.game = this;
+            seenCollect = sim.S.manual > 1 || sim.S.bought > 0;
         }
 
         void SetupCamera()
@@ -141,83 +135,154 @@ namespace SalvageRun.Orbit
             light.intensity = 1f;
         }
 
-        void AddBand(string name, float r, float w, float speed, double d, bool open)
+        // ───────────────────────────────── 저장 — 이어하기만. 오프라인 수익은 없다 (wiki 1회차)
+
+        void Load()
         {
-            var b = new Band { name = name, radius = r, width = w, speed = speed, D = d, D0 = d, open = open };
-            float outer = r + w;
-            b.ring = MakeSprite(name + " 띠", MakeRing(256, (r - w) / outer), earthPos, outer * 2f,
-                                new Color(1f, 1f, 1f, open ? 0.025f : 0.012f), 1);
-            // ⚠️ 0.07/0.03 은 화면에서 트랙처럼 진했다 (09-21 첫 캡처). 띠는 파편이 그려야지 바탕이 그리면 안 된다
-            b.ring.transform.SetParent(transform);
-            bands.Add(b);
-            SyncDots(b, true);
+            var s = OrbitSim.NewState();
+            string json = PlayerPrefs.GetString(SaveKey, "");
+            if (!string.IsNullOrEmpty(json))
+            {
+                // 🔴 FromJson 이 아니라 FromJsonOverwrite — 없는 필드가 0 이 되지 않게 (Wiki_gm unity.md)
+                try { JsonUtility.FromJsonOverwrite(json, s); }
+                catch { s = OrbitSim.NewState(); }
+            }
+            sim = new OrbitSim(s);
         }
+
+        public void Save()
+        {
+            if (sim == null) return;
+            PlayerPrefs.SetString(SaveKey, JsonUtility.ToJson(sim.S));
+            PlayerPrefs.Save();
+        }
+
+        public void Restart()
+        {
+            PlayerPrefs.DeleteKey(SaveKey);
+            PlayerPrefs.Save();
+            sim = null;
+            restarting = true;
+            new GameObject("== 궤도 청소부 ==").AddComponent<OrbitGame>();
+            Destroy(gameObject);
+        }
+
+        void OnApplicationPause(bool paused) { if (paused) Save(); }
+        void OnApplicationQuit() { Save(); }
 
         // ───────────────────────────────── 매 프레임
 
         void Update()
         {
-            float dt = Time.deltaTime;
-            t += dt;
-
-            // 드론 — 저궤도에서 줍는다. D 가 줄면 덜 줍는다 (1막이 끝날 때 수입이 뚝 끊기는 뿌리)
-            var leo = bands[0];
-            if (drones > 0 && leo.D > 0)
+            if (sim == null)
             {
-                droneCarry += drones * DroneRate * (leo.D / leo.D0) * dt;
-                while (droneCarry >= 1 && leo.D > 0)
+                // 에디터에서 Play 중에 스크립트가 다시 읽히면 시뮬이 비어 버린다 —
+                // 마지막 저장(5초마다)에서 스스로 다시 연다. (SlimeEscape 5f74234 와 같은 병)
+                if (!restarting)
                 {
-                    droneCarry -= 1;
-                    leo.D -= 1; held += 1; collected += 1;
+                    restarting = true;
+                    new GameObject("== 궤도 청소부 ==").AddComponent<OrbitGame>();
+                    Destroy(gameObject);
                 }
-                droneEatTimer -= dt;
-                if (droneEatTimer <= 0f) { droneEatTimer = 0.5f / Mathf.Max(1, drones); DroneEatVisual(); }
+                return;
+            }
+            var kb = Keyboard.current;
+            if (kb != null)
+            {
+                if (kb.f2Key.wasPressedThisFrame) timeScale = timeScale > 1f ? 1f : 5f;
+                if (kb.escapeKey.wasPressedThisFrame) hud.ToggleMenu();
             }
 
-            foreach (var b in bands)
+            float dt = hud.MenuOpen ? 0f : Time.deltaTime * timeScale;
+            t += Time.deltaTime;
+            int steps = Mathf.Max(1, Mathf.CeilToInt(dt / 0.1f));
+            for (int k = 0; k < steps; k++) sim.Tick(dt / steps);
+
+            ConsumeEvents();
+            AmbientCollisions(dt);
+
+            for (int i = 0; i < 3; i++) { DrawBand(i); SyncDots(i, false); }
+            MoveDots(dt);
+            DrawDrones();
+            DrawTransit();
+            DrawSalvage();
+            UpdateFx(Time.deltaTime);
+            UpdateHoverAndClick();
+
+            saveTimer += Time.unscaledDeltaTime;
+            if (saveTimer > 5f) { saveTimer = 0f; Save(); }
+        }
+
+        void ConsumeEvents()
+        {
+            while (sim.Events.Count > 0)
             {
-                SyncDots(b, false);
-                foreach (var d in b.dots)
+                var e = sim.Events.Dequeue();
+                switch (e.kind)
                 {
-                    d.angle += d.speed * dt;
-                    d.fade = Mathf.MoveTowards(d.fade, 1f, dt * 1.5f);
-                    d.t.position = DotPos(d);
-                    Color c = b.open ? new Color(0.70f, 0.72f, 0.78f) : new Color(0.45f, 0.47f, 0.52f, 0.55f);
-                    float s = 1f;
-                    if (d == hover && b.open) { c = Color.white; s = 1.5f; }
-                    if (d == blinkTarget && !seenCollect)
-                    {
-                        float k = 0.5f + 0.5f * Mathf.Sin(t * 5f);
-                        c = Color.Lerp(c, Color.white, k); s = 1f + 0.5f * k;
-                    }
-                    c.a *= d.fade;
-                    d.sr.color = c;
-                    d.t.localScale = Vector3.one * s * DotScale(d.sr.sprite);
+                    case SimEventKind.Collision:
+                        Flash(e.orbit, Random.Range(0f, Mathf.PI * 2f), 1.4f);
+                        break;
+                    case SimEventKind.DroneLost:
+                        // 🔴 숫자가 아니라 화면에서 점이 하나씩 꺼져야 한다 (wiki 4회차)
+                        foreach (var v in droneViews[e.orbit])
+                        {
+                            if (!v.enabled) continue;
+                            var ghost = MakeSprite("꺼지는 드론", droneSprite, v.transform.position, 0.20f, v.color, 21);
+                            ghost.transform.SetParent(transform);
+                            ghost.transform.rotation = v.transform.rotation;
+                            fx.Add(new Fx { sr = ghost, kind = 2, life = Random.Range(1.2f, 3.5f) });
+                        }
+                        break;
+                    case SimEventKind.Salvaged:
+                        Flash(e.orbit, (float)sim.S.salvage.angle, 2.2f);
+                        break;
                 }
+                hud.OnSimEvent(e);
             }
-
-            UpdateFalling(dt);
-            UpdateDroneViews();
-            UpdateHover();
         }
 
-        Vector3 DotPos(Dot d)
+        /// <summary>3막 — 아무도 안 눌렀는데 화면에서 뭔가 깨진다. D 가 높을수록 자주.</summary>
+        void AmbientCollisions(float dt)
         {
-            float r = d.band.radius + d.rOff;
-            return earthPos + new Vector3(Mathf.Cos(d.angle) * r, Mathf.Sin(d.angle) * r, 0f);
+            if (sim.S.act < 2 || dt <= 0f) return;
+            for (int i = 0; i < 3; i++)
+            {
+                var o = sim.S.orbits[i];
+                if (!o.open && sim.S.act < 3) continue;
+                float level = Mathf.Clamp01((float)(o.D / OrbitSim.LockAt[i]));
+                float rate = sim.S.act >= 3 ? level * 3f : level * 0.6f;
+                if (Random.value < rate * dt) Flash(i, Random.Range(0f, Mathf.PI * 2f), 1f);
+            }
         }
 
-        static float DotScale(Sprite s) => 0.16f / Mathf.Max(0.01f, s.bounds.size.x);
+        // ───────────────────────────────── 띠와 파편
 
-        /// <summary>화면의 점 개수를 D 에 맞춘다. 🔴 D 가 늘면 화면이 진짜로 지저분해진다.</summary>
-        void SyncDots(Band b, bool instant)
+        void DrawBand(int i)
         {
-            int target = Mathf.CeilToInt((float)(b.D / PerDot));
-            while (b.dots.Count < target) b.dots.Add(NewDot(b, instant));
-            while (b.dots.Count > target) FreeDot(b.dots[b.dots.Count - 1]);
+            var o = sim.S.orbits[i];
+            float pulse = 0.5f + 0.5f * Mathf.Sin(t * 4f);
+            // ⚠️ 선형 색공간이라 작은 알파가 화면에선 훨씬 밝다 — 0.02 가 트랙처럼 보였다 (09-21 캡처)
+            Color ring = new Color(1f, 1f, 1f, o.open ? 0.005f : 0.002f);
+            if (o.warned && !o.locked) ring = new Color(0.88f, 0.34f, 0.29f, 0.02f + 0.06f * pulse);   // 붉게 깜빡이기 시작한다
+            rings[i].color = ring;
+
+            // 점이 상한을 넘으면 개별 파편이 안 보일 만큼 하얗게 덮인다
+            float over = Mathf.Clamp01((float)((o.D - MaxDots * PerDot) / (OrbitSim.LockAt[i] * 0.6)));
+            float haze = o.locked ? 0.42f + 0.05f * Mathf.Sin(t * 1.3f + i) : over * 0.32f;
+            hazes[i].color = new Color(0.92f, 0.93f, 0.96f, haze);
         }
 
-        Dot NewDot(Band b, bool instant)
+        void SyncDots(int band, bool instant)
+        {
+            var o = sim.S.orbits[band];
+            int target = Mathf.Min(MaxDots, Mathf.CeilToInt((float)(o.D / PerDot)));
+            var list = dots[band];
+            while (list.Count < target) list.Add(NewDot(band, instant));
+            while (list.Count > target) FreeDot(list[list.Count - 1]);
+        }
+
+        Dot NewDot(int band, bool instant)
         {
             var d = pool.Count > 0 ? pool.Pop() : null;
             if (d == null)
@@ -228,11 +293,11 @@ namespace SalvageRun.Orbit
                 d.sr.sortingOrder = 10;
             }
             d.t.gameObject.SetActive(true);
-            d.band = b;
+            d.band = band;
             d.sr.sprite = debris[Random.Range(0, debris.Length)];
             d.angle = Random.Range(0f, Mathf.PI * 2f);
-            d.rOff = Random.Range(-b.width, b.width) * 0.85f;
-            d.speed = b.speed * Random.Range(0.8f, 1.2f);
+            d.rOff = Random.Range(-BandW[band], BandW[band]) * 0.85f;
+            d.speed = (float)OrbitSim.Speed[band] * Random.Range(0.8f, 1.2f);
             d.fade = instant ? 1f : 0f;
             d.t.position = DotPos(d);
             return d;
@@ -240,176 +305,214 @@ namespace SalvageRun.Orbit
 
         void FreeDot(Dot d)
         {
-            d.band.dots.Remove(d);
+            dots[d.band].Remove(d);
             if (d == hover) hover = null;
             if (d == blinkTarget) blinkTarget = null;
             d.t.gameObject.SetActive(false);
             pool.Push(d);
         }
 
-        // ───────────────────────────────── 줍기
+        Vector3 DotPos(Dot d) => Orbit(d.band, d.angle, d.rOff);
 
-        bool OverPanel(Vector2 gui) => seenSell && gui.x > Screen.width - PanelW;
-
-        void UpdateHover()
+        public Vector3 Orbit(int band, float angle, float rOff = 0f)
         {
-            hover = null;
-            if (OverPanel(mouseGui)) return;
-            Vector3 w = cam.ScreenToWorldPoint(new Vector3(mouseGui.x, Screen.height - mouseGui.y, 10f));
-            w.z = 0f;
-            float best = 0.35f;
-            foreach (var d in bands[0].dots)
+            float r = BandR[band] + rOff;
+            return earthPos + new Vector3(Mathf.Cos(angle) * r, Mathf.Sin(angle) * r, 0f);
+        }
+
+        void MoveDots(float dt)
+        {
+            if (blinkTarget == null && sim.S.manual == 0 && dots[0].Count > 0) blinkTarget = dots[0][dots[0].Count / 3];
+
+            for (int b = 0; b < 3; b++)
             {
-                float dist = Vector2.Distance(d.t.position, w);
-                if (dist < best) { best = dist; hover = d; }
+                var o = sim.S.orbits[b];
+                Color baseCol = o.open ? new Color(0.70f, 0.72f, 0.78f) : new Color(0.45f, 0.47f, 0.52f, 0.5f);
+                if (o.claimed) baseCol = new Color(0.80f, 0.74f, 0.62f);
+                foreach (var d in dots[b])
+                {
+                    d.angle += d.speed * dt;
+                    d.fade = Mathf.MoveTowards(d.fade, 1f, Time.deltaTime * 1.5f);
+                    d.t.position = DotPos(d);
+                    Color c = baseCol;
+                    float s = 1f;
+                    if (d == hover) { c = Color.white; s = 1.5f; }
+                    if (d == blinkTarget)
+                    {
+                        // 첫 과녁 — 색이 아니라 **움직임**으로 가리킨다
+                        float k = 0.5f + 0.5f * Mathf.Sin(t * 5f);
+                        c = Color.Lerp(c, Color.white, k); s = 1f + 0.6f * k;
+                    }
+                    c.a *= d.fade;
+                    d.sr.color = c;
+                    d.t.localScale = Vector3.one * s * (0.16f / Mathf.Max(0.01f, d.sr.sprite.bounds.size.x));
+                }
             }
         }
 
-        void ClickPick()
+        // ───────────────────────────────── 드론
+
+        void DrawDrones()
         {
+            for (int b = 0; b < 3; b++)
+            {
+                var o = sim.S.orbits[b];
+                int n = Mathf.Min(o.drones, 36);
+                var list = droneViews[b];
+                while (list.Count < n)
+                {
+                    var sr = MakeSprite("드론", droneSprite, earthPos, 0.20f, new Color(0.95f, 0.80f, 0.36f), 20);   // 0.34 는 목걸이처럼 띠를 덮었다 (09-21)
+                    sr.transform.SetParent(transform);
+                    list.Add(sr);
+                }
+                for (int i = 0; i < list.Count; i++)
+                {
+                    bool on = i < n;
+                    list[i].enabled = on;
+                    if (!on) continue;
+                    float jit = Mathf.Sin(i * 12.9898f) * 0.5f;
+                    float a = t * (float)OrbitSim.Speed[b] * (1.4f + 0.4f * jit) + i * (Mathf.PI * 2f / n) + jit;
+                    float rr = Mathf.Sin(t * 0.9f + i * 1.7f) * BandW[b] * 0.6f;
+                    list[i].transform.position = Orbit(b, a, rr);
+                    list[i].transform.rotation = Quaternion.Euler(0, 0, a * Mathf.Rad2Deg + 180f);
+                }
+            }
+        }
+
+        void DrawTransit()
+        {
+            int need = 0;
+            foreach (var tr in sim.S.transit) need += Mathf.Min(tr.count, 10);
+            while (transitViews.Count < need)
+            {
+                var sr = MakeSprite("이동 중", droneSprite, earthPos, 0.18f, new Color(0.95f, 0.80f, 0.36f, 0.7f), 20);
+                sr.transform.SetParent(transform);
+                transitViews.Add(sr);
+            }
+            int idx = 0;
+            foreach (var tr in sim.S.transit)
+            {
+                int n = Mathf.Min(tr.count, 10);
+                float k = Mathf.Clamp01(1f - (float)(tr.left / tr.total));
+                float e = k * k * (3f - 2f * k);
+                int from = tr.from < 0 ? tr.to : tr.from;
+                for (int i = 0; i < n; i++, idx++)
+                {
+                    float a = t * 0.25f + i * 0.14f + tr.to;
+                    float r = Mathf.Lerp(BandR[from], BandR[tr.to], e);
+                    var v = transitViews[idx];
+                    v.enabled = true;
+                    v.transform.position = earthPos + new Vector3(Mathf.Cos(a) * r, Mathf.Sin(a) * r, 0f);
+                    v.transform.rotation = Quaternion.Euler(0, 0, a * Mathf.Rad2Deg + (BandR[tr.to] > BandR[from] ? 90f : -90f));
+                }
+            }
+            for (; idx < transitViews.Count; idx++) transitViews[idx].enabled = false;
+        }
+
+        void DrawSalvage()
+        {
+            var v = sim.S.salvage;
+            salvageView.enabled = v.active;
+            salvageHalo.enabled = v.active;
+            if (!v.active) return;
+            salvageView.transform.position = Orbit(v.orbit, (float)v.angle);
+            salvageView.transform.rotation = Quaternion.Euler(0, 0, t * 25f);
+            float blink = v.life < 5 ? (Mathf.Sin(t * 12f) > 0 ? 1f : 0.35f) : 1f;
+            float glow = hoverSalvage ? 1f : 0.85f + 0.15f * Mathf.Sin(t * 3f);
+            salvageView.color = new Color(1f, 0.95f, 0.85f, blink * glow);
+            salvageView.transform.localScale = Vector3.one * (hoverSalvage ? 1.2f : 1f) * (0.8f / Mathf.Max(0.01f, satSprite.bounds.size.x));
+            // 누를 수 있는 것은 둘레가 숨 쉰다 — 글 없이 「이건 누른다」를 말한다
+            float br = 0.5f + 0.5f * Mathf.Sin(t * 3f);
+            salvageHalo.transform.position = salvageView.transform.position;
+            salvageHalo.transform.localScale = Vector3.one * (1.0f + 0.25f * br) / Mathf.Max(0.01f, thinRing.bounds.size.x);
+            salvageHalo.color = new Color(1f, 0.85f, 0.5f, (hoverSalvage ? 0.9f : 0.35f + 0.3f * br) * blink);
+        }
+
+        // ───────────────────────────────── 누르기
+
+        void UpdateHoverAndClick()
+        {
+            hover = null;
+            hoverSalvage = false;
+            var mouse = Mouse.current;
+            if (mouse == null || sim.Finished || hud.BlocksWorld(mouse.position.ReadValue())) return;
+
+            Vector2 sp = mouse.position.ReadValue();
+            Vector3 w = cam.ScreenToWorldPoint(new Vector3(sp.x, sp.y, 10f));
+            w.z = 0f;
+
+            var v = sim.S.salvage;
+            if (v.active && Vector2.Distance(Orbit(v.orbit, (float)v.angle), w) < 0.6f) hoverSalvage = true;
+            else
+            {
+                float best = 0.3f;
+                for (int b = 0; b < 3; b++)
+                {
+                    var o = sim.S.orbits[b];
+                    if (!o.open || o.locked) continue;
+                    foreach (var d in dots[b])
+                    {
+                        float dist = Vector2.Distance(d.t.position, w);
+                        if (dist < best) { best = dist; hover = d; }
+                    }
+                }
+            }
+
+            if (!mouse.leftButton.wasPressedThisFrame) return;
+            if (hoverSalvage) { sim.ClaimSalvage(); return; }
             if (hover == null) return;
-            var d = hover;
-            var b = d.band;
 
             // 점은 대표일 뿐이다 — 하나를 주워도 D 는 1 줄 뿐이라 띠는 곧 다시 채워진다.
             // 🔴 그게 「34,000개? 평생 걸리겠는데」다. 드론을 원하게 만든다
-            var ghost = Instantiate(d.t.gameObject, transform);
-            ghost.GetComponent<SpriteRenderer>().sortingOrder = 15;
-            falling.Add(new Falling { t = ghost.transform, from = d.t.position, time = 0f });
-            FreeDot(d);
-            b.D -= 1;
+            var d0 = hover;
+            if (!sim.Pick(d0.band)) return;
+            var ghost = MakeSprite("회수", d0.sr.sprite, d0.t.position, 0f, Color.white, 15);
+            ghost.transform.localScale = d0.t.localScale;
+            ghost.transform.SetParent(transform);
+            fx.Add(new Fx { sr = ghost, from = d0.t.position, kind = 0, life = 0.6f });
+            FreeDot(d0);
         }
 
-        void UpdateFalling(float dt)
+        // ───────────────────────────────── 연출
+
+        void Flash(int band, float angle, float size)
         {
-            for (int i = falling.Count - 1; i >= 0; i--)
+            var sr = MakeSprite("섬광", thinRing, Orbit(band, angle, Random.Range(-0.15f, 0.15f)), 0.1f, new Color(1f, 0.9f, 0.75f, 1f), 16);
+            sr.transform.SetParent(transform);
+            fx.Add(new Fx { sr = sr, kind = 1, life = 0.6f, from = Vector3.one * size });
+        }
+
+        void UpdateFx(float dt)
+        {
+            for (int i = fx.Count - 1; i >= 0; i--)
             {
-                var f = falling[i];
-                f.time += dt / 0.6f;
-                float e = f.time * f.time;          // 끌려 내려갈수록 빨라진다
-                f.t.position = Vector3.Lerp(f.from, earthPos, e);
-                f.t.localScale *= 1f - dt * 1.2f;
-                if (f.time >= 1f)
+                var f = fx[i];
+                f.time += dt;
+                float k = f.time / f.life;
+                if (f.kind == 0)
                 {
-                    Destroy(f.t.gameObject);
-                    falling.RemoveAt(i);
-                    held += 1; collected += 1;
-                    seenCollect = true;
+                    // 끌려 내려갈수록 빨라진다
+                    f.sr.transform.position = Vector3.Lerp(f.from, earthPos, k * k);
+                    f.sr.transform.localScale *= 1f - dt * 1.2f;
+                    if (k >= 1f) seenCollect = true;
                 }
-            }
-        }
-
-        void DroneEatVisual()
-        {
-            // 드론 근처 점 하나가 사라졌다 딴 데서 다시 떠오른다 — 줍는 게 화면에서 보여야 한다
-            var leo = bands[0];
-            foreach (var v in droneViews)
-            {
-                Dot best = null; float bd = 0.9f;
-                foreach (var d in leo.dots)
+                else if (f.kind == 1)
                 {
-                    float dist = Vector2.Distance(d.t.position, v.position);
-                    if (dist < bd) { bd = dist; best = d; }
+                    float s = Mathf.Lerp(0.1f, 0.9f * f.from.x, k);
+                    f.sr.transform.localScale = Vector3.one * s / Mathf.Max(0.01f, thinRing.bounds.size.x);
+                    f.sr.color = new Color(1f, 0.9f, 0.75f, 1f - k);
                 }
-                if (best != null) { best.fade = 0f; best.angle += Random.Range(1f, 5f); }
-            }
-        }
-
-        void UpdateDroneViews()
-        {
-            while (droneViews.Count < drones)
-            {
-                var sr = MakeSprite("드론", droneSprite, earthPos, 0.34f, new Color(0.95f, 0.85f, 0.45f), 20);
-                sr.transform.SetParent(transform);
-                droneViews.Add(sr.transform);
-            }
-            var leo = bands[0];
-            for (int i = 0; i < droneViews.Count; i++)
-            {
-                float a = t * leo.speed * 1.6f + i * (Mathf.PI * 2f / droneViews.Count);
-                float r = leo.radius + Mathf.Sin(t * 0.9f + i) * leo.width * 0.6f;
-                droneViews[i].position = earthPos + new Vector3(Mathf.Cos(a) * r, Mathf.Sin(a) * r, 0f);
-                droneViews[i].rotation = Quaternion.Euler(0, 0, a * Mathf.Rad2Deg + 180f);
-            }
-        }
-
-        // ───────────────────────────────── 패널 (OnGUI — 임시)
-
-        double DronePrice => System.Math.Ceiling(DroneBase * System.Math.Pow(DroneGrowth, drones));
-
-        double TotalD
-        {
-            get { double s = 0; foreach (var b in bands) s += b.D; return s; }
-        }
-
-        void EnsureStyles()
-        {
-            if (label != null) return;
-            font = Resources.Load<Font>("Galmuri11");
-            label = new GUIStyle(GUI.skin.label) { font = font, fontSize = 16 };
-            label.normal.textColor = new Color(0.85f, 0.88f, 0.92f);
-            big = new GUIStyle(label) { fontSize = 22 };
-            big.normal.textColor = Color.white;
-            button = new GUIStyle(GUI.skin.button)
-            {
-                font = font, fontSize = 15, alignment = TextAnchor.MiddleLeft,
-                padding = new RectOffset(12, 12, 6, 6)
-            };
-            buttonOff = new GUIStyle(button);
-            var grey = new Color(0.5f, 0.52f, 0.56f);
-            buttonOff.normal.textColor = grey; buttonOff.hover.textColor = grey; buttonOff.active.textColor = grey;
-        }
-
-        void OnGUI()
-        {
-            EnsureStyles();
-            var e = Event.current;
-            mouseGui = e.mousePosition;
-            if (e.type == EventType.MouseDown && e.button == 0 && !OverPanel(e.mousePosition)) ClickPick();
-
-            // 위쪽 띠 — 🔴 표시 자체가 없다가 생긴다. 0:00 에는 아무것도 없다
-            float x = 16f;
-            if (seenCollect) { GUI.Label(new Rect(x, 12, 220, 30), "회수  " + KNum.Fmt(held), big); x += 190f; }
-            if (seenSell) { GUI.Label(new Rect(x, 12, 260, 30), "크레딧  " + KNum.Fmt(credits), big); x += 220f; }
-            if (seenD) GUI.Label(new Rect(x, 12, 320, 30), "궤도 파편  " + KNum.Fmt(TotalD) + "개", big);
-
-            if (!seenSell && collected >= SellUnlockAt) seenSell = true;
-            if (!seenSell) return;
-
-            // 오른쪽 패널
-            var pr = new Rect(Screen.width - PanelW, 0, PanelW, Screen.height);
-            GUI.Box(pr, GUIContent.none);
-            float y = 60f;
-            float bx = pr.x + 14f, bw = PanelW - 28f;
-
-            string sell = "판매   " + KNum.Fmt(held) + "개 → " + KNum.Fmt(held * SellPrice) + " 크레딧";
-            if (GUI.Button(new Rect(bx, y, bw, 44), sell, held > 0 ? button : buttonOff) && held > 0)
-            {
-                credits += held * SellPrice; held = 0;
-                seenDroneOffer = true;
-            }
-            y += 56f;
-
-            // 🔴 못 사는 걸 먼저 보여준다 — 그게 목표가 된다
-            if (seenDroneOffer || drones > 0)
-            {
-                bool can = credits >= DronePrice;
-                string txt = "수거 드론   " + KNum.Fmt(DronePrice) + " 크레딧";
-                if (GUI.Button(new Rect(bx, y, bw, 44), txt, can ? button : buttonOff) && can)
+                else
                 {
-                    credits -= DronePrice; drones++;
-                    seenD = true;   // 🔴 D 는 드론을 산 뒤에 처음 보여준다 — 「압도하는 크기」로 등장한다
+                    var c = f.sr.color;
+                    c.a = k < 0.8f ? (Mathf.Sin(f.time * 18f) > 0 ? 1f : 0.25f) : (1f - k) * 5f;
+                    f.sr.color = c;
                 }
-                y += 50f;
-                if (drones > 0)
-                {
-                    double rate = drones * DroneRate * (bands[0].D / bands[0].D0);
-                    GUI.Label(new Rect(bx + 4, y, bw, 24), "드론 " + drones + "대 · 초당 " + rate.ToString("0.0") + "개", label);
-                }
+                if (k >= 1f) { Destroy(f.sr.gameObject); fx.RemoveAt(i); }
             }
         }
 
-        // ───────────────────────────────── 그림 (코드로 찍는다 — 흰 네모 단계)
+        // ───────────────────────────────── 그림 (코드로 찍는다)
 
         static SpriteRenderer MakeSprite(string name, Sprite s, Vector3 pos, float size, Color c, int order)
         {
@@ -428,7 +531,7 @@ namespace SalvageRun.Orbit
             var rng = new System.Random(7);
             for (int i = 0; i < n; i++)
             {
-                var p = new Vector3((float)(rng.NextDouble() * 20 - 10), (float)(rng.NextDouble() * 12 - 6), 0f);
+                var p = new Vector3((float)(rng.NextDouble() * 22 - 11), (float)(rng.NextDouble() * 12 - 6), 0f);
                 float a = 0.08f + (float)rng.NextDouble() * 0.3f;
                 var sr = MakeSprite("별", disc, p, 0.03f + (float)rng.NextDouble() * 0.04f, new Color(1, 1, 1, a), 0);
                 sr.transform.SetParent(root);

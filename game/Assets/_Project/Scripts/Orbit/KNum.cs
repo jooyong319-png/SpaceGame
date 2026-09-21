@@ -14,7 +14,9 @@ namespace SalvageRun.Orbit
 
         public static string Fmt(double v)
         {
+            if (double.IsNaN(v) || double.IsInfinity(v)) return "∞";
             if (v < 0) return "-" + Fmt(-v);
+            if (v >= 9e18) v = 9e18;
             long n = (long)System.Math.Floor(v);
             if (n < 10000) return n.ToString();
 
