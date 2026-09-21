@@ -206,6 +206,34 @@ namespace SalvageRun.Meta
 
         // ---------------------------------------------------------------- 재화 · 노드
 
+        /// <summary>
+        /// 공짜 노드(비용 0 · 선행 없음)를 미리 랭크 1로 찍어 둔다.
+        ///
+        /// 🔴 이게 없으면 **첫 무기조차 안 열린 것으로 읽힌다** — `WeaponUnlocked`가
+        ///    랭크만 보기 때문이다(아래 주석 참고).
+        ///
+        /// ⚠️ 2026-09-02 「죽은 코드 1,700줄 제거」(`84a2f5d`)에서 **실수로 같이 지워졌다.**
+        ///    참조가 0인지 grep으로 확인했는데 `TechSystem.cs`와 `TechTreeScreen.cs`
+        ///    두 곳이 부르고 있었다. 2026-09-20에 그대로 되살렸다.
+        /// </summary>
+        public static void EnsureFreeNodes(GameContent content)
+        {
+            if (content == null || content.techTree == null) return;
+
+            bool changed = false;
+            for (int i = 0; i < content.techTree.Length; i++)
+            {
+                var n = content.techTree[i];
+                if (n == null || !n.IsFree) continue;
+                if (n.requires != null && n.requires.Length > 0) continue;
+                if (Data.RankOf(n.id) > 0) continue;
+
+                Data.SetRank(n.id, 1);
+                changed = true;
+            }
+            if (changed) Save();
+        }
+
         // ---------------------------------------------------------------- 무기
 
         /// <summary>이 무기를 여는 노드를 찍었는가.</summary>
