@@ -212,6 +212,7 @@ namespace SalvageRun.Orbit
         {
             PlayerPrefs.DeleteKey(SaveKey);
             PlayerPrefs.Save();
+            OrbitHud.SkipTitle = true;          // 다시 시작은 타이틀을 건너뛴다
             sim = null;
             restarting = true;
             new GameObject("== 궤도 청소부 ==").AddComponent<OrbitGame>();
@@ -241,13 +242,13 @@ namespace SalvageRun.Orbit
             if (kb != null)
             {
                 if (kb.f2Key.wasPressedThisFrame) CycleSpeed();
-                if (kb.escapeKey.wasPressedThisFrame) hud.ToggleMenu();
+                if (kb.escapeKey.wasPressedThisFrame && !hud.TitleOpen) hud.ToggleMenu();
                 if (kb.mKey.wasPressedThisFrame && OrbitSfx.I != null) OrbitSfx.I.ToggleMute();
             }
 
             // 3막 여는 장면 · 봉쇄 순간엔 시간이 멈칫한다
             if (hitStop > 0f) hitStop -= Time.deltaTime;
-            bool frozen = hud.MenuOpen || cinematic >= 0f || hitStop > 0f;
+            bool frozen = hud.MenuOpen || hud.TitleOpen || cinematic >= 0f || hitStop > 0f;
             float dt = frozen ? 0f : Time.deltaTime * timeScale;
             Cinematic(Time.deltaTime);
             fx.intensity = Intensity();

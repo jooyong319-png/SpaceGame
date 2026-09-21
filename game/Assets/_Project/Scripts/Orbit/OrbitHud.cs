@@ -22,6 +22,14 @@ namespace SalvageRun.Orbit
         float scale = 1f, vw = 960f;
 
         public bool MenuOpen { get; private set; }
+
+        /// <summary>
+        /// 타이틀 (완성도 루프 4) — 켜면 궤도가 도는 화면 위에 이름이 뜬다. 떠 있는 동안 게임 시간은 멈춘다.
+        /// 「처음부터」로 다시 시작할 때는 건너뛴다.
+        /// </summary>
+        public bool TitleOpen = true;
+        public static bool SkipTitle;
+        void Start() { if (SkipTitle) { TitleOpen = false; SkipTitle = false; } }
         bool confirmRestart;
         Vector2 scroll;
         readonly HashSet<string> seenUnlock = new HashSet<string>();
@@ -74,7 +82,7 @@ namespace SalvageRun.Orbit
         /// <summary>화면 좌표(Input System, 왼쪽 아래 원점)가 UI 위인가 — 그러면 파편을 줍지 않는다.</summary>
         public bool BlocksWorld(Vector2 screen)
         {
-            if (MenuOpen || (sim != null && sim.Finished)) return true;
+            if (TitleOpen || MenuOpen || (sim != null && sim.Finished)) return true;
             if (PanelVisible && screen.x > Screen.width - PanelW * scale) return true;
             return false;
         }
@@ -168,7 +176,8 @@ namespace SalvageRun.Orbit
             BannerDraw(left);
             if (PanelVisible) Panel();
             if (game.timeScale > 1f) GUI.Label(new Rect((PanelVisible ? vw - PanelW : vw) - 150, 34, 140, 18), "<color=#f0c070>테스트 속도 ×" + game.timeScale + "</color> (F2)", costDim);   // 왼쪽 아래는 충전 칸 · 고정 뉴스와 겹쳤다 (루프 1)
-            if (sim.Finished) EndScreen();
+            if (TitleOpen) Title();
+            else if (sim.Finished) EndScreen();
             else if (MenuOpen) Menu();
         }
 
@@ -557,6 +566,48 @@ namespace SalvageRun.Orbit
                 y += 6 + hist.Length * 18;
             }
             if (GUI.Button(new Rect(cx - 80, y + 30, 160, 40), "처음부터", mini)) game.Restart();
+        }
+
+        void Title()
+        {
+            var S = sim.S;
+            bool resume = S.t > 1 && !sim.Finished;
+            var dc = GUI.color; GUI.color = new Color(1, 1, 1, 0.55f);
+            GUI.DrawTexture(new Rect(0, 0, vw, RefH), texDim);     // 뒤에서 도는 궤도가 비쳐야 한다 — 보는 게임의 첫 화면
+            GUI.color = dc;
+            float cx = vw / 2f;
+            float breathe = 1f + 0.015f * Mathf.Sin(Time.time * 1.2f);
+            unitStyle.fontSize = Mathf.RoundToInt(64 * breathe);
+            GUI.Label(new Rect(cx - 300, 150, 600, 90), "궤도 청소부", unitStyle);
+            GUI.Label(new Rect(cx - 300, 236, 600, 30), "— 오늘도 궤도는 깨끗합니다", unitSub);
+
+            float y = 310;
+            bool go = false, fresh = false;
+            if (resume)
+            {
+                int m = (int)(S.t / 60);
+                if (GUI.Button(new Rect(cx - 100, y, 200, 40), "이어하기  (" + m + "분 · " + KNum.Fmt(S.credits) + ")", mini)) go = true;
+                y += 50;
+                if (GUI.Button(new Rect(cx - 100, y, 200, 34), confirmRestart ? "정말? 한 번 더 누르면 지워진다" : "새로 시작", mini))
+                {
+                    if (confirmRestart) fresh = true; else confirmRestart = true;
+                }
+            }
+            else if (GUI.Button(new Rect(cx - 100, y, 200, 44), "시작", mini)) go = true;
+
+            var e = Event.current;
+            if (e.type == EventType.KeyDown && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.Space)) { go = true; e.Use(); }
+
+            var hist = OrbitGame.History();
+            if (hist.Length > 0)
+            {
+                var f = hist[0].Split('|');
+                if (f.Length >= 4) GUI.Label(new Rect(cx - 250, RefH - 110, 500, 20), "지난 판 — " + f[0] + " · 최고 " + f[2], center);
+            }
+            GUI.Label(new Rect(cx - 250, RefH - 70, 500, 20), "마우스로 누른다 · M 소리 · Esc 메뉴", center);
+
+            if (fresh) { confirmRestart = false; game.Restart(); return; }
+            if (go) { TitleOpen = false; confirmRestart = false; OrbitSfx.Play("buy", 0.7f); }
         }
 
         void Menu()
