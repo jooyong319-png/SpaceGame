@@ -168,6 +168,7 @@ namespace SalvageRun.Orbit
         /// <summary>3막 충돌 — 한 번 터지면 옆에서 또 터진다. 연쇄가 눈에 보여야 한다.</summary>
         public void ChainBurst(Vector3 at, int depth)
         {
+            OrbitSfx.Play("collide", 0.45f, 0.08f, 0.15f);
             BigBurst(at, new Color(1f, 0.75f, 0.45f), Mathf.RoundToInt(10 * intensity), 3f * Mathf.Sqrt(intensity), 0.8f * Mathf.Sqrt(intensity));
             if (depth <= 0) return;
             int kids = Random.Range(1, 3);
@@ -495,7 +496,7 @@ namespace SalvageRun.Orbit
                         if (to.magnitude < (p.kind == 2 ? 0.35f : 0.12f))
                         {
                             dead = true;
-                            if (p.kind == 2) creditPulse = 1f;
+                            if (p.kind == 2) { creditPulse = 1f; OrbitSfx.Play("coin", 0.45f, 0.05f, 0.1f); }
                         }
                         if (p.kind == 2) p.sr.color = new Color(p.c.r, p.c.g, p.c.b, Mathf.Min(1f, p.age * 4f));
                         break;

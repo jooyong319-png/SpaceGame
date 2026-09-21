@@ -121,6 +121,7 @@ namespace SalvageRun.Orbit
             blastCursor.transform.SetParent(transform);
             blastCursor.enabled = false;
 
+            gameObject.AddComponent<OrbitSfx>();
             hud = gameObject.AddComponent<OrbitHud>();
             hud.game = this;
             seenCollect = sim.S.manual > 1 || sim.S.bought > 0;
@@ -241,6 +242,7 @@ namespace SalvageRun.Orbit
             {
                 if (kb.f2Key.wasPressedThisFrame) CycleSpeed();
                 if (kb.escapeKey.wasPressedThisFrame) hud.ToggleMenu();
+                if (kb.mKey.wasPressedThisFrame && OrbitSfx.I != null) OrbitSfx.I.ToggleMute();
             }
 
             // 3막 여는 장면 · 봉쇄 순간엔 시간이 멈칫한다
@@ -304,23 +306,28 @@ namespace SalvageRun.Orbit
                         break;
                     }
                     case SimEventKind.Unlock:
-                        if (e.text != null) fx.SyncStructures(true);
+                        if (e.text != null) { fx.SyncStructures(true); OrbitSfx.Play("buy", 0.8f); }
                         break;
                     case SimEventKind.Lock:
                         // 봉쇄 — 멈칫, 그리고 띠 전체가 도미노로 한 바퀴 터진다
                         hitStop = 0.35f;
+                        OrbitSfx.Play("lock", 1f, 0.5f, 0f);
                         fx.shake = Mathf.Max(fx.shake, 0.28f);
                         fx.Domino(e.orbit, Random.Range(0f, 6.28f), 26, 0.25f, 0.05f, 1);
                         fx.CoinShower(25);
+                        break;
+                    case SimEventKind.Warn:
+                        OrbitSfx.Play("warn", 0.9f, 1f, 0f);
                         break;
                     case SimEventKind.StationHit:
                         fx.StationPass();
                         break;
                     case SimEventKind.Act:
-                        if (e.orbit == 3) cinematic = 0f;     // 3막 여는 장면
+                        if (e.orbit == 3) { cinematic = 0f; OrbitSfx.Play("cine", 1f, 1f, 0f); }     // 3막 여는 장면
                         break;
                     case SimEventKind.Ending:
                         fx.CoinShower(40);
+                        OrbitSfx.Play("ending", 1f, 1f, 0f);
                         break;
                 }
                 hud.OnSimEvent(e);
@@ -633,6 +640,7 @@ namespace SalvageRun.Orbit
                 }
             Vector3 p = best != null ? best.t.position : at + (Vector3)(Random.insideUnitCircle * 0.3f);
             if (best != null) { best.fade = 0f; best.angle += Random.Range(1f, 5f); }
+            OrbitSfx.Play("tick", 0.3f, 0.07f, 0.15f);
             fx.CollectBurst(p, drone, sim.Has("shatter"));
         }
 
@@ -723,6 +731,7 @@ namespace SalvageRun.Orbit
                 return;
             }
 
+            OrbitSfx.Play(hand ? "pick" : "blast", hand ? 0.8f : 0.7f, 0.04f);
             if (hand && hover != null)
             {
                 var d0 = hover;
@@ -768,6 +777,7 @@ namespace SalvageRun.Orbit
             if (got <= 0) return;
             lastEarned += got;
             salvageKick = 0.25f;
+            OrbitSfx.Play(broke ? "break" : "clank", 1f, 0.02f);
             if (!broke)
             {
                 fx.BigBurst(at, new Color(1f, 0.85f, 0.55f), 12, 2.8f, 0.6f);

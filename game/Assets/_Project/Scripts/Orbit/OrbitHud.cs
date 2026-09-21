@@ -64,6 +64,7 @@ namespace SalvageRun.Orbit
                 lastUnit = unit;
                 unitAt = Time.time;
                 unitName = UnitNames[unit];
+                OrbitSfx.Play("unit", 1f, 1f, 0f);
                 if (game.fx != null) game.fx.CoinShower(30);
             }
         }
@@ -376,7 +377,7 @@ namespace SalvageRun.Orbit
             {
                 string name = S.bought > 0 ? "수거 드론  ×" + sim.FleetTotal : "수거 드론";
                 if (Row(w, name, S.bought == 0 ? "파편을 알아서 줍는다" : null, KNum.Fmt(sim.DronePrice), S.credits >= sim.DronePrice && S.ending == 0))
-                    sim.BuyDrone();
+                    { if (sim.BuyDrone()) OrbitSfx.Play("buy", 0.5f, 0.05f); }
             }
             if (sim.Has("manager"))
             {
@@ -561,7 +562,7 @@ namespace SalvageRun.Orbit
         void Menu()
         {
             float cx = vw / 2f;
-            var r = new Rect(cx - 150, 170, 300, 210);
+            var r = new Rect(cx - 150, 150, 300, 250);
             GUI.DrawTexture(new Rect(0, 0, vw, RefH), texDim);
             GUI.DrawTexture(r, texCard);
             GUI.Label(new Rect(r.x, r.y + 16, r.width, 24), "멈춤", center);
@@ -571,7 +572,9 @@ namespace SalvageRun.Orbit
                 if (confirmRestart) game.Restart(); else confirmRestart = true;
             }
             if (GUI.Button(new Rect(r.x + 50, r.y + 140, 200, 30), "속도 ×" + game.timeScale + "  (F2)", mini)) game.CycleSpeed();
-            GUI.Label(new Rect(r.x, r.y + 176, r.width, 20), "진행은 5초마다 저장된다 · Esc", small);
+            bool muted = OrbitSfx.I != null && OrbitSfx.I.Muted;
+            if (GUI.Button(new Rect(r.x + 50, r.y + 176, 200, 30), (muted ? "소리 꺼짐" : "소리 켜짐") + "  (M)", mini) && OrbitSfx.I != null) OrbitSfx.I.ToggleMute();
+            GUI.Label(new Rect(r.x, r.y + 216, r.width, 20), "진행은 5초마다 저장된다 · Esc", small);
         }
     }
 }
