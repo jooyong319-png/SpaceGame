@@ -22,6 +22,10 @@ namespace SalvageRun.Orbit
         public OrbitHud hud;
         public float timeScale = 1f;            // F2 — 개발용 ×5
         public OrbitFx fx;
+        public float cinematic = -1f;           // 3막 여는 장면 경과 초 (-1 = 없음)
+        public const float CinematicLen = 6.5f;
+        float hitStop, endingFxTimer;
+        Vector3 camBase = new Vector3(0f, 0f, -10f);
         double lastCollected, lastEarned, burstBudget, popupEarn;
         float popupTimer;
         public bool seenCollect;                // 첫 파편이 지구에 닿았다 → 「회수」가 생긴다
@@ -198,7 +202,14 @@ namespace SalvageRun.Orbit
                 if (kb.escapeKey.wasPressedThisFrame) hud.ToggleMenu();
             }
 
-            float dt = hud.MenuOpen ? 0f : Time.deltaTime * timeScale;
+            // 3막 여는 장면 · 봉쇄 순간엔 시간이 멈칫한다
+            if (hitStop > 0f) hitStop -= Time.deltaTime;
+            bool frozen = hud.MenuOpen || cinematic >= 0f || hitStop > 0f;
+            float dt = frozen ? 0f : Time.deltaTime * timeScale;
+            Cinematic(Time.deltaTime);
+            fx.intensity = Intensity();
+            EndingFireworks(Time.deltaTime);
+            ApplyCamera();
             t += Time.deltaTime;
             int steps = Mathf.Max(1, Mathf.CeilToInt(dt / 0.1f));
             for (int k = 0; k < steps; k++) sim.Tick(dt / steps);
@@ -254,8 +265,17 @@ namespace SalvageRun.Orbit
                         if (e.text != null) fx.SyncStructures(true);
                         break;
                     case SimEventKind.Lock:
-                        // 봉쇄 — 띠 전체가 한 바퀴 터진다
-                        for (int k = 0; k < 14; k++) fx.ChainBurst(Orbit(e.orbit, k * 0.45f), 0);
+                        // 봉쇄 — 멈칫, 그리고 띠 전체가 도미노로 한 바퀴 터진다
+                        hitStop = 0.35f;
+                        fx.shake = Mathf.Max(fx.shake, 0.28f);
+                        fx.Domino(e.orbit, Random.Range(0f, 6.28f), 26, 0.25f, 0.05f, 1);
+                        fx.CoinShower(25);
+                        break;
+                    case SimEventKind.StationHit:
+                        fx.StationPass();
+                        break;
+                    case SimEventKind.Act:
+                        if (e.orbit == 3) cinematic = 0f;     // 3막 여는 장면
                         break;
                     case SimEventKind.Ending:
                         fx.CoinShower(40);
@@ -450,6 +470,60 @@ namespace SalvageRun.Orbit
             salvageHalo.transform.position = salvageView.transform.position;
             salvageHalo.transform.localScale = Vector3.one * (1.0f + 0.25f * br) / Mathf.Max(0.01f, thinRing.bounds.size.x);
             salvageHalo.color = new Color(1f, 0.85f, 0.5f, (hoverSalvage ? 0.9f : 0.35f + 0.3f * br) * blink);
+        }
+
+        // ───────────────────────────────── 끝으로 갈수록 커진다
+
+        float Intensity()
+        {
+            var S = sim.S;
+            if (S.ending == 1) return 3.5f;
+            if (S.act >= 3) return Mathf.Min(3f, 2f + (float)(S.t - S.act3At) / 300f);
+            if (S.act == 2) return 1.3f + 0.5f * (float)sim.Danger;
+            return 1f;
+        }
+
+        /// <summary>
+        /// 🔴 3막 여는 장면 (6.5초). 멈칫 → 첫 충돌 → 도미노가 저궤도를 한 바퀴 → 중궤도 → 정지궤도.
+        /// 사장님: *"게임 엔딩으로 가는 길인 만큼 뭔가 극적인 스토리를 보여준다거나"* (09-21)
+        /// </summary>
+        void Cinematic(float dt)
+        {
+            if (cinematic < 0f) return;
+            float prev = cinematic;
+            cinematic += dt;
+            float a0 = 0.6f;
+            if (prev < 0.5f && cinematic >= 0.5f) { fx.ChainBurst(Orbit(0, a0), 2); fx.shake = 0.35f; }
+            if (prev < 0.9f && cinematic >= 0.9f) fx.Domino(0, a0, 26, 0.245f, 0.09f, 1);
+            if (prev < 3.0f && cinematic >= 3.0f && sim.S.orbits[1].open) fx.Domino(1, a0 + 1f, 30, 0.21f, 0.07f, 1);
+            if (prev < 4.4f && cinematic >= 4.4f && sim.S.orbits[2].open) fx.Domino(2, a0 + 2f, 34, 0.185f, 0.05f, 0);
+            if (prev < 5.2f && cinematic >= 5.2f) fx.CoinShower(40);
+            if (cinematic >= CinematicLen) cinematic = -1f;
+        }
+
+        void ApplyCamera()
+        {
+            if (cam == null) return;
+            float zoom = 0f;
+            if (cinematic >= 0f) zoom = 0.7f * Mathf.Sin(Mathf.PI * Mathf.Clamp01(cinematic / CinematicLen));
+            cam.orthographicSize = 6f - zoom;
+            Vector2 j = fx.shake > 0f ? Random.insideUnitCircle * fx.shake : Vector2.zero;
+            cam.transform.position = camBase + (Vector3)j;
+        }
+
+        /// <summary>회수 극대화 — 끝까지 빨아먹는 60초. 동전이 폭포처럼 쏟아진다.</summary>
+        void EndingFireworks(float dt)
+        {
+            if (sim.S.ending != 1 || sim.Finished) return;
+            endingFxTimer -= dt;
+            if (endingFxTimer > 0f) return;
+            endingFxTimer = 0.4f;
+            fx.CoinShower(12);
+            for (int k = 0; k < 3; k++)
+            {
+                int b = Random.Range(0, 3);
+                if (sim.S.orbits[b].open) fx.ChainBurst(Orbit(b, Random.Range(0f, 6.28f)), 1);
+            }
         }
 
         // ───────────────────────────────── 보는 맛 — 시뮬의 숫자를 화면의 사건으로

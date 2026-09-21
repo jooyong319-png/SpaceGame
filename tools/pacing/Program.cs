@@ -28,7 +28,7 @@ static class Program
         double pickClock = 0, rotateClock = 0, buyClock = 0;
         var log = new List<string>();
         double nextSnap = 0;
-        var tempt = new HashSet<string> { "shatter", "insurance", "claim" };
+        var tempt = new HashSet<string> { "shatter", "insurance", "claim", "fleetshatter", "autolaunch", "finalcontract" };
 
         void L(string s) => log.Add($"{Fmt(S.t)}  {s}");
 

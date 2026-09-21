@@ -93,7 +93,7 @@ namespace SalvageRun.Orbit.Sim
         public int claimed = -1;
     }
 
-    public enum SimEventKind { News, Collision, Warn, Lock, Unlock, ContractDone, Salvaged, Act, Ending, DroneLost }
+    public enum SimEventKind { News, Collision, Warn, Lock, Unlock, ContractDone, Salvaged, Act, Ending, DroneLost, StationHit }
 
     public struct SimEvent
     {
@@ -131,6 +131,7 @@ namespace SalvageRun.Orbit.Sim
         const double CleanFrac = 0.12;            // 저궤도가 이 밑으로 내려가면 「정화 완료」
         const double LaunchBase = 110, LaunchTau = 480;   // 🔴 2막 초반부터 비운 궤도가 2~3분에 다시 찬다 — 그래야 옮길 이유가 생긴다 (09-21 투어: 20분에 세 궤도가 다 휑했다)
         public const int SellUnlockAt = 5;
+        public const double Act3Fallback = 22 * 60;   // 2막 시작부터 — 끝까지 안 누르면 여기서 3막
 
         public SimState S;
         public readonly Queue<SimEvent> Events = new Queue<SimEvent>();
@@ -172,6 +173,7 @@ namespace SalvageRun.Orbit.Sim
                 if (Has("grade2")) e *= 2;
                 if (Has("grade3")) e *= 2;
                 if (Has("shatter")) e *= 1.4;
+                if (Has("fleetshatter")) e *= 2;
                 if (S.ending == 1) e *= 10;
                 return e;
             }
@@ -185,6 +187,8 @@ namespace SalvageRun.Orbit.Sim
             if (Has("wreck")) p *= 1.5;
             if (Has("recycle")) p *= 2;
             if (Has("refinery")) p *= 3;
+            if (Has("fleetshatter")) p *= 1.5;
+            if (Has("autolaunch")) p *= 2;
             if (S.orbits[i].claimed) p *= 3;
             if (S.regulated) p *= 0.7;
             return p;
@@ -214,6 +218,30 @@ namespace SalvageRun.Orbit.Sim
         public double CollectIncome { get { double c = 0; for (int i = 0; i < 3; i++) c += Rate(i) * Price(i); return c; } }
         public double IncomeRate => (Has("autosell") ? CollectIncome : 0) + InsuranceRate;
         public double CompanyValue => S.credits + (CollectIncome + InsuranceRate) * 900;
+
+        /// <summary>
+        /// 궤도 위험도 0..1 — 2막 후반의 긴장. 시간이 가도 오르고, 선을 넘는 해금을 살 때마다 크게 오른다.
+        /// </summary>
+        public double Danger
+        {
+            get
+            {
+                if (S.act >= 3) return 1;
+                if (S.act < 2) return 0;
+                double time = Math.Min(1, (S.t - S.act2At) / Act3Fallback);
+                int steps = (Has("claim") ? 1 : 0) + (Has("fleetshatter") ? 1 : 0) + (Has("autolaunch") ? 1 : 0);
+                return Math.Min(0.99, time * 0.55 + steps * 0.15);
+            }
+        }
+
+        void StartAct3()
+        {
+            if (S.act >= 3) return;
+            S.act = 3; S.act3At = S.t;
+            Fire("act3", "연쇄 충돌 시작 — 저궤도 위성 다수 손실", false);
+            Push(SimEventKind.Act, 3);
+            S.contract.active = false;
+        }
 
         public double DronePrice => Math.Ceiling(DroneBase * Math.Pow(DroneGrowth, S.bought));
 
@@ -266,9 +294,9 @@ namespace SalvageRun.Orbit.Sim
                 // 줍는 행위 자체가 파편을 낳는다
                 double loss = r * CaptureLoss;
                 o.D += loss; S.made += loss;
-                if (Has("shatter"))
+                if (Has("shatter") || Has("fleetshatter"))
                 {
-                    double extra = r * 0.35;
+                    double extra = r * ((Has("shatter") ? 0.35 : 0) + (Has("fleetshatter") ? 0.5 : 0));
                     o.D += extra; S.made += extra; S.avoidable += extra;
                 }
 
@@ -307,6 +335,7 @@ namespace SalvageRun.Orbit.Sim
             if (S.act >= 2)
             {
                 double launches = LaunchBase * Math.Exp((S.t - S.act2At) / LaunchTau);
+                if (Has("autolaunch")) { launches *= 3; S.made += launches * 2 / 3 * dt; S.avoidable += launches * 2 / 3 * dt; }
                 if (S.orbits[0].locked) launches *= 0.2;         // 저궤도가 막히면 발사가 끊긴다
                 for (int i = 0; i < 3; i++)
                     if (S.orbits[i].open && !S.orbits[i].locked) S.orbits[i].D += launches * LaunchShare[i] * dt;
@@ -435,19 +464,21 @@ namespace SalvageRun.Orbit.Sim
                 }
                 if (TotalD >= 50000 && S.t - S.act2At > 120) Fire("d50k", "파편 5만개 돌파 — 10년 전 수준으로", true);
 
-                // 🔴 케슬러 — 어느 궤도든 드론이 따라잡을 수 없는 밀도를 넘으면
-                for (int i = 0; i < 3; i++)
+                // 🔴 2막 끝은 「뭔가 온다」가 보여야 한다 (09-21 사장님: "2->3막 가는 구간이 너무 할 게 없고 기다리는 시간만 너무 길어")
+                double dg = Danger;
+                if (dg >= 0.25) Fire("dg25", "궤도 위험 등급 「주의」로 상향", false);
+                if (dg >= 0.45) Fire("dg45", "위성 3기 연속 충돌 — 전문가 「임계점 근접」", false);
+                if (dg >= 0.6 && !S.fired.Contains("station"))
                 {
-                    var o = S.orbits[i];
-                    if (!o.locked && o.D >= o.D0 * 3.5 && S.t >= S.act2At + 17 * 60)
-                    {
-                        S.act = 3; S.act3At = S.t;
-                        Fire("act3", "연쇄 충돌 시작 — 저궤도 위성 다수 손실", false);
-                        Push(SimEventKind.Act, 0);
-                        S.contract.active = false;
-                        break;
-                    }
+                    S.fired.Add("station");
+                    Push(SimEventKind.StationHit, 1);
+                    Later("station2", "우주정거장 파편 충돌 — 승무원 긴급 대피", 4);
                 }
+                if (dg >= 0.8) Fire("dg80", "국제우주기구, 전 궤도 사용 자제 권고", false);
+
+                // 🔴 3막은 플레이어가 연다 — 「역대 최대 계약」을 누르는 순간 (설계: 「2막→3막은 스스로 넘어가야 한다」)
+                //    안 누르고 버티면 안전장치 시각에 온다 — 다시는 멈추지 않게 (09-21 첫 판: 3막이 영영 안 왔다)
+                if (S.t >= S.act2At + Act3Fallback) StartAct3();
                 return;
             }
 
@@ -713,6 +744,7 @@ namespace SalvageRun.Orbit.Sim
         {
             if (Has(u.id) || !u.ready(this)) return false;
             if (u.ending) return S.endingsOpen && S.ending == 0;
+            if (u.cost(this) <= 0) return true;
             return S.credits >= u.cost(this) * 0.4 || S.earned >= u.cost(this) * 0.4;
         }
 
@@ -793,6 +825,24 @@ namespace SalvageRun.Orbit.Sim
                 }
             });
             U("refinery", "궤도 정련소", "값 ×3", 30000000, s => s.Has("grade3"));
+
+            // 🔴 「선 넘기」 사다리 — 2막 끝의 발전 요소가 곧 3막으로 가는 길이다 (09-21)
+            U("fleetshatter", "대량 파쇄 편대", "파쇄 로켓을 함대로 · 효율 ×2 · 값 ×1.5 · 회수할 때마다 파편 +50%", 60000000,
+              s => s.Has("refinery"), s => s.Fire("fleet", "대형 위성 연쇄 해체 — 업계 「속도 신기록」", true));
+            U("autolaunch", "궤도 자동 발사장", "발사를 쉬지 않고 대신 해준다 · 값 ×2 · 발사 ×3", 150000000,
+              s => s.Has("fleetshatter"), s => s.Fire("autol", "민간 발사 하루 100회 돌파", true));
+            L.Add(new Unlock
+            {
+                id = "finalcontract", name = "역대 최대 계약 — 전 궤도 동시 파쇄",
+                desc = "모든 궤도의 대형 잔해를 한꺼번에 깬다 · 보상은 지금 수입의 30분치",
+                cost = _ => 0, ready = s => s.Has("autolaunch") && s.S.act == 2,
+                onBuy = s =>
+                {
+                    s.Earn(Math.Ceiling(Math.Max(1, s.IncomeRate) * 1800));
+                    for (int i = 0; i < 3; i++) if (s.S.orbits[i].open && !s.S.orbits[i].locked) s.S.orbits[i].D += s.S.orbits[i].D0 * 2;
+                    s.StartAct3();
+                }
+            });
 
             // 3막 — 마지막 기술 셋. 하나만 산다 (= 엔딩)
             L.Add(new Unlock

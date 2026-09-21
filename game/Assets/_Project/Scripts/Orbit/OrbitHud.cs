@@ -159,6 +159,8 @@ namespace SalvageRun.Orbit
             Popups();
             UnitBreak(left);
             TopBar(left);
+            DangerMeter(left);
+            CinematicTitle(left);
             News(left);
             BannerDraw(left);
             if (PanelVisible) Panel();
@@ -224,6 +226,45 @@ namespace SalvageRun.Orbit
                 popStyle.normal.textColor = c;
                 GUI.Label(new Rect(gx - 100, gy - 14, 200, 28), p.text, popStyle);
             }
+        }
+
+        /// <summary>🔴 2막 후반 — 궤도 위험도. 「뭔가 온다」가 화면에 있어야 한다 (09-21: 끝난 줄 알았다).</summary>
+        void DangerMeter(float left)
+        {
+            if (sim.S.act != 2) return;
+            double d = sim.Danger;
+            if (d < 0.15) return;
+            string word = d < 0.35 ? "안전" : d < 0.6 ? "주의" : d < 0.8 ? "경고" : "임계";
+            Color col = d < 0.35 ? new Color(0.5f, 0.85f, 0.6f) : d < 0.6 ? new Color(0.95f, 0.8f, 0.4f) : new Color(0.95f, 0.4f, 0.35f);
+            bool blink = d >= 0.8f && Mathf.Sin(Time.time * 8f) > 0f;
+            float w = 200f, x = left / 2f - w / 2f, y = 88f;   // 60 은 튀는 숫자 · 시가총액과 겹쳤다
+            GUI.Label(new Rect(x, y - 20, 120, 18), "궤도 위험도", head);
+            var ws = new GUIStyle(head) { alignment = TextAnchor.UpperRight };
+            ws.normal.textColor = col;
+            GUI.Label(new Rect(x, y - 20, w, 18), word, ws);
+            GUI.DrawTexture(new Rect(x, y, w, 6), texBarBg);
+            var c = GUI.color;
+            GUI.color = blink ? Color.white : col;
+            GUI.DrawTexture(new Rect(x, y, w * (float)d, 6), Texture2D.whiteTexture);
+            GUI.color = c;
+        }
+
+        void CinematicTitle(float left)
+        {
+            float c = game.cinematic;
+            if (c < 0.8f) return;
+            float alpha = c < 1.3f ? (c - 0.8f) * 2f : c > OrbitGame.CinematicLen - 0.8f ? (OrbitGame.CinematicLen - c) / 0.8f : 1f;
+            float punch = c < 1.1f ? 1f + (1.1f - c) * 1.5f : 1f;
+            var col = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, Mathf.Clamp01(alpha) * 0.75f);
+            GUI.DrawTexture(new Rect(0, 185, left, 140), texDim);          // 폭발에 글자가 묻혔다 — 뒤에 띠를 깐다
+            GUI.color = new Color(1f, 1f, 1f, Mathf.Clamp01(alpha));
+            unitStyle.fontSize = Mathf.RoundToInt(64 * punch);
+            unitStyle.normal.textColor = new Color(1f, 0.55f, 0.45f);
+            GUI.Label(new Rect(left / 2 - 260, 190, 520, 100), "연쇄 충돌", unitStyle);
+            unitStyle.normal.textColor = Color.white;
+            GUI.Label(new Rect(left / 2 - 260, 285, 520, 30), "파편이 파편을 낳는다 · 멈출 수 없다", unitSub);
+            GUI.color = col;
         }
 
         void UnitBreak(float left)

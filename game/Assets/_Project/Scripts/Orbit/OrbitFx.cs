@@ -50,6 +50,16 @@ namespace SalvageRun.Orbit
         public readonly List<Popup> popups = new List<Popup>();
         public float creditPulse;          // 동전이 꽂힐 때 크레딧 숫자가 한 번 튄다
 
+        /// <summary>
+        /// 🔴 연출의 세기 — 끝으로 갈수록 커진다. 1막 1 → 2막 1.3~1.8 → 3막 2~3 → 회수 극대화 3.5.
+        /// 사장님: *"마지막엔 진짜 도파민 돌아야해"* (09-21). 숫자가 커지는 만큼 화면도 커진다.
+        /// </summary>
+        public float intensity = 1f;
+        public float shake;                // 카메라 흔들림 — 봉쇄 · 3막 시작 · 정거장 피격에서만
+
+        SpriteRenderer station;
+        float stationT = -1f, stationAngle;
+
         // ───────────────────────────────── 세상
 
         class Sat
@@ -101,6 +111,8 @@ namespace SalvageRun.Orbit
             Rockets(simDt);
             Meteors(simDt);
             UpdateParticles(dt);
+            UpdateStation(dt);
+            shake = Mathf.MoveTowards(shake, 0f, dt * 0.8f);
 
             for (int i = popups.Count - 1; i >= 0; i--)
             {
@@ -115,7 +127,7 @@ namespace SalvageRun.Orbit
         /// <summary>드론이 주운 자리 — 파편이 터져 흩어졌다가 드론으로 빨려 들어간다.</summary>
         public void CollectBurst(Vector3 at, Transform drone, bool shatter)
         {
-            int n = shatter ? 10 : 8;
+            int n = Mathf.Min(24, Mathf.RoundToInt((shatter ? 10 : 8) * intensity));
             Color c = shatter ? new Color(1f, 0.55f, 0.25f) : new Color(0.85f, 0.87f, 0.92f);
             for (int i = 0; i < n; i++)
             {
@@ -137,7 +149,7 @@ namespace SalvageRun.Orbit
                     p.drag = 1.5f;
                 }
             }
-            Ring(at, 0.5f, shatter ? new Color(1f, 0.6f, 0.3f) : new Color(1f, 0.95f, 0.8f), 0.25f);
+            Ring(at, 0.5f * Mathf.Sqrt(intensity), shatter ? new Color(1f, 0.6f, 0.3f) : new Color(1f, 0.95f, 0.8f), 0.25f);
         }
 
         /// <summary>손으로 누른 것 · 죽은 위성 · 충돌 — 크게 한 번 터진다.</summary>
@@ -156,7 +168,7 @@ namespace SalvageRun.Orbit
         /// <summary>3막 충돌 — 한 번 터지면 옆에서 또 터진다. 연쇄가 눈에 보여야 한다.</summary>
         public void ChainBurst(Vector3 at, int depth)
         {
-            BigBurst(at, new Color(1f, 0.75f, 0.45f), 10, 3f, 0.8f);
+            BigBurst(at, new Color(1f, 0.75f, 0.45f), Mathf.RoundToInt(10 * intensity), 3f * Mathf.Sqrt(intensity), 0.8f * Mathf.Sqrt(intensity));
             if (depth <= 0) return;
             int kids = Random.Range(1, 3);
             for (int i = 0; i < kids; i++)
@@ -165,6 +177,55 @@ namespace SalvageRun.Orbit
                 if (p == null) return;
                 p.payload = depth - 1;
             }
+        }
+
+        /// <summary>도미노 — 궤도를 따라 차례로 터진다. 연쇄 충돌이 「번지는」 게 보여야 한다.</summary>
+        public void Domino(int band, float startAngle, int count, float step, float gap, int depth)
+        {
+            for (int k = 0; k < count; k++)
+            {
+                var at = Pos(startAngle + k * step, OrbitGame.BandR[band] + Random.Range(-0.15f, 0.15f));
+                var p = Spawn(at, 0.01f, Color.clear, 6, 0.02f + k * gap);
+                if (p == null) return;
+                p.payload = depth;
+            }
+        }
+
+        /// <summary>2막 후반 — 큰 정거장이 지나가다 파편에 맞는다. 「뭔가 온다」.</summary>
+        public void StationPass()
+        {
+            if (station == null)
+                station = Make("우주정거장", PixelArt.Satellite(40, 21), earthPos, 1.5f, new Color(0.9f, 0.93f, 1f), 30);
+            station.enabled = true;
+            stationAngle = Random.Range(0f, 6.28f);
+            stationT = 0f;
+        }
+
+        void UpdateStation(float dt)
+        {
+            if (station == null || stationT < 0f) return;
+            stationT += dt;
+            stationAngle += 0.25f * dt;
+            var at = Pos(stationAngle, 2.7f);
+            station.transform.position = at;
+            station.transform.rotation = Quaternion.Euler(0, 0, stationT * 12f);
+            if (stationT < 2.6f)
+            {
+                // 날아드는 파편이 보인다
+                if (Random.value < dt * 10f)
+                {
+                    var from = at + (Vector3)(Random.insideUnitCircle.normalized * 2.5f);
+                    var p = Spawn(from, 0.07f, new Color(0.8f, 0.8f, 0.85f), 3, 0.5f);
+                    if (p != null) p.v = (at - from) / 0.5f;
+                }
+                return;
+            }
+            // 맞았다
+            BigBurst(at, new Color(1f, 0.9f, 0.75f), 70, 5f, 3f);
+            Domino(1, stationAngle, 8, 0.18f, 0.07f, 1);
+            shake = Mathf.Max(shake, 0.18f);
+            station.enabled = false;
+            stationT = -1f;
         }
 
         void Ring(Vector3 at, float size, Color c, float life)
@@ -180,7 +241,7 @@ namespace SalvageRun.Orbit
         public void Pop(Vector3 world, string text, Color c, float size = 19f)
         {
             if (popups.Count > 30) popups.RemoveAt(0);
-            popups.Add(new Popup { world = world + (Vector3)(Random.insideUnitCircle * 0.15f), text = text, c = c, size = size });
+            popups.Add(new Popup { world = world + (Vector3)(Random.insideUnitCircle * 0.15f), text = text, c = c, size = size * (1f + (intensity - 1f) * 0.3f) });
         }
 
         /// <summary>동전이 크레딧 숫자로 날아가 꽂힌다.</summary>
@@ -244,7 +305,7 @@ namespace SalvageRun.Orbit
             foreach (var d in Defs)
             {
                 if (!game.sim.Has(d.id) || structures.Exists(s => s.id == d.id)) continue;
-                Sprite sp = d.kind == 0 ? PixelArt.Station(d.px, d.seed)
+                Sprite sp = d.kind == 0 ? PixelArt.Satellite(d.px + 6, d.seed)   // Station 은 작으면 색 네모로 뭉개졌다 (09-22 캡처)
                           : d.kind == 1 ? PixelArt.Satellite(d.px, d.seed)
                           : d.kind == 2 ? PixelArt.Vessel(d.px, d.seed)
                           : PixelArt.Hulk(d.px, d.seed);
