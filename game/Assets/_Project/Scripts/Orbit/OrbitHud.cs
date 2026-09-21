@@ -35,6 +35,38 @@ namespace SalvageRun.Orbit
         Texture2D texPanel, texLine, texCard, texBar, texBarBg, texDim, texWarn;
 
         public bool PanelVisible => sim != null && sim.SellVisible;
+        public Vector2 CreditAnchorScreen = new Vector2(120, 580);   // 동전이 날아가 꽂히는 자리 (화면 좌표)
+
+        double shownCredits;
+        int lastUnit = -1;
+        float unitAt = -99f;
+        string unitName = "";
+        GUIStyle popStyle, unitStyle, unitSub;
+        static readonly string[] UnitNames = { "", "만", "억", "조", "경" };
+
+        /// <summary>
+        /// 🔴 숫자 연출 — 크레딧은 굴러 올라가고, 만·억·조로 넘어가는 순간 크게 한 번 터진다.
+        /// 「이제 억 단위구나」가 이 장르의 보상이다 (wiki 2회차).
+        /// </summary>
+        void Update()
+        {
+            if (sim == null) return;
+            double a = sim.S.credits;
+            if (a < shownCredits || double.IsNaN(shownCredits)) shownCredits = a;
+            else shownCredits += (a - shownCredits) * (1 - Mathf.Exp(-Time.deltaTime * 7f));
+            if (a - shownCredits < 1) shownCredits = a;
+
+            double peak = sim.S.peak;
+            int unit = peak >= 10000 ? Mathf.Min(4, (int)(System.Math.Log10(peak) / 4)) : 0;
+            if (lastUnit < 0) lastUnit = unit;
+            else if (unit > lastUnit)
+            {
+                lastUnit = unit;
+                unitAt = Time.time;
+                unitName = UnitNames[unit];
+                if (game.fx != null) game.fx.CoinShower(30);
+            }
+        }
 
         public void ToggleMenu() { MenuOpen = !MenuOpen; confirmRestart = false; }
 
@@ -98,6 +130,9 @@ namespace SalvageRun.Orbit
             warnStyle = S(15, Color.white, TextAnchor.MiddleCenter);
             titleStyle = S(34, Color.white, TextAnchor.MiddleCenter);
             center = S(15, text, TextAnchor.MiddleCenter); center.wordWrap = true;
+            popStyle = S(15, amber, TextAnchor.MiddleCenter);
+            unitStyle = S(96, Color.white, TextAnchor.MiddleCenter);
+            unitSub = S(16, amber, TextAnchor.MiddleCenter);
 
             btn = new GUIStyle(GUI.skin.button) { font = font, fontSize = 13, border = new RectOffset(0, 0, 0, 0) };
             btn.normal.background = Tex(new Color(0.08f, 0.105f, 0.15f));
@@ -121,6 +156,8 @@ namespace SalvageRun.Orbit
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1f));
 
             float left = PanelVisible ? vw - PanelW : vw;
+            Popups();
+            UnitBreak(left);
             TopBar(left);
             News(left);
             BannerDraw(left);
@@ -148,7 +185,14 @@ namespace SalvageRun.Orbit
 
             // 🔴 표시 자체가 없다가 생긴다
             if (game.seenCollect && !sim.Has("autosell")) Item("회수", KNum.Fmt(S.held));
-            if (PanelVisible) Item("크레딧", KNum.Fmt(S.credits));
+            if (PanelVisible)
+            {
+                float x0 = x;
+                big.fontSize = 20 + Mathf.RoundToInt(game.fx != null ? game.fx.creditPulse * 6f : 0f);
+                Item("크레딧", KNum.Fmt(shownCredits));
+                big.fontSize = 20;
+                CreditAnchorScreen = new Vector2((x0 + 90f) * scale, Screen.height - 24f * scale);
+            }
             if (S.bought > 0)
             {
                 double inc = sim.IncomeRate > 0 ? sim.IncomeRate : sim.CollectIncome;
@@ -163,6 +207,37 @@ namespace SalvageRun.Orbit
                 int m = (int)(S.t / 60), s = (int)(S.t % 60);
                 GUI.Label(new Rect(left - 70, 14, 60, 20), $"{m:00}:{s:00}", costDim);
             }
+        }
+
+        void Popups()
+        {
+            var fx = game.fx;
+            var cam = Camera.main;
+            if (fx == null || cam == null) return;
+            foreach (var p in fx.popups)
+            {
+                Vector3 sp = cam.WorldToScreenPoint(p.world);
+                float k = p.age / p.life;
+                float gx = sp.x / scale, gy = (Screen.height - sp.y) / scale - k * 30f;
+                popStyle.fontSize = Mathf.RoundToInt(p.size * (k < 0.12f ? 1f + (0.12f - k) * 4f : 1f));
+                var c = p.c; c.a = 1f - k * k;
+                popStyle.normal.textColor = c;
+                GUI.Label(new Rect(gx - 100, gy - 14, 200, 28), p.text, popStyle);
+            }
+        }
+
+        void UnitBreak(float left)
+        {
+            float age = Time.time - unitAt;
+            if (age > 2.8f || string.IsNullOrEmpty(unitName)) return;
+            float punch = age < 0.3f ? 1f + (0.3f - age) * 2f : 1f;
+            float alpha = age < 2f ? 1f : 1f - (age - 2f) / 0.8f;
+            var col = GUI.color;
+            GUI.color = new Color(1f, 1f, 1f, alpha);
+            unitStyle.fontSize = Mathf.RoundToInt(96 * punch);
+            GUI.Label(new Rect(left / 2 - 200, 170, 400, 130), unitName, unitStyle);
+            GUI.Label(new Rect(left / 2 - 200, 290, 400, 30), "크레딧 " + unitName + " 단위", unitSub);
+            GUI.color = col;
         }
 
         void News(float left)
