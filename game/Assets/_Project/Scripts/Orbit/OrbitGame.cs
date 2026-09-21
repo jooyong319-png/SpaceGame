@@ -76,7 +76,8 @@ namespace SalvageRun.Orbit
 
         // ───────────────────────────────── 부팅
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        // ⬜ 2026-09-22: rev16 「빚 갚는 청소선」(DebtGame)이 대신 뜬다. rev15 는 태그 rev15-final.
+        // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void AutoBoot()
         {
             if (FindFirstObjectByType<OrbitGame>() != null) return;
