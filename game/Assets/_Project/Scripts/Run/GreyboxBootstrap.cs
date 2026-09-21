@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using SalvageRun.Data;
 using SalvageRun.UI;
@@ -37,7 +37,9 @@ namespace SalvageRun.Run
         ///    씬 구성을 사람 손에 맡기면 반드시 이런 게 생긴다.
         ///    코드가 스스로 조립하게 두면 어떤 씬에서 실행하든 게임이 된다.
         /// </summary>
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        // ⬜ 2026-09-21: 자동 부팅을 껐다 — rev15 「궤도 청소부」(Scripts/Orbit/OrbitGame.cs)가 대신 뜬다.
+        //    옛 게임을 보려면 메뉴 「SalvageRun/그레이박스 준비」로 씬에 넣는다.
+        // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void AutoBoot()
         {
             if (FindFirstObjectByType<GreyboxBootstrap>() != null) return;
