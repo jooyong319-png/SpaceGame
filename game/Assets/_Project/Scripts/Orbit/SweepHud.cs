@@ -212,8 +212,8 @@ namespace SalvageRun.Orbit
             }
             // 첫 5분 — 새 장난감마다 한 줄씩만 (§10)
             string hint = null;
-            if (!sim.M.flags.Contains("hint_claw") && R.t < 10) hint = "궤도 위에 커서를 대 보세요 — 집게가 저절로 친다";
-            else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 12) hint = "왼쪽 단추를 누르고 있으면 빨아들이고, 떼면 모인 만큼 터진다 (모으는 동안 집게는 쉰다)";
+            if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = "쓰레기를 눌러서 하나씩 줍는다 — 위성은 세 번, 로켓은 다섯 번";
+            else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "지구에서 폭탄이 올라온다 — 길게 누르고 있으면 빨아들이고, 떼면 모인 만큼 터진다";
             else if (sim.DronesOn && !sim.M.flags.Contains("hint_drone") && R.t < 8) hint = "드론은 알아서 줍는다 — 한 방에 부서지는 것만";
             if (hint != null) GUI.Label(new Rect(vw / 2 - 360, RefH - 70, 720, 20), hint, center);
             if (game.timeScale > 1) GUI.Label(new Rect(vw - 120, RefH - 46, 106, 18), "시험 속도 ×3", cost);
@@ -513,10 +513,11 @@ namespace SalvageRun.Orbit
             switch (id)
             {
                 case "c_pow": return "한 방 " + (1 + l);
-                case "c_rad": return "반지름 " + (46 + 8 * l);
+                case "c_auto": return l > 0 ? "대고만 있어도" : "눌러야 친다";
+                case "c_rad": return l > 0 ? "반지름 " + (22 + 10 * l) : "하나씩";
                 case "c_spd": return Mathf.Max(0.38f, 0.8f - 0.06f * l).ToString("0.00") + "초";
                 case "c_fuel": return (30 + 3 * l) + "초";
-                case "c_find": return "+" + (50 * l) + "%";
+                case "c_find": return "판마다 " + l + "번";
                 case "c_crit": return (5 * l) + "%";
                 case "d_n": return (2 + l) + "대";
                 case "d_spd": return Mathf.Max(0.4f, 1 - 0.1f * l).ToString("0.0") + "초마다";
@@ -524,7 +525,7 @@ namespace SalvageRun.Orbit
                 case "d_mag": return "+" + (25 * l) + "%";
                 case "d_grade": return "한 방 " + (1 + l);
                 case "d_pair": return l > 0 ? "둘씩" : "하나씩";
-                case "b_n": return (2 + l) + "발";
+                case "b_n": return "판마다 " + (2 + l) + "발";
                 case "b_pr": return "반경 " + (150 + 20 * l);
                 case "b_cap": return (18 + 8 * l) + "개";
                 case "b_pf": return "×" + (1 + 0.25f * l).ToString("0.00");

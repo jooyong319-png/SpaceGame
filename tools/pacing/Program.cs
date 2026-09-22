@@ -26,7 +26,7 @@ static class Program
     {
         var sim = new SweepSim(null, null, seed);
         var rng = new Random(seed * 31 + 1);
-        double ax = 600, ay = 360, tx = 600, ty = 360, retarget = 0, shopClock = 0;
+        double ax = 600, ay = 360, tx = 600, ty = 360, retarget = 0, shopClock = 0, clickT = 0;
         bool hold = false;
         var log = new List<string>();
         var segEarn = new double[9]; var segRuns = new int[9]; var segSplit = new double[9, 3];
@@ -54,7 +54,7 @@ static class Program
                 sim.SetOrbit(sim.MaxOrbit);
                 // 사기 — 청구서 몫은 남겨 두고 싼 것부터
                 // 기한이 한 판 남았거나 연체 중이면 모은다 (사람도 그렇게 한다)
-                double reserve = sim.S.overdue || sim.S.billDue <= 1 ? double.MaxValue : Math.Min(sim.BillAmount, sim.S.cash * 0.5);
+                double reserve = sim.S.overdue || sim.S.billDue <= 1 ? double.MaxValue : Math.Min(sim.BillAmount, sim.S.cash * 0.35);   // 첫 청구서 전엔 아끼지 않는다 (자동 집게부터)
                 for (int loop = 0; loop < 60; loop++)
                 {
                     int best = -1; double bc = double.MaxValue;
@@ -73,13 +73,25 @@ static class Program
             while (!R.over)
             {
                 if (++ticks > 20000) { Console.WriteLine($"  ⚠ 판이 안 끝난다: 연료 {R.fuel:0.0} 붙잡음 {R.holding} 연쇄대기 {R.pend.Count} 잔해 {R.junk.Count}"); break; }
-                retarget -= Dt;
-                if (!hold && retarget <= 0) { retarget = 1.5; Densest(sim, rng, ref tx, ref ty); }
-                double k = Math.Min(1, Dt * (hold ? 1.2 : 3)); ax += (tx - ax) * k; ay += (ty - ay) * k;
+                retarget -= Dt; clickT -= Dt;
+                bool click = false;
+                if (!hold && sim.ClawR <= 0)
+                {
+                    // 🖱 손으로 하나씩 — 가까운 것에 커서를 옮겨 1초에 4번 누른다
+                    if (retarget <= 0) { retarget = 0.25; Nearest(sim, ax, ay, ref tx, ref ty); }
+                    double kk = Math.Min(1, Dt * 12); ax += (tx - ax) * kk; ay += (ty - ay) * kk;
+                    if (clickT <= 0 && Math.Abs(tx - ax) + Math.Abs(ty - ay) < 10) { click = true; clickT = 0.25; }
+                }
+                else
+                {
+                    if (!hold && retarget <= 0) { retarget = 1.5; Densest(sim, rng, ref tx, ref ty); }
+                    double k = Math.Min(1, Dt * (hold ? 1.2 : 3)); ax += (tx - ax) * k; ay += (ty - ay) * k;
+                    if (!sim.AutoClaw && clickT <= 0) { click = true; clickT = 0.25; }
+                }
                 // 폭탄 — 빽빽한 곳에서 누르고, 붕괴 한계 85% 이거나 3초면 뗀다
                 if (!hold && R.shots > 0 && R.t > 3 && R.fuel > 4 && rng.NextDouble() < Dt / 2.5) { hold = true; Densest(sim, rng, ref tx, ref ty); }
                 if (hold && (R.packed.Count >= sim.Cap * 0.85 || R.holdT > 3)) hold = false;
-                sim.Tick(Dt, ax, ay, true, hold);
+                sim.Tick(Dt, ax, ay, true, hold, click);
                 if (!R.holding && hold && R.shots <= 0) hold = false;
                 while (sim.Events.Count > 0) sim.Events.Dequeue();
             }
@@ -103,6 +115,17 @@ static class Program
     }
 
     static string Pct(double a, double t) => t <= 0 ? "-" : Math.Round(a / t * 100).ToString();
+
+    static void Nearest(SweepSim sim, double ax, double ay, ref double tx, ref double ty)
+    {
+        double bd = double.MaxValue;
+        foreach (var o in sim.R.junk)
+        {
+            if (o.dead || o.fade < 0.5) continue;
+            double d = (o.x - ax) * (o.x - ax) + (o.y - ay) * (o.y - ay) - SweepSim.Types[o.k].val * 400;
+            if (d < bd) { bd = d; tx = o.x; ty = o.y; }
+        }
+    }
 
     static void Densest(SweepSim sim, Random rng, ref double tx, ref double ty)
     {

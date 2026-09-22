@@ -28,9 +28,11 @@ namespace SalvageRun.Orbit
         readonly List<SpriteRenderer> attViews = new List<SpriteRenderer>();
         readonly List<SpriteRenderer> droneViews = new List<SpriteRenderer>();
         readonly List<SpriteRenderer> cableViews = new List<SpriteRenderer>();
+        readonly List<SpriteRenderer> podViews = new List<SpriteRenderer>();
         SpriteRenderer earth, atmo, rim, band, bandGlow, claw, clawRing, clawWind, holeCore, holeGlow, holeRing, moon;
         float t, saveTimer, bandInner = -1, earthR = 120;
-        public bool aimOn, holdOn;
+        public bool aimOn, holdOn, clickOn;
+        float pressT;
         public Vector2 aimPx;
         public static bool TestAim, TestHold;
         public static Vector2 TestPx;
@@ -157,7 +159,8 @@ namespace SalvageRun.Orbit
                 if (hitStop > 0) { hitStop -= dt; sdt = 0; }
                 else if (slowMo > 0) { slowMo -= dt; sdt *= 0.4f; }
                 int steps = Mathf.Max(1, Mathf.CeilToInt(sdt / 0.03f));
-                if (sdt > 0) for (int i = 0; i < steps; i++) sim.Tick(sdt / steps, aimPx.x, aimPx.y, aimOn, holdOn);
+                if (sdt > 0) for (int i = 0; i < steps; i++) sim.Tick(sdt / steps, aimPx.x, aimPx.y, aimOn, holdOn, clickOn && i == 0);
+                clickOn = false;
             }
             Consume();
             DrawWorld();
@@ -180,14 +183,17 @@ namespace SalvageRun.Orbit
         {
             var mouse = Mouse.current;
             aimOn = false; holdOn = false;
-            if (TestAim && hud != null && !hud.Blocking) { aimPx = TestPx; aimOn = true; holdOn = TestHold; return; }   // 에디터 시험용 (MCP 자동 플레이)
+            if (TestAim && hud != null && !hud.Blocking) { aimPx = TestPx; aimOn = true; holdOn = TestHold; clickOn = true; return; }   // 에디터 시험용 (MCP 자동 플레이)
             if (mouse == null || hud == null || hud.Blocking) return;
             Vector2 sp = mouse.position.ReadValue();
             if (sp.x < 0 || sp.y < 0 || sp.x > Screen.width || sp.y > Screen.height) return;
             Vector3 w = cam.ScreenToWorldPoint(new Vector3(sp.x, sp.y, 10));
             aimPx = new Vector2(480 + (w.x - cam.transform.position.x) * PxPerUnit, 310 - (w.y - cam.transform.position.y) * PxPerUnit);
             aimOn = true;
-            holdOn = mouse.leftButton.isPressed;
+            // 🖱 짧게 누르면 집게 한 번 · 0.22초 넘게 누르고 있으면 블랙홀 (폭탄이 있을 때)
+            if (mouse.leftButton.wasPressedThisFrame) { clickOn = true; pressT = 0; }
+            if (mouse.leftButton.isPressed) pressT += Time.unscaledDeltaTime; else pressT = 0;
+            holdOn = pressT > 0.22f;
         }
 
         public Vector3 PxToWorld(double x, double y) => new Vector3((float)(x - 480) / PxPerUnit, (float)(310 - y) / PxPerUnit, 0);
@@ -202,6 +208,16 @@ namespace SalvageRun.Orbit
                 var at = PxToWorld(e.x, e.y);
                 switch (e.kind)
                 {
+                    case SwEv.Supply:
+                        PopAt(e.x, e.y - 10, e.text, e.k == 1 ? Violet : Green, 15);
+                        Add(ring, at, 0.1f, e.k == 1 ? Violet : Green, 5, 0.5f, 0.9f);
+                        OrbitSfx.Play("unit", 0.6f, 0.1f);
+                        break;
+                    case SwEv.SupplyGet:
+                        PopAt(e.x, e.y, e.text, e.k == 1 ? Violet : Green, 18);
+                        Burst(at, e.k == 1 ? Violet : Green, 14, 3f);
+                        OrbitSfx.Play("buy", 0.9f, 0.05f);
+                        break;
                     case SwEv.Strike:
                         Add(ring, at, 0.1f, e.k == 1 ? Amber2 : new Color(0.35f, 0.38f, 0.44f), 5, 0.22f, (float)e.v * 2 / PxPerUnit);
                         if (e.k == 1) { OrbitSfx.Play("tick", 0.45f, 0.05f); shake = Mathf.Max(shake, 0.035f); }
@@ -418,6 +434,24 @@ namespace SalvageRun.Orbit
                 }
             for (int i = cn; i < cableViews.Count; i++) cableViews[i].enabled = false;
 
+            // 지구 보급 — 지구에서 올라와 청소선까지 (폭탄은 보라 · 연료는 초록)
+            var pods = sim.R.pods; int pn = 0;
+            if (live)
+                foreach (var p in pods)
+                {
+                    if (!p.up || p.got) continue;
+                    while (podViews.Count <= pn) podViews.Add(Make(square, Vector3.zero, 0.2f, Color.white, 80));
+                    var pv = podViews[pn++]; pv.enabled = true;
+                    pv.color = p.kind == 1 ? Violet : Green;
+                    var pp = PxToWorld(p.x, p.y);
+                    pv.transform.position = pp;
+                    pv.transform.localScale = new Vector3(0.16f / square.bounds.size.x, 0.28f / square.bounds.size.y, 1);
+                    var to = PxToWorld(aimPx.x, aimPx.y) - pp;
+                    pv.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(to.y, to.x) * Mathf.Rad2Deg - 90);
+                    if (Random.value < 0.7f) Add(pixel, pp - to.normalized * 0.15f, 0.07f, p.kind == 1 ? Violet : Green, 0, 0.4f);   // 꼬리
+                }
+            for (int i = pn; i < podViews.Count; i++) podViews[i].enabled = false;
+
             // 드론
             var drs = sim.R.drones;
             while (droneViews.Count < drs.Count) droneViews.Add(Make(droneArt, Vector3.zero, 0.32f, Cyan, 60));
@@ -456,9 +490,12 @@ namespace SalvageRun.Orbit
                 if (Random.value < 0.5f && n > 0) { float a = Random.value * 6.28f, rr = core * 0.8f; var p = Add(pixel, at + new Vector3(Mathf.Cos(a), Mathf.Sin(a)) * rr, 0.06f, Grey, 0, 0.3f); p.v = new Vector3(-Mathf.Sin(a), Mathf.Cos(a)) * 2f; }
                 return;
             }
-            float r = (float)sim.ClawR * 2 / PxPerUnit;
+            bool area = sim.ClawR > 0, auto = sim.AutoClaw;
+            float r = (float)(area ? sim.ClawR : SweepSim.PickR) * 2 / PxPerUnit;
             bool fuel = R.fuel > 0;
-            float wind = 1f - Mathf.Clamp01((float)(R.next / sim.Gap));
+            float wind = auto ? 1f - Mathf.Clamp01((float)(R.next / sim.Gap)) : 1f;
+            clawWind.enabled = fuel && auto;
+            claw.enabled = area || auto;               // 처음엔 작은 조준점만 — 손으로 하나씩
             claw.transform.position = at + new Vector3(0, 0.1f + (1 - wind) * 0.2f, 0);
             claw.transform.rotation = Quaternion.Euler(0, 0, -90);
             clawRing.transform.position = at;
