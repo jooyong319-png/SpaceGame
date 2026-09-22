@@ -29,7 +29,7 @@ namespace SalvageRun.Orbit
         Vector2 newsScroll;
         // 알림
         string banner; int bannerKind; float bannerT;
-        string paidText; float paidT; int paidBill;
+        string paidText; float paidT; int paidBill; float resultT;
         float[] branchFlash = new float[4];
         float breakingT, tickT; int tickI; string breakingHead;
         readonly float[] nodePulse = new float[SweepSim.NodeCount];
@@ -44,7 +44,7 @@ namespace SalvageRun.Orbit
 
         public void OnRunEnd()
         {
-            showResult = true; bankruptArmed = false; last = sim.R;
+            showResult = true; bankruptArmed = false; last = sim.R; resultT = 2.6f;
             sim.M.flags.Remove("hint_seen_now");
             if (!sim.M.flags.Contains("hint_claw")) sim.M.flags.Add("hint_claw");
             if (sim.DronesOn && !sim.M.flags.Contains("hint_drone")) sim.M.flags.Add("hint_drone");
@@ -98,7 +98,7 @@ namespace SalvageRun.Orbit
             shown = a < shown ? a : shown + (a - shown) * (1 - Mathf.Exp(-Time.deltaTime * 7f));
             if (a - shown < 1) shown = a;
             float dt = Time.deltaTime;
-            bannerT -= dt; paidT -= dt; breakingT -= dt; tickT -= dt;
+            bannerT -= dt; paidT -= dt; breakingT -= dt; tickT -= dt; resultT -= dt;
             for (int i = 0; i < 4; i++) branchFlash[i] = Mathf.Max(0, branchFlash[i] - dt);
             for (int i = 0; i < nodePulse.Length; i++) nodePulse[i] = Mathf.Max(0, nodePulse[i] - dt * 3);
             if (tickT <= 0) { tickT = 8f; tickI++; }
@@ -285,6 +285,7 @@ namespace SalvageRun.Orbit
                 title.fontSize = 26; GUI.Label(new Rect(ox + Win.x, Win.y + 18, Win.width, 36), "<color=#ffdf95>납부 완료</color> · " + pb.t, title);
                 title.fontSize = 18; GUI.Label(new Rect(ox + Win.x, Win.y + 54, Win.width, 26), pb.perk, title);
             }
+            if (resultT > 0 && last != null) ReturnCard();
             GUI.Label(new Rect(ox + Win.x, Win.yMax - 22, Win.width, 18), "창밖 = 지금 내 궤도 · 칸을 살수록 궤도가 넓어진다 (" + Mathf.RoundToInt((float)(sim.Widen - 1) * 100) + "%)", center);
 
             BillTerminal(new Rect(ox + 12, 44, 180, 176));
@@ -298,6 +299,36 @@ namespace SalvageRun.Orbit
             if (GUI.Button(new Rect(ox + 330, 408, 300, 104), M.cleanReady ? "청산 출동 ▸" : "출동 ▸", bigBtn) && paidT < 2.4f) Go();
             GUI.Label(new Rect(ox + 330, 516, 300, 16), "Space 로도 · 한 판 " + Mathf.RoundToInt((float)sim.FuelMax) + "초", center);
             Dial(new Rect(ox + 648, 400, 300, 150));
+        }
+
+        /// <summary>귀환 직후 2.6초 — 창 가운데에 크게 (§9-1)</summary>
+        void ReturnCard()
+        {
+            var R = last;
+            float k = Mathf.Clamp01(resultT / 0.35f), grow = Mathf.Clamp01((2.6f - resultT) / 0.25f);
+            var r = new Rect(ox + Win.x + 90, Win.y + 70, Win.width - 180, 170);
+            GUI.color = new Color(1, 1, 1, k * 0.94f);
+            GUI.DrawTexture(r, texCard2);
+            GUI.color = new Color(1, 1, 1, k);
+            Frame(r, SweepGame.Amber, 2);
+            GUI.Label(new Rect(r.x, r.y + 10, r.width, 20), "출동 " + sim.S.runs + " — 귀환", center);
+            title.fontSize = 34;
+            double earned = (R.Earned + R.bonus + R.interest) * grow;
+            GUI.Label(new Rect(r.x, r.y + 30, r.width, 44), "<color=#6fcf97>+" + KNum.Fmt(earned) + "</color>", title);
+            double tot = System.Math.Max(1, R.Earned);
+            float a = (float)(R.earnClaw / tot), b = (float)(R.earnDrone / tot);
+            float bw = r.width - 80, bx = r.x + 40, by = r.y + 84;
+            GUI.DrawTexture(new Rect(bx, by, bw, 10), texBar);
+            GUI.color = SweepGame.Amber; GUI.DrawTexture(new Rect(bx, by, bw * a * grow, 10), white);
+            GUI.color = SweepGame.Cyan; GUI.DrawTexture(new Rect(bx + bw * a, by, bw * b * grow, 10), white);
+            GUI.color = SweepGame.Violet; GUI.DrawTexture(new Rect(bx + bw * (a + b), by, bw * (1 - a - b) * grow, 10), white);
+            GUI.color = new Color(1, 1, 1, k);
+            GUI.Label(new Rect(r.x, by + 14, r.width, 18), "<color=#f2c14e>집게 " + Mathf.RoundToInt(a * 100) + "</color> · <color=#6fd3e8>드론 " + Mathf.RoundToInt(b * 100) + "</color> · <color=#b69cff>폭발 " + Mathf.RoundToInt((1 - a - b) * 100) + "</color> %  ·  부순 것 " + R.broke, center);
+            string rec = "최대 연쇄 " + R.chainBest + (R.chainBest > prevBestChain && R.chainBest >= 10 ? " <color=#ff8a7a>새 기록!</color>" : "") + "   최대 압축 " + R.packBest + (R.packBest > prevBestPack && R.packBest >= 5 ? " <color=#ff8a7a>새 기록!</color>" : "");
+            GUI.Label(new Rect(r.x, by + 34, r.width, 18), rec, center);
+            if (R.contractOk) GUI.Label(new Rect(r.x, by + 52, r.width, 18), "<color=#6fcf97>의뢰 성공 +" + KNum.Fmt(R.bonus) + "</color>", center);
+            else if (R.cut > 0) GUI.Label(new Rect(r.x, by + 52, r.width, 18), "<color=#ee7766>추심으로 떼인 것 -" + KNum.Fmt(R.cut) + "</color>", center);
+            GUI.color = Color.white;
         }
 
         void BillTerminal(Rect r)
