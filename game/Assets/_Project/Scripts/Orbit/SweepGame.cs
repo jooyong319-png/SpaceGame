@@ -29,7 +29,7 @@ namespace SalvageRun.Orbit
         readonly List<SpriteRenderer> droneViews = new List<SpriteRenderer>();
         readonly List<SpriteRenderer> cableViews = new List<SpriteRenderer>();
         readonly List<SpriteRenderer> podViews = new List<SpriteRenderer>();
-        SpriteRenderer earth, atmo, rim, band, bandGlow, claw, clawRing, clawWind, holeCore, holeGlow, holeRing, moon;
+        SpriteRenderer earth, atmo, rim, band, bandGlow, claw, clawRing, clawWind, holeCore, holeGlow, holeRing, moon, sun, sunCore;
         float t, saveTimer, bandInner = -1, earthR = 120, camBase;
         public bool aimOn, holdOn, clickOn;
         float pressT;
@@ -76,6 +76,8 @@ namespace SalvageRun.Orbit
 
             Stars();
             moon = Make(disc, PxToWorld(862, 104), 0.6f, new Color(0.6f, 0.62f, 0.66f), 1);
+            sun = Make(glow, PxToWorld(96, 528), 7.5f, new Color(1f, 0.86f, 0.6f, 0.18f), 0);     // 정지궤도 — 멀리 있는 태양
+            sunCore = Make(disc, PxToWorld(96, 528), 0.5f, new Color(1f, 0.95f, 0.82f, 0.9f), 1);
             atmo = Make(glow, Vector3.zero, 3.4f, new Color(0.35f, 0.6f, 1f, 0.35f), 4);
             earth = Make(disc, Vector3.zero, 2.4f, new Color(0.26f, 0.47f, 0.84f), 5);
             rim = Make(ring, Vector3.zero, 2.5f, new Color(1f, 0.87f, 0.58f, 0), 6);
@@ -357,12 +359,20 @@ namespace SalvageRun.Orbit
             rim.transform.localScale = Vector3.one * (d + 0.12f) / ring.bounds.size.x;
             rim.color = new Color(1f, 0.87f, 0.58f, rimLit);
             moon.enabled = sim.S.orbit == 1;
+            bool geo = sim.S.orbit == 2;
+            sun.enabled = sunCore.enabled = geo;
+            if (geo)
+            {
+                float pulse = 1f + 0.03f * Mathf.Sin(t * 0.8f);
+                sun.transform.localScale = Vector3.one * 7.5f * pulse / glow.bounds.size.x;
+                sunCore.transform.localScale = Vector3.one * 0.5f * pulse / disc.bounds.size.x;
+            }
             float inner = (float)(o.bi / sim.Bo);
             if (Mathf.Abs(inner - bandInner) > 0.001f) { bandInner = inner; bandSprite = Ring(256, inner); band.sprite = bandSprite; }
             float outer = (float)sim.Bo * 2 / PxPerUnit;
             band.transform.localScale = new Vector3(outer / bandSprite.bounds.size.x, outer * (float)SweepSim.Tilt / bandSprite.bounds.size.y, 1);
-            Color bc = sim.S.orbit == 0 ? new Color(0.43f, 0.55f, 0.78f) : sim.S.orbit == 1 ? new Color(0.59f, 0.47f, 0.82f) : new Color(0.86f, 0.51f, 0.39f);
-            bc.a = 0.06f + bandLit * 0.03f; band.color = bc;
+            Color bc = sim.S.orbit == 0 ? new Color(0.43f, 0.55f, 0.78f) : sim.S.orbit == 1 ? new Color(0.55f, 0.45f, 0.82f) : new Color(0.78f, 0.55f, 0.45f);
+            bc.a = 0.035f + bandLit * 0.025f; band.color = bc;
             bandGlow.transform.localScale = new Vector3(outer / ring.bounds.size.x, outer * (float)SweepSim.Tilt / ring.bounds.size.y, 1);
             bandGlow.color = new Color(1f, 0.8f, 0.4f, bandLit * 0.7f + edgeGlow * 0.2f);
         }
