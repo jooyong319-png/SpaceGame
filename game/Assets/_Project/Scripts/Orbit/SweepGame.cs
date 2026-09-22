@@ -501,12 +501,11 @@ namespace SalvageRun.Orbit
             bool fuel = R.fuel > 0;
             float wind = auto ? 1f - Mathf.Clamp01((float)(R.next / sim.Gap)) : 1f;
             clawWind.enabled = fuel && auto;
-            claw.enabled = area || auto;               // 처음엔 작은 조준점만 — 손으로 하나씩
             claw.transform.position = at + new Vector3(0, 0.1f + (1 - wind) * 0.2f, 0);
             claw.transform.rotation = Quaternion.Euler(0, 0, -90);
             clawRing.transform.position = at;
             clawRing.transform.localScale = Vector3.one * r / ring.bounds.size.x;
-            clawRing.color = fuel ? new Color(1f, 0.76f, 0.3f, 0.3f + 0.5f * wind) : new Color(0.5f, 0.54f, 0.6f, 0.4f);
+            clawRing.color = fuel ? new Color(1f, 0.76f, 0.3f, auto ? 0.3f + 0.5f * wind : 0.9f) : new Color(0.5f, 0.54f, 0.6f, 0.4f);
             float ang = wind * Mathf.PI * 2 + Mathf.PI / 2;
             clawWind.transform.position = at + new Vector3(Mathf.Cos(ang), Mathf.Sin(ang), 0) * r / 2;
         }

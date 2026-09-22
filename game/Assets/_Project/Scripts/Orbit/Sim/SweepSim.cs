@@ -169,7 +169,7 @@ namespace SalvageRun.Orbit.Sim
             new Bill { t = "궤도 사용료",      m = 1200,   due = 4, credit = 5,  perk = "중궤도 면허 (값 ×2)" },
             new Bill { t = "보험료",           m = 120000, due = 5, credit = 8,  perk = "큰 잔해 등장 · 연쇄 +10%" },
             new Bill { t = "청소선 할부 2회",  m = 200000, due = 4, credit = 12, perk = "드론 등급 +1" },
-            new Bill { t = "법인세",           m = 1800000, due = 5, credit = 18, perk = "정지궤도 면허 (값 ×3)" },
+            new Bill { t = "법인세",           m = 4000000, due = 5, credit = 18, perk = "정지궤도 면허 (값 ×3)" },
             new Bill { t = "청소선 할부 3회",  m = 11000000, due = 5, credit = 26, perk = "폭탄 +1 · 붕괴 한계 +50%" },
             new Bill { t = "청소선 할부 완납", m = 27000000, due = 6, credit = 0,  perk = "빚 청산 → 청산 출동" },
         };
@@ -178,8 +178,8 @@ namespace SalvageRun.Orbit.Sim
         public struct Career { public string id, name, desc; public int[] cost; }
         public static readonly Career[] Careers =
         {
-            new Career { id = "pilot",  name = "베테랑 조종사", desc = "연료 +25%",            cost = new[] { 3, 6, 10 } },
-            new Career { id = "seed",   name = "단골 고객",     desc = "모든 값 ×1.5",         cost = new[] { 2, 4, 7 } },
+            new Career { id = "pilot",  name = "베테랑 조종사", desc = "연료 +20%",            cost = new[] { 3, 6, 10 } },
+            new Career { id = "seed",   name = "단골 고객",     desc = "모든 값 ×1.3",         cost = new[] { 2, 4, 7 } },
             new Career { id = "wrench", name = "정비 요령",     desc = "트리 -15%",            cost = new[] { 4, 7, 11 } },
             new Career { id = "dronef", name = "드론 공장",     desc = "드론 +1 (해금 뒤)",    cost = new[] { 4, 8 } },
             new Career { id = "bhole",  name = "블랙홀 연구",   desc = "폭탄 +1 (해금 뒤)",    cost = new[] { 5, 10 } },
@@ -242,11 +242,11 @@ namespace SalvageRun.Orbit.Sim
         public bool ContractsOn => S.bill >= 2;
         public bool BigsOn => S.bill >= 4;
         public int MaxOrbit => S.bill >= 6 ? 2 : S.bill >= 3 ? 1 : 0;
-        public double FuelMax => (30 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.25 * Cr(0));
+        public double FuelMax => (30 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.2 * Cr(0));
         public double Gap => Math.Max(0.38, 0.8 - 0.06 * Lv("c_spd"));
         public double ClawR => Lv("c_rad") > 0 ? 22 + 10 * Lv("c_rad") : 0;   // 0 = 하나씩
         public bool AutoClaw => Lv("c_auto") > 0;
-        public const double PickR = 14;      // 손으로 누를 때 잡히는 거리
+        public const double PickR = 26;      // 손으로 누를 때 잡히는 거리 — 넓게
         public int ClawDmg => 1 + Lv("c_pow");
         public double Crit => 0.05 * Lv("c_crit");
         public int DroneCount => DronesOn ? 2 + Lv("d_n") + Lv("d_fact") + Cr(3) : 0;
@@ -263,7 +263,7 @@ namespace SalvageRun.Orbit.Sim
         public double PackK => 0.02 + 0.012 * Lv("b_pack");
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
         public int ChainMax => R.clean ? 5000 : 25 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 12 * Lv("b_chain") + (S.bill >= 4 ? 10 : 0) + (S.bill >= 7 ? 30 : 0);
-        public double ValMult => Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.5, Cr(1)) * Orbits[S.orbit].mult * Econ;
+        public double ValMult => Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * Orbits[S.orbit].mult * Econ;
         public double Cut => S.overdue ? (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) : 0;
         public int TotalLv { get { int n = 0; foreach (var l in S.lv) n += l; return n; } }
         public double Widen => 1 + Math.Min(0.6, TotalLv * 0.012);

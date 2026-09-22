@@ -21,11 +21,11 @@ namespace SalvageRun.Orbit
         public bool Blocking => sim != null && (sim.R.over || sim.M.careerOpen || sim.M.won || newsOpen || bayOpen);
 
         // 결산
-        bool showResult, bankruptArmed, newsOpen;
+        bool showResult, bankruptArmed; public bool newsOpen;
         int prevBestChain, prevBestPack, runNewsFrom;
         SweepRun last;
         double shown;
-        int selected = 0, newsSel = -1, endStage;
+        int selected = 0, newsSel = -1; public int endStage;
         Vector2 newsScroll;
         // 알림
         string banner; int bannerKind; float bannerT;
