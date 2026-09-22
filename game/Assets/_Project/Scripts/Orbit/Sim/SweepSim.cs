@@ -28,7 +28,7 @@ namespace SalvageRun.Orbit.Sim
     [Serializable]
     public class SweepState
     {
-        public int version = 18;
+        public int version = 19;
         public double cash, billAmount = -1, creditPending, startedAt;
         public int runs, orbit, bill, billDue = 5, overRuns, contract = -1;
         public bool overdue, rerolled;
@@ -57,7 +57,7 @@ namespace SalvageRun.Orbit.Sim
         public double ev1T = -1, ev2T = -1, stormT; public int ev1 = -1, ev2 = -1, stormLeft; public bool ev1Warn, ev2Warn, collector;
         public int shots, maxShots, chain, chainBest, packBest, broke, tier, idc;
         public bool over, holding, clean, contractOk;
-        public double earnClaw, earnDrone, earnBlast, cut, toBill, bonus;
+        public double earnClaw, earnDrone, earnBlast, cut, toBill, bonus, interest;
         public int cVault, cFuel, cChip, cSat, cTank, cBig, cTag;
         public int cleanKills, cleanGoal = 1;
         public readonly List<Junk> junk = new List<Junk>();
@@ -112,40 +112,52 @@ namespace SalvageRun.Orbit.Sim
 
         // ───────────────────────── 트리 스물네 칸 (§8-2)
         public struct Node { public string id, branch, name, desc; public string[] par; public int seg, max; public double first, mult; public int depth, lane; }
+        // 🔴 정비고 네 칸 × 아홉 = 36칸 (사장님 09-23: "강화하는 것도 더 넓히고 더 많게"). depth = 행(0~4) · lane = 열(0~4)
         public static readonly Node[] Nodes =
         {
-            N("c_pow", "claw", "집게 위력", "한 방 +1", new string[0], 1, 3, 1.6, 12, 1, 0),
-            N("c_auto", "claw", "자동 집게", "대고만 있어도 저절로 친다", new[] { "c_pow" }, 1, 8, 1, 1, 2, 1),
-            N("c_rad", "claw", "집게 범위", "한 번에 여러 개 — 반지름 +10", new[] { "c_pow" }, 1, 12, 1.7, 8, 2, -1),
-            N("c_spd", "claw", "집게 속도", "자동 집게가 0.06초 빨라진다", new[] { "c_auto" }, 2, 120, 1.6, 7, 3, 1),
-            N("c_crit", "claw", "치명타", "한 방이 3배 · 확률 +5%", new[] { "c_spd" }, 3, 600, 1.6, 6, 4, 1),
-            N("c_fuel", "claw", "연료 탱크", "연료 +3초", new[] { "c_rad" }, 1, 20, 1.6, 10, 3, -1),
-            N("c_find", "claw", "연료 보급", "지구에서 연료를 올려 보낸다 (판마다 한 번 더 · +4초)", new[] { "c_fuel" }, 2, 240, 1.8, 5, 4, -1),
-            N("d_n", "drone", "드론 +1", "드론이 한 대 더", new string[0], 2, 240, 1.8, 8, 1, 0),
-            N("d_spd", "drone", "드론 속도", "0.1초 더 자주 줍는다", new[] { "d_n" }, 2, 300, 1.6, 6, 2, -1),
-            N("d_reach", "drone", "드론 거리", "집는 거리 +15", new[] { "d_n" }, 3, 660, 1.6, 5, 2, 1),
-            N("d_mag", "drone", "드론 수거", "드론이 번 값 +25%", new[] { "d_spd" }, 3, 900, 1.6, 5, 3, -1),
-            N("d_grade", "drone", "드론 등급", "한 방 +1 — 더 단단한 것도", new[] { "d_reach" }, 5, 4500, 2.0, 3, 3, 1),
-            N("d_pair", "drone", "편대", "드론이 한 번에 둘씩", new[] { "d_mag", "d_grade" }, 6, 18000, 1, 1, 4, 0),
-            N("b_n", "bh", "폭탄 보급", "지구에서 폭탄을 한 발 더 올려 보낸다", new string[0], 3, 750, 2.2, 4, 1, 0),
-            N("b_pr", "bh", "흡입 반경", "+20", new[] { "b_n" }, 3, 600, 1.6, 6, 2, -1),
-            N("b_cap", "bh", "붕괴 한계", "+8개", new[] { "b_n" }, 3, 660, 1.6, 6, 2, 1),
-            N("b_pf", "bh", "흡입 세기", "+25%", new[] { "b_pr" }, 4, 1800, 1.6, 5, 3, -1),
-            N("b_br", "bh", "폭발 반경", "+15%", new[] { "b_cap" }, 4, 1800, 1.6, 6, 3, 1),
-            N("b_chain", "bh", "연쇄 확률", "+7%", new[] { "b_br" }, 4, 2700, 1.6, 8, 4, 1),
-            N("b_pack", "bh", "압축 배율", "모은 수당 +1.2%", new[] { "b_chain", "b_pf" }, 5, 7500, 1.7, 5, 5, 0),
-            N("e_val", "eco", "고철 시세", "모든 값 ×1.25", new string[0], 1, 120, 1.9, 10, 1, 0),
-            N("e_vault", "eco", "금고 감별", "금고 위성 +50%", new[] { "e_val" }, 2, 360, 1.6, 6, 2, -1),
-            N("e_att", "eco", "부착물 감별", "부착물 +40%", new[] { "e_val" }, 3, 1200, 1.7, 5, 2, 1),
-            N("e_talk", "eco", "청구서 협상", "기한 +1판", new[] { "e_vault" }, 4, 3600, 3.0, 2, 3, -1),
-            N("e_guard", "eco", "추심 방어", "추심 30% → 20%", new[] { "e_att" }, 5, 9000, 1, 1, 3, 1),
+            N("c_pow", "claw", "집게 위력", "한 방이 세진다", new string[0], 1, 3, 1.6, 12, 0, 2),
+            N("c_auto", "claw", "자동 집게", "대고만 있어도 친다", new[] { "c_pow" }, 1, 8, 1, 1, 1, 1),
+            N("c_rad", "claw", "집게 범위", "한 번에 여러 개", new[] { "c_pow" }, 1, 12, 1.7, 8, 1, 3),
+            N("c_spd", "claw", "집게 속도", "자동 집게가 빨라진다", new[] { "c_auto" }, 2, 40, 1.6, 7, 2, 0),
+            N("c_fuel", "claw", "연료 탱크", "출동이 길어진다", new[] { "c_rad" }, 1, 20, 1.6, 10, 2, 4),
+            N("c_crit", "claw", "치명타", "가끔 세 배로 친다", new[] { "c_spd" }, 3, 600, 1.6, 6, 3, 0),
+            N("c_double", "claw", "연타", "한 번 더 칠 확률", new[] { "c_spd" }, 3, 900, 1.7, 5, 3, 2),
+            N("c_magnet", "claw", "자석 집게", "주변 조각을 끌어온다", new[] { "c_rad", "c_fuel" }, 3, 1200, 1.8, 3, 3, 4),
+            N("c_over", "claw", "과부하", "판 끝 5초 두 배 빠르게", new[] { "c_crit", "c_double" }, 4, 3000, 1, 1, 4, 1),
+            N("d_n", "drone", "드론 +1", "드론이 한 대 더", new string[0], 2, 240, 1.8, 8, 0, 2),
+            N("d_spd", "drone", "드론 속도", "더 자주 줍는다", new[] { "d_n" }, 2, 300, 1.6, 6, 1, 1),
+            N("d_reach", "drone", "드론 거리", "더 멀리서 집는다", new[] { "d_n" }, 3, 660, 1.6, 5, 1, 3),
+            N("d_mag", "drone", "드론 수거", "드론 몫 +25%", new[] { "d_spd" }, 3, 900, 1.6, 5, 2, 0),
+            N("d_sig", "drone", "신호 증폭", "신호기 효과가 길어진다", new[] { "d_spd", "d_reach" }, 3, 700, 1.7, 3, 2, 2),
+            N("d_grade", "drone", "드론 등급", "더 단단한 것도 한 방에", new[] { "d_reach" }, 5, 4500, 2.0, 3, 2, 4),
+            N("d_fix", "drone", "수리 드론", "출동 +2초", new[] { "d_mag" }, 4, 2000, 1.8, 3, 3, 1),
+            N("d_pair", "drone", "편대", "한 번에 둘씩", new[] { "d_mag", "d_grade" }, 6, 18000, 1, 1, 3, 3),
+            N("d_fact", "drone", "드론 공장", "드론 +1 (공장제)", new[] { "d_pair" }, 6, 30000, 2.5, 2, 4, 2),
+            N("b_n", "bh", "폭탄 보급", "폭탄 한 발 더", new string[0], 3, 750, 2.2, 4, 0, 1),
+            N("c_find", "bh", "연료 보급", "연료를 올려 보낸다", new string[0], 3, 240, 1.8, 5, 0, 3),
+            N("s_speed", "bh", "보급 속도", "보급이 빨리 닿는다", new[] { "b_n", "c_find" }, 3, 500, 1.6, 4, 1, 2),
+            N("b_pr", "bh", "흡입 반경", "더 넓게 빨아들인다", new[] { "b_n" }, 3, 600, 1.6, 6, 1, 0),
+            N("b_cap", "bh", "붕괴 한계", "더 많이 모아도 버틴다", new[] { "b_n" }, 3, 660, 1.6, 6, 2, 1),
+            N("b_pf", "bh", "흡입 세기", "더 빨리 빨려 든다", new[] { "b_pr" }, 4, 1800, 1.6, 5, 2, 0),
+            N("b_br", "bh", "폭발 반경", "더 크게 터진다", new[] { "b_cap" }, 4, 1800, 1.6, 6, 3, 1),
+            N("b_chain", "bh", "연쇄 확률", "터진 게 또 터진다", new[] { "b_br" }, 4, 2700, 1.6, 8, 3, 3),
+            N("b_pack", "bh", "압축 배율", "많이 모을수록 값 +", new[] { "b_chain", "b_pf" }, 5, 7500, 1.7, 5, 4, 2),
+            N("e_val", "eco", "고철 시세", "모든 값이 오른다", new string[0], 1, 120, 1.9, 10, 0, 2),
+            N("e_vault", "eco", "금고 감별", "금고 위성이 더 자주", new[] { "e_val" }, 2, 360, 1.6, 6, 1, 0),
+            N("e_att", "eco", "부착물 감별", "부착물이 더 자주", new[] { "e_val" }, 3, 1200, 1.7, 5, 1, 2),
+            N("e_quest", "eco", "의뢰 보상", "의뢰 보너스가 커진다", new[] { "e_val" }, 3, 800, 1.7, 4, 1, 4),
+            N("e_talk", "eco", "청구서 협상", "기한 +1판", new[] { "e_vault" }, 4, 3600, 3.0, 2, 2, 0),
+            N("e_tip", "eco", "제보망", "블랙박스가 더 자주", new[] { "e_att" }, 3, 1500, 1.8, 3, 2, 2),
+            N("e_save", "eco", "적금", "판 끝에 이자", new[] { "e_quest" }, 4, 2500, 1.9, 5, 2, 4),
+            N("e_guard", "eco", "추심 방어", "추심 30% → 20%", new[] { "e_talk", "e_tip" }, 5, 9000, 1, 1, 3, 1),
+            N("e_used", "eco", "중고 거래", "모든 칸 -5%", new[] { "e_save" }, 4, 6000, 2.0, 3, 3, 3),
         };
-        public const int NodeCount = 25;
+        public const int NodeCount = 36;
         static Node N(string id, string br, string name, string desc, string[] par, int seg, double first, double mult, int max, int depth, int lane)
             => new Node { id = id, branch = br, name = name, desc = desc, par = par, seg = seg, first = first, mult = mult, max = max, depth = depth, lane = lane };
         static readonly Dictionary<string, int> NodeIx = new Dictionary<string, int>();
         public static readonly string[] BranchIds = { "claw", "drone", "bh", "eco" };
-        public static readonly string[] BranchNames = { "집게", "드론", "블랙홀", "경제" };
+        public static readonly string[] BranchNames = { "집게 팔", "드론 격납고", "보급 · 폭탄", "사무실" };
         public static readonly int[] BranchNeed = { 0, 1, 2, 0 };
 
         // ───────────────────────── 청구서 여덟 (§7-3)
@@ -155,11 +167,11 @@ namespace SalvageRun.Orbit.Sim
             new Bill { t = "연료비",           m = 60,     due = 5, credit = 2,  perk = "드론 2대 · 금고 위성 · 부착물이 나온다" },
             new Bill { t = "청소선 할부 1회",  m = 400,    due = 4, credit = 3,  perk = "블랙홀 폭탄 — 지구에서 판마다 2발 올려 보낸다" },
             new Bill { t = "궤도 사용료",      m = 1200,   due = 4, credit = 5,  perk = "중궤도 면허 (값 ×2)" },
-            new Bill { t = "보험료",           m = 60000,  due = 5, credit = 8,  perk = "큰 잔해 등장 · 연쇄 +10%" },
-            new Bill { t = "청소선 할부 2회",  m = 90000,  due = 4, credit = 12, perk = "드론 등급 +1" },
-            new Bill { t = "법인세",           m = 1200000, due = 5, credit = 18, perk = "정지궤도 면허 (값 ×3)" },
-            new Bill { t = "청소선 할부 3회",  m = 7500000, due = 5, credit = 26, perk = "폭탄 +1 · 붕괴 한계 +50%" },
-            new Bill { t = "청소선 할부 완납", m = 18000000, due = 6, credit = 0,  perk = "빚 청산 → 청산 출동" },
+            new Bill { t = "보험료",           m = 120000, due = 5, credit = 8,  perk = "큰 잔해 등장 · 연쇄 +10%" },
+            new Bill { t = "청소선 할부 2회",  m = 200000, due = 4, credit = 12, perk = "드론 등급 +1" },
+            new Bill { t = "법인세",           m = 1800000, due = 5, credit = 18, perk = "정지궤도 면허 (값 ×3)" },
+            new Bill { t = "청소선 할부 3회",  m = 11000000, due = 5, credit = 26, perk = "폭탄 +1 · 붕괴 한계 +50%" },
+            new Bill { t = "청소선 할부 완납", m = 27000000, due = 6, credit = 0,  perk = "빚 청산 → 청산 출동" },
         };
 
         // ───────────────────────── 경력 (§9-4) — 파산할 때만 산다
@@ -209,10 +221,11 @@ namespace SalvageRun.Orbit.Sim
             rng = seed == 0 ? new Random() : new Random(seed);
             M = m ?? new SweepMeta();
             if (M.career == null || M.career.Length != CareerCount) M.career = new int[CareerCount];
-            if (s == null || s.version != 18) { S = new SweepState(); S.startedAt = M.playSeconds; }
+            if (s == null || s.version != 19) { S = new SweepState(); S.startedAt = M.playSeconds; }
             else S = s;
             if (S.lv == null || S.lv.Length != NodeCount) S.lv = new int[NodeCount];
             if (M.news.Count == 0) AddNews("first_run");
+            Preview();
         }
 
         double Rnd() => rng.NextDouble();
@@ -229,14 +242,14 @@ namespace SalvageRun.Orbit.Sim
         public bool ContractsOn => S.bill >= 2;
         public bool BigsOn => S.bill >= 4;
         public int MaxOrbit => S.bill >= 6 ? 2 : S.bill >= 3 ? 1 : 0;
-        public double FuelMax => (30 + 3 * Lv("c_fuel")) * (1 + 0.25 * Cr(0));
+        public double FuelMax => (30 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.25 * Cr(0));
         public double Gap => Math.Max(0.38, 0.8 - 0.06 * Lv("c_spd"));
         public double ClawR => Lv("c_rad") > 0 ? 22 + 10 * Lv("c_rad") : 0;   // 0 = 하나씩
         public bool AutoClaw => Lv("c_auto") > 0;
         public const double PickR = 14;      // 손으로 누를 때 잡히는 거리
         public int ClawDmg => 1 + Lv("c_pow");
         public double Crit => 0.05 * Lv("c_crit");
-        public int DroneCount => DronesOn ? 2 + Lv("d_n") + Cr(3) : 0;
+        public int DroneCount => DronesOn ? 2 + Lv("d_n") + Lv("d_fact") + Cr(3) : 0;
         public double DroneCd => Math.Max(0.4, 1 - 0.1 * Lv("d_spd"));
         public double Reach => 80 + 15 * Lv("d_reach");
         public int Grade => 1 + Lv("d_grade") + (S.bill >= 5 ? 1 : 0);
@@ -252,6 +265,9 @@ namespace SalvageRun.Orbit.Sim
         public int ChainMax => R.clean ? 5000 : 25 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 12 * Lv("b_chain") + (S.bill >= 4 ? 10 : 0) + (S.bill >= 7 ? 30 : 0);
         public double ValMult => Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.5, Cr(1)) * Orbits[S.orbit].mult * Econ;
         public double Cut => S.overdue ? (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) : 0;
+        public int TotalLv { get { int n = 0; foreach (var l in S.lv) n += l; return n; } }
+        public double Widen => 1 + Math.Min(0.6, TotalLv * 0.012);
+        public double Bo => Orbits[S.orbit].bi + (Orbits[S.orbit].bo - Orbits[S.orbit].bi) * Widen;
         public double BillAmount => S.bill < Bills.Length ? (S.billAmount >= 0 ? S.billAmount : Bills[S.bill].m) : 0;
         public bool CanBankrupt => !M.cleanReady && S.bill < Bills.Length && (S.bill >= 3 || S.overdue && S.bill >= 1);
         public int CareerCost(int i) => M.career[i] < Careers[i].cost.Length ? Careers[i].cost[M.career[i]] : -1;
@@ -263,12 +279,13 @@ namespace SalvageRun.Orbit.Sim
             {
                 var o = Orbits[S.orbit];
                 int n = new[] { 90, 110, 130, 150, 175, 200, 230, 260, 260 }[Math.Min(8, S.bill)];
-                return Math.Max(o.nMin, Math.Min(o.nMax, n));
+                double area = (Bo * Bo - o.bi * o.bi) / (o.bo * o.bo - o.bi * o.bi);       // 넓어진 만큼 더 많이
+                return (int)(Math.Max(o.nMin, Math.Min(o.nMax, n)) * area);
             }
         }
 
         // ───────────────────────── 트리
-        public double Cost(int i) { var n = Nodes[i]; return Math.Ceiling(n.first * Math.Pow(n.mult, S.lv[i]) * (1 - 0.15 * Cr(2))); }
+        public double Cost(int i) { var n = Nodes[i]; return Math.Ceiling(n.first * Math.Pow(n.mult, S.lv[i]) * (1 - 0.15 * Cr(2)) * (1 - 0.05 * Lv("e_used"))); }
         public bool BranchOpen(string br) { int b = Array.IndexOf(BranchIds, br); return S.bill >= BranchNeed[b]; }
         public NodeSt State(int i)
         {
@@ -319,6 +336,7 @@ namespace SalvageRun.Orbit.Sim
             M.company++;
             S = new SweepState { startedAt = M.playSeconds };
             M.careerOpen = true;
+            Preview();
             if (M.company == 2) AddNews("company2");
             Emit(SwEv.Bankrupt, 0, 0, M.company, 0, "주식회사 궤도 청소부 (" + (M.company - 1) + "대) — 파산");
             return true;
@@ -334,7 +352,7 @@ namespace SalvageRun.Orbit.Sim
 
         public void CloseCareer() { M.careerOpen = false; }
 
-        public void SetOrbit(int i) { if (R.over && i >= 0 && i <= MaxOrbit && i != S.orbit) { S.orbit = i; RollContract(); } }
+        public void SetOrbit(int i) { if (R.over && i >= 0 && i <= MaxOrbit && i != S.orbit) { S.orbit = i; RollContract(); Preview(); } }
 
         public void RollContract()
         {
@@ -449,7 +467,7 @@ namespace SalvageRun.Orbit.Sim
             }
             r.collector = S.overdue;
             // 블랙박스 — 청구서 2 뒤 · 판마다 25%
-            if ((S.bill >= 2 || clean) && M.scoops < 6 && (clean || Rnd() < 0.25))
+            if ((S.bill >= 2 || clean) && M.scoops < 6 && (clean || Rnd() < 0.25 + 0.1 * Lv("e_tip")))
             {
                 var hosts = r.junk.FindAll(d => IsHost(d.k) && d.att == Att.None);
                 if (hosts.Count > 0) hosts[rng.Next(hosts.Count)].att = Att.BBox;
@@ -490,7 +508,7 @@ namespace SalvageRun.Orbit.Sim
             var o = Orbits[S.orbit];
             if (k < 0) k = PickType();
             if (a < 0) a = Rnd(0, Math.PI * 2);
-            if (rr < 0) rr = edge ? o.bo - Rnd(0, 18) : o.bi + Rnd() * (o.bo - o.bi);
+            if (rr < 0) rr = edge ? Bo - Rnd(0, 18) : o.bi + Rnd() * (Bo - o.bi);
             Att at = att ?? Att.None;
             if (att == null && IsHost(k) && (R.clean || S.bill >= 1) && Rnd() < (R.clean ? 0.35 : o.att * (1 + 0.4 * Lv("e_att")))) at = PickAtt();
             int hp = Types[k].hp + (at == Att.Ice ? 2 : 0);
@@ -511,7 +529,7 @@ namespace SalvageRun.Orbit.Sim
 
         void Formation(int kind, double a0)
         {
-            var o = Orbits[S.orbit]; double mid = (o.bi + o.bo) / 2;
+            var o = Orbits[S.orbit]; double mid = (o.bi + Bo) / 2;
             switch (kind)
             {
                 case 0: Spawn(Sat, a0, mid, null, false, 1); for (int i = 0; i < 13; i++) Spawn(Chip, a0 + Rnd(-0.11, 0.11), mid + Rnd(-22, 22), Att.None, false, 1); break;
@@ -524,9 +542,9 @@ namespace SalvageRun.Orbit.Sim
                     break;
                 }
                 case 3:
-                    for (int i = 0; i < 5; i++) { var v = Spawn(Vault, a0 + i * 0.08, o.bo - 26, Att.None, false, 3.2); v.convoy = true; }
-                    Spawn(Sat, a0 - 0.08, o.bo - 26, Att.Armor, false, 3.2).convoy = true;
-                    Spawn(Sat, a0 + 0.42, o.bo - 26, Att.Armor, false, 3.2).convoy = true;
+                    for (int i = 0; i < 5; i++) { var v = Spawn(Vault, a0 + i * 0.08, Bo - 26, Att.None, false, 3.2); v.convoy = true; }
+                    Spawn(Sat, a0 - 0.08, Bo - 26, Att.Armor, false, 3.2).convoy = true;
+                    Spawn(Sat, a0 + 0.42, Bo - 26, Att.Armor, false, 3.2).convoy = true;
                     break;
                 case 4:
                     Spawn(BigsOn || R.clean ? Big : Rocket, a0, mid, Att.Ice, false, 1);
@@ -604,14 +622,14 @@ namespace SalvageRun.Orbit.Sim
                 {
                     r.stormT += 0.12; r.stormLeft--;
                     var o = Orbits[S.orbit];
-                    SpawnFree(Chip, -10, EY + Rnd(-o.bo * Tilt, o.bo * Tilt), Rnd(170, 240), Rnd(-20, 20), 2.6);
+                    SpawnFree(Chip, -10, EY + Rnd(-Bo * Tilt, Bo * Tilt), Rnd(170, 240), Rnd(-20, 20), 2.6);
                 }
             }
         }
 
         void FireEvent(int ev)
         {
-            var r = R; var o = Orbits[S.orbit]; double mid = (o.bi + o.bo) / 2;
+            var r = R; var o = Orbits[S.orbit]; double mid = (o.bi + Bo) / 2;
             Emit(SwEv.EventGo, 0, 0, ev, 0, EventNames[ev]);
             switch (ev)
             {
@@ -650,7 +668,7 @@ namespace SalvageRun.Orbit.Sim
                     continue;
                 }
                 double dx = r.ax - p.x, dy = r.ay - p.y, d = Math.Sqrt(dx * dx + dy * dy);
-                double sp = 240 * dt;
+                double sp = (240 + 60 * Lv("s_speed")) * dt;
                 if (d <= Math.Max(14, sp))
                 {
                     p.got = true;
@@ -680,17 +698,17 @@ namespace SalvageRun.Orbit.Sim
                 if (d.free)
                 {
                     d.x += d.vx * dt; d.y += d.vy * dt; d.vx *= 1 - 0.9 * dt; d.vy *= 1 - 0.9 * dt;
-                    if (d.capT > 0) { d.capT -= dt; if (d.capT <= 0) Recapture(d, o); }
+                    if (d.capT > 0) { d.capT -= dt; if (d.capT <= 0) Recapture(d, o.bi, Bo); }
                 }
                 else { d.a += 0.12 * d.ws * dt; Place(d); }
             }
         }
 
-        static void Recapture(Junk d, OrbitDef o)
+        static void Recapture(Junk d, double bi, double bo)
         {
             d.free = false; d.capT = 0; d.vx = d.vy = 0;
             d.a = Math.Atan2((d.y - EY) / Tilt, d.x - EX);
-            d.rr = Math.Min(o.bo, Math.Max(o.bi, Math.Sqrt((d.x - EX) * (d.x - EX) + (d.y - EY) / Tilt * (d.y - EY) / Tilt)));
+            d.rr = Math.Min(bo, Math.Max(bi, Math.Sqrt((d.x - EX) * (d.x - EX) + (d.y - EY) / Tilt * (d.y - EY) / Tilt)));
         }
 
         void Pull(double dt)
@@ -751,9 +769,22 @@ namespace SalvageRun.Orbit.Sim
             var r = R;
             r.next -= dt; r.clickCd -= dt;
             if (click && r.clickCd <= 0) { r.clickCd = 0.12; Strike(); return; }      // 손으로 — 한 번 누르면 한 번
+            if (Lv("c_magnet") > 0)
+            {
+                double mr = Math.Max(ClawR, PickR) + 40 + 20 * Lv("c_magnet");
+                foreach (var d in r.junk)
+                {
+                    if (d.dead || d.k != Chip) continue;
+                    double dx = r.ax - d.x, dy = r.ay - d.y, dd = dx * dx + dy * dy;
+                    if (dd > mr * mr || dd < 100) continue;
+                    if (!d.free) { d.free = true; d.vx = d.vy = 0; }
+                    d.capT = 0.5; d.vx += dx * 2.5 * dt; d.vy += dy * 2.5 * dt;
+                }
+            }
             if (!AutoClaw || r.next > 0) return;
-            r.next = Gap;
+            r.next = Gap * (Lv("c_over") > 0 && r.fuel < 5 ? 0.5 : 1);
             Strike();
+            if (Rnd() < 0.1 * Lv("c_double")) Strike();
         }
 
         void Strike()
@@ -809,7 +840,7 @@ namespace SalvageRun.Orbit.Sim
         {
             var r = R; var o = Orbits[S.orbit];
             if (r.rushT > 0) r.rushT -= dt;
-            double mid = (o.bi + o.bo) / 2, reach = Reach, cd = DroneCd; int grade = Grade, per = Lv("d_pair") > 0 ? 2 : 1;
+            double mid = (o.bi + Bo) / 2, reach = Reach, cd = DroneCd; int grade = Grade, per = Lv("d_pair") > 0 ? 2 : 1;
             foreach (var dr in r.drones)
             {
                 dr.a += dt * 0.45;
@@ -885,7 +916,7 @@ namespace SalvageRun.Orbit.Sim
                     Emit(SwEv.Ring, d.x, d.y, 90, 2);
                     foreach (var q in r.junk) if (!q.dead && q.k == Chip) { double dx = d.x - q.x, dy = d.y - q.y; if (dx * dx + dy * dy < 8100) { q.free = true; q.vx = dx * 2.2; q.vy = dy * 2.2; q.capT = 1; } }
                     break;
-                case Att.Beacon: r.rushT = 3; r.rushX = d.x; r.rushY = d.y; Emit(SwEv.Ring, d.x, d.y, 40, 2); break;
+                case Att.Beacon: r.rushT = 3 + 2 * Lv("d_sig"); r.rushX = d.x; r.rushY = d.y; Emit(SwEv.Ring, d.x, d.y, 40, 2); break;
                 case Att.BBox:
                     M.scoops++; S.creditPending += 1;
                     AddNews("s" + M.scoops);
@@ -928,7 +959,8 @@ namespace SalvageRun.Orbit.Sim
                 return;
             }
             var c = CurContract;
-            if (c != null && ContractProgress(r) >= c.Value.target) { r.contractOk = true; r.bonus = Math.Ceiling(r.Earned * 0.25); S.cash += r.bonus; }
+            if (c != null && ContractProgress(r) >= c.Value.target) { r.contractOk = true; r.bonus = Math.Ceiling(r.Earned * (0.25 + 0.1 * Lv("e_quest"))); S.cash += r.bonus; }
+            if (Lv("e_save") > 0) { r.interest = Math.Min(r.Earned, Math.Floor(S.cash * 0.02 * Lv("e_save"))); S.cash += r.interest; }
             if (S.bill < Bills.Length)
             {
                 if (BillAmount <= 0) FinishBill();              // 압류 딱지로 다 갚았다
@@ -941,6 +973,30 @@ namespace SalvageRun.Orbit.Sim
             }
             RollContract();
             Emit(SwEv.RunEnd);
+        }
+
+        /// <summary>출동 사이 — 조종실 창밖에서 궤도와 드론이 계속 돈다 (규칙은 안 움직인다)</summary>
+        /// <summary>조종실 창밖에 보일 궤도 — 출동 전에도 쓰레기와 드론이 떠 있다</summary>
+        public void Preview()
+        {
+            R = new SweepRun { over = true };
+            int n = JunkTarget;
+            for (int i = 0; i < n; i++) Spawn(-1, -1, -1, null, false).fade = 1;
+            for (int i = 0; i < DroneCount; i++) R.drones.Add(new Drone { a = i * Math.PI * 2 / Math.Max(1, DroneCount) });
+        }
+
+        public void IdleTick(double dt)
+        {
+            var o = Orbits[S.orbit];
+            foreach (var d in R.junk)
+            {
+                if (d.dead) continue;
+                d.hit = 0; d.fade = 1; d.rot += d.vr * dt;
+                if (d.free) Recapture(d, o.bi, Bo);
+                d.a += 0.12 * d.ws * dt; Place(d);
+            }
+            double mid = (o.bi + Bo) / 2;
+            foreach (var dr in R.drones) { dr.a += dt * 0.45; dr.x = EX + Math.Cos(dr.a) * mid; dr.y = EY + Math.Sin(dr.a) * mid * Tilt; }
         }
 
         public void ReadAll() { foreach (var n in M.news) n.read = true; }

@@ -30,7 +30,7 @@ namespace SalvageRun.Orbit
         readonly List<SpriteRenderer> cableViews = new List<SpriteRenderer>();
         readonly List<SpriteRenderer> podViews = new List<SpriteRenderer>();
         SpriteRenderer earth, atmo, rim, band, bandGlow, claw, clawRing, clawWind, holeCore, holeGlow, holeRing, moon;
-        float t, saveTimer, bandInner = -1, earthR = 120;
+        float t, saveTimer, bandInner = -1, earthR = 120, camBase;
         public bool aimOn, holdOn, clickOn;
         float pressT;
         public Vector2 aimPx;
@@ -162,6 +162,7 @@ namespace SalvageRun.Orbit
                 if (sdt > 0) for (int i = 0; i < steps; i++) sim.Tick(sdt / steps, aimPx.x, aimPx.y, aimOn, holdOn, clickOn && i == 0);
                 clickOn = false;
             }
+            else sim.IdleTick(dt);             // 조종실 창밖 — 궤도는 계속 돈다
             Consume();
             DrawWorld();
             DrawJunk();
@@ -174,7 +175,13 @@ namespace SalvageRun.Orbit
             bandLit = Mathf.MoveTowards(bandLit, 0, dt * 0.6f);
             rimLit = Mathf.MoveTowards(rimLit, 0, dt * 0.5f);
             kessT = Mathf.MoveTowards(kessT, 0, dt);
-            cam.transform.position = new Vector3(0, 0, -10) + (Vector3)(Random.insideUnitCircle * shake);
+            // 조종실에선 카메라가 물러나 지구가 창 가운데 오게 (창 = SweepHud.Win)
+            bool cockpit = hud != null && hud.CockpitView;
+            float wantSize = cockpit ? 9.6f : 6f;
+            cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, wantSize, 1 - Mathf.Exp(-dt * 5f));
+            float camY = cockpit ? -0.3f * cam.orthographicSize : 0f;
+            camBase = Mathf.Lerp(camBase, camY, 1 - Mathf.Exp(-dt * 5f));
+            cam.transform.position = new Vector3(0, camBase, -10) + (Vector3)(Random.insideUnitCircle * shake);
             saveTimer += dt;
             if (saveTimer > 5f) { saveTimer = 0; Save(); }
         }
@@ -341,9 +348,9 @@ namespace SalvageRun.Orbit
             rim.transform.localScale = Vector3.one * (d + 0.12f) / ring.bounds.size.x;
             rim.color = new Color(1f, 0.87f, 0.58f, rimLit);
             moon.enabled = sim.S.orbit == 1;
-            float inner = (float)(o.bi / o.bo);
+            float inner = (float)(o.bi / sim.Bo);
             if (Mathf.Abs(inner - bandInner) > 0.001f) { bandInner = inner; bandSprite = Ring(256, inner); band.sprite = bandSprite; }
-            float outer = (float)o.bo * 2 / PxPerUnit;
+            float outer = (float)sim.Bo * 2 / PxPerUnit;
             band.transform.localScale = new Vector3(outer / bandSprite.bounds.size.x, outer * (float)SweepSim.Tilt / bandSprite.bounds.size.y, 1);
             Color bc = sim.S.orbit == 0 ? new Color(0.43f, 0.55f, 0.78f) : sim.S.orbit == 1 ? new Color(0.59f, 0.47f, 0.82f) : new Color(0.86f, 0.51f, 0.39f);
             bc.a = 0.06f + bandLit * 0.03f; band.color = bc;
@@ -359,7 +366,7 @@ namespace SalvageRun.Orbit
             for (int i = 0; i < list.Count; i++)
             {
                 var d = list[i];
-                if (d.dead || !live) continue;
+                if (d.dead) continue;
                 while (views.Count <= n) { views.Add(Make(junkArt[0], Vector3.zero, 0.2f, Color.white, 10)); attViews.Add(Make(disc, Vector3.zero, 0.1f, Color.white, 12)); }
                 var v = views[n]; var av = attViews[n]; n++;
                 v.enabled = true;
@@ -417,8 +424,7 @@ namespace SalvageRun.Orbit
 
             // 케이블 — 이어진 둘 사이 가는 선
             int cn = 0;
-            if (live)
-                foreach (var d in list)
+            foreach (var d in list)
                 {
                     if (d.dead || d.att != Att.Cable && d.link1 == null) continue;
                     foreach (var l in new[] { d.link1 })
@@ -457,7 +463,7 @@ namespace SalvageRun.Orbit
             while (droneViews.Count < drs.Count) droneViews.Add(Make(droneArt, Vector3.zero, 0.32f, Cyan, 60));
             for (int i = 0; i < droneViews.Count; i++)
             {
-                bool on = live && i < drs.Count;
+                bool on = i < drs.Count;
                 droneViews[i].enabled = on;
                 if (!on) continue;
                 var dr = drs[i];
