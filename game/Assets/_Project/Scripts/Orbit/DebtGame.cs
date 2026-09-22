@@ -41,7 +41,8 @@ namespace SalvageRun.Orbit
 
         // ───────────────────────────────── 부팅
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        // rev17 SweepGame 으로 넘어갔다 (2026-09-23) — rev16 은 태그 rev16-final
+        // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void AutoBoot()
         {
             if (FindFirstObjectByType<DebtGame>() != null) return;
