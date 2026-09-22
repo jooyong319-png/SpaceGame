@@ -170,8 +170,8 @@ namespace SalvageRun.Orbit.Sim
             new Bill { t = "보험료",           m = 120000, due = 5, credit = 8,  perk = "큰 잔해 등장 · 연쇄 +10%" },
             new Bill { t = "청소선 할부 2회",  m = 200000, due = 4, credit = 12, perk = "드론 등급 +1" },
             new Bill { t = "법인세",           m = 4000000, due = 5, credit = 18, perk = "정지궤도 면허 (값 ×3)" },
-            new Bill { t = "청소선 할부 3회",  m = 11000000, due = 5, credit = 26, perk = "폭탄 +1 · 붕괴 한계 +50%" },
-            new Bill { t = "청소선 할부 완납", m = 27000000, due = 6, credit = 0,  perk = "빚 청산 → 청산 출동" },
+            new Bill { t = "청소선 할부 3회",  m = 20000000, due = 5, credit = 26, perk = "폭탄 +1 · 붕괴 한계 +50%" },
+            new Bill { t = "청소선 할부 완납", m = 60000000, due = 6, credit = 0,  perk = "빚 청산 → 청산 출동" },
         };
 
         // ───────────────────────── 경력 (§9-4) — 파산할 때만 산다
@@ -472,7 +472,7 @@ namespace SalvageRun.Orbit.Sim
                 var hosts = r.junk.FindAll(d => IsHost(d.k) && d.att == Att.None);
                 if (hosts.Count > 0) hosts[rng.Next(hosts.Count)].att = Att.BBox;
             }
-            if (clean) r.cleanGoal = 520;
+            if (clean) r.cleanGoal = 8000;
             if (S.runs == 6) AddNews("run6");
         }
 
@@ -594,10 +594,9 @@ namespace SalvageRun.Orbit.Sim
             r.formT -= dt;
             if (r.formT <= 0) { r.formT = 9; if (alive < target + 40) { var f = Orbits[S.orbit].forms; Formation(f[rng.Next(f.Length)], Rnd(0, Math.PI * 2)); } }
 
-            if (r.clean && r.cleanKills >= r.cleanGoal) { EndRun(); return; }
             if (r.fuel <= 0 && !r.holding && r.pend.Count == 0)
             {
-                if (r.clean) { r.cleanKills = r.cleanGoal; DoBlast(EX, EY, 400); return; }   // 청산 출동은 늘 성공한다
+                if (r.clean) { r.cleanKills = Math.Max(r.cleanKills, r.cleanGoal); DoBlast(EX, EY, 420); EndRun(); return; }   // 청산 출동은 연료를 다 쓰면 끝 — 늘 성공
                 r.fuel = 0; r.endT += dt;
                 if (r.endT > 1.3) EndRun();
             }

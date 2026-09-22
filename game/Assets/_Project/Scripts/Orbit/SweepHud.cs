@@ -126,7 +126,7 @@ namespace SalvageRun.Orbit
 
         void Effects()
         {
-            if (game.edgeGlow > 0.01f && !reduceMotion) { GUI.color = new Color(1f, 0.76f, 0.3f, game.edgeGlow * 0.35f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), texVignette); }
+            if (game.edgeGlow > 0.01f && !reduceMotion) { GUI.color = new Color(1f, 0.76f, 0.3f, game.edgeGlow * 0.22f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), texVignette); }
             if (game.flash > 0.01f) { GUI.color = new Color(1f, 0.97f, 0.9f, game.flash * 0.7f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); }
             GUI.color = Color.white;
             var R = sim.R;
@@ -213,6 +213,7 @@ namespace SalvageRun.Orbit
             }
             // 첫 5분 — 새 장난감마다 한 줄씩만 (§10)
             string hint = null;
+            if (R.clean) hint = null; else
             if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = "쓰레기를 눌러서 하나씩 줍는다 — 위성은 세 번, 로켓은 다섯 번";
             else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "지구에서 폭탄이 올라온다 — 길게 누르고 있으면 빨아들이고, 떼면 모인 만큼 터진다";
             else if (sim.DronesOn && !sim.M.flags.Contains("hint_drone") && R.t < 8) hint = "드론은 알아서 줍는다 — 한 방에 부서지는 것만";

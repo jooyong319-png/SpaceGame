@@ -226,9 +226,18 @@ namespace SalvageRun.Orbit
                         OrbitSfx.Play("buy", 0.9f, 0.05f);
                         break;
                     case SwEv.Strike:
-                        Add(ring, at, 0.1f, e.k == 1 ? Amber2 : new Color(0.35f, 0.38f, 0.44f), 5, 0.22f, (float)e.v * 2 / PxPerUnit);
-                        if (e.k == 1) { OrbitSfx.Play("tick", 0.45f, 0.05f); shake = Mathf.Max(shake, 0.035f); }
+                    {
+                        bool hand = e.v <= SweepSim.PickR + 0.1;      // 손으로 누른 한 방 — 더 또렷하게
+                        Add(ring, at, 0.1f, e.k == 1 ? Amber2 : new Color(0.35f, 0.38f, 0.44f), 5, hand ? 0.28f : 0.22f, (float)e.v * 2 / PxPerUnit);
+                        if (e.k == 1)
+                        {
+                            OrbitSfx.Play(hand ? "clank" : "tick", hand ? 0.55f : 0.45f, 0.05f);
+                            shake = Mathf.Max(shake, hand ? 0.05f : 0.035f);
+                            if (hand) Burst(at, Amber2, 3, 2f);
+                        }
+                        else if (hand) OrbitSfx.Play("tick", 0.18f, 0.05f, 0.3f);
                         break;
+                    }
                     case SwEv.Broke:
                     {
                         int k = e.k / 100; var att = (Att)(e.k % 100);
