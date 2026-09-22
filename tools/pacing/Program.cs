@@ -26,7 +26,7 @@ static class Program
     {
         var sim = new SweepSim(null, null, seed);
         var rng = new Random(seed * 31 + 1);
-        double ax = 600, ay = 360, tx = 600, ty = 360, retarget = 0, shopClock = 0, clickT = 0;
+        double ax = 600, ay = 360, tx = 600, ty = 360, retarget = 0, shopClock = 0;
         bool hold = false;
         var log = new List<string>();
         var segEarn = new double[9]; var segRuns = new int[9]; var segSplit = new double[9, 3];
@@ -73,25 +73,22 @@ static class Program
             while (!R.over)
             {
                 if (++ticks > 20000) { Console.WriteLine($"  ⚠ 판이 안 끝난다: 연료 {R.fuel:0.0} 붙잡음 {R.holding} 연쇄대기 {R.pend.Count} 잔해 {R.junk.Count}"); break; }
-                retarget -= Dt; clickT -= Dt;
-                bool click = false;
+                retarget -= Dt;
                 if (!hold && sim.ClawR <= 0)
                 {
-                    // 🖱 손으로 하나씩 — 가까운 것에 커서를 옮겨 1초에 4번 누른다
-                    if (retarget <= 0) { retarget = 0.25; Nearest(sim, ax, ay, ref tx, ref ty); }
+                    // 범위가 없을 땐 가까운 것 하나에 커서를 올려 둔다 (집게는 저절로 친다)
+                    if (retarget <= 0) { retarget = 0.4; Nearest(sim, ax, ay, ref tx, ref ty); }
                     double kk = Math.Min(1, Dt * 12); ax += (tx - ax) * kk; ay += (ty - ay) * kk;
-                    if (clickT <= 0 && Math.Abs(tx - ax) + Math.Abs(ty - ay) < 10) { click = true; clickT = 0.25; }
                 }
                 else
                 {
                     if (!hold && retarget <= 0) { retarget = 1.5; Densest(sim, rng, ref tx, ref ty); }
                     double k = Math.Min(1, Dt * (hold ? 1.2 : 3)); ax += (tx - ax) * k; ay += (ty - ay) * k;
-                    if (!sim.AutoClaw && clickT <= 0) { click = true; clickT = 0.25; }
                 }
                 // 폭탄 — 빽빽한 곳에서 누르고, 붕괴 한계 85% 이거나 3초면 뗀다
                 if (!hold && R.shots > 0 && R.t > 3 && R.fuel > 4 && rng.NextDouble() < Dt / 2.5) { hold = true; Densest(sim, rng, ref tx, ref ty); }
                 if (hold && (R.packed.Count >= sim.Cap * 0.85 || R.holdT > 3)) hold = false;
-                sim.Tick(Dt, ax, ay, true, hold, click);
+                sim.Tick(Dt, ax, ay, true, hold);
                 if (!R.holding && hold && R.shots <= 0) hold = false;
                 while (sim.Events.Count > 0) sim.Events.Dequeue();
             }

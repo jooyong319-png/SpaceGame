@@ -31,8 +31,7 @@ namespace SalvageRun.Orbit
         readonly List<SpriteRenderer> podViews = new List<SpriteRenderer>();
         SpriteRenderer earth, atmo, rim, band, bandGlow, claw, clawRing, clawWind, holeCore, holeGlow, holeRing, moon, sun, sunCore;
         float t, saveTimer, bandInner = -1, earthR = 120, camBase;
-        public bool aimOn, holdOn, clickOn;
-        float pressT;
+        public bool aimOn, holdOn;
         public Vector2 aimPx;
         public static bool TestAim, TestHold;
         public static Vector2 TestPx;
@@ -161,8 +160,7 @@ namespace SalvageRun.Orbit
                 if (hitStop > 0) { hitStop -= dt; sdt = 0; }
                 else if (slowMo > 0) { slowMo -= dt; sdt *= 0.4f; }
                 int steps = Mathf.Max(1, Mathf.CeilToInt(sdt / 0.03f));
-                if (sdt > 0) for (int i = 0; i < steps; i++) sim.Tick(sdt / steps, aimPx.x, aimPx.y, aimOn, holdOn, clickOn && i == 0);
-                clickOn = false;
+                if (sdt > 0) for (int i = 0; i < steps; i++) sim.Tick(sdt / steps, aimPx.x, aimPx.y, aimOn, holdOn);
             }
             else sim.IdleTick(dt);             // 조종실 창밖 — 궤도는 계속 돈다
             Consume();
@@ -192,17 +190,14 @@ namespace SalvageRun.Orbit
         {
             var mouse = Mouse.current;
             aimOn = false; holdOn = false;
-            if (TestAim && hud != null && !hud.Blocking) { aimPx = TestPx; aimOn = true; holdOn = TestHold; clickOn = true; return; }   // 에디터 시험용 (MCP 자동 플레이)
+            if (TestAim && hud != null && !hud.Blocking) { aimPx = TestPx; aimOn = true; holdOn = TestHold; return; }   // 에디터 시험용 (MCP 자동 플레이)
             if (mouse == null || hud == null || hud.Blocking) return;
             Vector2 sp = mouse.position.ReadValue();
             if (sp.x < 0 || sp.y < 0 || sp.x > Screen.width || sp.y > Screen.height) return;
             Vector3 w = cam.ScreenToWorldPoint(new Vector3(sp.x, sp.y, 10));
             aimPx = new Vector2(480 + (w.x - cam.transform.position.x) * PxPerUnit, 310 - (w.y - cam.transform.position.y) * PxPerUnit);
             aimOn = true;
-            // 🖱 짧게 누르면 집게 한 번 · 0.22초 넘게 누르고 있으면 블랙홀 (폭탄이 있을 때)
-            if (mouse.leftButton.wasPressedThisFrame) { clickOn = true; pressT = 0; }
-            if (mouse.leftButton.isPressed) pressT += Time.unscaledDeltaTime; else pressT = 0;
-            holdOn = pressT > 0.22f;
+            holdOn = mouse.leftButton.isPressed;      // 누르고 있으면 블랙홀 (집게는 저절로 친다)
         }
 
         public Vector3 PxToWorld(double x, double y) => new Vector3((float)(x - 480) / PxPerUnit, (float)(310 - y) / PxPerUnit, 0);

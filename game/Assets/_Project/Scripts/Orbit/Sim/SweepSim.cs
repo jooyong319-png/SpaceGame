@@ -28,7 +28,7 @@ namespace SalvageRun.Orbit.Sim
     [Serializable]
     public class SweepState
     {
-        public int version = 19;
+        public int version = 20;
         public double cash, billAmount = -1, creditPending, startedAt;
         public int runs, orbit, bill, billDue = 5, overRuns, contract = -1;
         public bool overdue, rerolled;
@@ -116,9 +116,8 @@ namespace SalvageRun.Orbit.Sim
         public static readonly Node[] Nodes =
         {
             N("c_pow", "claw", "집게 위력", "한 방이 세진다", new string[0], 1, 3, 1.6, 12, 0, 2),
-            N("c_auto", "claw", "자동 집게", "대고만 있어도 친다", new[] { "c_pow" }, 1, 8, 1, 1, 1, 1),
-            N("c_rad", "claw", "집게 범위", "한 번에 여러 개", new[] { "c_pow" }, 1, 12, 1.7, 8, 1, 3),
-            N("c_spd", "claw", "집게 속도", "자동 집게가 빨라진다", new[] { "c_auto" }, 2, 40, 1.6, 7, 2, 0),
+            N("c_rad", "claw", "집게 범위", "한 번에 여러 개", new[] { "c_pow" }, 1, 9, 1.7, 8, 1, 3),
+            N("c_spd", "claw", "집게 속도", "치는 간격이 짧아진다", new[] { "c_pow" }, 2, 40, 1.6, 7, 1, 1),
             N("c_fuel", "claw", "연료 탱크", "출동이 길어진다", new[] { "c_rad" }, 1, 20, 1.6, 10, 2, 4),
             N("c_crit", "claw", "치명타", "가끔 세 배로 친다", new[] { "c_spd" }, 3, 600, 1.6, 6, 3, 0),
             N("c_double", "claw", "연타", "한 번 더 칠 확률", new[] { "c_spd" }, 3, 900, 1.7, 5, 3, 2),
@@ -152,7 +151,7 @@ namespace SalvageRun.Orbit.Sim
             N("e_guard", "eco", "추심 방어", "추심 30% → 20%", new[] { "e_talk", "e_tip" }, 5, 9000, 1, 1, 3, 1),
             N("e_used", "eco", "중고 거래", "모든 칸 -5%", new[] { "e_save" }, 4, 6000, 2.0, 3, 3, 3),
         };
-        public const int NodeCount = 36;
+        public const int NodeCount = 35;
         static Node N(string id, string br, string name, string desc, string[] par, int seg, double first, double mult, int max, int depth, int lane)
             => new Node { id = id, branch = br, name = name, desc = desc, par = par, seg = seg, first = first, mult = mult, max = max, depth = depth, lane = lane };
         static readonly Dictionary<string, int> NodeIx = new Dictionary<string, int>();
@@ -164,7 +163,7 @@ namespace SalvageRun.Orbit.Sim
         public struct Bill { public string t, perk; public double m, credit; public int due; }
         public static readonly Bill[] Bills =
         {
-            new Bill { t = "연료비",           m = 60,     due = 5, credit = 2,  perk = "드론 2대 · 금고 위성 · 부착물이 나온다" },
+            new Bill { t = "연료비",           m = 30,     due = 5, credit = 2,  perk = "드론 2대 · 금고 위성 · 부착물이 나온다" },
             new Bill { t = "청소선 할부 1회",  m = 400,    due = 4, credit = 3,  perk = "블랙홀 폭탄 — 지구에서 판마다 2발 올려 보낸다" },
             new Bill { t = "궤도 사용료",      m = 1200,   due = 4, credit = 5,  perk = "중궤도 면허 (값 ×2)" },
             new Bill { t = "보험료",           m = 120000, due = 5, credit = 8,  perk = "큰 잔해 등장 · 연쇄 +10%" },
@@ -221,7 +220,7 @@ namespace SalvageRun.Orbit.Sim
             rng = seed == 0 ? new Random() : new Random(seed);
             M = m ?? new SweepMeta();
             if (M.career == null || M.career.Length != CareerCount) M.career = new int[CareerCount];
-            if (s == null || s.version != 19) { S = new SweepState(); S.startedAt = M.playSeconds; }
+            if (s == null || s.version != 20) { S = new SweepState(); S.startedAt = M.playSeconds; }
             else S = s;
             if (S.lv == null || S.lv.Length != NodeCount) S.lv = new int[NodeCount];
             if (M.news.Count == 0) AddNews("first_run");
@@ -243,10 +242,10 @@ namespace SalvageRun.Orbit.Sim
         public bool BigsOn => S.bill >= 4;
         public int MaxOrbit => S.bill >= 6 ? 2 : S.bill >= 3 ? 1 : 0;
         public double FuelMax => (30 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.2 * Cr(0));
-        public double Gap => Math.Max(0.38, 0.8 - 0.06 * Lv("c_spd"));
+        public double Gap => Math.Max(0.3, 0.6 - 0.045 * Lv("c_spd"));
         public double ClawR => Lv("c_rad") > 0 ? 22 + 10 * Lv("c_rad") : 0;   // 0 = 하나씩
-        public bool AutoClaw => Lv("c_auto") > 0;
-        public const double PickR = 26;      // 손으로 누를 때 잡히는 거리 — 넓게
+        public bool AutoClaw => true;        // 🔴 자동이 기본 (사장님 09-23: "클릭은 빼자 오토는 기본으로")
+        public const double PickR = 30;      // 범위 강화 전 — 커서 밑 하나를 잡는 거리
         public int ClawDmg => 1 + Lv("c_pow");
         public double Crit => 0.05 * Lv("c_crit");
         public int DroneCount => DronesOn ? 2 + Lv("d_n") + Lv("d_fact") + Cr(3) : 0;
@@ -555,7 +554,7 @@ namespace SalvageRun.Orbit.Sim
         }
 
         // ───────────────────────── 한 걸음
-        public void Tick(double dt, double ax, double ay, bool aim, bool hold, bool click = false)
+        public void Tick(double dt, double ax, double ay, bool aim, bool hold)
         {
             var r = R; if (r.over) return;
             M.playSeconds += dt; r.t += dt;
@@ -571,7 +570,7 @@ namespace SalvageRun.Orbit.Sim
             Supply(dt);
             Motion(dt);
             if (r.holding) Pull(dt);
-            if (aim && !r.holding && r.fuel > 0) Claw(dt, click);
+            if (aim && !r.holding && r.fuel > 0) Claw(dt);
             Drones(dt);
 
             // 💥 연쇄
@@ -763,11 +762,10 @@ namespace SalvageRun.Orbit.Sim
             foreach (var d in r.junk) if (d.free && !d.dead && d.capT <= 0) d.capT = 0.6;
         }
 
-        void Claw(double dt, bool click)
+        void Claw(double dt)
         {
             var r = R;
-            r.next -= dt; r.clickCd -= dt;
-            if (click && r.clickCd <= 0) { r.clickCd = 0.12; Strike(); return; }      // 손으로 — 한 번 누르면 한 번
+            r.next -= dt;
             if (Lv("c_magnet") > 0)
             {
                 double mr = Math.Max(ClawR, PickR) + 40 + 20 * Lv("c_magnet");
@@ -780,7 +778,7 @@ namespace SalvageRun.Orbit.Sim
                     d.capT = 0.5; d.vx += dx * 2.5 * dt; d.vy += dy * 2.5 * dt;
                 }
             }
-            if (!AutoClaw || r.next > 0) return;
+            if (r.next > 0) return;
             r.next = Gap * (Lv("c_over") > 0 && r.fuel < 5 ? 0.5 : 1);
             Strike();
             if (Rnd() < 0.1 * Lv("c_double")) Strike();

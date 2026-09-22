@@ -214,7 +214,7 @@ namespace SalvageRun.Orbit
             // 첫 5분 — 새 장난감마다 한 줄씩만 (§10)
             string hint = null;
             if (R.clean) hint = null; else
-            if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = "쓰레기를 눌러서 하나씩 줍는다 — 위성은 세 번, 로켓은 다섯 번";
+            if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = "궤도 위에 커서를 대면 집게가 저절로 친다 — 처음엔 하나씩";
             else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "지구에서 폭탄이 올라온다 — 길게 누르고 있으면 빨아들이고, 떼면 모인 만큼 터진다";
             else if (sim.DronesOn && !sim.M.flags.Contains("hint_drone") && R.t < 8) hint = "드론은 알아서 줍는다 — 한 방에 부서지는 것만";
             if (hint != null) GUI.Label(new Rect(vw / 2 - 360, RefH - 70, 720, 20), hint, center);
@@ -437,7 +437,7 @@ namespace SalvageRun.Orbit
                 center.normal.textColor = open ? BranchCol[b] : new Color(0.35f, 0.39f, 0.46f);
                 GUI.Label(new Rect(cr.x, cr.y + 6, cr.width, 30), SweepSim.BranchNames[b].Replace(" ", "\n").Replace("\n·\n", " · "), center);
                 center.normal.textColor = new Color(0.87f, 0.89f, 0.92f);
-                GUI.Label(new Rect(cr.x, cr.y + 40, cr.width, 16), open ? Owned(b) + " / 9" : "잠김", center);
+                GUI.Label(new Rect(cr.x, cr.y + 40, cr.width, 16), open ? Owned(b) + " / " + Total(b) : "잠김", center);
                 if (open && CanCount(b) > 0) GUI.Label(new Rect(cr.x, cr.y + 54, cr.width, 14), "<size=10><color=#ffdf95>+" + CanCount(b) + "</color></size>", center);
             }
             title.fontSize = 18; GUI.Label(new Rect(r.x, r.y + 108, r.width, 30), "정비고로 ▾", title);
@@ -465,6 +465,7 @@ namespace SalvageRun.Orbit
         }
 
         int CanCount(int b) { int n = 0; for (int i = 0; i < SweepSim.NodeCount; i++) if (SweepSim.Nodes[i].branch == SweepSim.BranchIds[b] && sim.State(i) == NodeSt.Can) n++; return n; }
+        int Total(int b) { int n = 0; for (int i = 0; i < SweepSim.NodeCount; i++) if (SweepSim.Nodes[i].branch == SweepSim.BranchIds[b]) n++; return n; }
         int Owned(int b) { int n = 0; for (int i = 0; i < SweepSim.NodeCount; i++) if (SweepSim.Nodes[i].branch == SweepSim.BranchIds[b] && sim.S.lv[i] > 0) n++; return n; }
 
         // ───────────────────────────────── 정비고 — 네 칸 · 칸마다 카드 (설명 창 없이 카드에 다)
@@ -492,7 +493,7 @@ namespace SalvageRun.Orbit
                 Frame(new Rect(tr.x, tr.y, tr.width, 2), b == bayTab ? BranchCol[b] : new Color(0.14f, 0.2f, 0.28f), 2);
                 center.normal.textColor = open ? BranchCol[b] : new Color(0.35f, 0.39f, 0.46f);
                 int cc = open ? CanCount(b) : 0;
-                GUI.Label(tr, SweepSim.BranchNames[b] + "  <size=11>" + (open ? Owned(b) + "/9" : "잠김 · 청구서 " + SweepSim.BranchNeed[b]) + (cc > 0 ? "  <color=#ffdf95>● " + cc + "</color>" : "") + "</size>", center);
+                GUI.Label(tr, SweepSim.BranchNames[b] + "  <size=11>" + (open ? Owned(b) + "/" + Total(b) : "잠김 · 청구서 " + SweepSim.BranchNeed[b]) + (cc > 0 ? "  <color=#ffdf95>● " + cc + "</color>" : "") + "</size>", center);
                 center.normal.textColor = new Color(0.87f, 0.89f, 0.92f);
                 if (GUI.Button(tr, GUIContent.none, GUIStyle.none)) bayTab = b;
             }
@@ -577,9 +578,8 @@ namespace SalvageRun.Orbit
             switch (id)
             {
                 case "c_pow": return "한 방 " + (1 + l);
-                case "c_auto": return l > 0 ? "대고만 있어도" : "눌러야 친다";
                 case "c_rad": return l > 0 ? "반지름 " + (22 + 10 * l) : "하나씩";
-                case "c_spd": return Mathf.Max(0.38f, 0.8f - 0.06f * l).ToString("0.00") + "초";
+                case "c_spd": return Mathf.Max(0.3f, 0.6f - 0.045f * l).ToString("0.00") + "초";
                 case "c_fuel": return (30 + 3 * l) + "초";
                 case "c_crit": return (5 * l) + "%";
                 case "c_double": return (10 * l) + "%";
