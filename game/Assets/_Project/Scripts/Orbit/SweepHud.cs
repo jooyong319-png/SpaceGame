@@ -141,7 +141,8 @@ namespace SalvageRun.Orbit
             }
             if (!sim.M.won) NewsBanner();
             if (newsOpen) News();
-            RepayOverlay();                                            // 💸 빚 갚기 연출
+            RepayOverlay();
+            if (sim.Mk != null) { StockFxOverlay(); if (sim.StockOpen) AnchorBox(); }   // 📈 증권 연출 · 🎙 속보 앵커                                            // 💸 빚 갚기 연출
             if (!sim.M.won && !(CockpitView && flow != 3)) Ticker();          // 조종실엔 궤도일보 모니터가 있다 — 아래 한 줄과 겹친다
         }
 
@@ -1065,6 +1066,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0.03f, 0.04f, 0.06f, 0.94f); GUI.DrawTexture(r, white); GUI.color = Color.white;
             Frame(r, new Color(0.3f, 0.55f, 0.4f), 2);
             double tv = mk.TotalValue(), tc = 0; foreach (var st in MS.st) tc += st.cost;
+            RowTick(); stockCashPos = new Vector2(r.xMax - 60, r.y + 18);
             GUI.Label(new Rect(r.x + 12, r.y + 6, 200, 24), "<size=16><b><color=#9ff0bf>궤도 증권</color></b></size>", label);
             GUI.Label(new Rect(r.x + 12, r.y + 6, r.width - 24, 24), "<size=12><color=#8a9bb3>평가</color> " + KNum.Fmt(tv) + (tc > 0 ? "  " + (tv >= tc ? "<color=#ff5c5c>+" : "<color=#5494ff>") + ((tv / tc - 1) * 100).ToString("0.0") + "%</color>" : "") + "</size>", cost);
             // 종목 여덟 — 이름 · 가격 · 최근 20봉 등락 · 보유 표시
@@ -1074,6 +1076,7 @@ namespace SalvageRun.Orbit
                 var row = new Rect(r.x + 8, r.y + 34 + i * 23, r.width - 16, 22);
                 bool sel = MS.sel == i;
                 if (sel) { GUI.color = new Color(0.2f, 0.35f, 0.26f, 0.6f); GUI.DrawTexture(row, white); GUI.color = Color.white; }
+                RowFx(i, row); if (i < 8) stockRowPos[i] = new Vector2(row.xMax - 50, row.center.y);
                 double ch = mk.Change(i, 20);
                 string arrow = st.pushLeft > 0 ? (st.push > 0 ? " <color=#ff5c5c>▲</color>" : " <color=#5494ff>▼</color>") : "";
                 GUI.Label(new Rect(row.x + 6, row.y + 1, 170, 20), "<size=13>" + (st.shares > 0 ? "<color=#ffdf95>● </color>" : "") + d.name + "</size>" + arrow, label);
@@ -1115,20 +1118,14 @@ namespace SalvageRun.Orbit
             y += 22;
             float bw = (r.width - 24 - 12) / 6f;
             string[] bl = { "10%", "25%", "50%", "전부" }; float[] bf = { 0.1f, 0.25f, 0.5f, 1f };
-            for (int k = 0; k < 4; k++) if (GUI.Button(new Rect(r.x + 12 + k * (bw + 2), y, bw, 28), "<size=12><color=#9ff0bf>사기 " + bl[k] + "</color></size>", btn)) { sim.StockBuy(si, bf[k]); OrbitSfx.Play("buy", 0.5f); }
+            for (int k = 0; k < 4; k++) if (GUI.Button(new Rect(r.x + 12 + k * (bw + 2), y, bw, 28), "<size=12><color=#9ff0bf>사기 " + bl[k] + "</color></size>", btn)) TradeBuy(si, bf[k], new Vector2(r.x + 12 + k * (bw + 2) + bw / 2, y + 14));
             GUI.enabled = ss.shares > 0 && GUI.enabled;
-            if (GUI.Button(new Rect(r.x + 12 + 4 * (bw + 2) + 6, y, bw, 28), "<size=12><color=#ffb3a8>절반 팔기</color></size>", btn)) { sim.StockSell(si, 0.5); OrbitSfx.Play("grab", 0.6f); }
-            if (GUI.Button(new Rect(r.x + 12 + 5 * (bw + 2) + 6, y, bw, 28), "<size=12><color=#ffb3a8>전부 팔기</color></size>", btn)) { sim.StockSell(si, 1); OrbitSfx.Play("grab", 0.6f); }
+            if (GUI.Button(new Rect(r.x + 12 + 4 * (bw + 2) + 6, y, bw, 28), "<size=12><color=#ffb3a8>절반 팔기</color></size>", btn)) TradeSell(si, 0.5, new Vector2(r.x + 12 + 4 * (bw + 2) + 6 + bw / 2, y + 14));
+            if (GUI.Button(new Rect(r.x + 12 + 5 * (bw + 2) + 6, y, bw, 28), "<size=12><color=#ffb3a8>전부 팔기</color></size>", btn)) TradeSell(si, 1, new Vector2(r.x + 12 + 5 * (bw + 2) + 6 + bw / 2, y + 14));
             GUI.enabled = !loanOpen;
             y += 32;
-            // 자동 매도 (칸을 사야)
-            if (sim.Lv("a_auto") > 0)
-            {
-                GUI.Label(new Rect(r.x + 12, y, 140, 20), "<size=11>목표가 매도 <color=#ff5c5c>+" + Mathf.RoundToInt(MS.takeProfit * 100) + "%</color></size>", label);
-                if (GUI.Button(new Rect(r.x + 130, y, 22, 20), "<size=10>◀</size>", btnOff)) MS.takeProfit = Mathf.Max(0.05f, MS.takeProfit - 0.05f);
-                if (GUI.Button(new Rect(r.x + 154, y, 22, 20), "<size=10>▶</size>", btnOff)) MS.takeProfit = Mathf.Min(1f, MS.takeProfit + 0.05f);
-            }
-            if (sim.Lv("a_ins") > 0) GUI.Label(new Rect(r.x + 200, y, 200, 20), "<size=11>손절 <color=#5494ff>-" + Mathf.RoundToInt(sim.StopLossAt * 100) + "%</color></size>", label);
+            // 🙏 개미의 기도 · 🍀 행운의 부적 (칸을 사야)
+            GUI.Label(new Rect(r.x + 12, y, r.width - 24, 20), "<size=11>" + LuckLine() + "</size>", label);
             y += 22;
             // 내부자 정보
             int il = sim.Lv("a_read");
@@ -1164,7 +1161,7 @@ namespace SalvageRun.Orbit
             if (lastNewsSeen < 0) lastNewsSeen = ns.Count > 0 ? ns[ns.Count - 1].t : sim.Mk.M.clock - 0.01f;   // 켜자마자 옛 속보는 건너뛴다
             if (ns.Count > 0 && ns[ns.Count - 1].t > lastNewsSeen)
             {
-                bannerNews = ns[ns.Count - 1]; newsBanner = 5.5f; OrbitSfx.Play("supply", 0.5f);
+                bannerNews = ns[ns.Count - 1]; newsBanner = 5.5f; OrbitSfx.Play("supply", 0.5f); Anchor(bannerNews.head);
                 lastNewsSeen = ns[ns.Count - 1].t;
             }
             if (newsBanner <= 0 || bannerNews == null) return;
@@ -1400,9 +1397,9 @@ namespace SalvageRun.Orbit
                 case "c_rad": return l > 0 ? "반지름 " + (22 + 10 * l) : "한 점";
                 case "c_spd": return Mathf.Max(0.3f, 0.6f - 0.045f * l).ToString("0.00") + "초";
                 case "a_open": return l > 0 ? "열림" : "잠김";
-                case "a_auto": return l > 0 ? "목표 수익률에서 자동" : "없음";
+                case "a_auto": return l > 0 ? "내 종목 봉마다 +0.08% 쪽으로" : "없음";
                 case "a_read": return new[] { "없음", "다음 속보까지 시간", "+ 업종", "+ 제목까지" }[Mathf.Min(3, l)];
-                case "a_ins": return l == 0 ? "없음" : "-" + new[] { 0, 20, 15, 10 }[Mathf.Min(3, l)] + "% 에서 손절";
+                case "a_ins": return l == 0 ? "없음" : "나쁜 속보 → 좋은 속보 " + new[] { 0, 60, 70, 80 }[Mathf.Min(3, l)] + "%";
                 case "a_big": return "수수료 " + new[] { "1", "0.6", "0.3", "0" }[Mathf.Min(3, l)] + "% · 배당 +" + (0.03f * l).ToString("0.00") + "%";
                 case "c_fuel": return (30 + 3 * l) + "초";
                 case "c_crit": return (5 * l) + "%";

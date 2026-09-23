@@ -174,9 +174,9 @@ namespace SalvageRun.Orbit.Sim
             N("e_used", "eco", "중고 거래", "모든 칸 -5%", new[] { "e_save" }, 4, 6000, 2.0, 3, 3, 3),
             // 📈 증권 줄기 (09-23 사장님 「진짜 주식처럼 · 정비소에서 이점을」) — 맨 끝에 붙여 옛 저장의 칸 순서를 안 흔든다 (경매 칸 자리를 그대로 썼다)
             N("a_open", "eco", "증권 계좌", "궤도 증권이 열린다 — 판 중에도 조종실에서도 사고판다", new[] { "e_val" }, 2, 500, 1, 1, 1, 1),
-            N("a_auto", "eco", "목표가 매도", "정한 수익률에 닿으면 알아서 판다", new[] { "a_open" }, 2, 800, 1, 1, 1, 1),
+            N("a_auto", "eco", "개미의 기도", "내가 산 종목이 조금씩 더 오르는 쪽으로 움직인다", new[] { "a_open" }, 2, 800, 1, 1, 1, 1),
             N("a_read", "eco", "내부자 정보", "다음 속보를 미리 안다 — 시간 · 업종 · 제목", new[] { "a_auto" }, 2, 1500, 2.5, 3, 1, 1),
-            N("a_ins", "eco", "손절 매도", "많이 떨어지면 알아서 판다 (-20 · -15 · -10%)", new[] { "a_read" }, 3, 4000, 2.5, 3, 1, 1),
+            N("a_ins", "eco", "행운의 부적", "내 종목에 나쁜 속보가 걸리면 좋은 속보로 바뀐다 (60 · 70 · 80%)", new[] { "a_read" }, 3, 4000, 2.5, 3, 1, 1),
             N("a_big", "eco", "큰손 계좌", "수수료가 줄고 배당이 붙는다", new[] { "a_ins" }, 4, 20000, 3, 3, 1, 1),
         };
         public const int NodeCount = 41;
@@ -401,7 +401,7 @@ namespace SalvageRun.Orbit.Sim
         public bool StockOpen => Lv("a_open") > 0;
         public double StockFee => new[] { 0.01, 0.006, 0.003, 0 }[Math.Min(3, Lv("a_big"))];
         public double StockDiv => 0.0003 * Lv("a_big");
-        public float StopLossAt => new[] { 0f, 0.2f, 0.15f, 0.1f }[Math.Min(3, Lv("a_ins"))];
+        public double LuckAt => new[] { 0, 0.6, 0.7, 0.8 }[Math.Min(3, Lv("a_ins"))];   // 🍀 행운의 부적 — 내 종목 나쁜 속보를 좋은 속보로 (09-24 사장님 「자동 매도 말고 오를 확률」)
         void MakeMarket()
         {
             if (S.market == null) S.market = new MarketState { seed = 1 + (int)(M.playSeconds * 7) % 100000 + M.company * 131 };
@@ -411,8 +411,7 @@ namespace SalvageRun.Orbit.Sim
         public void MarketTick(double dt)
         {
             if (!StockOpen || Mk == null) return;
-            S.market.stopLoss = StopLossAt;
-            S.cash += Mk.Update(dt, Lv("a_auto") > 0, Lv("a_ins") > 0, StockFee, StockDiv);
+            S.cash += Mk.Update(dt, Lv("a_auto") > 0 ? 0.0008 : 0, LuckAt, StockFee, StockDiv);
         }
         public void StockBuy(int i, double frac) { if (!StockOpen) return; double money = Math.Floor(S.cash * frac); if (money < 1) return; S.cash -= Mk.Buy(i, money, StockFee); }
         public void StockSell(int i, double frac) { if (!StockOpen) return; S.cash += Math.Floor(Mk.Sell(i, frac, StockFee)); }

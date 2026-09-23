@@ -106,10 +106,12 @@ namespace SalvageRun.Orbit.Sim
         double N() { double u1 = 1 - rng.NextDouble(), u2 = rng.NextDouble(); return Math.Sqrt(-2 * Math.Log(u1)) * Math.Cos(2 * Math.PI * u2); }
         static void StartCandle(StockState s) { s.co = s.ch = s.cl = (float)s.price; }
 
-        void Wiggle(int i, StockState s, double dt)
+        bool HitsHeld(string[] keys) { if (keys == null) return false; for (int i = 0; i < M.st.Count; i++) if (M.st[i].shares > 0 && Hits(i, keys)) return true; return false; }
+
+        void Wiggle(int i, StockState s, double dt, double extra = 0)
         {
             var d = Defs[i]; double k = dt / CandleSec;
-            double drift = d.mu + (s.pushLeft > 0 ? s.push : 0);
+            double drift = d.mu + extra + (s.pushLeft > 0 ? s.push : 0);
             s.price *= Math.Exp(drift * k - 0.5 * d.vol * d.vol * k + d.vol * Math.Sqrt(k) * N());
             s.price = Math.Max(0.5, s.price);
             s.ch = Math.Max(s.ch, (float)s.price); s.cl = Math.Min(s.cl, (float)s.price);
@@ -150,12 +152,22 @@ namespace SalvageRun.Orbit.Sim
         public void GameEvent(string head, string body, string[] up, string[] down, float size) => Publish(head, body, up, down, size, false);
 
         /// <summary>시간이 흐른다. 돌려주는 값 = 배당 · 자동 매도로 들어온 돈</summary>
-        public double Update(double dt, bool tp, bool sl, double fee, double divBonus)
+        public double Update(double dt, double holdDrift, double luck, double fee, double divBonus)
         {
             double got = 0;
             M.clock += (float)dt; M.candleT += (float)dt; M.newsT += (float)dt;
-            for (int i = 0; i < M.st.Count; i++) Wiggle(i, M.st[i], dt);
-            if (M.newsT >= M.nextNewsT) { var nd = NewsBook[M.nextNews]; Publish(nd.head, nd.body, nd.up, nd.down, nd.size, nd.rumor); RollNews(); }
+            for (int i = 0; i < M.st.Count; i++) Wiggle(i, M.st[i], dt, M.st[i].shares > 0 ? holdDrift : 0);
+            if (M.newsT >= M.nextNewsT)
+            {
+                var nd = NewsBook[M.nextNews];
+                if (luck > 0 && HitsHeld(nd.down) && rng.NextDouble() < luck)          // 🍀 행운의 부적 — 내 종목 악재 → 내 종목 호재로 바꿔 친다
+                {
+                    var good = new List<int>();
+                    for (int k = 0; k < NewsBook.Length; k++) if (NewsBook[k].down == null && HitsHeld(NewsBook[k].up)) good.Add(k);
+                    if (good.Count > 0) nd = NewsBook[good[rng.Next(good.Count)]];
+                }
+                Publish(nd.head, nd.body, nd.up, nd.down, nd.size, nd.rumor); RollNews();
+            }
             if (M.candleT >= CandleSec)
             {
                 M.candleT -= CandleSec;
@@ -166,13 +178,6 @@ namespace SalvageRun.Orbit.Sim
                     if (s.shares > 0 && div > 0) got += s.shares * s.price * div;   // 배당 — 들고 있으면 봉마다
                     Close(s);
                 }
-            }
-            for (int i = 0; i < M.st.Count; i++)
-            {
-                var s = M.st[i];
-                if (s.shares <= 0) continue;
-                double ch = s.price / (s.cost / s.shares) - 1;
-                if ((tp && ch >= M.takeProfit) || (sl && ch <= -M.stopLoss)) got += Sell(i, 1, fee);
             }
             return got;
         }
