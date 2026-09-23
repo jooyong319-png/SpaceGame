@@ -47,6 +47,7 @@ namespace SalvageRun.Orbit.Sim
         public double credit, broken, playSeconds;
         public int[] career = new int[SweepSim.CareerCount];
         public int company = 1, bankrupt, loans, bestChain, bestPack, totalRuns, scoops;
+        public double bestAuc;                                           // 고철 경매 최고 배수
         public bool won, careerOpen, cleanReady;
         public List<NewsItem> news = new List<NewsItem>();
         public List<string> flags = new List<string>();
@@ -162,8 +163,14 @@ namespace SalvageRun.Orbit.Sim
             N("e_save", "eco", "적금", "판 끝에 이자", new[] { "e_quest" }, 4, 2500, 1.9, 5, 2, 4),
             N("e_guard", "eco", "상환 조절", "빚 상환으로 떼는 몫 30% → 20%", new[] { "e_talk", "e_tip" }, 5, 9000, 1, 1, 3, 1),
             N("e_used", "eco", "중고 거래", "모든 칸 -5%", new[] { "e_save" }, 4, 6000, 2.0, 3, 3, 3),
+            // 🔨 고철 경매 줄기 (09-23 사장님 「경매 · 정비소에서 이점을」) — 맨 끝에 붙여 옛 저장의 칸 순서를 안 흔든다
+            N("a_open", "eco", "고철 경매장", "판이 끝나면 번 돈을 경매에 걸 수 있다", new[] { "e_val" }, 2, 500, 1, 1, 1, 1),
+            N("a_auto", "eco", "자동 낙찰", "정한 배수에서 알아서 낙찰", new[] { "a_open" }, 2, 800, 1, 1, 1, 1),
+            N("a_read", "eco", "시세 예측", "폭락 직전에 진짜 경고가 뜬다", new[] { "a_auto" }, 2, 1500, 2.5, 3, 1, 1),
+            N("a_ins", "eco", "경매 보험", "폭락해도 건 돈 일부를 돌려받는다", new[] { "a_read" }, 3, 4000, 2.5, 3, 1, 1),
+            N("a_big", "eco", "큰손 입찰", "시작 배수가 오른다", new[] { "a_ins" }, 4, 20000, 3, 3, 1, 1),
         };
-        public const int NodeCount = 36;
+        public const int NodeCount = 41;
         // ───────────────────────── 정비소 트리 자리 (손으로 격자에 놓았다 · 시안 https://claude.ai/artifact/NLZseBQWXKMGfuAmFDFJcR)
         //    par = 이어지는 앞 칸의 능력 (R = 가운데 청소선) · tile = 그 능력의 몇 번째 칸 뒤 · (x, y) 첫 칸 자리 · (dx, dy) 뻗는 방향
         //    🔴 여는 조건도 이것 — 앞 칸을 사야 이 능력의 첫 칸이 열린다 (게임 · 봇 같은 규칙)
@@ -206,8 +213,13 @@ namespace SalvageRun.Orbit.Sim
             { "e_save", new TreeSpot { par = "e_val", tile = 5, x = -1, y = 6, dx = 0, dy = 1 } },
             { "e_guard", new TreeSpot { par = "e_talk", tile = 2, x = -6, y = 1, dx = -1, dy = 0 } },
             { "e_used", new TreeSpot { par = "e_save", tile = 3, x = -2, y = 8, dx = -1, dy = 0 } },
+            { "a_open", new TreeSpot { par = "e_val", tile = 3, x = -2, y = 3, dx = -1, dy = 0 } },
+            { "a_auto", new TreeSpot { par = "a_open", tile = 1, x = -3, y = 3, dx = -1, dy = 0 } },
+            { "a_read", new TreeSpot { par = "a_auto", tile = 1, x = -4, y = 3, dx = -1, dy = 0 } },
+            { "a_ins", new TreeSpot { par = "a_read", tile = 3, x = -7, y = 3, dx = -1, dy = 0 } },
+            { "a_big", new TreeSpot { par = "a_ins", tile = 3, x = -10, y = 3, dx = -1, dy = 0 } },
         };
-        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R" };
+        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R", "a_open", "a_auto", "a_read", "a_ins", "a_big" };
         public static string VisBranch(string id) => id == "c_fuel" || id == "o_wide" || id == "c_find" ? "hull" : id == "s_speed" ? "bh" : Nodes[NodeIx[id]].branch;
 
         static Node N(string id, string br, string name, string desc, string[] par, int seg, double first, double mult, int max, int depth, int lane)
@@ -297,13 +309,8 @@ namespace SalvageRun.Orbit.Sim
             if (s == null || s.version != 22) { S = new SweepState(); S.startedAt = M.playSeconds; }
             else S = s;
             if (S.lv == null) S.lv = new int[NodeCount];
-            else if (S.lv.Length == NodeCount + 1)
-            {
-                // 자동 조준 칸(맨 끝)은 정비소에서 빠지고 ON/OFF 스위치가 됐다 (09-23) — 산 값(150 · ×3)은 돌려준다
-                int al = S.lv[NodeCount]; double back = 0; for (int k = 0; k < al; k++) back += 150 * Math.Pow(3, k);
-                S.cash += back; var lv = S.lv; Array.Resize(ref lv, NodeCount); S.lv = lv;
-            }
-            else if (S.lv.Length != NodeCount) S.lv = new int[NodeCount];
+            else if (S.lv.Length < NodeCount) { var lv = S.lv; Array.Resize(ref lv, NodeCount); S.lv = lv; }   // 칸이 늘면 산 것은 그대로 두고 뒤에 붙인다 (경매 줄기 · 09-23)
+            else if (S.lv.Length > NodeCount) { var lv = S.lv; Array.Resize(ref lv, NodeCount); S.lv = lv; }
             if (M.news.Count == 0) AddNews("first_run");
             if (ContractsOn && (S.contract < 0 || S.contract < Contracts.Length && Contracts[S.contract].orbit < 0)) RollContract();     // 의뢰가 비었거나 이제 없는 압류 딱지 의뢰면 새로
             Preview();
@@ -378,6 +385,52 @@ namespace SalvageRun.Orbit.Sim
             S.loanLog.Add(new LoanRec { kind = kind, amt = amt, run = S.runs });
             if (S.loanLog.Count > 30) S.loanLog.RemoveAt(0);
         }
+        // 🔨 고철 경매 — 주식 봉 차트 (09-23 사장님 「봉 하나 생길 때마다 파시겠습니까?」)
+        // 봉마다: 12% 폭락 · 아니면 70% 초록(+10~30%) / 30% 빨강(-3~12%). 한 봉 더 보는 기대값 ≈ 0.98 — 버틸수록 살짝 손해, 언제 팔지가 판단
+        public bool AucOpen => Lv("a_open") > 0;
+        public double AucStartMult => 1 + 0.07 * Lv("a_big");
+        public double AucInsure => new[] { 0, 0.15, 0.25, 0.35 }[Math.Min(3, Lv("a_ins"))];
+        public double AucStake, AucPrice, AucNextF; public bool AucLive, AucWarn; public int AucCandles;
+        void AucRoll()
+        {
+            double u = rng.NextDouble();
+            AucNextF = u < 0.12 ? 0 : rng.NextDouble() < 0.7 ? 1.10 + rng.NextDouble() * 0.20 : 0.88 + rng.NextDouble() * 0.09;
+            // 시세 예측 — 폭락이면 단계별로 알아챈다, 낮은 단계는 헛경보도 가끔
+            int lv = Math.Min(3, Lv("a_read"));
+            double hit = new[] { 0, 0.6, 0.8, 1.0 }[lv], fa = new[] { 0, 0.1, 0.06, 0 }[lv];
+            AucWarn = AucNextF == 0 ? rng.NextDouble() < hit : rng.NextDouble() < fa;
+        }
+        public bool AuctionStart(double stake)
+        {
+            stake = Math.Floor(Math.Min(stake, S.cash));
+            if (!AucOpen || AucLive || stake <= 0) return false;
+            AucStake = stake; S.cash -= stake; AucLive = true; AucPrice = AucStartMult; AucCandles = 0;
+            AucRoll();
+            return true;
+        }
+        /// <summary>한 봉 더 — true 면 폭락</summary>
+        public bool AuctionStep()
+        {
+            if (!AucLive) return false;
+            AucCandles++;
+            if (AucNextF == 0) return true;
+            AucPrice *= AucNextF; AucRoll();
+            return false;
+        }
+        public double AuctionSell()
+        {
+            if (!AucLive) return 0;
+            AucLive = false; double m = AucPrice, got = Math.Floor(AucStake * m); S.cash += got;
+            if (m > M.bestAuc) { M.bestAuc = m; if (m >= 5) AddNews(null, "고철 경매 ×" + m.ToString("0.0") + " — 「이 값에 산 사람이 누구냐」", "궤도 청소부가 내놓은 고철이 경매에서 시세의 " + m.ToString("0.0") + "배에 팔렸다. 낙찰자는 끝내 이름을 밝히지 않았다."); }
+            return got;
+        }
+        public double AuctionCrash()
+        {
+            if (!AucLive) return 0;
+            AucLive = false; double back = Math.Floor(AucStake * AucInsure); S.cash += back;
+            return back;
+        }
+
         public bool LoanAndPay()
         {
             if (S.cash >= BillAmount) return PayBill();

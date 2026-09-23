@@ -45,7 +45,7 @@ namespace SalvageRun.Orbit
 
         public void OnRunEnd()
         {
-            showResult = true; bankruptArmed = false; last = sim.R; resultT = 2.6f; flow = 1;
+            showResult = true; bankruptArmed = false; last = sim.R; resultT = 2.6f; flow = 1; aucUsed = false; aucState = 0;
             resultAt = Time.time; endCash = sim.S.cash; gained = last.Earned + last.bonus + last.interest; flyers.Clear(); flyT = 0;
             bannerT = 0; banner = null;          // 판 중 예고가 조종실까지 남지 않게
             sim.M.flags.Remove("hint_seen_now");
@@ -112,7 +112,7 @@ namespace SalvageRun.Orbit
             var kb = Keyboard.current;
             if (kb != null && kb.spaceKey.wasPressedThisFrame && sim.R.over && !sim.M.careerOpen && !sim.M.won && !newsOpen && paidT < 2.4f)
             {
-                if (loanOpen) { } else if (flow == 2) Go(); else flow = 2;   // Space — 결과 · 정비소 → 조종실, 조종실 → 출동
+                if (loanOpen || aucState > 0) { } else if (flow == 2) Go(); else flow = 2;   // Space — 결과 · 정비소 → 조종실, 조종실 → 출동
             }
             if (kb != null && kb.escapeKey.wasPressedThisFrame) { if (loanOpen) { loanOpen = false; pendLoan = 0; } else if (newsOpen) newsOpen = false; else bayOpen = false; }
         }
@@ -130,9 +130,10 @@ namespace SalvageRun.Orbit
             else if (sim.R.over)
             {
                 if (flow == 0) flow = 2;                                // 켜자마자 · 파산 뒤 = 조종실
-                GUI.enabled = !loanOpen;
+                GUI.enabled = !loanOpen && aucState == 0;
                 if (flow == 1) FlowResult(); else if (flow == 3) { Bay(); FlowBottom(); } else Cockpit();
                 GUI.enabled = true;
+                if (aucState > 0) Auction();
                 if (loanOpen) LoanWin();
             }
             if (newsOpen) News();
@@ -433,6 +434,17 @@ namespace SalvageRun.Orbit
             GUI.Label(new Rect(bx, by + 16, bw, 18), "<color=#f2c14e>빔 " + Mathf.RoundToInt(a * 100) + "%</color>   " + (sim.DronesOn ? "<color=#6fd3e8>드론 " + Mathf.RoundToInt(b * 100) + "%</color>   " : "") + (sim.BombsOn ? "<color=#b69cff>폭발 " + Mathf.RoundToInt((1 - a - b) * 100) + "%</color>" : ""), label);
             if (R.contractText != null) GUI.Label(new Rect(bx, by + 44, bw, 20), "의뢰 · " + R.contractText + "  " + (R.contractOk ? "<color=#6fcf97>성공 +" + KNum.Fmt(R.bonus) + "</color>" : "<color=#ee7766>실패 " + R.contractProg + "/" + R.contractTarget + "</color>"), label);
             else if (R.cut > 0) GUI.Label(new Rect(bx, by + 44, bw, 20), "<color=#ee7766>빚 상환으로 떼인 것 -" + KNum.Fmt(R.cut) + "</color>", label);
+
+            // 🔨 고철 경매 — 왼쪽 칸 아래 (경매장을 샀고, 이번 판 수입이 있으면 한 번)
+            if (sim.AucOpen && !aucUsed && R != null && !R.clean && R.Earned >= 1 && aucState == 0 && S.cash >= 1)
+            {
+                var ab = new Rect(L.x + 16, L.yMax - 48, L.width - 32, 38);
+                float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 4);
+                GUI.color = Color.Lerp(new Color(0.3f, 0.2f, 0.05f), new Color(0.45f, 0.3f, 0.07f), pulse); GUI.DrawTexture(ab, white); GUI.color = Color.white;
+                Frame(ab, SweepGame.Amber, 2);
+                GUI.Label(ab, "<size=16><color=#ffdf95><b>고철 경매</b></color></size>  <size=13><color=#e8c77e>이번 판 +" + KNum.Fmt(System.Math.Min(R.Earned, S.cash)) + " 걸기 ▸</color></size>", center);
+                if (GUI.Button(ab, GUIContent.none, GUIStyle.none)) AucPrep();
+            }
 
             // 오른쪽 아래 — 다음 해금 (청구서를 갚으면 열리는 것)
             var RB = new Rect(cx + 10, 270, 410, 120);
@@ -784,6 +796,291 @@ namespace SalvageRun.Orbit
         }
 
         // ───────────────────────────────── 대출 창구 (모달) — 내역 · 받기 · 갚기
+        // 🔨 고철 경매 — 주식 봉 차트. 봉 하나가 서면 「파시겠습니까?」 (사장님 09-23)
+        // aucState 1 준비 · 2 봉이 서는 중 · 5 고르기 · 3 낙찰 · 4 유찰
+        int aucState; bool aucUsed, aucRecord; float aucT, aucEndT, aucNextTick, aucTarget = 2f;
+        double aucGot, aucStakeShown, aucOpenP, aucCloseP, aucHi, aucLo;
+        struct Candle { public float o, c, h, l; }
+        readonly List<Candle> aucCandles = new List<Candle>();
+        readonly List<Vector3> aucBubbles = new List<Vector3>();   // x = 가격, y = 뜬 시각, z = 이름 번호
+        static readonly string[] Bidders = { "케슬러 금융", "달 기지 조합", "화성 제련소", "고철왕 박 씨", "목성 선박", "익명 수집가" };
+        static readonly float[] AutoTargets = { 1.5f, 2f, 3f, 5f, 8f };
+        const float CandleSec = 0.95f;
+        public void TestAuc(int step) { if (step == 0) AucPrep(); else if (step == 1) AucBegin(); else if (step == 2 && aucState == 5) AucSell(); else if (step == 3 && aucState == 5) AucNextCandle(); }   // 에디터 시험용
+
+        // 걸기 전 — 시세가 실제 차트처럼 계속 움직인다 (보기만, 앞날과는 상관없다). [배팅!] 누른 순간 가격에 산다
+        readonly List<Candle> aucHist = new List<Candle>();
+        float prepT; float prepO, prepC, prepH, prepL;
+        void AucPrep()
+        {
+            aucState = 1; OrbitSfx.Play("tick", 0.7f);
+            aucHist.Clear(); aucCandles.Clear(); aucBubbles.Clear();
+            float p = 1f; var tmp = new List<Candle>();
+            for (int i = 0; i < 10; i++)
+            {
+                float f = Random.value < 0.52f ? Random.Range(1.02f, 1.12f) : Random.Range(0.9f, 0.98f);
+                float o = p / f;
+                tmp.Add(new Candle { o = o, c = p, h = Mathf.Max(o, p) * Random.Range(1.01f, 1.05f), l = Mathf.Min(o, p) * Random.Range(0.95f, 0.99f) });
+                p = o;
+            }
+            for (int i = tmp.Count - 1; i >= 0; i--) aucHist.Add(tmp[i]);
+            PrepCandle();
+        }
+        void PrepCandle()
+        {
+            prepT = 0; prepO = aucHist.Count > 0 ? aucHist[aucHist.Count - 1].c : 1f;
+            float f = Random.value < 0.5f ? Random.Range(1.01f, 1.1f) : Random.Range(0.91f, 0.99f);
+            prepC = prepO * f; prepH = Mathf.Max(prepO, prepC) * Random.Range(1.005f, 1.04f); prepL = Mathf.Min(prepO, prepC) * Random.Range(0.96f, 0.995f);
+        }
+        float PrepNow() => Mathf.Lerp(prepO, prepC, Mathf.Clamp01(prepT / CandleSec)) + (1 - Mathf.Clamp01(prepT / CandleSec)) * Mathf.Sin(prepT * 37) * 0.012f * prepO;
+
+        void AucBegin()
+        {
+            double stake = System.Math.Min(last.Earned, sim.S.cash);
+            if (!sim.AuctionStart(stake)) { aucState = 0; return; }
+            aucStakeShown = sim.AucStake; endCash = sim.S.cash; gained = 0;
+            float now = PrepNow();
+            aucHist.Add(new Candle { o = prepO, c = now, h = Mathf.Max(prepO, now, Mathf.Lerp(prepO, prepH, prepT / CandleSec)), l = Mathf.Min(prepO, now, Mathf.Lerp(prepO, prepL, prepT / CandleSec)) });
+            float k = (float)sim.AucStartMult / Mathf.Max(0.01f, now);
+            for (int i = 0; i < aucHist.Count; i++) { var c = aucHist[i]; aucHist[i] = new Candle { o = c.o * k, c = c.c * k, h = c.h * k, l = c.l * k }; }
+            aucCandles.Clear(); aucBubbles.Clear();
+            OrbitSfx.Play("launch", 0.4f); game.shake = 0.12f;
+            AucNextCandle();
+        }
+        void AucNextCandle()
+        {
+            aucOpenP = sim.AucPrice;
+            bool crash = sim.AuctionStep();
+            aucCloseP = crash ? aucOpenP * 0.08 : sim.AucPrice;
+            aucHi = System.Math.Max(aucOpenP, aucCloseP) * (1 + Random.Range(0.01f, 0.06f));
+            aucLo = System.Math.Min(aucOpenP, aucCloseP) * (1 - Random.Range(0.01f, 0.05f));
+            aucState = 2; aucT = 0; aucNextTick = 0;
+            aucCrashNow = crash;
+        }
+        bool aucCrashNow;
+        void AucSell()
+        {
+            double m = sim.AucPrice;
+            aucRecord = m > sim.M.bestAuc + 1e-6;
+            aucGot = sim.AuctionSell();
+            aucState = 3; aucEndT = 0; endCash = sim.S.cash;
+            OrbitSfx.Play("clank", 1f); OrbitSfx.Play("buy", 1f); game.creditPulse = 1; game.shake = 0.25f;
+        }
+        void AucBust()
+        {
+            aucGot = sim.AuctionCrash();
+            aucState = 4; aucEndT = 0; endCash = sim.S.cash;
+            OrbitSfx.Play("crash", 1f); game.shake = 0.45f;
+        }
+
+        // 봉 차트 — 지난 봉(흐리게) + 내 봉 · 「매수」 점선 · 오른쪽 가격 눈금. 걸기 전엔 서는 봉이 계속 움직인다
+        Rect chG; float chLo, chHi;
+        float ChartY(float v) => chG.yMax - 10 - (chG.height - 20) * (Mathf.Log(Mathf.Max(0.05f, v)) - Mathf.Log(chLo)) / (Mathf.Log(chHi) - Mathf.Log(chLo));
+        void Chart(Rect g, float grow)
+        {
+            chG = g;
+            GUI.color = new Color(0.02f, 0.025f, 0.04f); GUI.DrawTexture(g, white); GUI.color = Color.white; Frame(g, new Color(0.15f, 0.2f, 0.27f), 1.5f);
+            var all = new List<Candle>(aucHist); int histN = all.Count; all.AddRange(aucCandles);
+            bool prep = aucState == 1, forming = aucState == 2 || prep;
+            float fo = prep ? prepO : (float)aucOpenP, fc = prep ? prepC : (float)aucCloseP, fh = prep ? prepH : (float)aucHi, fl = prep ? prepL : (float)aucLo;
+            float cw = 26, gap = 14, x0 = g.x + 12;
+            int maxN = Mathf.Max(6, (int)((g.width - 60) / (cw + gap)));
+            int shown = all.Count + (forming ? 1 : 0), first = Mathf.Max(0, shown - maxN);
+            float lo = float.MaxValue, hi = 0;
+            for (int i = first; i < all.Count; i++) { lo = Mathf.Min(lo, all[i].l); hi = Mathf.Max(hi, all[i].h); }
+            if (forming) { hi = Mathf.Max(hi, fh); lo = Mathf.Min(lo, fl); }
+            if (hi <= 0) { lo = 0.8f; hi = 1.25f; }
+            if (hi / lo < 1.3f) { float mid = Mathf.Sqrt(hi * lo); lo = mid / 1.14f; hi = mid * 1.14f; }
+            chLo = Mathf.Max(0.03f, lo * 0.94f); chHi = hi * 1.06f;
+            foreach (var k in new[] { 0.25f, 0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f, 3f, 5f, 8f, 13f, 20f, 35f, 60f })
+            {
+                if (k < chLo || k > chHi) continue;
+                float yy = ChartY(k);
+                GUI.color = new Color(1, 1, 1, 0.06f); GUI.DrawTexture(new Rect(g.x, yy, g.width, 1), white); GUI.color = Color.white;
+                GUI.Label(new Rect(g.xMax + 4, yy - 9, 60, 18), "<size=10><color=#5f6878>×" + k + "</color></size>", small);
+            }
+            void DrawCandle(int slot, float o, float c, float h, float l, float k, float alpha)
+            {
+                float cx = x0 + slot * (cw + gap) + cw / 2;
+                float cNow = Mathf.Lerp(o, c, k), hNow = Mathf.Lerp(Mathf.Max(o, cNow), h, k), lNow = Mathf.Lerp(Mathf.Min(o, cNow), l, k);
+                GUI.color = cNow >= o ? new Color(0.35f, 0.85f, 0.5f, alpha) : new Color(0.95f, 0.3f, 0.25f, alpha);
+                GUI.DrawTexture(new Rect(cx - 1, ChartY(hNow), 2, Mathf.Max(1, ChartY(lNow) - ChartY(hNow))), white);
+                float yTop = ChartY(Mathf.Max(o, cNow)), yBot = ChartY(Mathf.Min(o, cNow));
+                GUI.DrawTexture(new Rect(cx - cw / 2, yTop, cw, Mathf.Max(2, yBot - yTop)), white);
+                GUI.color = Color.white;
+            }
+            for (int i = first; i < all.Count; i++) DrawCandle(i - first, all[i].o, all[i].c, all[i].h, all[i].l, 1, (!prep && i < histN) ? 0.4f : 1f);
+            float now = fc;
+            if (forming)
+            {
+                float wob = (1 - grow) * Mathf.Sin((prep ? prepT : aucT) * 40) * 0.035f * fo;
+                now = Mathf.Lerp(fo, fc, grow) + wob;
+                DrawCandle(all.Count - first, fo, now, fh, fl, grow, 1);
+            }
+            else now = (float)sim.AucPrice;
+            // 매수 점선 — 여기서부터 내 돈
+            if (!prep && histN - first >= 0)
+            {
+                float mx = x0 + (histN - first) * (cw + gap) - gap / 2;
+                GUI.color = new Color(1f, 0.87f, 0.58f, 0.6f);
+                for (float yy = g.y + 4; yy < g.yMax - 4; yy += 10) GUI.DrawTexture(new Rect(mx, yy, 1.5f, 5), white);
+                GUI.color = Color.white;
+                GUI.Label(new Rect(mx + 4, g.yMax - 22, 60, 18), "<size=11><color=#ffdf95>매수</color></size>", small);
+            }
+            // 지금 가격 줄 + 오른쪽 꼬리표
+            float cy = ChartY(now);
+            GUI.color = new Color(1f, 0.87f, 0.58f, 0.45f); GUI.DrawTexture(new Rect(g.x, cy, g.width, 1), white);
+            GUI.color = new Color(1f, 0.8f, 0.4f, 0.95f); GUI.DrawTexture(new Rect(g.xMax - 54, cy - 9, 54, 18), white); GUI.color = Color.white;
+            GUI.Label(new Rect(g.xMax - 54, cy - 9, 54, 18), "<size=11><b><color=#2a1a05>" + now.ToString("0.00") + "</color></b></size>", center);
+        }
+
+        void Auction()
+        {
+            var S = sim.S; var ev = Event.current;
+            bool tick = ev.type == EventType.Repaint;
+            float dt = tick ? Time.unscaledDeltaTime : 0;
+            double price = sim.AucPrice;
+            GUI.color = new Color(0, 0, 0, 0.8f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
+            if ((aucState == 2 || aucState == 5) && price > 3) { float a = 0.22f * Mathf.Clamp01((float)(price - 3) / 5) * (0.6f + 0.4f * Mathf.Sin(Time.unscaledTime * 8)); Frame(new Rect(0, 0, vw, RefH), new Color(0.9f, 0.2f, 0.15f, a), 14); }
+            var r = new Rect(vw / 2 - 320, 44, 640, 512);
+            GUI.color = new Color(0.035f, 0.04f, 0.06f, 0.98f); GUI.DrawTexture(r, white); GUI.color = Color.white;
+            Frame(r, new Color(0.62f, 0.5f, 0.3f), 2);
+            title.fontSize = 24; GUI.Label(new Rect(r.x, r.y + 10, r.width, 32), "<color=#ffdf95>고철 경매</color>  <size=13><color=#8a9bb3>케슬러 고철 거래소</color></size>", title); title.fontSize = 18;
+
+            if (aucState == 1)
+            {
+                double stake = System.Math.Min(last.Earned, S.cash);
+                GUI.Label(new Rect(r.x, r.y + 68, r.width, 30), "<size=18>이번 판 수입 <color=#ffdf95>+" + KNum.Fmt(stake) + "</color> 을 건다</size>", center);
+                GUI.Label(new Rect(r.x, r.y + 96, r.width, 24), "<size=13><color=#8a9bb3>시세는 계속 움직인다 — 원하는 순간 [배팅!]. 그 뒤로 봉이 설 때마다 팔지 정한다</color></size>", center);
+                if (tick) { prepT += dt; if (prepT >= CandleSec) { aucHist.Add(new Candle { o = prepO, c = prepC, h = prepH, l = prepL }); if (aucHist.Count > 30) aucHist.RemoveAt(0); PrepCandle(); OrbitSfx.PlayPitch("tick", 0.25f, 0.7f); } }
+                Chart(new Rect(r.x + 50, r.y + 126, r.width - 140, 160), Mathf.Clamp01(prepT / CandleSec));
+                string[] info = {
+                    "시작 가격  ×" + sim.AucStartMult.ToString("0.00") + (sim.Lv("a_big") > 0 ? "  <color=#6fcf97>(큰손 입찰)</color>" : ""),
+                    "폭락 보험  " + (sim.AucInsure > 0 ? "<color=#6fcf97>" + Mathf.RoundToInt((float)sim.AucInsure * 100) + "% 돌려받기</color>" : "<color=#5f6878>없음</color>"),
+                    "시세 예측  " + (sim.Lv("a_read") > 0 ? "<color=#6fcf97>폭락 봉 앞에서 「⚠ 수상하다」 (" + new[] { "", "가끔 · 헛경보도", "자주", "늘" }[Mathf.Min(3, sim.Lv("a_read"))] + ")</color>" : "<color=#5f6878>없음</color>"),
+                };
+                for (int i = 0; i < info.Length; i++) GUI.Label(new Rect(r.x + 150, r.y + 296 + i * 24, r.width - 200, 26), "<size=13>" + info[i] + "</size>", label);
+                if (sim.Lv("a_auto") > 0)
+                {
+                    GUI.Label(new Rect(r.x + 150, r.y + 368, 200, 30), "<size=13>자동 낙찰  <color=#ffdf95>×" + aucTarget.ToString("0.0") + "</color></size>", label);
+                    int ti = System.Array.IndexOf(AutoTargets, aucTarget); if (ti < 0) ti = 1;
+                    if (GUI.Button(new Rect(r.x + 330, r.y + 368, 34, 26), "◀", btnOff)) aucTarget = AutoTargets[Mathf.Max(0, ti - 1)];
+                    if (GUI.Button(new Rect(r.x + 368, r.y + 368, 34, 26), "▶", btnOff)) aucTarget = AutoTargets[Mathf.Min(AutoTargets.Length - 1, ti + 1)];
+                }
+                var bb = new Rect(r.center.x - 240, r.yMax - 84, 240, 64);
+                float bp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 6);
+                GUI.color = Color.Lerp(new Color(0.55f, 0.12f, 0.1f), new Color(0.8f, 0.2f, 0.15f), bp); GUI.DrawTexture(bb, white); GUI.color = Color.white;
+                Frame(bb, new Color(1f, 0.6f, 0.5f), 3);
+                GUI.Label(bb, "<size=30><b><color=#fff0e8>배팅!</color></b></size>", center);
+                if (GUI.Button(bb, GUIContent.none, GUIStyle.none)) AucBegin();
+                if (GUI.Button(new Rect(r.center.x + 20, r.yMax - 84, 200, 64), "<size=16>그만두기</size>", btnOff)) aucState = 0;
+                return;
+            }
+
+            // ── 봉이 서는 중 — 꿈틀거리며 자란다
+            float grow = 1;
+            if (aucState == 2)
+            {
+                if (tick) aucT += dt;
+                grow = Mathf.Clamp01(aucT / CandleSec);
+                aucNextTick -= dt;
+                if (aucNextTick <= 0 && tick) { aucNextTick = 0.11f; OrbitSfx.PlayPitch("tick", 0.45f, 0.8f + 0.25f * Mathf.Log((float)System.Math.Max(1, aucOpenP), 2) + grow * 0.3f); }
+                if (aucOpenP > 3 && tick && Mathf.Repeat(aucT, 0.5f) < dt) OrbitSfx.Play("heart", 0.8f, 0.1f, 0);
+                if (aucT >= CandleSec)
+                {
+                    aucCandles.Add(new Candle { o = (float)aucOpenP, c = (float)aucCloseP, h = (float)aucHi, l = (float)aucLo });
+                    if (aucCrashNow) AucBust();
+                    else
+                    {
+                        aucState = 5;
+                        if (aucCloseP > aucOpenP) { OrbitSfx.Play("grab", 0.6f); if (Random.value < 0.6f) aucBubbles.Add(new Vector3((float)aucCloseP, Time.unscaledTime, Random.Range(0, Bidders.Length))); }
+                        else OrbitSfx.PlayPitch("tick", 0.6f, 0.5f);
+                        if (sim.Lv("a_auto") > 0 && sim.AucPrice >= aucTarget) AucSell();
+                    }
+                }
+            }
+            if ((aucState == 3 || aucState == 4) && tick) aucEndT += dt;
+
+            // ── 차트
+            var g = new Rect(r.x + 24, r.y + 52, r.width - 110, 290);
+            Chart(g, grow);
+            // 입찰 말풍선
+            foreach (var b in aucBubbles)
+            {
+                float age = Time.unscaledTime - b.y; if (age > 2f) continue;
+                float bx = g.x + 30 + (b.z * 71 % (g.width - 200)), by = ChartY(b.x) - 34 - age * 12;
+                GUI.color = new Color(0.95f, 0.9f, 0.8f, 0.9f * Mathf.Clamp01(2f - age)); GUI.DrawTexture(new Rect(bx, by, 150, 22), white); GUI.color = Color.white;
+                GUI.Label(new Rect(bx, by + 1, 150, 20), "<size=11><color=#2a1a05>" + Bidders[(int)b.z] + " ×" + b.x.ToString("0.00") + " 입찰!</color></size>", center);
+            }
+            // 오른쪽 위 — 지금 가격 크게
+            double shownP = aucState == 2 ? Mathf.Lerp((float)aucOpenP, (float)aucCloseP, grow) : price;
+            if (aucState == 4) shownP = aucCloseP;
+            string pc = aucState == 4 ? "#ff5a4a" : shownP < 1 ? "#ff8a7a" : shownP < 2 ? "#ffdf95" : shownP < 4 ? "#ffb070" : "#ff7a6a";
+            float fs = 34 + Mathf.Min(28f, 8f * Mathf.Log((float)System.Math.Max(1, shownP), 2));
+            GUI.Label(new Rect(g.x, g.y + 2, g.width, 60), "<size=" + Mathf.RoundToInt(fs) + "><b><color=" + pc + ">×" + shownP.ToString("0.00") + "</color></b></size>", new GUIStyle(center) { alignment = TextAnchor.UpperCenter });
+            GUI.Label(new Rect(g.x + 10, g.y + 8, 200, 20), "<size=12><color=#8a9bb3>봉 " + aucCandles.Count + "</color></size>", label);
+
+            // 아래 — 건 돈 · 지금 팔면
+            GUI.Label(new Rect(r.x, g.yMax + 8, r.width, 24), "<size=14><color=#8a9bb3>건 돈</color> " + KNum.Fmt(aucStakeShown) + "   <color=#8a9bb3>지금 팔면</color> <color=#ffdf95>+" + KNum.Fmt(System.Math.Floor(aucStakeShown * System.Math.Max(0, shownP))) + "</color>" + (sim.Lv("a_auto") > 0 ? "   <color=#8a9bb3>자동 ×" + aucTarget.ToString("0.0") + "</color>" : "") + "</size>", center);
+
+            if (aucState == 2)
+            {
+                GUI.Label(new Rect(r.x, r.yMax - 110, r.width, 30), "<size=16><color=#8a9bb3>봉이 서는 중…</color></size>", center);
+                return;
+            }
+            if (aucState == 5)
+            {
+                GUI.Label(new Rect(r.x, r.yMax - 140, r.width, 30), "<size=22><b>파시겠습니까?</b></size>", center);
+                if (sim.AucWarn) GUI.Label(new Rect(g.x, g.y + 34, g.width, 24), Mathf.Repeat(Time.unscaledTime * 3, 1) < 0.7f ? "<size=15><b><color=#ff4a3a>⚠ 다음 봉이 수상하다</color></b></size>" : "", center);
+                var sb = new Rect(r.center.x - 250, r.yMax - 110, 240, 70);
+                var nb = new Rect(r.center.x + 10, r.yMax - 110, 240, 70);
+                float pulse = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 6);
+                GUI.color = Color.Lerp(new Color(0.45f, 0.3f, 0.06f), new Color(0.7f, 0.48f, 0.1f), pulse); GUI.DrawTexture(sb, white); GUI.color = Color.white;
+                Frame(sb, SweepGame.Amber2, 3);
+                GUI.Label(new Rect(sb.x, sb.y + 6, sb.width, 32), "<size=24><b><color=#fff3d6>팔기</color></b></size>", center);
+                GUI.Label(new Rect(sb.x, sb.y + 38, sb.width, 24), "<size=13><color=#fff3d6>+" + KNum.Fmt(System.Math.Floor(aucStakeShown * price)) + "  (×" + price.ToString("0.00") + ")</color></size>", center);
+                if (GUI.Button(sb, GUIContent.none, GUIStyle.none)) AucSell();
+                GUI.color = new Color(0.1f, 0.14f, 0.2f); GUI.DrawTexture(nb, white); GUI.color = Color.white;
+                Frame(nb, new Color(0.4f, 0.55f, 0.75f), 2);
+                GUI.Label(new Rect(nb.x, nb.y + 6, nb.width, 32), "<size=22><b><color=#cfe0ff>한 봉 더 ▸</color></b></size>", center);
+                GUI.Label(new Rect(nb.x, nb.y + 38, nb.width, 24), "<size=12><color=#8a9bb3>오를까, 떨어질까, 폭락할까</color></size>", center);
+                if (GUI.Button(nb, GUIContent.none, GUIStyle.none)) AucNextCandle();
+                return;
+            }
+
+            // ── 끝 — 낙찰 / 유찰 도장
+            float k2 = Mathf.Clamp01(aucEndT / 0.2f), sc = Mathf.Lerp(2.4f, 1f, k2);
+            var cc = new Vector2(r.center.x - 40, r.y + 190);
+            var m0 = GUI.matrix;
+            GUIUtility.RotateAroundPivot(aucState == 3 ? -8 : 10, cc); GUIUtility.ScaleAroundPivot(new Vector2(sc, sc), cc);
+            Color stc = aucState == 3 ? SweepGame.Amber : new Color(0.85f, 0.15f, 0.12f);
+            GUI.color = new Color(stc.r, stc.g, stc.b, 0.92f * k2); GUI.DrawTexture(new Rect(cc.x - 110, cc.y - 44, 220, 88), white);
+            GUI.color = new Color(0.035f, 0.04f, 0.06f, 0.95f * k2); GUI.DrawTexture(new Rect(cc.x - 104, cc.y - 38, 208, 76), white);
+            GUI.color = new Color(1, 1, 1, k2);
+            GUI.Label(new Rect(cc.x - 110, cc.y - 30, 220, 60), aucState == 3 ? "<size=40><b><color=#ffdf95>낙찰!</color></b></size>" : "<size=40><b><color=#ff5a4a>유찰</color></b></size>", center);
+            GUI.matrix = m0; GUI.color = Color.white;
+            if (aucState == 3)
+            {
+                GUI.Label(new Rect(r.x, r.yMax - 150, r.width, 44), "<size=32><b><color=#6fcf97>+" + KNum.Fmt(aucGot) + "</color></b></size>  <size=15><color=#ffdf95>(봉 " + aucCandles.Count + " · ×" + (aucGot / System.Math.Max(1, aucStakeShown)).ToString("0.00") + ")</color></size>", center);
+                if (aucRecord && aucEndT > 0.5f) GUI.Label(new Rect(r.x, r.yMax - 108, r.width, 24), "<size=15><b><color=#ff8a7a>신기록!</color></b></size>", center);
+                var dst = new Vector2(vw - 125, 36);
+                for (int i = 0; i < 26; i++)
+                {
+                    float st = i * 0.035f, u = Mathf.Clamp01((aucEndT - st) / 0.7f);
+                    if (u <= 0 || u >= 1) continue;
+                    var from = new Vector2(r.center.x + (i * 37 % 120 - 60), r.yMax - 130);
+                    var pos = Vector2.Lerp(from, dst, u * u) + new Vector2(0, -Mathf.Sin(u * Mathf.PI) * 80);
+                    GUI.color = SweepGame.Amber2; GUI.DrawTexture(new Rect(pos.x - 6, pos.y - 6, 12, 12), texDisc); GUI.color = Color.white;
+                }
+            }
+            else
+            {
+                GUI.Label(new Rect(r.x, r.yMax - 150, r.width, 36), "<size=20><color=#ff8a7a>봉 " + aucCandles.Count + " 에서 폭락</color></size>", center);
+                GUI.Label(new Rect(r.x, r.yMax - 116, r.width, 24), aucGot > 0 ? "<size=15><color=#6fcf97>경매 보험 +" + KNum.Fmt(aucGot) + " 돌려받음</color></size>" : "<size=15><color=#8a9bb3>건 돈 " + KNum.Fmt(aucStakeShown) + " 을 잃었다</color></size>", center);
+            }
+            if (aucEndT > 0.9f && GUI.Button(new Rect(r.center.x - 90, r.yMax - 76, 180, 50), "<size=18>확인</size>", btn)) { aucState = 0; aucUsed = true; }
+        }
+
         // ✍ 대출 계약서 — 누르면 바로가 아니라, 계약서를 펼치고 서명란에 직접 그어 서명 → 「승인」 도장 → 돈 (사장님 09-23)
         double pendLoan; bool pendPay; float signT = -1; readonly List<Vector2> signPts = new List<Vector2>(); float signLen; bool signing;
         public void TestSign() { signPts.Clear(); for (int i = 0; i < 30; i++) signPts.Add(new Vector2(vw / 2 - 150 + i * 9, 360 + Mathf.Sin(i * 0.9f) * 18)); signLen = 300; signT = Time.unscaledTime; }   // 에디터 시험용
@@ -1051,7 +1348,7 @@ namespace SalvageRun.Orbit
             if (iconTex == null) iconTex = Resources.Load<Texture2D>("tree_icons");
             int idx = System.Array.IndexOf(SweepSim.IconOrder, id);
             if (iconTex == null || idx < 0) return;
-            const int cols = 8, rows = 5;
+            int cols = 8, rows = Mathf.Max(1, iconTex.height / 96);
             float cw = 1f / cols, ch = 1f / rows;
             GUI.DrawTextureWithTexCoords(r, iconTex, new Rect((idx % cols) * cw, 1f - (idx / cols + 1) * ch, cw, ch));
         }
@@ -1234,6 +1531,11 @@ namespace SalvageRun.Orbit
                 case "c_pow": return "한 방 " + (1 + l);
                 case "c_rad": return l > 0 ? "반지름 " + (22 + 10 * l) : "한 점";
                 case "c_spd": return Mathf.Max(0.3f, 0.6f - 0.045f * l).ToString("0.00") + "초";
+                case "a_open": return l > 0 ? "열림" : "잠김";
+                case "a_auto": return l > 0 ? "목표 배수에서 자동" : "없음";
+                case "a_read": return new[] { "없음", "경고 60%", "경고 80% · 일찍", "경고 늘 · 더 일찍" }[Mathf.Min(3, l)];
+                case "a_ins": return "돌려받기 " + new[] { 0, 15, 25, 35 }[Mathf.Min(3, l)] + "%";
+                case "a_big": return "시작 ×" + (1 + 0.07f * l).ToString("0.00");
                 case "c_fuel": return (30 + 3 * l) + "초";
                 case "c_crit": return (5 * l) + "%";
                 case "c_double": return (10 * l) + "%";
