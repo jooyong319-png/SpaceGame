@@ -230,7 +230,8 @@ namespace SalvageRun.Orbit
             autoRetarget -= Time.deltaTime;
             if (autoRetarget <= 0 || autoJunk == null || autoJunk.dead)
             {
-                autoRetarget = al == 1 ? 0.9f : al == 2 ? 0.5f : 0.8f;
+                autoRetarget = al == 1 ? 0.9f : al == 2 ? 0.5f : 1.2f;
+                var keep = autoJunk != null && !autoJunk.dead ? autoJunk : null;
                 autoJunk = null; float best = float.MaxValue;
                 if (al < 3)
                 {
@@ -238,20 +239,28 @@ namespace SalvageRun.Orbit
                 }
                 else
                 {
-                    // 가장 빽빽한 곳 — 몇 개를 골라 주변 60 안의 수를 센다
-                    int bestN = -1;
-                    for (int t = 0; t < 24 && R.junk.Count > 0; t++)
+                    // 빽빽하고 가까운 곳 — 주변 60 안의 수 ÷ 거리 벌점. 지금 목표보다 확실히(35%) 나아야 옮긴다 (사장님 09-24 「여기저기 널뛰기」)
+                    float cur = keep != null ? AutoScore(keep) : -1, bestS = -1;
+                    for (int t = 0; t < 40 && R.junk.Count > 0; t++)
                     {
-                        var c = R.junk[Random.Range(0, R.junk.Count)]; if (c.dead) continue;
-                        int n = 0; foreach (var d in R.junk) if (!d.dead && (d.x - c.x) * (d.x - c.x) + (d.y - c.y) * (d.y - c.y) < 3600) n++;
-                        if (n > bestN) { bestN = n; autoJunk = c; }
+                        var c = R.junk[Random.Range(0, R.junk.Count)]; if (c.dead || c.fade < 0.5) continue;
+                        float sc = AutoScore(c);
+                        if (sc > bestS) { bestS = sc; autoJunk = c; }
                     }
+                    if (keep != null && bestS < cur * 1.35f) autoJunk = keep;
                 }
             }
             if (autoJunk != null) autoTarget = new Vector2((float)autoJunk.x, (float)autoJunk.y);
             float sp = al == 1 ? 170 : al == 2 ? 320 : 380;
             aimPx = Vector2.MoveTowards(aimPx, autoTarget, sp * Time.deltaTime * timeScale);
             aimOn = true;
+        }
+
+        float AutoScore(Junk c)
+        {
+            int n = 0; foreach (var d in sim.R.junk) if (!d.dead && (d.x - c.x) * (d.x - c.x) + (d.y - c.y) * (d.y - c.y) < 3600) n++;
+            float dist = Vector2.Distance(aimPx, new Vector2((float)c.x, (float)c.y));
+            return n / (1f + dist / 160f);
         }
 
         public Vector3 PxToWorld(double x, double y) => new Vector3((float)(x - 480) / PxPerUnit, (float)(310 - y) / PxPerUnit, 0);
