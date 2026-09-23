@@ -284,7 +284,7 @@ namespace SalvageRun.Orbit.Sim
             else S = s;
             if (S.lv == null || S.lv.Length != NodeCount) S.lv = new int[NodeCount];
             if (M.news.Count == 0) AddNews("first_run");
-            if (ContractsOn && S.contract < 0) RollContract();     // 의뢰가 비어 있으면 채운다
+            if (ContractsOn && (S.contract < 0 || S.contract < Contracts.Length && Contracts[S.contract].orbit < 0)) RollContract();     // 의뢰가 비었거나 이제 없는 압류 딱지 의뢰면 새로
             Preview();
         }
 
@@ -479,7 +479,7 @@ namespace SalvageRun.Orbit.Sim
             if (!ContractsOn) { S.contract = -1; return; }
             var pool = new List<int>();
             for (int i = 0; i < Contracts.Length; i++)
-                if (Contracts[i].orbit == S.orbit || (Contracts[i].orbit == -1 && S.overdue)) pool.Add(i);
+                if (Contracts[i].orbit == S.orbit) pool.Add(i);                  // 압류 딱지 의뢰(orbit -1)는 추심선이 쉬어서 뺐다 — 딱지가 안 붙으니 못 이룬다
             int prev = S.contract;
             for (int t = 0; t < 6; t++) { S.contract = pool[rng.Next(pool.Count)]; if (S.contract != prev || pool.Count == 1) break; }
         }
