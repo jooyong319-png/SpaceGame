@@ -1217,6 +1217,7 @@ namespace SalvageRun.Orbit
                 case "claw": return SweepGame.Amber;
                 case "hull": return new Color(0.56f, 0.72f, 0.9f);
                 case "route": return new Color(0.6f, 0.72f, 1f);
+                case "cross": return new Color(1f, 0.87f, 0.58f);
                 case "drone": return SweepGame.Cyan;
                 case "bh": return SweepGame.Violet;
                 default: return SweepGame.Green;
@@ -1316,7 +1317,8 @@ namespace SalvageRun.Orbit
                 Color bcol = isRoot ? SweepGame.Amber : VisCol(n.id);
                 bool next = st[k] == 2, owned = st[k] == 3;
                 var ns = isRoot ? NodeSt.Max : sim.State(t.stat);
-                bool can = next && ns == NodeSt.Can;
+                bool inf = !isRoot && SweepSim.Infinite(t.stat);
+                bool can = (next || inf && owned) && ns == NodeSt.Can;
                 bool circle = !isRoot && n.id.StartsWith("q_");
                 bool diamond = !isRoot && !circle && n.max == 1;
                 var pc = ToScr(t.cell);
@@ -1343,7 +1345,8 @@ namespace SalvageRun.Orbit
                 if (lockedTile && next) { GUI.color = new Color(1f, 0.6f, 0.55f); GUI.Label(new Rect(r.xMax - 14, r.y - 4, 18, 18), "<size=11>잠</size>", center); }
                 GUI.color = Color.white;
                 if (r.Contains(ev.mousePosition)) hover = k;
-                if (!isRoot && next && GUI.Button(r, GUIContent.none, GUIStyle.none) && ns == NodeSt.Can)
+                if (inf && owned) GUI.Label(new Rect(r.x - 10, r.yMax, r.width + 20, 16), "<size=10><color=#ffdf95>∞ " + sim.S.lv[t.stat] + "</color></size>", center);
+                if (!isRoot && (next || inf && owned) && GUI.Button(r, GUIContent.none, GUIStyle.none) && ns == NodeSt.Can)
                 {
                     int times = shift ? 5 : 1;
                     while (times-- > 0 && sim.State(t.stat) == NodeSt.Can) sim.BuyTile(t.stat);
@@ -1359,7 +1362,7 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(zb.xMax + 8, zb.y + 6, 260, 20), "<size=11><color=#5f6878>" + Mathf.RoundToInt(userZ * 100) + "%</color></size>", label);
             }
             WeaponBar(new Rect(zb.x, zb.yMax + 8, 300, 30));
-            PartsButton(new Rect(zb.x, zb.yMax + (sim.Lv("w_slot2") > 0 ? 82 : 46), 230, 26));
+            PartsButton(new Rect(zb.x + (sim.Lv("w_hub") > 0 ? 198 : 0), zb.yMax + 8, 230, 30));
             if (hover >= 0) Tip(hover, ToScr(gtiles[hover].cell), st[hover], tile);
             else GUI.Label(new Rect(0, area.yMax - 18, vw, 16), "<size=11>칸에 마우스를 올리면 무엇인지 보인다 · 빛나는 칸을 누르면 산다 · 휠 = 확대 · 끌기 = 이동</size>", center);
         }
@@ -1428,6 +1431,17 @@ namespace SalvageRun.Orbit
                 case "w_chain_u": return new[] { "없음", "7번 튄다", "7번 · 튈수록 ×1.2" }[Mathf.Min(2, l)];
                 case "w_laser_a": case "w_chain_a": return l > 0 ? "각성!" : "잠김";
                 case "e_shop": return l > 0 ? "부품 가게 열림" : "잠김";
+                case "x_claw_arm": return l > 0 ? "켜짐" : "꺼짐";
+                case "x_arm_drone": return l > 0 ? "켜짐" : "꺼짐";
+                case "x_drone_bh": return l > 0 ? "켜짐" : "꺼짐";
+                case "x_bh_eco": return l > 0 ? "켜짐" : "꺼짐";
+                case "x_eco_route": return l > 0 ? "켜짐" : "꺼짐";
+                case "x_route_claw": return l > 0 ? "켜짐" : "꺼짐";
+                case "i_claw": return "×" + l;
+                case "i_drone": return "×" + l;
+                case "i_bh": return "×" + l;
+                case "i_eco": return "×" + l;
+                case "i_route": return "×" + l;
                 case "w_vac": return l > 0 ? (SweepSim.WeaponNode[sim.Weapon] == id ? "장착 중" : "산 것 — 왼쪽 위에서 장착") : "잠김";
                 case "w_vac_u": return new[] { "없음", "1단계", "2단계" }[Mathf.Min(2, l)];
                 case "w_vac_a": return l > 0 ? "각성!" : "잠김";

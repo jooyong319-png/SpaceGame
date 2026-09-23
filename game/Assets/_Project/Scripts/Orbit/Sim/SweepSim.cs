@@ -233,10 +233,22 @@ namespace SalvageRun.Orbit.Sim
             N("w_rail", "arm", "레일건", "모았다가 한 줄로 관통 — 엄청 세고 장갑도 뚫는다", new[] { "w_mag" }, 1, 3000000, 1, 1, 0, 0),
             N("w_rail_u", "arm", "레일건 강화", "1단계 빨리 모은다 · 2단계 뚫을수록 +15%", new[] { "w_rail" }, 1, 6000000, 4, 2, 0, 0),
             N("w_rail_a", "arm", "레일건 각성", "띠 끝에서 튕겨 한 번 더 쏜다", new[] { "w_rail_u" }, 1, 30000000, 1, 1, 0, 0),
+            // ◆ 교차 핵심 (두 방향을 다 키워야 닿는다 · 열쇠) · ∞ 무한 칸 (3막의 돈이 계속 쓸 곳)
+            N("x_claw_arm", "claw", "◆ 교차: 사격 통제", "모든 무기 치명 +10% · 치명타는 ×4 (청소선 × 무기고)", new[] { "c_magnet", "w_hub" }, 1, 400000, 1, 1, 0, 0),
+            N("x_arm_drone", "drone", "◆ 교차: 드론 사수", "드론 공격에서도 블랙홀 · 내부자 거래가 굴러간다 · 드론 피해 ×2 (무기고 × 드론)", new[] { "d_grade", "w_hub" }, 1, 600000, 1, 1, 0, 0),
+            N("x_drone_bh", "drone", "◆ 교차: 블랙홀 견인", "블랙홀이 열려 있는 동안 드론이 두 배 빠르다 (드론 × 블랙홀)", new[] { "d_fix", "b_n" }, 1, 500000, 1, 1, 0, 0),
+            N("x_bh_eco", "bh", "◆ 교차: 파산 보험", "파산하면 돈의 10% 와 제일 좋은 부품 하나를 다음 대로 가져간다 (블랙홀 × 경영)", new[] { "k_bh", "e_save" }, 1, 800000, 1, 1, 0, 0),
+            N("x_eco_route", "eco", "◆ 교차: 행성 투자", "지금 궤도 행성의 종목(달 · 화성 · 목성 · 토성)을 들고 있으면 그 판 값 +20% (경영 × 항로)", new[] { "e_tip", "p_mars" }, 1, 700000, 1, 1, 0, 0),
+            N("x_route_claw", "claw", "◆ 교차: 궤도 폭격", "행성이 멀수록 화력이 오른다 (달 +5% · 화성 +10% · 목성 +20% · 토성 +35%) (항로 × 청소선)", new[] { "c_double", "p_moon" }, 1, 900000, 1, 1, 0, 0),
+            N("i_claw", "claw", "∞ 무한 화력", "살 때마다 모든 무기 화력 +5% — 끝이 없다", new[] { "k_claw" }, 1, 2000000, 1.35, 999, 0, 0),
+            N("i_drone", "drone", "∞ 무한 드론", "살 때마다 드론 몫 +5%", new[] { "k_drone" }, 1, 2000000, 1.35, 999, 0, 0),
+            N("i_bh", "bh", "∞ 무한 블랙홀", "살 때마다 블랙홀 확률 +0.1%p", new[] { "k_bh" }, 1, 2000000, 1.35, 999, 0, 0),
+            N("i_eco", "eco", "∞ 무한 시세", "살 때마다 모든 값 +4%", new[] { "k_eco" }, 1, 2000000, 1.35, 999, 0, 0),
+            N("i_route", "route", "∞ 무한 궤도", "살 때마다 행성 값 배수 +0.05", new[] { "k_route" }, 1, 2000000, 1.35, 999, 0, 0),
         };
-        public const int NodeCount = 87;
+        public const int NodeCount = 98;
         /// <summary>◆ 핵심 칸 — 돈 + 열쇠 하나 (부품 가게에서 산다). 각성도 여기</summary>
-        public static readonly HashSet<string> KeyNodes = new HashSet<string> { "w_laser_a", "w_chain_a", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2", "w_vac_a", "w_mine_a", "w_frz_a", "w_clus_a", "w_mag_a", "w_rail_a" };
+        public static readonly HashSet<string> KeyNodes = new HashSet<string> { "w_laser_a", "w_chain_a", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2", "w_vac_a", "w_mine_a", "w_frz_a", "w_clus_a", "w_mag_a", "w_rail_a", "x_claw_arm", "x_arm_drone", "x_drone_bh", "x_bh_eco", "x_eco_route", "x_route_claw" };
         public static readonly string[] WeaponName = { "집게 빔", "레이저", "번개", "청소기", "기뢰", "냉동 빔", "분열탄", "자석", "레일건" };
         public static readonly string[] WeaponNode = { null, "w_laser", "w_chain", "w_vac", "w_mine", "w_frz", "w_clus", "w_mag", "w_rail" };
         public static readonly string[] PlanetNode = { null, "p_moon", "p_mars", "p_jup", "p_sat" };
@@ -333,9 +345,20 @@ namespace SalvageRun.Orbit.Sim
             { "w_rail", new TreeSpot { par = "w_mag", tile = 1, x = 4, y = -9, dx = 0, dy = 0 } },
             { "w_rail_u", new TreeSpot { par = "w_rail", tile = 1, x = 5, y = -9, dx = 1, dy = 0 } },
             { "w_rail_a", new TreeSpot { par = "w_rail_u", tile = 2, x = 7, y = -9, dx = 0, dy = 0 } },
+            { "x_claw_arm", new TreeSpot { par = "c_magnet", tile = 3, x = 2, y = -10, dx = 0, dy = 0 } },
+            { "x_arm_drone", new TreeSpot { par = "d_grade", tile = 3, x = 13, y = -2, dx = 0, dy = 0 } },
+            { "x_drone_bh", new TreeSpot { par = "d_fix", tile = 3, x = 10, y = 4, dx = 0, dy = 0 } },
+            { "x_bh_eco", new TreeSpot { par = "k_bh", tile = 1, x = -1, y = 12, dx = 0, dy = 0 } },
+            { "x_eco_route", new TreeSpot { par = "e_tip", tile = 3, x = -10, y = 6, dx = 0, dy = 0 } },
+            { "x_route_claw", new TreeSpot { par = "c_double", tile = 5, x = -4, y = -11, dx = 0, dy = 0 } },
+            { "i_claw", new TreeSpot { par = "k_claw", tile = 1, x = -2, y = -12, dx = 0, dy = 0 } },
+            { "i_drone", new TreeSpot { par = "k_drone", tile = 1, x = 15, y = 1, dx = 0, dy = 0 } },
+            { "i_bh", new TreeSpot { par = "k_bh", tile = 1, x = 0, y = 11, dx = 0, dy = 0 } },
+            { "i_eco", new TreeSpot { par = "k_eco", tile = 1, x = -6, y = 8, dx = 0, dy = 0 } },
+            { "i_route", new TreeSpot { par = "k_route", tile = 1, x = -10, y = -3, dx = 0, dy = 0 } },
         };
-        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R", "a_open", "a_auto", "a_read", "a_ins", "a_big", "p_moon", "p_mars", "p_jup", "p_sat", "w_hub", "w_laser", "w_laser_u", "w_laser_a", "w_chain", "w_chain_u", "w_chain_a", "e_shop", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2", "q_insider", "q_rage", "q_front", "q_debt", "q_meteor", "q_sling", "q_tour", "q_rock", "q_gold", "q_lazy", "w_vac", "w_vac_u", "w_vac_a", "w_mine", "w_mine_u", "w_mine_a", "w_frz", "w_frz_u", "w_frz_a", "w_clus", "w_clus_u", "w_clus_a", "w_mag", "w_mag_u", "w_mag_a", "w_rail", "w_rail_u", "w_rail_a" };
-        public static string VisBranch(string id) => id.StartsWith("w_") ? "arm" : id == "c_fuel" || id == "o_wide" || id == "c_find" ? "hull" : id == "s_speed" ? "bh" : Nodes[NodeIx[id]].branch;
+        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R", "a_open", "a_auto", "a_read", "a_ins", "a_big", "p_moon", "p_mars", "p_jup", "p_sat", "w_hub", "w_laser", "w_laser_u", "w_laser_a", "w_chain", "w_chain_u", "w_chain_a", "e_shop", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2", "q_insider", "q_rage", "q_front", "q_debt", "q_meteor", "q_sling", "q_tour", "q_rock", "q_gold", "q_lazy", "w_vac", "w_vac_u", "w_vac_a", "w_mine", "w_mine_u", "w_mine_a", "w_frz", "w_frz_u", "w_frz_a", "w_clus", "w_clus_u", "w_clus_a", "w_mag", "w_mag_u", "w_mag_a", "w_rail", "w_rail_u", "w_rail_a", "x_claw_arm", "x_arm_drone", "x_drone_bh", "x_bh_eco", "x_eco_route", "x_route_claw", "i_claw", "i_drone", "i_bh", "i_eco", "i_route" };
+        public static string VisBranch(string id) => id.StartsWith("w_") ? "arm" : id.StartsWith("x_") ? "cross" : id == "c_fuel" || id == "o_wide" || id == "c_find" ? "hull" : id == "s_speed" ? "bh" : Nodes[NodeIx[id]].branch;
 
         static Node N(string id, string br, string name, string desc, string[] par, int seg, double first, double mult, int max, int depth, int lane)
             => new Node { id = id, branch = br, name = name, desc = desc, par = par, seg = seg, first = first, mult = mult, max = max, depth = depth, lane = lane };
@@ -477,19 +500,20 @@ namespace SalvageRun.Orbit.Sim
         public const double PickR = 30;      // 범위 강화 전 — 커서 밑 하나를 잡는 거리
         public int ClawDmg => 1 + Lv("c_pow");
         public double Part(string k) => Parts.Sum(S.parts, k);
-        public double DmgMul => 1 + Part("dmg") + (Lv("k_claw") > 0 ? 0.4 : 0) + Rage + Grit;
+        public double DmgMul => 1 + Part("dmg") + (Lv("k_claw") > 0 ? 0.4 : 0) + Rage + Grit + 0.05 * Lv("i_claw") + (Lv("x_route_claw") > 0 ? new[] { 0, 0.05, 0.1, 0.2, 0.35 }[Math.Min(4, S.orbit)] : 0);
         public double Rage { get { if (Lv("q_rage") <= 0 || Mk == null) return 0; double v = 0, c = 0; foreach (var s in Mk.M.st) if (s.shares > 0) { v += s.shares * s.price; c += s.cost; } return c > 0 ? Math.Min(0.5, Math.Max(0, 1 - v / c)) : 0; } }   // ★ 물린 개미의 분노
         public double Grit => Lv("q_debt") > 0 && S.debt > 0 ? Math.Min(0.15, S.debt / Math.Max(1, BillAmount) * 0.1) : 0;   // ★ 빚쟁이의 근성
         public double Pow => ClawDmg * DmgMul;                                  // 무기 화력 (소수는 확률로)
         int RoundP(double v) => (int)v + (Rnd() < v - (int)v ? 1 : 0);
         public double HpMul => ((1 + 0.45 * Math.Max(0, S.bill - 2)) * Orbits[S.orbit].hp) * (Lv("k_route") > 0 ? 1.2 : 1);   // 잔해 체력 배율 — 청구서 3장째부터 한 장마다 +45% (초반은 가볍게)
         public int BlastDmg => 2 + 2 * ClawDmg;                    // 폭발은 즉사가 아니라 피해
-        public double Crit => 0.05 * Lv("c_crit") + Part("crit");
+        public double Crit => 0.05 * Lv("c_crit") + Part("crit") + (Lv("x_claw_arm") > 0 ? 0.1 : 0);
+        public int CritX => Lv("x_claw_arm") > 0 ? 4 : 3;
         public int DroneCount => DronesOn ? 1 + Lv("d_n") + Lv("d_fact") + Cr(3) + (Lv("k_drone") > 0 ? 4 : 0) : 0;   // 격납고 첫 칸 = 두 대
-        public double DroneCd => Math.Max(0.4, 1 - 0.1 * Lv("d_spd"));
+        public double DroneCd => Math.Max(0.4, 1 - 0.1 * Lv("d_spd")) * (Lv("x_drone_bh") > 0 && R != null && R.holding ? 0.5 : 1);
         public double Reach => 80 + 15 * Lv("d_reach");
         public int Grade => 1 + Lv("d_grade");
-        public double DroneMag => (1 + 0.25 * Lv("d_mag")) * (1 + Part("drone")) * (Lv("k_drone") > 0 ? 0.75 : 1);
+        public double DroneMag => (1 + 0.25 * Lv("d_mag")) * (1 + Part("drone")) * (Lv("k_drone") > 0 ? 0.75 : 1) * (1 + 0.05 * Lv("i_drone"));
         public int Bombs => BombsOn ? Math.Min(6, 2 + Lv("b_n") + (S.bill >= 7 ? 1 : 0) + Cr(4)) : 0;
         public double PullR => 90 + 14 * Lv("b_pr");                // 09-24 사장님 「블랙홀 크기 많이 줄이고」 150+20 → 90+14
         public double PullF => 1 + 0.25 * Lv("b_pf");
@@ -497,12 +521,13 @@ namespace SalvageRun.Orbit.Sim
         public double BlastK => 1 + 0.15 * Lv("b_br");
         public double ChainP => Math.Min(0.85, 0.3 + 0.07 * Lv("b_chain"));    // 무기 폭발이 또 번질 확률
         public double HoleCd => 16 - 1.5 * Lv("s_speed");     // (옛 시간 충전 — 이제 안 쓴다)
-        public double HoleChance => R.clean ? 0.05 : (0.012 + 0.002 * Lv("b_n") + 0.0025 * Lv("s_speed") + Part("hole")) * (Lv("k_bh") > 0 ? 0.7 : 1);   // 🌀 블랙홀 — 집게가 맞힐 때 이 확률로 그 자리에 저절로 열린다 (09-24 사장님 「자동으로 바닥에 깔리는 걸로」 · Q 스킬 없앰)
+        public double HoleChance => R.clean ? 0.05 : (0.012 + 0.002 * Lv("b_n") + 0.0025 * Lv("s_speed") + Part("hole") + 0.001 * Lv("i_bh")) * (Lv("k_bh") > 0 ? 0.7 : 1);   // 🌀 블랙홀 — 집게가 맞힐 때 이 확률로 그 자리에 저절로 열린다 (09-24 사장님 「자동으로 바닥에 깔리는 걸로」 · Q 스킬 없앰)
         public const double HoleDur = 3;                           // 열려 있는 시간 — 끝나면 저절로 터진다
         public double PackK => 0.02 + 0.012 * Lv("b_pack");
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
         public int ChainMax => R.clean ? 5000 : 40 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 15 * Lv("b_chain");
-        public double ValMult => Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (Orbits[S.orbit].mult + (Lv("k_route") > 0 && S.orbit > 0 ? 0.5 : 0)) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1);
+        public double ValMult => Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (Orbits[S.orbit].mult + (Lv("k_route") > 0 && S.orbit > 0 ? 0.5 : 0) + (S.orbit > 0 ? 0.05 * Lv("i_route") : 0)) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1) * (1 + 0.04 * Lv("i_eco")) * PlanetStockBonus;
+        double PlanetStockBonus { get { if (Lv("x_eco_route") <= 0 || Mk == null || S.orbit == 0) return 1; string[] ids = { "", "moon", "mars", "jup", "sat" }; for (int i = 0; i < Market.Defs.Length && i < Mk.M.st.Count; i++) if (Market.Defs[i].id == ids[S.orbit] && Mk.M.st[i].shares > 0) return 1.2; return 1; } }
         public double Cut => S.debt > 0 ? Math.Max(0.1, (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) - Part("cut")) : 0;   // 빚이 있으면 판 수입에서 떼어 상환
         // ── 대출 (연체 대신) — 언제든 받을 수 있다. 받은 돈 × 배수를 판 수입에서 조금씩 갚는다
         public static double LoanMult = 3;
@@ -690,10 +715,12 @@ namespace SalvageRun.Orbit.Sim
 
         // 🔴 칸 = 한 번 사기 (사장님 09-23: "한 칸에 1/3 이런식 말고 무조건 다음칸으로 넘어가지는 방식")
         //    레벨이 여럿인 칸은 많아야 셋으로 나눈다 — 한 칸이 여러 레벨을 한꺼번에 올리고, 가격은 그 레벨들 값을 합친 것
-        public static int Tiles(int i) => Math.Min(Nodes[i].max, 5);
+        public static bool Infinite(int i) => Nodes[i].id.StartsWith("i_");
+        public static int Tiles(int i) => Infinite(i) ? 1 : Math.Min(Nodes[i].max, 5);
         /// <summary>j번째 칸을 사면 되는 레벨 — 앞 칸은 작게(1레벨), 뒤로 갈수록 크게. 12레벨이면 1 · 3 · 5 · 8 · 12</summary>
         public static int TileLv(int i, int j)
         {
+            if (Infinite(i)) return 1;
             int T = Tiles(i), max = Nodes[i].max;
             if (j >= T) return max;
             int v = Math.Max(j, (int)Math.Round(max * Math.Pow((double)j / T, 1.6)));
@@ -702,6 +729,7 @@ namespace SalvageRun.Orbit.Sim
         public int NextTile(int i) { for (int j = 1; j <= Tiles(i); j++) if (TileLv(i, j) > S.lv[i]) return j; return Tiles(i) + 1; }
         public double TileCost(int i)
         {
+            if (Infinite(i)) return CostAt(i, S.lv[i]);
             int j = NextTile(i); if (j > Tiles(i)) return 0;
             double c = 0; for (int l = S.lv[i]; l < TileLv(i, j); l++) c += CostAt(i, l);
             return c;
@@ -709,7 +737,7 @@ namespace SalvageRun.Orbit.Sim
         public bool BuyTile(int i)
         {
             if (!R.over || State(i) != NodeSt.Can) return false;
-            S.cash -= TileCost(i); S.lv[i] = TileLv(i, NextTile(i));
+            S.cash -= TileCost(i); S.lv[i] = Infinite(i) ? S.lv[i] + 1 : TileLv(i, NextTile(i));
             var id = Nodes[i].id;
             if (KeyNodes.Contains(id)) S.keys--;
             if (id == "e_shop") RollShop();
@@ -762,7 +790,11 @@ namespace SalvageRun.Orbit.Sim
             M.bankrupt++;
             AddNews(M.bankrupt == 1 ? "bankrupt1" : M.bankrupt == 2 ? "bankrupt2" : null, "궤도 청소부 (" + M.company + "대), 출동 " + S.runs + "번 만에 파산", "청구서 " + S.bill + "장을 갚고 문을 닫았다. 빚은 날아갔고, 조종사의 경력은 남았다.");
             M.company++;
+            double carry = Lv("x_bh_eco") > 0 ? Math.Floor(S.cash * 0.1) : 0; int keepPart = -1;
+            if (Lv("x_bh_eco") > 0 && S.parts != null) foreach (var pid in S.parts) if (pid >= 0 && (keepPart < 0 || Parts.Defs[pid].rar > Parts.Defs[keepPart].rar)) keepPart = pid;
             S = new SweepState { startedAt = M.playSeconds };
+            if (carry > 0) S.cash += carry;
+            if (keepPart >= 0) S.parts[Parts.Defs[keepPart].slot] = keepPart;   // ◆ 파산 보험 — 돈 10% · 제일 좋은 부품 하나
             MakeMarket();
             M.careerOpen = true;
             Preview();
@@ -1400,7 +1432,7 @@ namespace SalvageRun.Orbit.Sim
         }
         void RailLine(double sx, double sy, double ux, double uy, double len, bool grow)
         {
-            var r = R; double dmg = Pow * 6 * (Rnd() < Crit ? 3 : 1);
+            var r = R; double dmg = Pow * 6 * (Rnd() < Crit ? CritX : 1);
             var hit = new List<Junk>();
             for (int ji = 0, jn = r.junk.Count; ji < jn && ji < r.junk.Count; ji++)
             {
@@ -1466,7 +1498,7 @@ namespace SalvageRun.Orbit.Sim
             if (L0 < 1) return;
             double width = (9 + 0.35 * Math.Max(ClawR, PickR * 0.6)) * (u >= 1 ? 1.5 : 1), len = L0 + 280;
             bool crit = Rnd() < Crit, any = false;
-            double per = Pow * 0.3 * (u >= 2 ? r.heat : 1) * (crit ? 3 : 1);
+            double per = Pow * 0.3 * (u >= 2 ? r.heat : 1) * (crit ? CritX : 1);
             for (int b = 0; b < (awk ? 2 : 1); b++)
             {
                 double ang = Math.Atan2(dy0, dx0) + (awk ? (b == 0 ? -0.09 : 0.09) : 0), ux = Math.Cos(ang), uy = Math.Sin(ang);
@@ -1499,7 +1531,7 @@ namespace SalvageRun.Orbit.Sim
             if (cur == null) { Emit(SwEv.Strike, r.ax, r.ay, PickR, 0); return; }
             bool crit = Rnd() < Crit;
             int jumps = 5 + (u >= 1 ? 2 : 0);
-            double dmg = Pow * 1.3 * (crit ? 3 : 1);
+            double dmg = Pow * 1.3 * (crit ? CritX : 1);
             double px = ShipX, py = ShipY;
             var hit = new List<Junk>();
             for (int j = 0; j <= jumps && cur != null; j++)
@@ -1532,12 +1564,12 @@ namespace SalvageRun.Orbit.Sim
                     if (dd < lim * lim && dd < bd) { bd = dd; best = d; }
                 }
                 bool c1 = best != null && Rnd() < Crit;
-                if (best != null) { Hit(best, Math.Max(1, RoundP(Pow * (c1 ? 3 : 1))), 0, true); OnHit(1); }
+                if (best != null) { Hit(best, Math.Max(1, RoundP(Pow * (c1 ? CritX : 1))), 0, true); OnHit(1); }
                 Emit(SwEv.Strike, r.ax, r.ay, PickR, best != null ? 1 : 0);
                 if (c1) Emit(SwEv.Crit, r.ax, r.ay - 20);
                 return;
             }
-            double R0 = ClawR; bool hit = false, crit = Rnd() < Crit; int dmg = Math.Max(1, RoundP(Pow * (crit ? 3 : 1)));
+            double R0 = ClawR; bool hit = false, crit = Rnd() < Crit; int dmg = Math.Max(1, RoundP(Pow * (crit ? CritX : 1)));
             var list = r.junk;
             for (int i = 0; i < list.Count; i++)
             {
@@ -1614,7 +1646,8 @@ namespace SalvageRun.Orbit.Sim
                     }
                     if (best == null) break;
                     Emit(SwEv.Beam, dr.x, dr.y, 0, 0, null, best.x, best.y);
-                    Hit(best, grade, 1, false);
+                    Hit(best, grade * (Lv("x_arm_drone") > 0 ? 2 : 1), 1, false);
+                    if (Lv("x_arm_drone") > 0) OnHit(0.3);
                 }
             }
         }
