@@ -286,9 +286,7 @@ namespace SalvageRun.Orbit
             x += 210;
             if (R.maxShots > 0)
             {
-                GUI.Label(new Rect(x, 14, 40, 20), "블랙홀", dim);
-                for (int i = 0; i < R.maxShots; i++) { GUI.color = i < R.shots ? SweepGame.Violet : new Color(0.17f, 0.18f, 0.24f); GUI.DrawTexture(new Rect(x + 50 + i * 15, 18, 11, 11), texDisc); }
-                GUI.color = Color.white;
+                GUI.Label(new Rect(x, 14, 200, 20), "블랙홀 <color=#b69cff>자동 " + (sim.HoleChance * 100).ToString("0.#") + "%</color>" + (R.holding ? "  <color=#b69cff>● 열림</color>" : ""), dim);
             }
             GUI.Label(new Rect(vw - 330, 14, 316, 20), "주식회사 궤도 청소부 (" + sim.M.company + "대) · " + SweepSim.Orbits[S.orbit].name, cost);
             if (R.holding)
@@ -298,7 +296,6 @@ namespace SalvageRun.Orbit
                 GUI.color = k > 0.8f ? SweepGame.Red : SweepGame.Violet; GUI.DrawTexture(new Rect(vw - 200, 42, 186 * k, 8), white); GUI.color = Color.white;
                 GUI.Label(new Rect(vw - 330, 52, 316, 18), "압축 " + R.packed.Count + " / 붕괴 " + sim.Cap, cost);
             }
-            if (R.maxShots > 0 && !R.over) SkillSlot(R);
             AutoSwitch();
             if (sim.StockOpen) StockSwitch();
             var c = sim.CurContract;
@@ -1428,7 +1425,7 @@ namespace SalvageRun.Orbit
                 case "d_fix": return "+" + (2 * l) + "초";
                 case "d_pair": return l > 0 ? "둘씩" : "하나씩";
                 case "d_fact": return "+" + l + "대";
-                case "b_n": return "최대 " + (2 + l) + "칸";
+                case "b_n": return "공격마다 +" + (0.2f * l).ToString("0.#") + "%";
                 case "c_find": return "판마다 " + l + "번";
                 case "s_speed": return "공격마다 " + (1.2f + 0.25f * l).ToString("0.##") + "%";
                 case "b_pr": return "반경 " + (150 + 20 * l);

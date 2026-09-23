@@ -153,9 +153,9 @@ namespace SalvageRun.Orbit.Sim
             N("d_fix", "drone", "수리 드론", "출동 +2초", new[] { "d_mag" }, 4, 2000, 1.8, 3, 3, 1),
             N("d_pair", "drone", "편대", "한 번에 둘씩", new[] { "d_mag", "d_grade" }, 6, 18000, 1, 1, 3, 3),
             N("d_fact", "drone", "드론 공장", "드론 +1 (공장제)", new[] { "d_pair" }, 6, 30000, 2.5, 2, 4, 2),
-            N("b_n", "bh", "블랙홀 충전", "블랙홀을 한 번 더 쟁여 둔다", new string[0], 3, 750, 2.2, 4, 0, 1),
+            N("b_n", "bh", "블랙홀", "집게로 칠 때 블랙홀이 저절로 열린다 — 단계마다 더 자주", new string[0], 3, 750, 2.2, 4, 0, 1),
             N("c_find", "bh", "연료 보급", "연료를 올려 보낸다", new string[0], 3, 240, 1.8, 5, 0, 3),
-            N("s_speed", "bh", "재충전", "공격할 때 블랙홀이 찰 확률이 오르고 보급도 빨리 닿는다", new[] { "b_n", "c_find" }, 3, 500, 1.6, 4, 1, 2),
+            N("s_speed", "bh", "재충전", "블랙홀이 더 자주 열리고 보급도 빨리 닿는다", new[] { "b_n", "c_find" }, 3, 500, 1.6, 4, 1, 2),
             N("b_pr", "bh", "흡입 반경", "더 넓게 빨아들인다", new[] { "b_n" }, 3, 600, 1.6, 6, 1, 0),
             N("b_cap", "bh", "붕괴 한계", "더 많이 모아도 버틴다", new[] { "b_n" }, 3, 660, 1.6, 6, 2, 1),
             N("b_pf", "bh", "흡입 세기", "더 빨리 빨려 든다", new[] { "b_pr" }, 4, 1800, 1.6, 5, 2, 0),
@@ -372,7 +372,7 @@ namespace SalvageRun.Orbit.Sim
         public double BlastK => 1 + 0.15 * Lv("b_br");
         public double ChainP => Math.Min(0.93, 0.25 + 0.07 * Lv("b_chain") + (S.bill >= 4 ? 0.1 : 0));
         public double HoleCd => 16 - 1.5 * Lv("s_speed");     // (옛 시간 충전 — 이제 안 쓴다)
-        public double HoleChance => 0.012 + 0.0025 * Lv("s_speed");   // 🌀 블랙홀 — 집게가 맞힐 때마다 이 확률로 한 칸 (09-24 사장님 「공격 시 확률로」)
+        public double HoleChance => R.clean ? 0.05 : 0.012 + 0.002 * Lv("b_n") + 0.0025 * Lv("s_speed");   // 🌀 블랙홀 — 집게가 맞힐 때 이 확률로 그 자리에 저절로 열린다 (09-24 사장님 「자동으로 바닥에 깔리는 걸로」 · Q 스킬 없앰)
         public const double HoleDur = 3;                           // 열려 있는 시간 — 끝나면 저절로 터진다
         public double PackK => 0.02 + 0.012 * Lv("b_pack");
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
@@ -699,7 +699,7 @@ namespace SalvageRun.Orbit.Sim
             S.runs++; S.rerolled = false;
             var r = new SweepRun { clean = clean };
             r.max = r.fuel = clean ? 45 : FuelMax;
-            r.maxShots = clean ? 6 : Bombs; r.shots = clean ? 6 : Math.Min(1, Bombs);   // 블랙홀은 스킬 — 한 칸 들고 나가서 시간 따라 찬다
+            r.maxShots = clean ? 6 : Bombs; r.shots = 0;   // 블랙홀은 스킬 — 한 칸 들고 나가서 시간 따라 찬다
             int nfuel = clean ? 0 : Lv("c_find");
             for (int i = 0; i < nfuel; i++) r.pods.Add(new Pod { kind = 0, t = 9 + i * 7 });
             R = r;
@@ -817,11 +817,9 @@ namespace SalvageRun.Orbit.Sim
             M.playSeconds += dt; r.t += dt;
             if (aim) { r.ax = ax; r.ay = ay; }
             if (r.fuel > 0) r.fuel -= dt;
-            if (r.clean) { r.refillT += dt; if (r.refillT > 2) { r.refillT = 0; if (r.shots < r.maxShots) r.shots++; } }
 
             // 🌀 블랙홀 스킬 — 누르면 그 자리에 열려 3초 빨아들이고 저절로 터진다. 칸은 시간 따라 찬다
             r.holeCd = 0;                                               // 시간으로는 안 찬다 — Strike 에서 확률로
-            if (hold && !r.holding && r.shots > 0 && r.fuel > 0) { r.holding = true; r.holdT = 0; r.chain = 0; r.tier = 0; r.hx = r.ax; r.hy = r.ay; }
             if (r.holding && (r.holdT >= HoleDur || r.fuel <= 0)) Release();
 
             Schedule(dt);
@@ -928,7 +926,7 @@ namespace SalvageRun.Orbit.Sim
                 if (d <= Math.Max(14, sp))
                 {
                     p.got = true;
-                    if (p.kind == 1) { r.shots = Math.Min(6, r.shots + 1); Emit(SwEv.SupplyGet, r.ax, r.ay - 18, 0, 1, "폭탄 +1"); }
+                    if (p.kind == 1) { Emit(SwEv.SupplyGet, r.ax, r.ay - 18, 0, 1, "블랙홀!"); OpenHole(); }
                     else { double s2 = Math.Min(4, r.max - r.fuel); if (s2 > 0) r.fuel += s2; Emit(SwEv.SupplyGet, r.ax, r.ay - 18, 0, 0, "연료 +4초"); }
                     continue;
                 }
@@ -1084,11 +1082,14 @@ namespace SalvageRun.Orbit.Sim
             if (hit && crit) Emit(SwEv.Crit, r.ax, r.ay - R0 - 8);
             if (hit) HoleRoll();
         }
-        void HoleRoll()
+        void HoleRoll() { if (Rnd() < HoleChance) OpenHole(); }
+        /// <summary>블랙홀이 저절로 열린다 — 조준점에서 3초 빨아들이고 터진다 (하나씩만)</summary>
+        void OpenHole()
         {
             var r = R;
-            if (r.clean || r.shots >= r.maxShots || Rnd() >= HoleChance) return;
-            r.shots++; Emit(SwEv.SkillReady, r.ax, r.ay, r.shots);
+            if (r.holding || r.fuel <= 0 || (!BombsOn && !r.clean)) return;
+            r.holding = true; r.holdT = 0; r.chain = 0; r.tier = 0; r.hx = r.ax; r.hy = r.ay; r.shots++;   // Release 가 하나 뺀다
+            Emit(SwEv.SkillReady, r.ax, r.ay, 1);
         }
 
         void Hit(Junk d, int dmg, int src, bool spread)
