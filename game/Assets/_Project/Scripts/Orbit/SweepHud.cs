@@ -765,7 +765,9 @@ namespace SalvageRun.Orbit
             GUI.enabled = S.debt > 0 && S.cash > 0;
             if (GUI.Button(new Rect(cx + 340, by, 168, 36), "<size=12>빚 갚기 −" + KNum.Fmt(System.Math.Min(S.cash, S.debt)) + "</size>", btn)) sim.RepayDebt();
             GUI.enabled = true;
-            GUI.Label(new Rect(cx + 4, by + 38, 500, 16), "<size=11>받으면 빚 +" + KNum.Fmt(quarter * SweepSim.LoanMult) + " · 한도 = 지금 청구서 − 남은 원금</size>", small);
+            GUI.Label(new Rect(cx + 4, by + 38, 500, 20), S.bill >= SweepSim.Bills.Length - 1
+                ? "<size=11><color=#ff9b8f>마지막 할부(완납)엔 대출이 안 된다 — 제힘으로 갚거나, 못 갚으면 파산</color></size>"
+                : "<size=11>받으면 빚 +" + KNum.Fmt(quarter * SweepSim.LoanMult) + " · 한도 = 지금 청구서 − 남은 원금</size>", small);
             // 내역
             float hy = by + 64;
             GUI.Label(new Rect(cx + 4, hy, 300, 18), "내역", label);
