@@ -293,6 +293,7 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(vw - 330, 52, 316, 18), "압축 " + R.packed.Count + " / 붕괴 " + sim.Cap, cost);
             }
             if (R.maxShots > 0 && !R.over) SkillSlot(R);
+            if (game.autoAiming) GUI.Label(new Rect(vw / 2 - 120, RefH - 118, 240, 20), "<size=12><color=#f2c14e>◎ 자동 조준</color> <color=#8a9bb3>— 마우스를 움직이면 직접</color></size>", center);
             var c = sim.CurContract;
             if (c != null && !R.clean)
             {
@@ -1208,6 +1209,7 @@ namespace SalvageRun.Orbit
                 case "c_pow": return "한 방 " + (1 + l);
                 case "c_rad": return l > 0 ? "반지름 " + (22 + 10 * l) : "한 점";
                 case "c_spd": return Mathf.Max(0.3f, 0.6f - 0.045f * l).ToString("0.00") + "초";
+                case "c_auto": return l == 0 ? "없음" : l == 1 ? "가까운 것부터 · 느리게" : l == 2 ? "빠르게 따라간다" : "가장 빽빽한 곳";
                 case "c_fuel": return (30 + 3 * l) + "초";
                 case "c_crit": return (5 * l) + "%";
                 case "c_double": return (10 * l) + "%";

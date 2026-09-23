@@ -203,11 +203,49 @@ namespace SalvageRun.Orbit
             if (TestAim && hud != null && !hud.Blocking) { aimPx = TestPx; aimOn = true; holdOn = TestHold; return; }   // 에디터 시험용 (MCP 자동 플레이)
             if (mouse == null || hud == null || hud.Blocking) return;
             Vector2 sp = mouse.position.ReadValue();
-            if (sp.x < 0 || sp.y < 0 || sp.x > Screen.width || sp.y > Screen.height) return;
+            bool inside = !(sp.x < 0 || sp.y < 0 || sp.x > Screen.width || sp.y > Screen.height);
+            if ((sp - lastMouse).sqrMagnitude > 4) { idleT = 0; lastMouse = sp; } else idleT += Time.deltaTime;
+            // 🎯 자동 조준 — 마우스를 1초 멈추거나 창 밖 · 스킬 칸 위면 조준점이 스스로 잔해를 찾는다
+            int al = sim.Lv("c_auto");
+            autoAiming = al > 0 && !sim.R.over && (idleT > 1f || !inside || hud.overSkill);
+            if (autoAiming) { AutoAim(al); return; }
+            if (!inside) return;
             Vector3 w = cam.ScreenToWorldPoint(new Vector3(sp.x, sp.y, 10));
             aimPx = new Vector2(480 + (w.x - cam.transform.position.x) * PxPerUnit, 310 - (w.y - cam.transform.position.y) * PxPerUnit);
             aimOn = true;
             if (hud.overSkill) aimOn = false;          // 스킬 칸 위 — 빔 자리는 그대로 둔다
+        }
+
+        Vector2 lastMouse, autoTarget; float idleT, autoRetarget; Junk autoJunk;
+        public bool autoAiming;
+        void AutoAim(int al)
+        {
+            var R = sim.R;
+            autoRetarget -= Time.deltaTime;
+            if (autoRetarget <= 0 || autoJunk == null || autoJunk.dead)
+            {
+                autoRetarget = al == 1 ? 0.9f : al == 2 ? 0.5f : 0.8f;
+                autoJunk = null; float best = float.MaxValue;
+                if (al < 3)
+                {
+                    foreach (var d in R.junk) { if (d.dead || d.fade < 0.5) continue; float dd = (float)((d.x - aimPx.x) * (d.x - aimPx.x) + (d.y - aimPx.y) * (d.y - aimPx.y)); if (dd < best) { best = dd; autoJunk = d; } }
+                }
+                else
+                {
+                    // 가장 빽빽한 곳 — 몇 개를 골라 주변 60 안의 수를 센다
+                    int bestN = -1;
+                    for (int t = 0; t < 24 && R.junk.Count > 0; t++)
+                    {
+                        var c = R.junk[Random.Range(0, R.junk.Count)]; if (c.dead) continue;
+                        int n = 0; foreach (var d in R.junk) if (!d.dead && (d.x - c.x) * (d.x - c.x) + (d.y - c.y) * (d.y - c.y) < 3600) n++;
+                        if (n > bestN) { bestN = n; autoJunk = c; }
+                    }
+                }
+            }
+            if (autoJunk != null) autoTarget = new Vector2((float)autoJunk.x, (float)autoJunk.y);
+            float sp = al == 1 ? 170 : al == 2 ? 320 : 380;
+            aimPx = Vector2.MoveTowards(aimPx, autoTarget, sp * Time.deltaTime * timeScale);
+            aimOn = true;
         }
 
         public Vector3 PxToWorld(double x, double y) => new Vector3((float)(x - 480) / PxPerUnit, (float)(310 - y) / PxPerUnit, 0);
