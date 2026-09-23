@@ -28,7 +28,7 @@ namespace SalvageRun.Orbit.Sim
     [Serializable]
     public class SweepState
     {
-        public int version = 20;
+        public int version = 21;
         public double cash, billAmount = -1, creditPending, startedAt;
         public int runs, orbit, bill, billDue = 5, overRuns, contract = -1;
         public bool overdue, rerolled;
@@ -142,6 +142,7 @@ namespace SalvageRun.Orbit.Sim
             N("b_br", "bh", "폭발 반경", "더 크게 터진다", new[] { "b_cap" }, 4, 1800, 1.6, 6, 3, 1),
             N("b_chain", "bh", "연쇄 확률", "터진 게 또 터진다", new[] { "b_br" }, 4, 2700, 1.6, 8, 3, 3),
             N("b_pack", "bh", "압축 배율", "많이 모을수록 값 +", new[] { "b_chain", "b_pf" }, 5, 7500, 1.7, 5, 4, 2),
+            N("o_wide", "eco", "궤도 확장", "궤도가 넓어진다 — 쓰레기도 는다", new string[0], 1, 20, 1.9, 6, 0, 4),
             N("e_val", "eco", "고철 시세", "모든 값이 오른다", new string[0], 1, 120, 1.9, 10, 0, 2),
             N("e_vault", "eco", "금고 감별", "금고 위성이 더 자주", new[] { "e_val" }, 2, 360, 1.6, 6, 1, 0),
             N("e_att", "eco", "부착물 감별", "부착물이 더 자주", new[] { "e_val" }, 3, 1200, 1.7, 5, 1, 2),
@@ -152,7 +153,7 @@ namespace SalvageRun.Orbit.Sim
             N("e_guard", "eco", "추심 방어", "추심 30% → 20%", new[] { "e_talk", "e_tip" }, 5, 9000, 1, 1, 3, 1),
             N("e_used", "eco", "중고 거래", "모든 칸 -5%", new[] { "e_save" }, 4, 6000, 2.0, 3, 3, 3),
         };
-        public const int NodeCount = 35;
+        public const int NodeCount = 36;
         static Node N(string id, string br, string name, string desc, string[] par, int seg, double first, double mult, int max, int depth, int lane)
             => new Node { id = id, branch = br, name = name, desc = desc, par = par, seg = seg, first = first, mult = mult, max = max, depth = depth, lane = lane };
         static readonly Dictionary<string, int> NodeIx = new Dictionary<string, int>();
@@ -221,7 +222,14 @@ namespace SalvageRun.Orbit.Sim
             rng = seed == 0 ? new Random() : new Random(seed);
             M = m ?? new SweepMeta();
             if (M.career == null || M.career.Length != CareerCount) M.career = new int[CareerCount];
-            if (s == null || s.version != 20) { S = new SweepState(); S.startedAt = M.playSeconds; }
+            if (s != null && s.version == 20 && s.lv != null && s.lv.Length == 35)
+            {
+                // 판 20 → 21: 「궤도 확장」 칸이 「고철 시세」 앞에 끼었다 — 레벨을 한 칸씩 밀어 옮긴다 (사장님 저장을 지키려고)
+                int at = NodeIx["o_wide"]; var nl = new int[NodeCount];
+                for (int i = 0; i < 35; i++) nl[i < at ? i : i + 1] = s.lv[i];
+                s.lv = nl; s.version = 21;
+            }
+            if (s == null || s.version != 21) { S = new SweepState(); S.startedAt = M.playSeconds; }
             else S = s;
             if (S.lv == null || S.lv.Length != NodeCount) S.lv = new int[NodeCount];
             if (M.news.Count == 0) AddNews("first_run");
@@ -267,7 +275,7 @@ namespace SalvageRun.Orbit.Sim
         public double ValMult => Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * Orbits[S.orbit].mult * Econ;
         public double Cut => S.overdue ? (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) : 0;
         public int TotalLv { get { int n = 0; foreach (var l in S.lv) n += l; return n; } }
-        public double Widen => 1 + Math.Min(0.6, TotalLv * 0.012);
+        public double Widen => 1 + 0.1 * Lv("o_wide");      // 🔴 정비소에서 산다 (사장님 09-23: "맵 크기도 여기서 늘리게")
         public double Bo => Orbits[S.orbit].bi + (Orbits[S.orbit].bo - Orbits[S.orbit].bi) * Widen;
         public double BillAmount => S.bill < Bills.Length ? (S.billAmount >= 0 ? S.billAmount : Bills[S.bill].m) : 0;
         public bool CanBankrupt => !M.cleanReady && S.bill < Bills.Length && (S.bill >= 3 || S.overdue && S.bill >= 1);
@@ -286,7 +294,33 @@ namespace SalvageRun.Orbit.Sim
         }
 
         // ───────────────────────── 트리
-        public double Cost(int i) { var n = Nodes[i]; return Math.Ceiling(n.first * Math.Pow(n.mult, S.lv[i]) * (1 - 0.15 * Cr(2)) * (1 - 0.05 * Lv("e_used"))); }
+        public double Cost(int i) => CostAt(i, S.lv[i]);
+        double CostAt(int i, int l) { var n = Nodes[i]; return Math.Ceiling(n.first * Math.Pow(n.mult, l) * (1 - 0.15 * Cr(2)) * (1 - 0.05 * Lv("e_used"))); }
+
+        // 🔴 칸 = 한 번 사기 (사장님 09-23: "한 칸에 1/3 이런식 말고 무조건 다음칸으로 넘어가지는 방식")
+        //    레벨이 여럿인 칸은 많아야 셋으로 나눈다 — 한 칸이 여러 레벨을 한꺼번에 올리고, 가격은 그 레벨들 값을 합친 것
+        public static int Tiles(int i) => Math.Min(Nodes[i].max, 5);
+        /// <summary>j번째 칸을 사면 되는 레벨 — 앞 칸은 작게(1레벨), 뒤로 갈수록 크게. 12레벨이면 1 · 3 · 5 · 8 · 12</summary>
+        public static int TileLv(int i, int j)
+        {
+            int T = Tiles(i), max = Nodes[i].max;
+            if (j >= T) return max;
+            int v = Math.Max(j, (int)Math.Round(max * Math.Pow((double)j / T, 1.6)));
+            return Math.Min(v, max - (T - j));
+        }
+        public int NextTile(int i) { for (int j = 1; j <= Tiles(i); j++) if (TileLv(i, j) > S.lv[i]) return j; return Tiles(i) + 1; }
+        public double TileCost(int i)
+        {
+            int j = NextTile(i); if (j > Tiles(i)) return 0;
+            double c = 0; for (int l = S.lv[i]; l < TileLv(i, j); l++) c += CostAt(i, l);
+            return c;
+        }
+        public bool BuyTile(int i)
+        {
+            if (!R.over || State(i) != NodeSt.Can) return false;
+            S.cash -= TileCost(i); S.lv[i] = TileLv(i, NextTile(i));
+            return true;
+        }
         public bool BranchOpen(string br) { int b = Array.IndexOf(BranchIds, br); return S.bill >= BranchNeed[b]; }
         public NodeSt State(int i)
         {
@@ -295,14 +329,9 @@ namespace SalvageRun.Orbit.Sim
             if (S.lv[i] >= n.max) return NodeSt.Max;
             foreach (var p in n.par) if (S.lv[NodeIx[p]] <= 0) return NodeSt.Hidden;
             if (n.seg > Seg) return NodeSt.Hidden;
-            return S.cash >= Cost(i) ? NodeSt.Can : NodeSt.Poor;
+            return S.cash >= TileCost(i) ? NodeSt.Can : NodeSt.Poor;
         }
-        public bool Buy(int i)
-        {
-            if (!R.over || State(i) != NodeSt.Can) return false;
-            S.cash -= Cost(i); S.lv[i]++;
-            return true;
-        }
+        public bool Buy(int i) => BuyTile(i);
 
         // ───────────────────────── 청구서 · 파산 · 경력
         public bool PayBill()

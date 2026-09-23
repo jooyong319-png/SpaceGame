@@ -58,7 +58,7 @@ static class Program
                 for (int loop = 0; loop < 60; loop++)
                 {
                     int best = -1; double bc = double.MaxValue;
-                    for (int i = 0; i < SweepSim.NodeCount; i++) if (sim.State(i) == NodeSt.Can && sim.Cost(i) < bc) { bc = sim.Cost(i); best = i; }
+                    for (int i = 0; i < SweepSim.NodeCount; i++) if (sim.State(i) == NodeSt.Can && sim.TileCost(i) < bc) { bc = sim.TileCost(i); best = i; }
                     if (best < 0 || reserve == double.MaxValue || sim.S.cash - bc < reserve) break;
                     sim.Buy(best);
                 }
