@@ -148,6 +148,7 @@ namespace SalvageRun.Orbit
 
         // ───────────────────────────────── 연출 (도파민 사다리 §5)
 
+        int chainHund; float chainPopT;
         void Effects()
         {
             if (game.edgeGlow > 0.01f && !reduceMotion) { GUI.color = new Color(1f, 0.76f, 0.3f, game.edgeGlow * 0.22f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), texVignette); }
@@ -157,10 +158,16 @@ namespace SalvageRun.Orbit
             if (!R.over && R.chain >= 10 && R.chainT > 0)
             {
                 int tier = R.chain >= 200 ? 4 : R.chain >= 80 ? 3 : R.chain >= 30 ? 2 : 1;
-                chainSt.fontSize = new[] { 0, 28, 40, 54, 72 }[tier];
-                chainSt.normal.textColor = tier >= 3 ? new Color(1f, 0.96f, 0.84f, Mathf.Min(1, (float)R.chainT * 2)) : new Color(1f, 0.87f, 0.58f, Mathf.Min(1, (float)R.chainT * 2));
-                GUI.Label(new Rect(vw / 2 - 300, 70, 600, 80), "연쇄 ×" + R.chain, chainSt);
+                // 200 넘으면 큰 글자는 200 · 500 · 1000 · 2000 · 5000 … 넘을 때만 1.5초 — 그 사이엔 위쪽 작은 계수기 (09-24: 콤보가 판 내내 가운데를 덮었다)
+                int ms = 0; for (long m = 200; m <= R.chain; m = m.ToString()[0] == '2' ? m * 5 / 2 : m * 2) ms++;   // 1-2-5 눈금
+                if (ms > chainHund) { chainHund = ms; chainPopT = 1.5f; }
+                chainPopT -= Time.unscaledDeltaTime;
+                bool big = tier < 4 || chainPopT > 0;
+                chainSt.fontSize = big ? new[] { 0, 28, 40, 54, 72 }[tier] : 24;
+                chainSt.normal.textColor = tier >= 3 ? new Color(1f, 0.96f, 0.84f, Mathf.Min(1, (float)R.chainT * 2) * (big ? 1 : 0.85f)) : new Color(1f, 0.87f, 0.58f, Mathf.Min(1, (float)R.chainT * 2));
+                GUI.Label(big ? new Rect(vw / 2 - 300, 70, 600, 80) : new Rect(vw / 2 - 150, 34, 300, 30), "연쇄 ×" + R.chain, chainSt);
             }
+            else chainHund = 0;
             if (game.kessT > 0)
             {
                 chainSt.fontSize = game.kessText == "케슬러!" ? 30 : 44; chainSt.normal.textColor = new Color(1f, 0.6f, 0.3f, Mathf.Min(1, game.kessT * 1.5f));
