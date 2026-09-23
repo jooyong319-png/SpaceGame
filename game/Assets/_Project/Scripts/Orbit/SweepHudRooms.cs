@@ -844,5 +844,23 @@ namespace SalvageRun.Orbit
             }
             GUI.color = Color.white;
         }
+
+        // ⚔ 무기 단추 — 정비고 왼쪽 위. 산 무기만 (무기고를 사야 보인다)
+        void WeaponBar(Rect r)
+        {
+            if (sim.Lv("w_hub") <= 0) return;
+            GUI.Label(new Rect(r.x, r.y + 6, 40, 20), "<size=11><color=#ff8a7a>무기</color></size>", label);
+            float x = r.x + 38;
+            for (int w = 0; w < SweepSim.WeaponName.Length; w++)
+            {
+                bool own = sim.WeaponOwned(w), on = sim.Weapon == w;
+                var b = new Rect(x, r.y, 76, r.height);
+                GUI.color = on ? new Color(0.35f, 0.12f, 0.1f) : own ? new Color(0.12f, 0.1f, 0.1f) : new Color(0.07f, 0.07f, 0.08f); GUI.DrawTexture(b, white);
+                Frame(b, on ? new Color(1f, 0.55f, 0.5f) : own ? new Color(0.45f, 0.3f, 0.28f) : new Color(0.18f, 0.18f, 0.2f), on ? 2 : 1);
+                GUI.Label(b, "<size=12>" + (on ? "<b><color=#ffd0c8>" : own ? "<color=#c8a8a0>" : "<color=#3f4652>") + SweepSim.WeaponName[w] + (own ? "" : " 🔒") + (on ? "</color></b>" : "</color>") + "</size>", center);
+                if (own && !on && GUI.Button(b, GUIContent.none, GUIStyle.none) && sim.Equip(w)) { OrbitSfx.Play("grab", 0.7f); BuyFx(b.center, new Color(1f, 0.55f, 0.5f), false); }
+                x += 80;
+            }
+        }
     }
 }

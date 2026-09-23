@@ -29,6 +29,7 @@ namespace SalvageRun.Orbit
         readonly List<SpriteRenderer> droneViews = new List<SpriteRenderer>();
         readonly List<SpriteRenderer> cableViews = new List<SpriteRenderer>();
         readonly List<SpriteRenderer> podViews = new List<SpriteRenderer>();
+        SpriteRenderer shipView, shipFlame;
         SpriteRenderer earth, ringB, ringF, atmo, rim, band, bandGlow, claw, clawRing, clawWind, holeCore, holeGlow, holeRing, moon, sun, sunCore;
         float t, saveTimer, bandInner = -1, earthR = 120, camBase;
         public bool aimOn, holdOn;
@@ -89,6 +90,8 @@ namespace SalvageRun.Orbit
             band = Make(disc, Vector3.zero, 7f, new Color(1, 1, 1, 0.05f), 1);
             bandGlow = Make(ring, Vector3.zero, 7f, new Color(1f, 0.76f, 0.3f, 0), 2);
             claw = Make(droneArt, Vector3.zero, 0.5f, Color.white, 70);
+            shipView = Make(droneArt, Vector3.zero, 0.62f, new Color(1f, 0.9f, 0.7f), 72);            // 🚀 청소선 — 궤도 바깥에서 조준 쪽으로 (09-24)
+            shipFlame = Make(glow, Vector3.zero, 0.5f, new Color(1f, 0.6f, 0.25f, 0.6f), 71);
             clawRing = Make(ring, Vector3.zero, 1.7f, new Color(1f, 0.76f, 0.3f, 0.8f), 69);
             clawWind = Make(disc, Vector3.zero, 0.18f, Amber2, 71);
             holeGlow = Make(glow, Vector3.zero, 1f, Violet, 66);
@@ -324,6 +327,28 @@ namespace SalvageRun.Orbit
                         break;
                     }
                     case SwEv.Pop: PopAt(e.x, e.y, e.text, e.k == 1 ? Green : e.k == 3 ? Orange : Amber2, 16); if (e.k == 3) OrbitSfx.Play("unit", 0.8f); break;
+                    case SwEv.Laser:
+                    {
+                        var s0 = PxToWorld(e.x, e.y); var s1 = PxToWorld(e.x2, e.y2); bool awk = (e.k & 2) != 0, cr = (e.k & 1) != 0;
+                        float w = (float)e.v * 2 / PxPerUnit;
+                        var halo = Add(pixel, s0, 0.05f, awk ? new Color(1f, 0.45f, 0.9f, 0.35f) : new Color(1f, 0.3f, 0.25f, 0.35f), 8, 0.13f); halo.a = s0; halo.b = s1; halo.size = w;
+                        var core = Add(pixel, s0, 0.05f, cr ? new Color(1f, 1f, 0.8f, 1f) : new Color(1f, 0.85f, 0.8f, 0.95f), 8, 0.1f); core.a = s0; core.b = s1; core.size = Mathf.Max(0.05f, w * 0.22f);
+                        if (Random.value < 0.25f) OrbitSfx.PlayPitch("tick", 0.12f, 2.2f + Random.value * 0.3f);
+                        break;
+                    }
+                    case SwEv.Bolt:
+                    {
+                        var p0 = PxToWorld(e.x, e.y); var p1 = PxToWorld(e.x2, e.y2); var mid = (p0 + p1) / 2 + (Vector3)(Random.insideUnitCircle * 0.25f);
+                        var c = e.k == 1 ? new Color(1f, 1f, 0.75f) : new Color(0.7f, 0.85f, 1f);
+                        foreach (var seg in new[] { (p0, mid), (mid, p1) })
+                        {
+                            var gl = Add(pixel, seg.Item1, 0.05f, new Color(0.45f, 0.65f, 1f, 0.45f), 8, 0.22f); gl.a = seg.Item1; gl.b = seg.Item2; gl.size = 0.22f;
+                            var co = Add(pixel, seg.Item1, 0.05f, c, 8, 0.18f); co.a = seg.Item1; co.b = seg.Item2; co.size = 0.06f;
+                        }
+                        Add(glow, p1, 0.6f, new Color(0.6f, 0.8f, 1f, 0.7f), 7, 0.2f);
+                        OrbitSfx.PlayPitch("tick", 0.35f, 1.6f + (float)e.v * 0.12f);
+                        break;
+                    }
                     case SwEv.Beam: { var p = Add(pixel, at, 0.05f, Cyan, 3, 0.16f); p.a = at; p.b = PxToWorld(e.x2, e.y2); break; }
                     case SwEv.Ring: Add(ring, at, 0.1f, e.k == 1 ? Red : e.k == 2 ? Mag : Orange, 5, 0.45f, (float)e.v * 2 / PxPerUnit); break;
                     case SwEv.Blast:
@@ -373,7 +398,7 @@ namespace SalvageRun.Orbit
         /// <summary>🔴 빔 — 화면 아래 선체(포구)에서 조준점까지 (사장님 09-23: "집게보단 우주선에서 빔 쏘는 느낌")</summary>
         void Beam(Vector3 at, bool hit)
         {
-            var muzzle = new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);   // 화면 아래 끝 — 확대해도 청소선에서 나온다
+            var muzzle = sim.R != null && !sim.R.over ? PxToWorld(sim.ShipX, sim.ShipY) : new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);   // 청소선에서 나간다 (09-24)
             var core = Add(pixel, at, 0.05f, hit ? new Color(1f, 0.95f, 0.78f, 1f) : new Color(0.6f, 0.65f, 0.75f, 0.5f), 8, 0.22f);
             core.a = muzzle; core.b = at; core.size = hit ? 0.1f : 0.05f;
             var halo = Add(pixel, at, 0.05f, new Color(1f, 0.76f, 0.3f, hit ? 0.55f : 0.22f), 8, 0.3f);
@@ -599,7 +624,17 @@ namespace SalvageRun.Orbit
             var R = sim.R;
             bool show = aimOn && !R.over;
             bool holding = R.holding && !R.over;
-            claw.enabled = clawRing.enabled = show;
+            claw.enabled = show; clawRing.enabled = show && sim.Weapon == 0;       // 원 = 집게 빔의 범위 (다른 무기엔 없다)
+            shipView.enabled = shipFlame.enabled = !R.over;
+            if (!R.over)
+            {
+                var sp = PxToWorld(sim.ShipX, sim.ShipY); var ap = PxToWorld(R.ax, R.ay); var dd = ap - sp;
+                float shipAng = Mathf.Atan2(dd.y, dd.x) * Mathf.Rad2Deg;
+                shipView.transform.position = sp; shipView.transform.rotation = Quaternion.Euler(0, 0, shipAng - 90);
+                shipFlame.transform.position = sp - (Vector3)(new Vector2(dd.x, dd.y).normalized * 0.28f);
+                shipFlame.transform.localScale = Vector3.one * (0.35f + 0.08f * Mathf.Sin(Time.time * 30)) / glow.bounds.size.x;
+                shipView.color = sim.Weapon == 1 ? new Color(1f, 0.75f, 0.7f) : sim.Weapon == 2 ? new Color(0.75f, 0.88f, 1f) : new Color(1f, 0.9f, 0.7f);
+            }
             clawWind.enabled = show && R.fuel > 0;
             holeCore.enabled = holeGlow.enabled = holeRing.enabled = holding;
             Cursor.visible = true;                                         // 마우스는 늘 보인다 — 판 중 · AUTO 여도 (사장님 09-24)

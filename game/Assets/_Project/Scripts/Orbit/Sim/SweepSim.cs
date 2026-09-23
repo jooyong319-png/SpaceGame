@@ -35,6 +35,7 @@ namespace SalvageRun.Orbit.Sim
     public class SweepState
     {
         public int version = 22;
+        public int weapon;                                                   // ⚔ 장착한 무기 (0 집게 빔 · 1 레이저 · 2 번개)
         public double cash, billAmount = -1, creditPending, startedAt, debt;   // debt = 갚아야 할 빚 (대출 × 배수)
         public int runs, orbit, bill, billDue = 5, overRuns, contract = -1;
         public bool overdue, rerolled;
@@ -63,12 +64,13 @@ namespace SalvageRun.Orbit.Sim
         public List<PastCompany> history = new List<PastCompany>();
     }
 
-    public class Blast { public double x, y, t, R; }
+    public class Blast { public double x, y, t, R; public bool w; }     // w = 무기가 낸 폭발 (이것만 또 번진다 — 09-24 사장님 「연쇄 반응도 무기 특성으로」)
     public class Drone { public double a, cd, x, y; }
     public class Pod { public int kind; public double t, x, y; public bool up, got; }     // 지구 보급 — kind 0 연료 · 1 폭탄
 
     public class SweepRun
     {
+        public double shipA = -1.57, heat = 1;                            // 청소선 — 궤도 바깥에서 조준 방향으로 따라온다 · 레이저 열
         public double hx, hy, holeCd, clickCd, fuelGot, refill, fuel, max, t, next = 0.3, endT, formT = 9, rushT, rushX, rushY, chainT, holdT, ax = 480, ay = 310, refillT;
         public double ev1T = -1, ev2T = -1, stormT; public int ev1 = -1, ev2 = -1, stormLeft; public bool ev1Warn, ev2Warn, collector;
         public int shots, maxShots, chain, chainBest, packBest, broke, tier, idc;
@@ -85,7 +87,7 @@ namespace SalvageRun.Orbit.Sim
         public double Earned => earnClaw + earnDrone + earnBlast;
     }
 
-    public enum SwEv { Supply, SupplyGet, Strike, Broke, Coin, Pop, Beam, Ring, Blast, Tier, Crit, Collapse, Warn, EventGo, Collector, Shatter, Release, RunEnd, BillPaid, Overdue, Bankrupt, News, Won, SkillReady, NodeBought }
+    public enum SwEv { Supply, SupplyGet, Strike, Broke, Coin, Pop, Beam, Ring, Blast, Tier, Crit, Collapse, Warn, EventGo, Collector, Shatter, Release, RunEnd, BillPaid, Overdue, Bankrupt, News, Won, SkillReady, NodeBought, Laser, Bolt }
 
     public struct SwEvent
     {
@@ -160,7 +162,7 @@ namespace SalvageRun.Orbit.Sim
             N("b_cap", "bh", "붕괴 한계", "더 많이 모아도 버틴다", new[] { "b_n" }, 3, 660, 1.6, 6, 2, 1),
             N("b_pf", "bh", "흡입 세기", "더 빨리 빨려 든다", new[] { "b_pr" }, 4, 1800, 1.6, 5, 2, 0),
             N("b_br", "bh", "폭발 반경", "더 크게 터진다", new[] { "b_cap" }, 4, 1800, 1.6, 6, 3, 1),
-            N("b_chain", "bh", "연쇄 확률", "터진 게 또 터진다", new[] { "b_br" }, 4, 2700, 1.6, 8, 3, 3),
+            N("b_chain", "bh", "폭발 연쇄", "폭발형 무기(번개 각성 …)의 폭발이 또 터질 확률 · 연쇄 한계 +15", new[] { "b_br" }, 4, 2700, 1.6, 8, 3, 3),
             N("b_pack", "bh", "압축 배율", "많이 모을수록 값 +", new[] { "b_chain", "b_pf" }, 5, 7500, 1.7, 5, 4, 2),
             N("o_wide", "eco", "궤도 확장", "궤도가 넓어진다 — 쓰레기도 는다", new string[0], 1, 20, 1.9, 6, 0, 4),
             N("e_val", "eco", "고철 시세", "모든 값이 오른다", new string[0], 1, 120, 1.9, 10, 0, 2),
@@ -183,8 +185,18 @@ namespace SalvageRun.Orbit.Sim
             N("p_mars", "route", "화성 항로", "화성 궤도 — 값 ×2 · 모래 폭풍 · 얼음 껍질 · 큰 잔해", new[] { "p_moon" }, 1, 20000, 1, 1, 0, 0),
             N("p_jup", "route", "목성 항로", "목성 궤도 — 값 ×3 · 중력이 안쪽으로 모은다 · 장갑판", new[] { "p_mars" }, 1, 1500000, 1, 1, 0, 0),
             N("p_sat", "route", "토성 항로", "토성 궤도 — 값 ×4.5 · 두 겹 고리 · 케이블 망", new[] { "p_jup" }, 1, 15000000, 1, 1, 0, 0),
+            // ⚔ 무기고 (09-24 설계서 2단계) — 지금 빔 칸(화력 · 크기 · 연사 · 치명 · 두 번)은 모든 무기 공통
+            N("w_hub", "arm", "무기고", "무기를 사서 바꿔 낀다 — 정비고 왼쪽 위 무기 단추로 고른다", new string[0], 1, 300, 1, 1, 0, 0),
+            N("w_laser", "arm", "레이저", "청소선에서 조준점 너머까지 쭉 — 닿는 동안 계속 태운다 · 한 줄로 늘어선 것에 강하다", new[] { "w_hub" }, 1, 2500, 1, 1, 0, 0),
+            N("w_laser_u", "arm", "레이저 강화", "1단계 굵기 +50% · 2단계 계속 쬘수록 뜨거워진다 (최대 +80%)", new[] { "w_laser" }, 1, 6000, 4, 2, 0, 0),
+            N("w_laser_a", "arm", "레이저 각성", "두 갈래로 갈라지고 장갑판도 녹인다", new[] { "w_laser_u" }, 1, 60000, 1, 1, 0, 0),
+            N("w_chain", "arm", "번개", "맞으면 옆으로 다섯 번 튄다 — 흩어진 잔해에 강하다", new[] { "w_laser" }, 1, 5000, 1, 1, 0, 0),
+            N("w_chain_u", "arm", "번개 강화", "1단계 두 번 더 튄다 · 2단계 튈수록 세진다", new[] { "w_chain" }, 1, 9000, 4, 2, 0, 0),
+            N("w_chain_a", "arm", "번개 각성", "튄 자리마다 작은 폭발 — 연쇄로 이어진다", new[] { "w_chain_u" }, 1, 90000, 1, 1, 0, 0),
         };
-        public const int NodeCount = 45;
+        public const int NodeCount = 52;
+        public static readonly string[] WeaponName = { "집게 빔", "레이저", "번개" };
+        public static readonly string[] WeaponNode = { null, "w_laser", "w_chain" };
         public static readonly string[] PlanetNode = { null, "p_moon", "p_mars", "p_jup", "p_sat" };
         // ───────────────────────── 정비소 트리 자리 (손으로 격자에 놓았다 · 시안 https://claude.ai/artifact/NLZseBQWXKMGfuAmFDFJcR)
         //    par = 이어지는 앞 칸의 능력 (R = 가운데 청소선) · tile = 그 능력의 몇 번째 칸 뒤 · (x, y) 첫 칸 자리 · (dx, dy) 뻗는 방향
@@ -237,9 +249,16 @@ namespace SalvageRun.Orbit.Sim
             { "p_mars", new TreeSpot { par = "p_moon", tile = 1, x = -4, y = -3, dx = 0, dy = 0 } },
             { "p_jup", new TreeSpot { par = "p_mars", tile = 1, x = -6, y = -4, dx = 0, dy = 0 } },
             { "p_sat", new TreeSpot { par = "p_jup", tile = 1, x = -8, y = -5, dx = 0, dy = 0 } },
+            { "w_hub", new TreeSpot { par = "R", tile = 0, x = 1, y = -1, dx = 0, dy = 0 } },
+            { "w_laser", new TreeSpot { par = "w_hub", tile = 1, x = 4, y = -2, dx = 0, dy = 0 } },
+            { "w_laser_u", new TreeSpot { par = "w_laser", tile = 1, x = 5, y = -2, dx = 1, dy = 0 } },
+            { "w_laser_a", new TreeSpot { par = "w_laser_u", tile = 2, x = 7, y = -2, dx = 0, dy = 0 } },
+            { "w_chain", new TreeSpot { par = "w_laser", tile = 1, x = 4, y = -3, dx = 0, dy = 0 } },
+            { "w_chain_u", new TreeSpot { par = "w_chain", tile = 1, x = 5, y = -3, dx = 1, dy = 0 } },
+            { "w_chain_a", new TreeSpot { par = "w_chain_u", tile = 2, x = 7, y = -3, dx = 0, dy = 0 } },
         };
-        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R", "a_open", "a_auto", "a_read", "a_ins", "a_big", "p_moon", "p_mars", "p_jup", "p_sat" };
-        public static string VisBranch(string id) => id == "c_fuel" || id == "o_wide" || id == "c_find" ? "hull" : id == "s_speed" ? "bh" : Nodes[NodeIx[id]].branch;
+        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R", "a_open", "a_auto", "a_read", "a_ins", "a_big", "p_moon", "p_mars", "p_jup", "p_sat", "w_hub", "w_laser", "w_laser_u", "w_laser_a", "w_chain", "w_chain_u", "w_chain_a" };
+        public static string VisBranch(string id) => id.StartsWith("w_") ? "arm" : id == "c_fuel" || id == "o_wide" || id == "c_find" ? "hull" : id == "s_speed" ? "bh" : Nodes[NodeIx[id]].branch;
 
         static Node N(string id, string br, string name, string desc, string[] par, int seg, double first, double mult, int max, int depth, int lane)
             => new Node { id = id, branch = br, name = name, desc = desc, par = par, seg = seg, first = first, mult = mult, max = max, depth = depth, lane = lane };
@@ -351,6 +370,9 @@ namespace SalvageRun.Orbit.Sim
         public int Seg => Math.Min(8, S.bill + 1);
         public bool DronesOn => Lv("d_n") > 0;                        // 해금은 전부 정비고 (09-24) — 드론 격납고
         public bool BombsOn => Lv("b_n") > 0;
+        public bool WeaponOwned(int w) => w == 0 || (w < WeaponNode.Length && Lv(WeaponNode[w]) > 0);
+        public int Weapon => WeaponOwned(S.weapon) ? S.weapon : 0;
+        public bool Equip(int w) { if (!WeaponOwned(w) || R != null && !R.over) return false; S.weapon = w; return true; }
         public bool ContractsOn => Lv("e_quest") > 0;
         public bool BigsOn => S.orbit >= 2;                              // 큰 잔해는 화성부터 (행성의 성격)
         public int MaxOrbit { get { int m = 0; for (int i = 0; i < Orbits.Length; i++) if (Open(i)) m = i; return m; } }
@@ -387,7 +409,7 @@ namespace SalvageRun.Orbit.Sim
         public double PullF => 1 + 0.25 * Lv("b_pf");
         public int Cap => 22 + 9 * Lv("b_cap");
         public double BlastK => 1 + 0.15 * Lv("b_br");
-        public double ChainP => Math.Min(0.93, 0.3 + 0.075 * Lv("b_chain"));
+        public double ChainP => Math.Min(0.85, 0.3 + 0.07 * Lv("b_chain"));    // 무기 폭발이 또 번질 확률
         public double HoleCd => 16 - 1.5 * Lv("s_speed");     // (옛 시간 충전 — 이제 안 쓴다)
         public double HoleChance => R.clean ? 0.05 : 0.012 + 0.002 * Lv("b_n") + 0.0025 * Lv("s_speed");   // 🌀 블랙홀 — 집게가 맞힐 때 이 확률로 그 자리에 저절로 열린다 (09-24 사장님 「자동으로 바닥에 깔리는 걸로」 · Q 스킬 없앰)
         public const double HoleDur = 3;                           // 열려 있는 시간 — 끝나면 저절로 터진다
@@ -854,7 +876,7 @@ namespace SalvageRun.Orbit.Sim
                 var p = r.pend[i];
                 if (p.t > 0) continue;
                 r.pend.RemoveAt(i);
-                DoBlast(p.x, p.y, p.R * BlastK);
+                blastW = p.w; DoBlast(p.x, p.y, p.R * BlastK); blastW = false;
             }
             r.chainT -= dt;
             if (r.chainT <= 0 && r.pend.Count == 0 && !r.holding) { r.chain = 0; r.tier = 0; }
@@ -1061,10 +1083,80 @@ namespace SalvageRun.Orbit.Sim
                     d.capT = 0.5; d.vx += dx * 2.5 * dt; d.vy += dy * 2.5 * dt;
                 }
             }
+            // 청소선 — 조준 방향 쪽 바깥 궤도로 (무기는 여기서 나간다)
+            {
+                double want = Math.Atan2((r.ay - EY) / Tilt, r.ax - EX), da = want - r.shipA;
+                while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+                r.shipA += da * Math.Min(1, dt * 3);
+            }
             if (r.next > 0) return;
-            r.next = Gap * (Lv("c_over") > 0 && r.fuel < 5 ? 0.5 : 1);
-            Strike();
-            if (Rnd() < 0.1 * Lv("c_double")) Strike();
+            double over = Lv("c_over") > 0 && r.fuel < 5 ? 0.5 : 1;
+            int w = Weapon;
+            r.next = Gap * over * (w == 1 ? 0.25 : 1);                           // 레이저는 네 배 자주 (한 번은 약하게)
+            Fire(w);
+            if (Rnd() < 0.1 * Lv("c_double")) Fire(w);
+        }
+        public double ShipX => EX + Math.Cos(R.shipA) * (Bo + 34);
+        public double ShipY => EY + Math.Sin(R.shipA) * (Bo + 34) * Tilt;
+        void Fire(int w) { if (w == 1) Laser(); else if (w == 2) Chain(); else Strike(); }
+        bool pierce;                                                       // 레이저 각성 — 장갑판 한도 무시
+
+        // 🔴 레이저 — 청소선에서 조준점 너머까지. 네 배 자주 · 한 번은 화력의 0.3 (소수는 확률로)
+        void Laser()
+        {
+            var r = R;
+            int u = Lv("w_laser_u"); bool awk = Lv("w_laser_a") > 0;
+            double sx = ShipX, sy = ShipY, dx0 = r.ax - sx, dy0 = r.ay - sy, L0 = Math.Sqrt(dx0 * dx0 + dy0 * dy0);
+            if (L0 < 1) return;
+            double width = (9 + 0.35 * Math.Max(ClawR, PickR * 0.6)) * (u >= 1 ? 1.5 : 1), len = L0 + 280;
+            bool crit = Rnd() < Crit, any = false;
+            double per = ClawDmg * 0.3 * (u >= 2 ? r.heat : 1) * (crit ? 3 : 1);
+            for (int b = 0; b < (awk ? 2 : 1); b++)
+            {
+                double ang = Math.Atan2(dy0, dx0) + (awk ? (b == 0 ? -0.09 : 0.09) : 0), ux = Math.Cos(ang), uy = Math.Sin(ang);
+                foreach (var d in r.junk)
+                {
+                    if (d.dead) continue;
+                    double px = d.x - sx, py = d.y - sy, t = px * ux + py * uy;
+                    if (t < 0 || t > len) continue;
+                    double perp = Math.Abs(px * uy - py * ux);
+                    if (perp > width + Types[d.k].r) continue;
+                    int dmg = (int)per + (Rnd() < per - (int)per ? 1 : 0);
+                    if (dmg <= 0) continue;
+                    any = true; pierce = awk; Hit(d, dmg, 0, true); pierce = false;
+                }
+                Emit(SwEv.Laser, sx, sy, width, (crit ? 1 : 0) + (awk ? 2 : 0), null, sx + ux * len, sy + uy * len);
+            }
+            r.heat = any ? Math.Min(1.8, r.heat + 0.04) : 1;
+        }
+
+        // ⚡ 번개 — 조준점 근처 하나를 치고 가까운 것으로 튄다
+        void Chain()
+        {
+            var r = R;
+            int u = Lv("w_chain_u"); bool awk = Lv("w_chain_a") > 0;
+            double reach0 = 70 + 0.5 * ClawR, hop = 115 + 0.6 * ClawR;
+            Junk cur = null; double bd = reach0 * reach0;
+            foreach (var d in r.junk) { if (d.dead) continue; double dx = d.x - r.ax, dy = d.y - r.ay, dd = dx * dx + dy * dy; if (dd < bd) { bd = dd; cur = d; } }
+            if (cur == null) { Emit(SwEv.Strike, r.ax, r.ay, PickR, 0); return; }
+            bool crit = Rnd() < Crit;
+            int jumps = 5 + (u >= 1 ? 2 : 0);
+            double dmg = ClawDmg * 1.3 * (crit ? 3 : 1);
+            double px = ShipX, py = ShipY;
+            var hit = new List<Junk>();
+            for (int j = 0; j <= jumps && cur != null; j++)
+            {
+                hit.Add(cur);
+                Emit(SwEv.Bolt, px, py, j, crit ? 1 : 0, null, cur.x, cur.y);
+                px = cur.x; py = cur.y;
+                Hit(cur, Math.Max(1, (int)Math.Round(dmg)), 0, true);
+                if (awk && r.chain < ChainMax) r.pend.Add(new Blast { x = px, y = py, t = 0.05 + 0.03 * j, R = 30, w = true });
+                if (u >= 2) dmg *= 1.2;
+                Junk nx = null; double nd = hop * hop;
+                foreach (var d in r.junk) { if (d.dead || hit.Contains(d)) continue; double dx = d.x - px, dy = d.y - py, dd = dx * dx + dy * dy; if (dd < nd) { nd = dd; nx = d; } }
+                cur = nx;
+            }
+            if (crit) Emit(SwEv.Crit, r.ax, r.ay - 20);
         }
 
         void Strike()
@@ -1113,7 +1205,7 @@ namespace SalvageRun.Orbit.Sim
         void Hit(Junk d, int dmg, int src, bool spread)
         {
             if (d.dead) return;
-            if (d.att == Att.Armor && src == 0) dmg = Math.Min(dmg, 1);
+            if (d.att == Att.Armor && src == 0 && !pierce) dmg = Math.Min(dmg, 1);
             d.hp -= dmg; d.hit = 0.12;
             if (d.att == Att.Ice && d.hp <= d.max - 2)
             {
@@ -1171,6 +1263,7 @@ namespace SalvageRun.Orbit.Sim
             }
         }
 
+        bool blastW;
         void Kill(Junk d, int src, double mult)
         {
             if (d.dead) return;
@@ -1180,19 +1273,19 @@ namespace SalvageRun.Orbit.Sim
             if (r.clean) r.cleanKills++;
             switch (d.k) { case Vault: r.cVault++; break; case Rocket: r.cFuel++; break; case Chip: r.cChip++; break; case Sat: r.cSat++; break; case Tank: r.cTank++; break; case Big: r.cBig++; break; }
             if (d.k == Big) Record("big1", "30년 떠다닌 우주선 잔해, 드디어 사라져", "큰 잔해 하나가 궤도에서 사라졌다. 청소업계는 「보험료가 아깝지 않다」고 했다.");
-            if (src == 2)
+            // 연쇄 = 잇달아 부순 수 (어떤 무기든 · 1.6초 안에 다음 것을 부수면 이어진다)
             {
                 r.chain++; r.chainT = 1.6;
                 r.chainBest = Math.Max(r.chainBest, r.chain); M.bestChain = Math.Max(M.bestChain, r.chain);
                 int tier = r.chain >= 200 ? 4 : r.chain >= 80 ? 3 : r.chain >= 30 ? 2 : r.chain >= 10 ? 1 : 0;
                 if (tier > r.tier) { r.tier = tier; Emit(SwEv.Tier, d.x, d.y, r.chain, tier); }
                 if (r.chain == 30 || r.chain == 80 || r.chain == 200) Record("chain" + r.chain, "민간 청소선, 잔해 " + r.chain + "개 연쇄 파괴" + (r.chain >= 200 ? " — 지상에서도 보였다" : ""), "폭발이 폭발을 불렀다. 궤도일보 관측팀은 「케슬러 연쇄를 일부러 일으킨 첫 사례」라고 적었다.");
-                if (r.chain < ChainMax && Rnd() < ChainP) r.pend.Add(new Blast { x = d.x, y = d.y, t = Rnd(0.06, 0.14), R = 40 });
+                if (src == 2 && blastW && r.chain < ChainMax && Rnd() < ChainP) r.pend.Add(new Blast { x = d.x, y = d.y, t = Rnd(0.06, 0.14), R = 40, w = true });   // 무기 폭발만 번진다
             }
             double v = Types[d.k].val * ValMult * mult;
             if (d.att == Att.Pouch) v *= 2;
             if (src == 1) v *= DroneMag;
-            if (src == 2) v *= 1 + Math.Min(r.chain, 100) / 200.0;       // 연쇄가 길면 값이 조금 더 붙는다 (최대 ×1.5)
+            v *= 1 + Math.Min(r.chain, 200) / 200.0;                    // 잇달아 부수면 값이 더 붙는다 (최대 ×2 · 어떤 무기든 — 연쇄 폭발을 무기 특성으로 옮긴 만큼)
             Pay(d, src, v, d.x, d.y, true);
             Emit(SwEv.Broke, d.x, d.y, 0, d.k * 100 + (int)d.att);
             if (d.k == Fuel && AddFuel(3) > 0) Emit(SwEv.Pop, d.x, d.y, 0, 1, "연료 +3초");
