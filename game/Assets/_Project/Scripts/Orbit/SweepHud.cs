@@ -1437,11 +1437,11 @@ namespace SalvageRun.Orbit
                 case "x_bh_eco": return l > 0 ? "켜짐" : "꺼짐";
                 case "x_eco_route": return l > 0 ? "켜짐" : "꺼짐";
                 case "x_route_claw": return l > 0 ? "켜짐" : "꺼짐";
-                case "i_claw": return "×" + l;
-                case "i_drone": return "×" + l;
-                case "i_bh": return "×" + l;
-                case "i_eco": return "×" + l;
-                case "i_route": return "×" + l;
+                case "i_claw": return "화력 +" + 5 * l + "%";
+                case "i_drone": return "드론 +" + 5 * l + "%";
+                case "i_bh": return "블랙홀 확률 +" + (0.1 * l).ToString("0.#") + "%";
+                case "i_eco": return "값 +" + 4 * l + "%";
+                case "i_route": return "행성 배수 +" + (0.05 * l).ToString("0.00");
                 case "w_vac": return l > 0 ? (SweepSim.WeaponNode[sim.Weapon] == id ? "장착 중" : "산 것 — 왼쪽 위에서 장착") : "잠김";
                 case "w_vac_u": return new[] { "없음", "1단계", "2단계" }[Mathf.Min(2, l)];
                 case "w_vac_a": return l > 0 ? "각성!" : "잠김";
