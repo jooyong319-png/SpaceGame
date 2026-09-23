@@ -64,6 +64,7 @@ namespace SalvageRun.Orbit
         {
             TestAim = false; TestHold = false;                                // 시험 스위치는 Play 를 넘어 남는다 (정적) — 켜진 채 남으면 사장님 커서가 안 먹는다
             SweepHud.CastReq = false;
+            autoMode = PlayerPrefs.GetInt("orbit.auto", 0) == 1;
             Application.targetFrameRate = 60;
             Load();
             cam = Camera.main;
@@ -157,6 +158,7 @@ namespace SalvageRun.Orbit
             {
                 if (kb.f2Key.wasPressedThisFrame) timeScale = timeScale > 1f ? 1f : 3f;
                 if (kb.mKey.wasPressedThisFrame && OrbitSfx.I != null) OrbitSfx.I.ToggleMute();
+                if (kb.aKey.wasPressedThisFrame && !sim.R.over) ToggleAuto();                  // 🎯 자동 조준 ON/OFF
             }
             ReadAim();
             if (!sim.R.over)
@@ -206,19 +208,19 @@ namespace SalvageRun.Orbit
             bool inside = !(sp.x < 0 || sp.y < 0 || sp.x > Screen.width || sp.y > Screen.height);
             if ((sp - lastMouse).sqrMagnitude > 4) { idleT = 0; lastMouse = sp; } else idleT += Time.deltaTime;
             // 🎯 자동 조준 — 사면 늘 스스로 잔해를 찾는다. 왼쪽 단추를 누르고 있을 때만 마우스로 직접 (사장님 「마우스 따라다니는데?」)
-            int al = sim.Lv("c_auto");
-            bool manual = inside && !hud.overSkill && mouse.leftButton.isPressed;
-            autoAiming = al > 0 && !sim.R.over && !manual;
-            if (autoAiming) { AutoAim(al); return; }
+            bool manual = inside && !hud.overSkill && !hud.overAuto && mouse.leftButton.isPressed;
+            autoAiming = autoMode && !sim.R.over && !manual;
+            if (autoAiming) { AutoAim(3); return; }
             if (!inside) return;
             Vector3 w = cam.ScreenToWorldPoint(new Vector3(sp.x, sp.y, 10));
             aimPx = new Vector2(480 + (w.x - cam.transform.position.x) * PxPerUnit, 310 - (w.y - cam.transform.position.y) * PxPerUnit);
             aimOn = true;
-            if (hud.overSkill) aimOn = false;          // 스킬 칸 위 — 빔 자리는 그대로 둔다
+            if (hud.overSkill || hud.overAuto) aimOn = false;          // 스킬 칸 위 — 빔 자리는 그대로 둔다
         }
 
         Vector2 lastMouse, autoTarget; float idleT, autoRetarget; Junk autoJunk;
-        public bool autoAiming;
+        public bool autoAiming, autoMode;
+        public void ToggleAuto() { autoMode = !autoMode; PlayerPrefs.SetInt("orbit.auto", autoMode ? 1 : 0); PlayerPrefs.Save(); OrbitSfx.Play("tick", 0.7f); }
         void AutoAim(int al)
         {
             var R = sim.R;

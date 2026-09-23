@@ -293,7 +293,7 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(vw - 330, 52, 316, 18), "압축 " + R.packed.Count + " / 붕괴 " + sim.Cap, cost);
             }
             if (R.maxShots > 0 && !R.over) SkillSlot(R);
-            if (game.autoAiming) GUI.Label(new Rect(vw / 2 - 120, RefH - 118, 240, 20), "<size=12><color=#f2c14e>◎ 자동 조준</color> <color=#8a9bb3>— 왼쪽 단추를 누르고 있으면 직접</color></size>", center);
+            AutoSwitch();
             var c = sim.CurContract;
             if (c != null && !R.clean)
             {
@@ -992,6 +992,21 @@ namespace SalvageRun.Orbit
             return 0;
         }
 
+        // 🎯 자동 조준 스위치 — 판 화면 아래, 블랙홀 칸 왼쪽. 키보드 A 로도 (정비소에선 뺐다 · 09-23)
+        public bool overAuto;
+        void AutoSwitch()
+        {
+            var r = new Rect(vw / 2 - 34 - 118, RefH - 92 + 19, 106, 34);
+            overAuto = r.Contains(Event.current.mousePosition);
+            bool on = game.autoMode;
+            GUI.color = on ? new Color(0.25f, 0.18f, 0.06f, 0.95f) : new Color(0.05f, 0.05f, 0.08f, 0.9f); GUI.DrawTexture(r, white); GUI.color = Color.white;
+            Frame(r, on ? SweepGame.Amber : new Color(0.3f, 0.3f, 0.36f), overAuto ? 3 : 2);
+            GUI.Label(r, on ? "<size=13><color=#ffdf95>◎ 자동 ON</color></size>" : "<size=13><color=#8a9bb3>◎ 자동 OFF</color></size>", center);
+            GUI.Label(new Rect(r.x + 3, r.y - 15, 30, 14), "<size=10>A</size>", dim);
+            if (GUI.Button(r, GUIContent.none, GUIStyle.none)) game.ToggleAuto();
+            if (on && game.autoAiming) GUI.Label(new Rect(vw / 2 - 150, RefH - 118, 300, 20), "<size=11><color=#8a9bb3>왼쪽 단추를 누르고 있으면 직접 조준</color></size>", center);
+        }
+
         public static bool CastReq;
         public bool overSkill;
         void SkillSlot(SweepRun R)
@@ -1209,7 +1224,6 @@ namespace SalvageRun.Orbit
                 case "c_pow": return "한 방 " + (1 + l);
                 case "c_rad": return l > 0 ? "반지름 " + (22 + 10 * l) : "한 점";
                 case "c_spd": return Mathf.Max(0.3f, 0.6f - 0.045f * l).ToString("0.00") + "초";
-                case "c_auto": return l == 0 ? "없음" : l == 1 ? "가까운 것부터 · 느리게" : l == 2 ? "빠르게 따라간다" : "가장 빽빽한 곳";
                 case "c_fuel": return (30 + 3 * l) + "초";
                 case "c_crit": return (5 * l) + "%";
                 case "c_double": return (10 * l) + "%";
