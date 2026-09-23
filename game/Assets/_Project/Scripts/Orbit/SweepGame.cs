@@ -312,9 +312,13 @@ namespace SalvageRun.Orbit
 
         void CollectorShip()
         {
-            var p = Add(square, PxToWorld(-40, 150), 0.9f, Red, 6, 3.2f);
-            p.sr.transform.localScale = new Vector3(1.2f / square.bounds.size.x, 0.35f / square.bounds.size.y, 1);
+            // 추심선 — 청소선과 같은 배 그림을 빨갛게, 크게. 꼬리에 빨간 불꽃
+            var p = Add(droneArt, PxToWorld(-40, 150), 1.1f, new Color(1f, 0.42f, 0.36f), 6, 3.2f);
+            p.sr.transform.rotation = Quaternion.Euler(0, 0, -90);
+            p.sr.sortingOrder = 85;
             p.v = new Vector3(1040f / PxPerUnit / 3.2f, -0.2f, 0);
+            var glowTail = Add(glow, PxToWorld(-70, 152), 0.9f, new Color(1f, 0.35f, 0.3f, 0.5f), 6, 3.2f);
+            glowTail.v = p.v;
         }
 
         public void PopAt(double x, double y, string text, Color c, float size)
