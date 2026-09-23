@@ -238,6 +238,7 @@ namespace SalvageRun.Orbit
                 y += 25;
             }
             Chip("<size=12>내 주식 <b>" + PctTxt(MyTotal()) + "</b></size>", false);
+            if (sim.PlanetStockBonus > 1) Chip("<size=12><color=#9fe8ff>행성 투자 값 <b>+20%</b></color></size>", false);
             if (sim.Rage > 0.005) Chip("<size=12><color=#ff8a7a>분노 화력 <b>+" + Mathf.RoundToInt((float)sim.Rage * 100) + "%</b></color></size>", true);
             for (int k = 0; k < Mathf.Min(3, myIdx.Count); k++) { int i = myIdx[k]; Chip("<size=12>" + Clip(Market.Defs[i].name, 7) + " <b>" + PctTxt(MyPct(i)) + (Hot(i) ? " ▲" : "") + "</b></size>", Hot(i)); }
         }
