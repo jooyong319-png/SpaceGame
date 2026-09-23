@@ -46,6 +46,7 @@ namespace SalvageRun.Orbit
         public void OnRunEnd()
         {
             showResult = true; bankruptArmed = false; last = sim.R; resultT = 2.6f; flow = 1;
+            if (last.cut > 0) RepayFx(sim.S.debt + last.cut, sim.S.debt, 1.4f, true);   // 판 끝 자동 상환 — 작은 명세서로
             resultAt = Time.time; endCash = sim.S.cash; gained = last.Earned + last.bonus + last.interest; flyers.Clear(); flyT = 0;
             bannerT = 0; banner = null;          // 판 중 예고가 조종실까지 남지 않게
             sim.M.flags.Remove("hint_seen_now");
@@ -140,6 +141,7 @@ namespace SalvageRun.Orbit
             }
             if (!sim.M.won) NewsBanner();
             if (newsOpen) News();
+            RepayOverlay();                                            // 💸 빚 갚기 연출
             if (!sim.M.won && !(CockpitView && flow != 3)) Ticker();          // 조종실엔 궤도일보 모니터가 있다 — 아래 한 줄과 겹친다
         }
 
@@ -494,7 +496,7 @@ namespace SalvageRun.Orbit
                 // 청구서는 끝 — 남은 빚을 갚아야 청산 출동
                 GUI.Label(new Rect(r.x, r.y + 6, r.width, 30), "<size=22><color=#ffdf95>빚 " + KNum.Fmt(S.debt) + "</color></size>", center);
                 GUI.Label(new Rect(r.x, r.y + 38, r.width, 22), "<size=13>" + (S.cash > 0 ? "눌러서 갚기 — 다 갚으면 청산 출동" : "다 갚으면 청산 출동") + "</size>", center);
-                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) sim.RepayDebt();
+                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) Repay();
                 return;
             }
             bool can = S.cash >= sim.BillAmount;
@@ -917,7 +919,7 @@ namespace SalvageRun.Orbit
             GUI.enabled = sim.LoanCap > 0;
             if (GUI.Button(new Rect(cx + 172, by, 160, 36), "<size=12>한도까지 +" + KNum.Fmt(sim.LoanCap) + "</size>", btn)) RequestLoan(sim.LoanCap, false);
             GUI.enabled = S.debt > 0 && S.cash > 0;
-            if (GUI.Button(new Rect(cx + 340, by, 168, 36), "<size=12>빚 갚기 −" + KNum.Fmt(System.Math.Min(S.cash, S.debt)) + "</size>", btn)) sim.RepayDebt();
+            if (GUI.Button(new Rect(cx + 340, by, 168, 36), "<size=12>빚 갚기 −" + KNum.Fmt(System.Math.Min(S.cash, S.debt)) + "</size>", btn)) Repay();
             GUI.enabled = true;
             GUI.Label(new Rect(cx + 4, by + 38, 500, 20), S.bill >= SweepSim.Bills.Length - 1
                 ? "<size=11><color=#ff9b8f>마지막 할부(완납)엔 대출이 안 된다 — 제힘으로 갚거나, 못 갚으면 파산</color></size>"

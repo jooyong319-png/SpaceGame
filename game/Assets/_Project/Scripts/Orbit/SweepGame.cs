@@ -221,17 +221,23 @@ namespace SalvageRun.Orbit
             if (hud.overSkill || hud.overAuto || hud.overStock) aimOn = false;          // 스킬 칸 위 — 빔 자리는 그대로 둔다
         }
 
-        Vector2 lastMouse, autoTarget; float idleT, autoRetarget; Junk autoJunk;
+        Vector2 lastMouse, autoTarget; float idleT, autoRetarget, autoDwell, autoBanT; int autoHp; Junk autoJunk, autoBan, prevAuto;
         public bool autoAiming, autoMode;
         public void ToggleAuto() { autoMode = !autoMode; PlayerPrefs.SetInt("orbit.auto", autoMode ? 1 : 0); PlayerPrefs.Save(); OrbitSfx.Play("tick", 0.7f); }
         void AutoAim(int al)
         {
             var R = sim.R;
-            autoRetarget -= Time.deltaTime;
+            autoRetarget -= Time.deltaTime; autoBanT -= Time.deltaTime;
+            // 🔴 한 잔해에 붙어 2초 동안 체력이 안 줄면 포기하고 4초 동안 다시 안 고른다 (사장님 09-24 「화성에서 오토가 멈춤」 — 얼음 껍질)
+            if (autoJunk != null && !autoJunk.dead && Vector2.Distance(aimPx, new Vector2((float)autoJunk.x, (float)autoJunk.y)) < 24)
+            {
+                if (autoJunk.hp < autoHp) { autoHp = autoJunk.hp; autoDwell = 0; } else autoDwell += Time.deltaTime;
+                if (autoDwell > 2f) { autoBan = autoJunk; autoBanT = 4f; autoJunk = null; autoDwell = 0; }
+            }
             if (autoRetarget <= 0 || autoJunk == null || autoJunk.dead)
             {
                 autoRetarget = al == 1 ? 0.9f : al == 2 ? 0.5f : 1.2f;
-                var keep = autoJunk != null && !autoJunk.dead ? autoJunk : null;
+                var keep = autoJunk != null && !autoJunk.dead && autoJunk.fade >= 0.5 ? autoJunk : null;
                 autoJunk = null; float best = float.MaxValue;
                 if (al < 3)
                 {
@@ -243,13 +249,14 @@ namespace SalvageRun.Orbit
                     float cur = keep != null ? AutoScore(keep) : -1, bestS = -1;
                     for (int t = 0; t < 40 && R.junk.Count > 0; t++)
                     {
-                        var c = R.junk[Random.Range(0, R.junk.Count)]; if (c.dead || c.fade < 0.5) continue;
+                        var c = R.junk[Random.Range(0, R.junk.Count)]; if (c.dead || c.fade < 0.5 || (autoBanT > 0 && c == autoBan)) continue;
                         float sc = AutoScore(c);
                         if (sc > bestS) { bestS = sc; autoJunk = c; }
                     }
                     if (keep != null && bestS < cur * 1.35f) autoJunk = keep;
                 }
             }
+            if (autoJunk != prevAuto) { prevAuto = autoJunk; autoDwell = 0; autoHp = autoJunk != null ? autoJunk.hp : 0; }
             if (autoJunk != null) autoTarget = new Vector2((float)autoJunk.x, (float)autoJunk.y);
             float sp = al == 1 ? 170 : al == 2 ? 320 : 380;
             aimPx = Vector2.MoveTowards(aimPx, autoTarget, sp * Time.deltaTime * timeScale);
