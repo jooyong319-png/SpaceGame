@@ -12,9 +12,10 @@ namespace SalvageRun.Orbit
         static readonly Sprite[] cache = new Sprite[5];
         static Sprite ringBack, ringFront;
 
-        public static Sprite Get(int kind) => cache[kind] ?? (cache[kind] = Make(kind));
-        public static Sprite RingBack => ringBack ?? (ringBack = Ring(false));
-        public static Sprite RingFront => ringFront ?? (ringFront = Ring(true));
+        // 🔴 ?? 는 쓰지 않는다 — Play 를 멈추면 유니티가 그림을 지우는데 C# 참조는 남는다. 유니티식 == null 로 봐야 다시 그린다
+        public static Sprite Get(int kind) { if (cache[kind] == null) cache[kind] = Make(kind); return cache[kind]; }
+        public static Sprite RingBack { get { if (ringBack == null) ringBack = Ring(false); return ringBack; } }
+        public static Sprite RingFront { get { if (ringFront == null) ringFront = Ring(true); return ringFront; } }
 
         static float Fbm(float x, float y, int oct)
         {
