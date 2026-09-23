@@ -658,19 +658,40 @@ namespace SalvageRun.Orbit
             }
             else GUI.Label(new Rect(ds.x + 8, ds.y + 12, ds.width - 16, 20), "<size=12><color=#8a9bb3>의뢰는 청구서 2 뒤에 들어온다</color></size>", label);
 
-            // ⑦ 출동 레버 (가운데 아래)
-            var go = new Rect(ox + 394, 470, 173, 80);
-            float glow = due ? 0 : 0.5f + 0.5f * Mathf.Sin(Time.time * 2.4f);
-            GUI.color = new Color(0.95f, 0.76f, 0.31f, due ? 0.05f : 0.10f + 0.08f * glow); GUI.DrawTexture(new Rect(go.x - 14, go.y - 12, go.width + 28, go.height + 24), texDisc); GUI.color = Color.white;
-            GUI.color = due ? new Color(0.12f, 0.1f, 0.08f) : new Color(0.25f, 0.18f, 0.06f); GUI.DrawTexture(go, white); GUI.color = Color.white;
-            Frame(go, due ? new Color(0.35f, 0.3f, 0.22f) : SweepGame.Amber, 3);
-            GUI.Label(new Rect(go.x, go.y + 10, go.width, 40), due ? "<size=17><color=#b8a89a>납부일</color></size>" : "<size=28><color=#ffdf95>" + (M.cleanReady ? "청산 ▸" : "출동 ▸") + "</color></size>", center);
-            GUI.Label(new Rect(go.x, go.y + 52, go.width, 18), due ? "<size=11><color=#b8a89a>청구서부터</color></size>" : "<size=11><color=#b8a078>SPACE</color></size>", center);
-            if (GUI.Button(go, GUIContent.none, GUIStyle.none) && paidT < 2.4f) Go();
+            // ⑦ 출동 버튼 (가운데 아래) — 받침 위에 둥근 누름 버튼, 윗면에 「출동」
+            {
+                float cxm = ox + 480, fy0 = 458, fw = 150, fh = 62, side = 16;
+                var hit = new Rect(cxm - fw / 2, fy0, fw, fh + side);
+                bool hover = !due && hit.Contains(Event.current.mousePosition);
+                bool press = hover && Mouse.current != null && Mouse.current.leftButton.isPressed;
+                float dip = press ? 10 : 0;                                   // 누르면 몸통이 받침 속으로
+                float glow = due ? 0 : 0.5f + 0.5f * Mathf.Sin(Time.time * 2.4f);
+                Color face = due ? new Color(0.32f, 0.3f, 0.28f) : hover ? new Color(1f, 0.8f, 0.36f) : new Color(0.95f, 0.72f, 0.26f);
+                Color wall = due ? new Color(0.18f, 0.17f, 0.16f) : new Color(0.55f, 0.36f, 0.08f);
+                // 빛 번짐
+                GUI.color = new Color(0.95f, 0.76f, 0.31f, due ? 0 : 0.10f + 0.10f * glow + (hover ? 0.08f : 0)); GUI.DrawTexture(new Rect(cxm - 120, fy0 - 26, 240, 150), texDisc);
+                // 받침 (어두운 테 + 그림자)
+                GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(cxm - 92, fy0 + 24, 184, 76), texDisc);
+                GUI.color = new Color(0.1f, 0.13f, 0.18f); GUI.DrawTexture(new Rect(cxm - 88, fy0 + 16, 176, 76), texDisc);
+                GUI.color = new Color(0.17f, 0.22f, 0.3f); GUI.DrawTexture(new Rect(cxm - 84, fy0 + 14, 168, 72), texDisc);
+                GUI.color = new Color(0.05f, 0.07f, 0.1f); GUI.DrawTexture(new Rect(cxm - fw / 2 - 4, fy0 + side + 2, fw + 8, fh + 4), texDisc);
+                // 몸통 옆면
+                float fy = fy0 + dip, sh = side - dip * 0.8f;
+                GUI.color = wall; GUI.DrawTexture(new Rect(cxm - fw / 2, fy + sh, fw, fh), texDisc);
+                GUI.DrawTexture(new Rect(cxm - fw / 2, fy + fh / 2, fw, sh), white);
+                // 윗면 + 반사
+                GUI.color = face; GUI.DrawTexture(new Rect(cxm - fw / 2, fy, fw, fh), texDisc);
+                GUI.color = new Color(1, 1, 1, due ? 0.05f : 0.22f); GUI.DrawTexture(new Rect(cxm - fw * 0.32f, fy + 6, fw * 0.5f, fh * 0.32f), texDisc);
+                GUI.color = Color.white;
+                // 윗면 글자
+                string word = due ? "납부일" : M.cleanReady ? "청산" : "출동";
+                GUI.Label(new Rect(cxm - fw / 2, fy + 2, fw, fh - 4), "<size=" + (due ? 20 : 28) + "><b><color=" + (due ? "#6a655e" : "#3a2306") + ">" + word + "</color></b></size>", center);
+                if (GUI.Button(hit, GUIContent.none, GUIStyle.none) && paidT < 2.4f) Go();
+            }
 
             // 아래 한 줄
-            string tip = due ? "<color=" + (dueNag > 0 ? "#ff9b8f" : "#b8a89a") + ">납부일 — 왼쪽 청구서 단말: 갚기 · 대출 · 또는 파산</color>" : "창밖 = 지금 내 궤도 · 궤도 넓히기 " + Mathf.RoundToInt((float)(sim.Widen - 1) * 100) + "% · 한 판 " + Mathf.RoundToInt((float)sim.FuelMax) + "초";
-            GUI.Label(new Rect(ox + 200, 566, 560, 20), "<size=12>" + tip + "</size>", center);
+            string tip = due ? "<color=" + (dueNag > 0 ? "#ff9b8f" : "#b8a89a") + ">납부일 — 왼쪽 청구서 단말: 갚기 · 대출 · 또는 파산</color>" : "Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 " + Mathf.RoundToInt((float)(sim.Widen - 1) * 100) + "% · 한 판 " + Mathf.RoundToInt((float)sim.FuelMax) + "초";
+            GUI.Label(new Rect(ox + 200, 570, 560, 20), "<size=12>" + tip + "</size>", center);
         }
 
         // ───────────────────────────────── 대출 창구 (모달) — 내역 · 받기 · 갚기
