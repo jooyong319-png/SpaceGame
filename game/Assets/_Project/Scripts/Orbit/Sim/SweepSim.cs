@@ -154,6 +154,52 @@ namespace SalvageRun.Orbit.Sim
             N("e_used", "eco", "중고 거래", "모든 칸 -5%", new[] { "e_save" }, 4, 6000, 2.0, 3, 3, 3),
         };
         public const int NodeCount = 36;
+        // ───────────────────────── 정비소 트리 자리 (손으로 격자에 놓았다 · 시안 https://claude.ai/artifact/NLZseBQWXKMGfuAmFDFJcR)
+        //    par = 이어지는 앞 칸의 능력 (R = 가운데 청소선) · tile = 그 능력의 몇 번째 칸 뒤 · (x, y) 첫 칸 자리 · (dx, dy) 뻗는 방향
+        //    🔴 여는 조건도 이것 — 앞 칸을 사야 이 능력의 첫 칸이 열린다 (게임 · 봇 같은 규칙)
+        public struct TreeSpot { public string par; public int tile, x, y, dx, dy; }
+        public static readonly Dictionary<string, TreeSpot> Layout = new Dictionary<string, TreeSpot>
+        {
+            { "c_pow", new TreeSpot { par = "R", tile = 0, x = 0, y = -1, dx = 0, dy = -1 } },
+            { "c_spd", new TreeSpot { par = "c_pow", tile = 1, x = -1, y = -2, dx = -1, dy = 0 } },
+            { "c_rad", new TreeSpot { par = "c_pow", tile = 1, x = 1, y = -2, dx = 1, dy = 0 } },
+            { "c_crit", new TreeSpot { par = "c_spd", tile = 2, x = -2, y = -3, dx = 0, dy = -1 } },
+            { "c_double", new TreeSpot { par = "c_spd", tile = 4, x = -4, y = -3, dx = 0, dy = -1 } },
+            { "c_over", new TreeSpot { par = "c_crit", tile = 5, x = -3, y = -8, dx = 0, dy = -1 } },
+            { "c_magnet", new TreeSpot { par = "c_rad", tile = 3, x = 3, y = -3, dx = 0, dy = -1 } },
+            { "c_fuel", new TreeSpot { par = "R", tile = 0, x = -1, y = 0, dx = -1, dy = 0 } },
+            { "o_wide", new TreeSpot { par = "c_fuel", tile = 1, x = -2, y = -1, dx = -1, dy = 0 } },
+            { "c_find", new TreeSpot { par = "c_fuel", tile = 5, x = -6, y = 0, dx = -1, dy = 0 } },
+            { "d_n", new TreeSpot { par = "R", tile = 0, x = 1, y = 0, dx = 1, dy = 0 } },
+            { "d_spd", new TreeSpot { par = "d_n", tile = 2, x = 3, y = -1, dx = 1, dy = 0 } },
+            { "d_reach", new TreeSpot { par = "d_n", tile = 2, x = 3, y = 1, dx = 1, dy = 0 } },
+            { "d_mag", new TreeSpot { par = "d_spd", tile = 5, x = 7, y = -2, dx = 0, dy = -1 } },
+            { "d_fix", new TreeSpot { par = "d_mag", tile = 1, x = 8, y = -3, dx = 1, dy = 0 } },
+            { "d_sig", new TreeSpot { par = "d_n", tile = 5, x = 6, y = 0, dx = 1, dy = 0 } },
+            { "d_grade", new TreeSpot { par = "d_reach", tile = 3, x = 6, y = 2, dx = 1, dy = 0 } },
+            { "d_pair", new TreeSpot { par = "d_sig", tile = 3, x = 9, y = -1, dx = 0, dy = -1 } },
+            { "d_fact", new TreeSpot { par = "d_pair", tile = 1, x = 10, y = -1, dx = 1, dy = 0 } },
+            { "b_n", new TreeSpot { par = "R", tile = 0, x = 0, y = 1, dx = 0, dy = 1 } },
+            { "s_speed", new TreeSpot { par = "b_n", tile = 4, x = 0, y = 5, dx = 0, dy = 1 } },
+            { "b_pr", new TreeSpot { par = "b_n", tile = 2, x = 1, y = 3, dx = 1, dy = 0 } },
+            { "b_cap", new TreeSpot { par = "b_n", tile = 4, x = 1, y = 5, dx = 1, dy = 0 } },
+            { "b_pf", new TreeSpot { par = "b_pr", tile = 5, x = 6, y = 3, dx = 1, dy = 0 } },
+            { "b_br", new TreeSpot { par = "b_cap", tile = 3, x = 3, y = 6, dx = 0, dy = 1 } },
+            { "b_chain", new TreeSpot { par = "b_br", tile = 2, x = 4, y = 7, dx = 1, dy = 0 } },
+            { "b_pack", new TreeSpot { par = "b_chain", tile = 5, x = 8, y = 8, dx = 0, dy = 1 } },
+            { "e_val", new TreeSpot { par = "R", tile = 0, x = -1, y = 1, dx = 0, dy = 1 } },
+            { "e_vault", new TreeSpot { par = "e_val", tile = 2, x = -2, y = 2, dx = -1, dy = 0 } },
+            { "e_att", new TreeSpot { par = "e_val", tile = 4, x = -2, y = 4, dx = -1, dy = 0 } },
+            { "e_quest", new TreeSpot { par = "e_val", tile = 5, x = -2, y = 6, dx = -1, dy = 0 } },
+            { "e_talk", new TreeSpot { par = "e_vault", tile = 3, x = -4, y = 1, dx = -1, dy = 0 } },
+            { "e_tip", new TreeSpot { par = "e_att", tile = 3, x = -4, y = 5, dx = -1, dy = 0 } },
+            { "e_save", new TreeSpot { par = "e_val", tile = 5, x = -1, y = 6, dx = 0, dy = 1 } },
+            { "e_guard", new TreeSpot { par = "e_talk", tile = 2, x = -6, y = 1, dx = -1, dy = 0 } },
+            { "e_used", new TreeSpot { par = "e_save", tile = 3, x = -2, y = 8, dx = -1, dy = 0 } },
+        };
+        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R" };
+        public static string VisBranch(string id) => id == "c_fuel" || id == "o_wide" || id == "c_find" ? "hull" : id == "s_speed" ? "bh" : Nodes[NodeIx[id]].branch;
+
         static Node N(string id, string br, string name, string desc, string[] par, int seg, double first, double mult, int max, int depth, int lane)
             => new Node { id = id, branch = br, name = name, desc = desc, par = par, seg = seg, first = first, mult = mult, max = max, depth = depth, lane = lane };
         static readonly Dictionary<string, int> NodeIx = new Dictionary<string, int>();
@@ -165,9 +211,9 @@ namespace SalvageRun.Orbit.Sim
         public struct Bill { public string t, perk; public double m, credit; public int due; }
         public static readonly Bill[] Bills =
         {
-            new Bill { t = "연료비",           m = 30,     due = 5, credit = 2,  perk = "드론 2대 · 금고 위성 · 부착물이 나온다" },
-            new Bill { t = "청소선 할부 1회",  m = 400,    due = 4, credit = 3,  perk = "블랙홀 폭탄 — 지구에서 판마다 2발 올려 보낸다" },
-            new Bill { t = "궤도 사용료",      m = 1200,   due = 4, credit = 5,  perk = "중궤도 면허 (값 ×2)" },
+            new Bill { t = "연료비",           m = 45,     due = 5, credit = 2,  perk = "드론 2대 · 금고 위성 · 부착물이 나온다" },
+            new Bill { t = "청소선 할부 1회",  m = 700,    due = 4, credit = 3,  perk = "블랙홀 폭탄 — 지구에서 판마다 2발 올려 보낸다" },
+            new Bill { t = "궤도 사용료",      m = 2500,   due = 4, credit = 5,  perk = "중궤도 면허 (값 ×2)" },
             new Bill { t = "보험료",           m = 120000, due = 5, credit = 8,  perk = "큰 잔해 등장 · 연쇄 +10%" },
             new Bill { t = "청소선 할부 2회",  m = 200000, due = 4, credit = 12, perk = "드론 등급 +1" },
             new Bill { t = "법인세",           m = 4000000, due = 5, credit = 18, perk = "정지궤도 면허 (값 ×3)" },
@@ -328,6 +374,8 @@ namespace SalvageRun.Orbit.Sim
             if (!BranchOpen(n.branch)) return NodeSt.Locked;
             if (S.lv[i] >= n.max) return NodeSt.Max;
             foreach (var p in n.par) if (S.lv[NodeIx[p]] <= 0) return NodeSt.Hidden;
+            var pl = Layout[n.id];
+            if (pl.par != "R" && S.lv[NodeIx[pl.par]] < TileLv(NodeIx[pl.par], pl.tile)) return NodeSt.Hidden;
             if (n.seg > Seg) return NodeSt.Hidden;
             return S.cash >= TileCost(i) ? NodeSt.Can : NodeSt.Poor;
         }

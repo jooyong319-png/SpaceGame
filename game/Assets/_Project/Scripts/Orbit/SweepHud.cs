@@ -712,63 +712,60 @@ namespace SalvageRun.Orbit
             gtiles = new List<GTile>();
             var N = SweepSim.Nodes;
             var first = new Dictionary<string, int>();
-            // 칸 만들기
+            gtiles.Add(new GTile { stat = -1, j = 1, cell = Vector2Int.zero });          // 가운데 — 청소선
+            first["R"] = 0;
             for (int i = 0; i < N.Length; i++)
+            {
+                var pl = SweepSim.Layout[N[i].id];
                 for (int j = 1; j <= SweepSim.Tiles(i); j++)
                 {
-                    var t = new GTile { stat = i, j = j };
                     if (j == 1) first[N[i].id] = gtiles.Count;
-                    gtiles.Add(t);
+                    gtiles.Add(new GTile { stat = i, j = j, cell = new Vector2Int(pl.x + pl.dx * (j - 1), pl.y + pl.dy * (j - 1)) });
                 }
-            // 부모 — 같은 능력의 앞 칸, 첫 칸이면 앞 능력의 첫 칸 (가지 뿌리는 가운데 「빔 위력」에)
-            for (int k = 0; k < gtiles.Count; k++)
+            }
+            for (int k = 1; k < gtiles.Count; k++)
             {
                 var t = gtiles[k]; var n = N[t.stat];
                 if (t.j > 1) { t.lpar = k - 1; continue; }
-                var ps = n.par.Length > 0 ? n.par : n.id == "c_pow" ? new string[0] : new[] { "c_pow" };
-                for (int q = 0; q < ps.Length; q++) { int pk = first[ps[q]]; if (q == 0) t.lpar = pk; else t.xpar.Add(pk); }
-            }
-            // 자리 — 가운데에서 너비 우선으로, 가지마다 선호 방향. 빈 이웃 칸을 찾는다
-            var used = new HashSet<Vector2Int>();
-            var branchDir = new Dictionary<string, Vector2Int> { { "claw", new Vector2Int(-1, -1) }, { "drone", new Vector2Int(1, -1) }, { "bh", new Vector2Int(1, 1) }, { "eco", new Vector2Int(-1, 1) } };
-            int root = first["c_pow"];
-            gtiles[root].cell = Vector2Int.zero; gtiles[root].inDir = new Vector2Int(0, -1); used.Add(Vector2Int.zero);
-            var q2 = new Queue<int>(); q2.Enqueue(root);
-            var placed = new HashSet<int> { root };
-            while (q2.Count > 0)
-            {
-                int pk = q2.Dequeue(); var p = gtiles[pk];
-                for (int k = 0; k < gtiles.Count; k++)
-                {
-                    var t = gtiles[k]; if (t.lpar != pk || placed.Contains(k)) continue;
-                    var n = N[t.stat];
-                    Vector2Int pref;
-                    if (t.j > 1) pref = p.inDir;                                          // 같은 능력 — 곧게 이어 간다
-                    else if (pk == root) pref = n.branch == "claw" ? (n.id == "c_rad" ? new Vector2Int(-1, -1) : new Vector2Int(-1, 0)) : branchDir[n.branch];
-                    else pref = Rot(p.inDir, (k % 2 == 0) ? 2 : -2);                      // 새 능력 — 옆으로 꺾는다
-                    int[] order = { 0, 1, -1, 2, -2, 3, -3, 4 };
-                    Vector2Int cell = p.cell, dir = pref; bool ok = false;
-                    for (int dist = 1; dist <= 3 && !ok; dist++)
-                        foreach (int o in order)
-                        {
-                            var d = Rot(pref, o); var c = p.cell + d * dist;
-                            if (used.Contains(c)) continue;
-                            cell = c; dir = d; ok = true; break;
-                        }
-                    t.cell = cell; t.inDir = dir; used.Add(cell); placed.Add(k); q2.Enqueue(k);
-                }
+                var pl = SweepSim.Layout[n.id];
+                t.lpar = pl.par == "R" ? 0 : first[pl.par] + pl.tile - 1;
+                foreach (var p in n.par) if (p != pl.par) t.xpar.Add(first[p]);
             }
         }
 
         int GTileState(int k)   // 0 안 보임 · 1 실루엣 · 2 다음 칸 · 3 산 것
         {
             var t = gtiles[k];
+            if (t.stat < 0) return 3;                                   // 청소선 — 늘 있다
             if (sim.S.lv[t.stat] >= SweepSim.TileLv(t.stat, t.j)) return 3;
             bool parOwned = t.lpar < 0 || GTileState(t.lpar) == 3;
             foreach (var x in t.xpar) if (GTileState(x) != 3) parOwned = false;
             if (parOwned) return 2;
             if (t.lpar >= 0 && GTileState(t.lpar) == 2) return 1;
             return 0;
+        }
+
+        static Texture2D iconTex;
+        void DrawIcon(Rect r, string id)
+        {
+            if (iconTex == null) iconTex = Resources.Load<Texture2D>("tree_icons");
+            int idx = System.Array.IndexOf(SweepSim.IconOrder, id);
+            if (iconTex == null || idx < 0) return;
+            const int cols = 8, rows = 5;
+            float cw = 1f / cols, ch = 1f / rows;
+            GUI.DrawTextureWithTexCoords(r, iconTex, new Rect((idx % cols) * cw, 1f - (idx / cols + 1) * ch, cw, ch));
+        }
+
+        static Color VisCol(string id)
+        {
+            switch (SweepSim.VisBranch(id))
+            {
+                case "claw": return SweepGame.Amber;
+                case "hull": return new Color(0.56f, 0.72f, 0.9f);
+                case "drone": return SweepGame.Cyan;
+                case "bh": return SweepGame.Violet;
+                default: return SweepGame.Green;
+            }
         }
 
         static readonly string[] Roman = { "", "Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ" };
@@ -838,29 +835,34 @@ namespace SalvageRun.Orbit
             for (int k = 0; k < nT; k++)
             {
                 if (st[k] == 0) continue;
-                var t = gtiles[k]; var n = SweepSim.Nodes[t.stat];
-                int b = System.Array.IndexOf(SweepSim.BranchIds, n.branch);
+                var t = gtiles[k];
+                bool isRoot = t.stat < 0;
+                var n = isRoot ? SweepSim.Nodes[0] : SweepSim.Nodes[t.stat];
+                Color bcol = isRoot ? SweepGame.Amber : VisCol(n.id);
                 bool next = st[k] == 2, owned = st[k] == 3;
-                var ns = sim.State(t.stat);
+                var ns = isRoot ? NodeSt.Max : sim.State(t.stat);
                 bool can = next && ns == NodeSt.Can;
-                bool diamond = n.max == 1;
+                bool diamond = !isRoot && n.max == 1;
                 var pc = ToScr(t.cell);
-                float grow = nodePulse[t.stat] * 8 * camZ;
-                float sz = (diamond ? tile * 0.92f : tile) + grow;
+                float grow = isRoot ? 0 : nodePulse[t.stat] * 8 * camZ;
+                float sz = (isRoot ? tile * 1.25f : diamond ? tile * 0.92f : tile) + grow;
                 var r = new Rect(pc.x - sz / 2, pc.y - sz / 2, sz, sz);
                 if (can) { GUI.color = new Color(1f, 0.78f, 0.3f, 0.28f + 0.18f * Mathf.Sin(Time.time * 5 + k)); GUI.DrawTexture(new Rect(r.x - 9 * camZ, r.y - 9 * camZ, r.width + 18 * camZ, r.height + 18 * camZ), texDisc); }
                 if (diamond) GUI.matrix = m0 * Matrix4x4.TRS(new Vector3(pc.x, pc.y, 0), Quaternion.Euler(0, 0, 45), Vector3.one) * Matrix4x4.TRS(new Vector3(-pc.x, -pc.y, 0), Quaternion.identity, Vector3.one);
-                Color bg = owned ? BranchCol[b] * new Color(0.38f, 0.3f, 0.26f, 1) : next ? new Color(0.09f, 0.09f, 0.1f) : new Color(0.06f, 0.06f, 0.07f);
+                Color bg = owned ? Color.Lerp(bcol, new Color(0.1f, 0.08f, 0.06f), 0.62f) : next ? new Color(0.09f, 0.09f, 0.1f) : new Color(0.06f, 0.06f, 0.07f);
                 GUI.color = bg; GUI.DrawTexture(r, white);
-                Color edge = can ? new Color(1f, 0.8f, 0.35f) : owned ? BranchCol[b] * new Color(0.9f, 0.8f, 0.7f, 1) : new Color(0.22f, 0.21f, 0.2f);
+                Color edge = can ? new Color(1f, 0.8f, 0.35f) : owned ? Color.Lerp(bcol, Color.black, 0.25f) : new Color(0.22f, 0.21f, 0.2f);
                 Frame(r, edge, can ? 2.5f : 1.5f);
                 GUI.matrix = m0;
-                string glyph = st[k] == 1 ? "" : ns == NodeSt.Locked && !owned ? "잠" : n.name.Substring(0, 1);
-                center.normal.textColor = owned ? Color.white : next ? new Color(0.72f, 0.72f, 0.74f) : new Color(0.3f, 0.3f, 0.32f);
-                center.fontSize = Mathf.RoundToInt(17 * camZ); GUI.Label(r, glyph, center); center.fontSize = 13;
-                center.normal.textColor = new Color(0.87f, 0.89f, 0.92f);
+                // 아이콘 — 칸 안에 글자 없이 (시안에서 구운 tree_icons.png)
+                bool lockedTile = !owned && ns == NodeSt.Locked;
+                GUI.color = owned ? new Color(1f, 0.96f, 0.86f) : next ? (lockedTile ? new Color(0.3f, 0.31f, 0.34f) : new Color(0.72f, 0.72f, 0.74f)) : new Color(0.17f, 0.17f, 0.19f);
+                float isz = sz * 0.62f;
+                DrawIcon(new Rect(pc.x - isz / 2, pc.y - isz / 2, isz, isz), isRoot ? "R" : n.id);
+                if (lockedTile && next) { GUI.color = new Color(1f, 0.6f, 0.55f); GUI.Label(new Rect(r.xMax - 14, r.y - 4, 18, 18), "<size=11>잠</size>", center); }
+                GUI.color = Color.white;
                 if (r.Contains(ev.mousePosition)) hover = k;
-                if (next && GUI.Button(r, GUIContent.none, GUIStyle.none) && ns == NodeSt.Can)
+                if (!isRoot && next && GUI.Button(r, GUIContent.none, GUIStyle.none) && ns == NodeSt.Can)
                 {
                     int times = shift ? 5 : 1;
                     while (times-- > 0 && sim.State(t.stat) == NodeSt.Can) sim.BuyTile(t.stat);
@@ -874,7 +876,16 @@ namespace SalvageRun.Orbit
 
         void Tip(int k, Vector2 at, int vis, float tile)
         {
-            var t = gtiles[k]; var n = SweepSim.Nodes[t.stat]; var ns = sim.State(t.stat); int lv = sim.S.lv[t.stat];
+            var t = gtiles[k];
+            if (t.stat < 0)
+            {
+                var r0 = new Rect(at.x + tile / 2 + 14, at.y - 40, 260, 76);
+                GUI.color = new Color(0.05f, 0.05f, 0.06f, 0.97f); GUI.DrawTexture(r0, white); GUI.color = Color.white; Frame(r0, new Color(0.6f, 0.5f, 0.35f), 2);
+                title.fontSize = 18; GUI.Label(new Rect(r0.x, r0.y + 6, r0.width, 26), "<color=#d9b98a>청소선</color>", title);
+                GUI.Label(new Rect(r0.x + 10, r0.y + 38, r0.width - 20, 22), "여기서 다섯 갈래로 뻗는다", center);
+                return;
+            }
+            var n = SweepSim.Nodes[t.stat]; var ns = sim.State(t.stat); int lv = sim.S.lv[t.stat];
             int b = System.Array.IndexOf(SweepSim.BranchIds, n.branch);
             var r = new Rect(at.x + tile / 2 + 14, at.y - 70, 300, 150);
             if (r.xMax > vw - 8) r.x = at.x - tile / 2 - 14 - r.width;
@@ -898,7 +909,8 @@ namespace SalvageRun.Orbit
             string foot;
             if (vis == 3) foot = "<color=#6fcf97>샀다</color>";
             else if (ns == NodeSt.Locked) foot = "<color=#ff9b8f>청구서 " + SweepSim.BranchNeed[b] + "을 갚으면 열린다</color>";
-            else if (ns == NodeSt.Hidden) foot = n.seg > sim.Seg ? "<color=#ff9b8f>청구서 " + (n.seg - 1) + "을 갚으면 열린다</color>" : "<color=#ff9b8f>앞 칸을 먼저 사야 한다</color>";
+            else if (ns == NodeSt.Hidden && vis != 2) foot = "<color=#ff9b8f>앞 칸을 먼저 사야 한다</color>";
+            else if (ns == NodeSt.Hidden) foot = n.seg > sim.Seg ? "<color=#ff9b8f>청구서 " + (n.seg - 1) + "을 갚으면 열린다</color>" : "<color=#ff9b8f>이어진 다른 칸도 사야 한다</color>";
             else foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>";
             center.fontSize = 20; GUI.Label(new Rect(r.x, r.y + 106, r.width, 32), foot, center); center.fontSize = 13;
         }
