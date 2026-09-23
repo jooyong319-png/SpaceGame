@@ -88,7 +88,7 @@ namespace SalvageRun.Orbit
                 string tag = key ? "핵심 칸을 여는 것" : Parts.RarName[Parts.Defs[id].rar] + " · " + Parts.SlotName[Parts.Defs[id].slot];
                 GUI.Label(new Rect(r.x, r.y + 10, r.width, 18), "<size=11><color=#" + ColorUtility.ToHtmlStringRGB(rc) + ">" + tag + "</color></size>", center);
                 GUI.Label(new Rect(r.x, r.y + 32, r.width, 30), "<size=19><b><color=#ffffff>" + (key ? "양자 열쇠" : Parts.Defs[id].name) + "</color></b></size>", center);
-                GUI.Label(new Rect(r.x + 14, r.y + 70, r.width - 28, 60), "<size=12><color=#c8d0dc>" + (key ? "◆ 핵심 칸 하나를 연다 (각성 · 과열 사격 · 벌떼 · 쌍둥이 블랙홀 · 큰손 · 궤도 공명 · 두 번째 무기 칸)" : Parts.Defs[id].desc) + "</color></size>", small);
+                GUI.Label(new Rect(r.x + 14, r.y + 70, r.width - 28, 60), "<size=12><color=#c8d0dc>" + (key ? "◆ 보라 테두리 핵심 칸 하나를 연다 — 무기 각성 · 가지마다 핵심 · 가지 사이 교차 핵심 · 두 번째 무기 칸" : Parts.Defs[id].desc) + "</color></size>", small);
                 if (!key && S.parts != null && S.parts[Parts.Defs[id].slot] >= 0) GUI.Label(new Rect(r.x + 14, r.y + 124, r.width - 28, 18), "<size=10><color=#8a7f99>지금 " + Parts.Defs[S.parts[Parts.Defs[id].slot]].name + " → 바뀐다</color></size>", label);
                 double price = sim.PartPrice(id); bool can = S.cash >= price;
                 var bb = new Rect(r.x + 14, r.yMax - 44, r.width - 28, 32);
