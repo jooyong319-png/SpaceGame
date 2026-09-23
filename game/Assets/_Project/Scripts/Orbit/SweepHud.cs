@@ -274,14 +274,14 @@ namespace SalvageRun.Orbit
             GUI.color = Color.white;
         }
 
-        bool Panel(Rect r, string label, string right, Color edge)
+        bool Panel(Rect r, string label, string right, Color edge, bool clickable = true)   // 안에 단추가 있는 칸은 clickable = false (칸 전체 단추가 안쪽 클릭을 가로챈다)
         {
-            bool hover = r.Contains(Event.current.mousePosition);
+            bool hover = clickable && r.Contains(Event.current.mousePosition);
             GUI.DrawTexture(r, texCard2);
             Frame(r, hover ? edge : new Color(0.14f, 0.2f, 0.28f), hover ? 2 : 1.5f);
             GUI.Label(new Rect(r.x + 9, r.y + 6, r.width - 18, 16), label, head);
             if (right != null) GUI.Label(new Rect(r.x + 9, r.y + 5, r.width - 18, 16), right, cost);
-            return GUI.Button(r, GUIContent.none, GUIStyle.none);
+            return clickable && GUI.Button(r, GUIContent.none, GUIStyle.none);
         }
 
 
@@ -491,7 +491,7 @@ namespace SalvageRun.Orbit
 
             // 왼쪽 — 청구서 단말기
             var lt = new Rect(ox + 12, 44, 180, 344);
-            Panel(lt, "청구서", S.overdue && !M.cleanReady ? "<color=#ff8a7a>오늘 납부일</color>" : "", SweepGame.Red);
+            Panel(lt, "청구서", S.overdue && !M.cleanReady ? "<color=#ff8a7a>오늘 납부일</color>" : "", SweepGame.Red, false);
             float ly = lt.y + 26;
             if (M.cleanReady) GUI.Label(new Rect(lt.x + 10, ly, lt.width - 20, 40), "<color=#6fcf97>빚 청산!</color>\n청산 출동만 남았다", label);
             else if (S.bill >= SweepSim.Bills.Length) GUI.Label(new Rect(lt.x + 10, ly, lt.width - 20, 40), "청구서는 끝\n<color=#ffb3a8>빚 " + KNum.Fmt(S.debt) + "</color> 을 갚으면 청산", label);
@@ -540,7 +540,7 @@ namespace SalvageRun.Orbit
             // 오른쪽 아래 — 이번 의뢰
             var cr = new Rect(ox + 768, 232, 180, 156);
             var c = sim.CurContract;
-            Panel(cr, "이번 의뢰", "", SweepGame.Green);
+            Panel(cr, "이번 의뢰", "", SweepGame.Green, false);
             if (c != null && !M.cleanReady)
             {
                 GUI.Label(new Rect(cr.x + 10, cr.y + 28, cr.width - 20, 40), c.Value.text, label);
