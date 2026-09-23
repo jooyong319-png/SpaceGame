@@ -114,7 +114,7 @@ namespace SalvageRun.Orbit
             scale = Screen.height / RefH; vw = Screen.width / scale; ox = Mathf.Max(0, (vw - 960) / 2);
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1));
             Effects();
-            if (!sim.R.over) { Pops(); RunHud(); }
+            if (!sim.R.over) { WindowEdge(); Pops(); RunHud(); }
             if (sim.M.won) Ending();
             else if (sim.M.careerOpen) Career();
             else if (sim.R.over) { if (bayOpen) Bay(); else Cockpit(); }
@@ -150,6 +150,23 @@ namespace SalvageRun.Orbit
                 if (bannerKind == 0) GUI.Label(new Rect(8, RefH / 2 - 14, 30, 28), "◀", pop);
                 if (bannerKind == 1) GUI.Label(new Rect(vw - 36, 110, 30, 28), "▶", pop);
             }
+        }
+
+        /// <summary>출동 중에도 「창으로 내다본다」 — 가장자리에 옅은 선체와 창틀 모서리 (사장님 09-23)</summary>
+        void WindowEdge()
+        {
+            GUI.color = new Color(0.03f, 0.05f, 0.08f, 0.32f);
+            GUI.DrawTexture(new Rect(0, 0, vw, RefH), texVignette);
+            GUI.color = new Color(0.16f, 0.23f, 0.32f, 0.5f);
+            float t2 = 3, L = 44;
+            GUI.DrawTexture(new Rect(0, 0, vw, t2), white); GUI.DrawTexture(new Rect(0, RefH - t2, vw, t2), white);
+            GUI.DrawTexture(new Rect(0, 0, t2, RefH), white); GUI.DrawTexture(new Rect(vw - t2, 0, t2, RefH), white);
+            GUI.color = new Color(0.25f, 0.34f, 0.46f, 0.8f);
+            foreach (var c in new[] { new Vector2(0, 0), new Vector2(vw - L, 0), new Vector2(0, RefH - 6), new Vector2(vw - L, RefH - 6) })
+            { GUI.DrawTexture(new Rect(c.x, c.y, L, 6), white); }
+            foreach (var c in new[] { new Vector2(0, 0), new Vector2(vw - 6, 0), new Vector2(0, RefH - L), new Vector2(vw - 6, RefH - L) })
+            { GUI.DrawTexture(new Rect(c.x, c.y, 6, L), white); }
+            GUI.color = Color.white;
         }
 
         void Pops()
@@ -214,8 +231,8 @@ namespace SalvageRun.Orbit
             // 첫 5분 — 새 장난감마다 한 줄씩만 (§10)
             string hint = null;
             if (R.clean) hint = null; else
-            if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = "궤도 위에 커서를 대면 집게가 저절로 친다 — 처음엔 하나씩";
-            else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "지구에서 폭탄이 올라온다 — 길게 누르고 있으면 빨아들이고, 떼면 모인 만큼 터진다";
+            if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = "궤도 위에 커서를 대면 청소선이 빔을 쏜다 — 처음엔 한 점씩";
+            else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "지구에서 폭탄이 올라온다 — 누르고 있으면 빨아들이고, 떼면 모인 만큼 터진다 (모으는 동안 빔은 쉰다)";
             else if (sim.DronesOn && !sim.M.flags.Contains("hint_drone") && R.t < 8) hint = "드론은 알아서 줍는다 — 한 방에 부서지는 것만";
             if (hint != null) GUI.Label(new Rect(vw / 2 - 360, RefH - 70, 720, 20), hint, center);
             if (game.timeScale > 1) GUI.Label(new Rect(vw - 120, RefH - 46, 106, 18), "시험 속도 ×3", cost);
@@ -227,7 +244,7 @@ namespace SalvageRun.Orbit
         public bool bayOpen; int bayTab;
         public bool CockpitView => sim != null && sim.R.over && !sim.M.careerOpen && !sim.M.won && !bayOpen && !newsOpen;
         static readonly Color[] BranchCol = { SweepGame.Amber, SweepGame.Cyan, SweepGame.Violet, SweepGame.Green };
-        static readonly string[] BayDesc = { "손으로 하나씩 → 저절로 → 한 번에 여럿", "알아서 줍는다 — 한 방에 부서지는 것만", "지구에서 올려 보낸다 — 폭탄과 연료", "돈 · 청구서 · 추심 · 기사" };
+        static readonly string[] BayDesc = { "조준점 하나 → 넓은 착탄 → 한 번에 여럿", "알아서 줍는다 — 한 방에 부서지는 것만", "지구에서 올려 보낸다 — 폭탄과 연료", "돈 · 청구서 · 추심 · 기사" };
         public static readonly Rect Win = new Rect(200, 44, 560, 344);
 
         static string Clip(string s, int n) => s.Length <= n ? s : s.Substring(0, n - 1) + "…";
@@ -323,7 +340,7 @@ namespace SalvageRun.Orbit
             GUI.color = SweepGame.Cyan; GUI.DrawTexture(new Rect(bx + bw * a, by, bw * b * grow, 10), white);
             GUI.color = SweepGame.Violet; GUI.DrawTexture(new Rect(bx + bw * (a + b), by, bw * (1 - a - b) * grow, 10), white);
             GUI.color = new Color(1, 1, 1, k);
-            GUI.Label(new Rect(r.x, by + 14, r.width, 18), "<color=#f2c14e>집게 " + Mathf.RoundToInt(a * 100) + "</color> · <color=#6fd3e8>드론 " + Mathf.RoundToInt(b * 100) + "</color> · <color=#b69cff>폭발 " + Mathf.RoundToInt((1 - a - b) * 100) + "</color> %  ·  부순 것 " + R.broke, center);
+            GUI.Label(new Rect(r.x, by + 14, r.width, 18), "<color=#f2c14e>빔 " + Mathf.RoundToInt(a * 100) + "</color> · <color=#6fd3e8>드론 " + Mathf.RoundToInt(b * 100) + "</color> · <color=#b69cff>폭발 " + Mathf.RoundToInt((1 - a - b) * 100) + "</color> %  ·  부순 것 " + R.broke, center);
             string rec = "최대 연쇄 " + R.chainBest + (R.chainBest > prevBestChain && R.chainBest >= 10 ? " <color=#ff8a7a>새 기록!</color>" : "") + "   최대 압축 " + R.packBest + (R.packBest > prevBestPack && R.packBest >= 5 ? " <color=#ff8a7a>새 기록!</color>" : "");
             GUI.Label(new Rect(r.x, by + 34, r.width, 18), rec, center);
             if (R.contractOk) GUI.Label(new Rect(r.x, by + 52, r.width, 18), "<color=#6fcf97>의뢰 성공 +" + KNum.Fmt(R.bonus) + "</color>", center);
@@ -379,7 +396,7 @@ namespace SalvageRun.Orbit
             GUI.color = SweepGame.Cyan; GUI.DrawTexture(new Rect(x + w * a, y, w * b, 8), white);
             GUI.color = SweepGame.Violet; GUI.DrawTexture(new Rect(x + w * (a + b), y, w * (1 - a - b), 8), white);
             GUI.color = Color.white; y += 11;
-            GUI.Label(new Rect(x, y, w, 14), "<color=#f2c14e>집게 " + Mathf.RoundToInt(a * 100) + "</color> · <color=#6fd3e8>드론 " + Mathf.RoundToInt(b * 100) + "</color> · <color=#b69cff>폭발 " + Mathf.RoundToInt((1 - a - b) * 100) + "</color> %", small); y += 18;
+            GUI.Label(new Rect(x, y, w, 14), "<color=#f2c14e>빔 " + Mathf.RoundToInt(a * 100) + "</color> · <color=#6fd3e8>드론 " + Mathf.RoundToInt(b * 100) + "</color> · <color=#b69cff>폭발 " + Mathf.RoundToInt((1 - a - b) * 100) + "</color> %", small); y += 18;
             void Row(string k, string v) { GUI.Label(new Rect(x, y, w, 16), k, small); GUI.Label(new Rect(x, y, w, 16), v, cost); y += 16; }
             Row("부순 것", R.broke.ToString());
             Row("최대 연쇄", R.chainBest + (R.chainBest > prevBestChain && R.chainBest >= 10 ? " <color=#ff8a7a>새 기록</color>" : ""));
@@ -578,7 +595,7 @@ namespace SalvageRun.Orbit
             switch (id)
             {
                 case "c_pow": return "한 방 " + (1 + l);
-                case "c_rad": return l > 0 ? "반지름 " + (22 + 10 * l) : "하나씩";
+                case "c_rad": return l > 0 ? "반지름 " + (22 + 10 * l) : "한 점";
                 case "c_spd": return Mathf.Max(0.3f, 0.6f - 0.045f * l).ToString("0.00") + "초";
                 case "c_fuel": return (30 + 3 * l) + "초";
                 case "c_crit": return (5 * l) + "%";

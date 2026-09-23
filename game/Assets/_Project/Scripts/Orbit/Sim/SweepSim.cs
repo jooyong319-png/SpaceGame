@@ -115,13 +115,13 @@ namespace SalvageRun.Orbit.Sim
         // 🔴 정비고 네 칸 × 아홉 = 36칸 (사장님 09-23: "강화하는 것도 더 넓히고 더 많게"). depth = 행(0~4) · lane = 열(0~4)
         public static readonly Node[] Nodes =
         {
-            N("c_pow", "claw", "집게 위력", "한 방이 세진다", new string[0], 1, 3, 1.6, 12, 0, 2),
-            N("c_rad", "claw", "집게 범위", "한 번에 여러 개", new[] { "c_pow" }, 1, 9, 1.7, 8, 1, 3),
-            N("c_spd", "claw", "집게 속도", "치는 간격이 짧아진다", new[] { "c_pow" }, 2, 40, 1.6, 7, 1, 1),
+            N("c_pow", "claw", "빔 위력", "한 방이 세진다", new string[0], 1, 3, 1.6, 12, 0, 2),
+            N("c_rad", "claw", "빔 범위", "한 번에 여러 개", new[] { "c_pow" }, 1, 9, 1.7, 8, 1, 3),
+            N("c_spd", "claw", "빔 연사", "쏘는 간격이 짧아진다", new[] { "c_pow" }, 2, 40, 1.6, 7, 1, 1),
             N("c_fuel", "claw", "연료 탱크", "출동이 길어진다", new[] { "c_rad" }, 1, 20, 1.6, 10, 2, 4),
-            N("c_crit", "claw", "치명타", "가끔 세 배로 친다", new[] { "c_spd" }, 3, 600, 1.6, 6, 3, 0),
-            N("c_double", "claw", "연타", "한 번 더 칠 확률", new[] { "c_spd" }, 3, 900, 1.7, 5, 3, 2),
-            N("c_magnet", "claw", "자석 집게", "주변 조각을 끌어온다", new[] { "c_rad", "c_fuel" }, 3, 1200, 1.8, 3, 3, 4),
+            N("c_crit", "claw", "치명타", "가끔 세 배로 쏜다", new[] { "c_spd" }, 3, 600, 1.6, 6, 3, 0),
+            N("c_double", "claw", "연사", "한 번 더 쏠 확률", new[] { "c_spd" }, 3, 900, 1.7, 5, 3, 2),
+            N("c_magnet", "claw", "견인 빔", "주변 조각을 끌어온다", new[] { "c_rad", "c_fuel" }, 3, 1200, 1.8, 3, 3, 4),
             N("c_over", "claw", "과부하", "판 끝 5초 두 배 빠르게", new[] { "c_crit", "c_double" }, 4, 3000, 1, 1, 4, 1),
             N("d_n", "drone", "드론 +1", "드론이 한 대 더", new string[0], 2, 240, 1.8, 8, 0, 2),
             N("d_spd", "drone", "드론 속도", "더 자주 줍는다", new[] { "d_n" }, 2, 300, 1.6, 6, 1, 1),
@@ -156,7 +156,7 @@ namespace SalvageRun.Orbit.Sim
             => new Node { id = id, branch = br, name = name, desc = desc, par = par, seg = seg, first = first, mult = mult, max = max, depth = depth, lane = lane };
         static readonly Dictionary<string, int> NodeIx = new Dictionary<string, int>();
         public static readonly string[] BranchIds = { "claw", "drone", "bh", "eco" };
-        public static readonly string[] BranchNames = { "집게 팔", "드론 격납고", "보급 · 폭탄", "사무실" };
+        public static readonly string[] BranchNames = { "빔 · 선체", "드론 격납고", "보급 · 폭탄", "사무실" };
         public static readonly int[] BranchNeed = { 0, 1, 2, 0 };
 
         // ───────────────────────── 청구서 여덟 (§7-3)

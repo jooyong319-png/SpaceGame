@@ -224,15 +224,15 @@ namespace SalvageRun.Orbit
                         break;
                     case SwEv.Strike:
                     {
-                        bool hand = e.v <= SweepSim.PickR + 0.1;      // 손으로 누른 한 방 — 더 또렷하게
-                        Add(ring, at, 0.1f, e.k == 1 ? Amber2 : new Color(0.35f, 0.38f, 0.44f), 5, hand ? 0.28f : 0.22f, (float)e.v * 2 / PxPerUnit);
+                        bool spot = e.v <= SweepSim.PickR + 0.1;      // 아직 좁은 빔 — 한 점
+                        Beam(at, e.k == 1);
+                        Add(ring, at, 0.1f, e.k == 1 ? Amber2 : new Color(0.35f, 0.38f, 0.44f), 5, spot ? 0.26f : 0.22f, (float)e.v * 2 / PxPerUnit);
                         if (e.k == 1)
                         {
-                            OrbitSfx.Play(hand ? "clank" : "tick", hand ? 0.55f : 0.45f, 0.05f);
-                            shake = Mathf.Max(shake, hand ? 0.05f : 0.035f);
-                            if (hand) Burst(at, Amber2, 3, 2f);
+                            OrbitSfx.Play(spot ? "clank" : "tick", spot ? 0.5f : 0.45f, 0.05f);
+                            shake = Mathf.Max(shake, spot ? 0.045f : 0.035f);
+                            Burst(at, Amber2, spot ? 3 : 5, 2.2f);
                         }
-                        else if (hand) OrbitSfx.Play("tick", 0.18f, 0.05f, 0.3f);
                         break;
                     }
                     case SwEv.Broke:
@@ -297,6 +297,17 @@ namespace SalvageRun.Orbit
                 case 3: if (!calm) slowMo = 0.8f; edgeGlow = 1f; bandLit = 1f; kessT = 1.4f; kessText = "케슬러!"; OrbitSfx.Play("cine", 1f); break;
                 case 4: if (!calm) flash = 1f; bandLit = 1f; rimLit = 1f; kessT = 2.4f; kessText = "케슬러 연쇄"; OrbitSfx.Play("ending", 0.9f); break;
             }
+        }
+
+        /// <summary>🔴 빔 — 화면 아래 선체(포구)에서 조준점까지 (사장님 09-23: "집게보단 우주선에서 빔 쏘는 느낌")</summary>
+        void Beam(Vector3 at, bool hit)
+        {
+            var muzzle = new Vector3(0, camBase - 6.4f, 0);
+            var core = Add(pixel, at, 0.05f, hit ? new Color(1f, 0.95f, 0.78f, 1f) : new Color(0.6f, 0.65f, 0.75f, 0.5f), 8, 0.22f);
+            core.a = muzzle; core.b = at; core.size = hit ? 0.1f : 0.05f;
+            var halo = Add(pixel, at, 0.05f, new Color(1f, 0.76f, 0.3f, hit ? 0.55f : 0.22f), 8, 0.3f);
+            halo.a = muzzle; halo.b = at; halo.size = hit ? 0.3f : 0.14f;
+            if (hit) Add(glow, at, 0.5f, new Color(1f, 0.87f, 0.58f, 0.6f), 7, 0.18f);
         }
 
         void CollectorShip()
@@ -516,8 +527,9 @@ namespace SalvageRun.Orbit
             bool fuel = R.fuel > 0;
             float wind = auto ? 1f - Mathf.Clamp01((float)(R.next / sim.Gap)) : 1f;
             clawWind.enabled = fuel && auto;
-            claw.transform.position = at + new Vector3(0, 0.1f + (1 - wind) * 0.2f, 0);
-            claw.transform.rotation = Quaternion.Euler(0, 0, -90);
+            claw.transform.position = at;
+            claw.transform.rotation = Quaternion.Euler(0, 0, t * 40f);        // 조준점이 천천히 돈다
+            claw.transform.localScale = Vector3.one * (0.12f + 0.05f * wind) / Mathf.Max(0.01f, droneArt.bounds.size.x);
             clawRing.transform.position = at;
             clawRing.transform.localScale = Vector3.one * r / ring.bounds.size.x;
             clawRing.color = fuel ? new Color(1f, 0.76f, 0.3f, auto ? 0.3f + 0.5f * wind : 0.9f) : new Color(0.5f, 0.54f, 0.6f, 0.4f);
@@ -578,6 +590,15 @@ namespace SalvageRun.Orbit
                         p.sr.color = new Color(p.c.r, p.c.g, p.c.b, 1 - k);
                         break;
                     case 6: tr.position += p.v * dt; break;       // 추심선
+                    case 8:      // 빔 — 포구에서 조준점까지, 굵기가 줄며 사라진다
+                    {
+                        tr.position = (p.a + p.b) / 2;
+                        var d8 = p.b - p.a;
+                        tr.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(d8.y, d8.x) * Mathf.Rad2Deg);
+                        tr.localScale = new Vector3(d8.magnitude / pixel.bounds.size.x, p.size * (1 - k * 0.7f) / pixel.bounds.size.y, 1);
+                        p.sr.color = new Color(p.c.r, p.c.g, p.c.b, p.c.a * (1 - k));
+                        break;
+                    }
                     case 7: p.sr.color = new Color(p.c.r, p.c.g, p.c.b, p.c.a * (1 - k)); break;
                 }
                 if (dead) { p.sr.gameObject.SetActive(false); pool.Push(p.sr); fx.RemoveAt(i); }
