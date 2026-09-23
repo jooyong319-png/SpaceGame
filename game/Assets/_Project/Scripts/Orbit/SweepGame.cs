@@ -62,6 +62,8 @@ namespace SalvageRun.Orbit
 
         void Awake()
         {
+            TestAim = false; TestHold = false;                                // 시험 스위치는 Play 를 넘어 남는다 (정적) — 켜진 채 남으면 사장님 커서가 안 먹는다
+            SweepHud.CastReq = false;
             Application.targetFrameRate = 60;
             Load();
             cam = Camera.main;
