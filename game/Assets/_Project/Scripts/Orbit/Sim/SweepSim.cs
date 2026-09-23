@@ -29,6 +29,9 @@ namespace SalvageRun.Orbit.Sim
     public class LoanRec { public int kind, run; public double amt; }   // kind 0 대출 · 1 판 수입에서 자동 상환 · 2 직접 상환
 
     [Serializable]
+    public class LottoTicket { public int a, b, c, round; public double price; }   // 🎱 궤도 로또 한 장
+
+    [Serializable]
     public class SweepState
     {
         public int version = 22;
@@ -38,6 +41,10 @@ namespace SalvageRun.Orbit.Sim
         public int[] lv = new int[SweepSim.NodeCount];
         public int planets = 1;                                          // 연 행성 (비트) — 지구는 늘
         public MarketState market;                                       // 📈 궤도 증권 — 회사마다 (파산하면 새 장)
+        public int scratchRun = -1, scratchN;                            // 🎟 즉석 복권 — 출동마다 3장
+        public List<LottoTicket> lotto = new List<LottoTicket>();        // 🎱 궤도 로또 — 이번 회 내 표
+        public int lottoRound = 1, lottoDrawAt = 3;                      // 다음 추첨 = 출동 번호
+        public int[] lottoLast; public int lottoLastRound, lottoLastHit; public double lottoLastWin;
         public List<LoanRec> loanLog = new List<LoanRec>();          // 대출 창에 보이는 내역 (최근 30개)
         public double lastClaw, lastDrone, lastBlast; public int lastBroke = -1, lastChain, lastContract;   // 조종실 출동 보고 — 껐다 켜도 남게 (lastContract 0 없음 · 1 성공 · 2 실패)
     }
@@ -408,6 +415,64 @@ namespace SalvageRun.Orbit.Sim
         }
         public void StockBuy(int i, double frac) { if (!StockOpen) return; double money = Math.Floor(S.cash * frac); if (money < 1) return; S.cash -= Mk.Buy(i, money, StockFee); }
         public void StockSell(int i, double frac) { if (!StockOpen) return; S.cash += Math.Floor(Mk.Sell(i, frac, StockFee)); }
+
+        // 🎟 즉석 복권 · 🎱 궤도 로또 (09-23 사장님 「복권 두 가지 다」) — 게임 안 돈만. 평균 기대값 0.7 안팎 (복권답게 손해)
+        readonly Random luck = new Random();                              // 게임 난수와 따로 — 봇 영향 없음
+        public static readonly string[] ScratchSym = { "고철", "위성", "금고", "행성", "황금" };
+        public static readonly int[] ScratchMult = { 1, 2, 5, 20, 100 };
+        public double ScratchPrice => Math.Max(10, Math.Round(BillAmount * 0.02));
+        public int ScratchLeft => S.scratchRun == S.runs ? Math.Max(0, 3 - S.scratchN) : 3;
+        public double ScratchPending;                                     // 긁어서 다 보이면 받는다
+        /// <summary>한 장 산다 — 돌려주는 값 = 칸 아홉의 그림 (null = 못 삼). win = 당첨 그림 (-1 꽝)</summary>
+        public int[] ScratchBuy(out int win)
+        {
+            win = -1;
+            if (ScratchLeft <= 0 || S.cash < ScratchPrice) return null;
+            if (S.scratchRun != S.runs) { S.scratchRun = S.runs; S.scratchN = 0; }
+            S.scratchN++; S.cash -= ScratchPrice;
+            double u = luck.NextDouble();
+            win = u < 0.001 ? 4 : u < 0.009 ? 3 : u < 0.044 ? 2 : u < 0.114 ? 1 : u < 0.234 ? 0 : -1;
+            var g = new int[9]; var cnt = new int[5];
+            var slots = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+            if (win >= 0) for (int k = 0; k < 3; k++) { int j = luck.Next(slots.Count); g[slots[j]] = win; slots.RemoveAt(j); cnt[win]++; }
+            foreach (var j in slots)
+            {
+                int sym; do sym = luck.Next(5); while (sym == win || cnt[sym] >= 2);   // 꽝 칸은 같은 그림이 둘까지만
+                g[j] = sym; cnt[sym]++;
+            }
+            ScratchPending = win >= 0 ? ScratchPrice * ScratchMult[win] : 0;
+            return g;
+        }
+        public double ScratchClaim() { double w = ScratchPending; S.cash += w; ScratchPending = 0; return w; }
+
+        public double LottoPrice => Math.Max(20, Math.Round(BillAmount * 0.03));
+        public int LottoMine => S.lotto.Count;
+        public bool LottoBuy(int a, int b, int c)
+        {
+            if (S.lotto.Count >= 3 || S.cash < LottoPrice || a == b || b == c || a == c) return false;
+            S.cash -= LottoPrice;
+            S.lotto.Add(new LottoTicket { a = a, b = b, c = c, round = S.lottoRound, price = LottoPrice });
+            return true;
+        }
+        /// <summary>출동이 끝날 때 — 추첨 날이면 번호를 뽑고 당첨금을 준다</summary>
+        void LottoDraw()
+        {
+            if (S.lotto.Count == 0) return;                               // 표를 산 출동이 끝나면 바로 추첨 (사장님 「출발 갔다 오면 당첨 번호」)
+            var pool = new List<int>(); for (int i = 1; i <= 12; i++) pool.Add(i);
+            var d = new int[3]; for (int k = 0; k < 3; k++) { int j = luck.Next(pool.Count); d[k] = pool[j]; pool.RemoveAt(j); }
+            Array.Sort(d);
+            int best = 0; double win = 0;
+            foreach (var t in S.lotto)
+            {
+                int hit = 0; foreach (var x in new[] { t.a, t.b, t.c }) if (x == d[0] || x == d[1] || x == d[2]) hit++;
+                best = Math.Max(best, hit);
+                win += t.price * (hit == 3 ? 60 : hit == 2 ? 2 : hit == 1 ? 0.3 : 0);
+            }
+            win = Math.Floor(win); S.cash += win;
+            S.lottoLast = d; S.lottoLastRound = S.lottoRound; S.lottoLastHit = S.lotto.Count > 0 ? best : -1; S.lottoLastWin = win;
+            AddNews(null, "궤도 로또 " + S.lottoRound + "회 — " + d[0] + " · " + d[1] + " · " + d[2], best == 3 ? "세 개를 다 맞힌 사람이 나왔다! 주식회사 궤도 청소부라는 소문이다." : "이번 회 당첨 번호는 " + d[0] + ", " + d[1] + ", " + d[2] + ".");
+            S.lotto.Clear(); S.lottoRound++; S.lottoDrawAt = S.runs + 3;
+        }
 
         public bool LoanAndPay()
         {
@@ -1169,6 +1234,7 @@ namespace SalvageRun.Orbit.Sim
             if (r.cut > 0) LogLoan(1, r.cut);
             S.lastClaw = r.earnClaw; S.lastDrone = r.earnDrone; S.lastBlast = r.earnBlast; S.lastBroke = r.broke; S.lastChain = r.chainBest;
             S.lastContract = r.contractText == null ? 0 : r.contractOk ? 1 : 2;
+            LottoDraw();                                                // 🎱 추첨 날이면
             CheckClean();                                               // 판 수입에서 떼어 빚을 다 갚았을 수도
             RollContract();
             Emit(SwEv.RunEnd);
