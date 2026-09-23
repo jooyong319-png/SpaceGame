@@ -374,8 +374,21 @@ namespace SalvageRun.Orbit
 
             // 오른쪽 아래 — 다음 해금 (청구서를 갚으면 열리는 것)
             var RB = new Rect(cx + 10, 270, 410, 120);
-            Panel2(RB, sim.S.bill < SweepSim.Bills.Length ? "청구서를 갚으면 열린다" : null);
-            if (S.bill < SweepSim.Bills.Length)
+            // 연체가 이어져 사실상 못 갚는 벽 — 다음 해금 대신 파산 안내 (설계상 첫 파산 자리. 구석 단추만으로는 모른다)
+            bool stuck = sim.CanBankrupt && S.overdue && (S.bill >= 3 || S.overRuns >= 3);
+            if (stuck)
+            {
+                Panel2(RB, "<color=#ff9b8f>이 청구서는 못 갚는다</color>");
+                GUI.Label(new Rect(RB.x + 16, RB.y + 30, RB.width - 32, 20), "<size=13>파산하면 빚이 사라지고 <color=#ffdf95>신용 +" + S.creditPending + "</color></size>", label);
+                GUI.Label(new Rect(RB.x + 16, RB.y + 50, RB.width - 32, 20), "<size=13>신용으로 경력을 사면 다음 회사는 처음부터 더 세다</size>", label);
+                var bb = new Rect(RB.x + 16, RB.y + 76, RB.width - 32, 34);
+                if (GUI.Button(bb, bankruptArmed ? "<color=#ffb3a8>정말? 한 번 더 누르면 파산</color>" : "<color=#ffb3a8>파산하고 새 회사로 ▸</color>", btn))
+                {
+                    if (bankruptArmed) { sim.Bankrupt(); bankruptArmed = false; showResult = false; } else bankruptArmed = true;
+                }
+            }
+            else Panel2(RB, sim.S.bill < SweepSim.Bills.Length ? "청구서를 갚으면 열린다" : null);
+            if (!stuck && S.bill < SweepSim.Bills.Length)
             {
                 float prog = Mathf.Clamp01((float)(S.cash / System.Math.Max(1, sim.BillAmount)));
                 var sil = new Rect(RB.x + 18, RB.y + 34, 72, 72);
