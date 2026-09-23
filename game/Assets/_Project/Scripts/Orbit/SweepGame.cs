@@ -77,9 +77,9 @@ namespace SalvageRun.Orbit
             junkArt = OrbitArt.Debris(); deadSat = OrbitArt.DeadSat(); wreck = OrbitArt.BigWreck(); droneArt = OrbitArt.Drone();
 
             Stars();
-            moon = Make(disc, PxToWorld(862, 104), 0.6f, new Color(0.6f, 0.62f, 0.66f), 1);
-            sun = Make(glow, PxToWorld(96, 528), 7.5f, new Color(1f, 0.86f, 0.6f, 0.18f), 0);     // 정지궤도 — 멀리 있는 태양
-            sunCore = Make(disc, PxToWorld(96, 528), 0.5f, new Color(1f, 0.95f, 0.82f, 0.9f), 1);
+            moon = Make(disc, PxToWorld(790, 122), 0.6f, new Color(0.6f, 0.62f, 0.66f), 1);
+            sun = Make(glow, PxToWorld(160, 500), 7.5f, new Color(1f, 0.86f, 0.6f, 0.18f), 0);     // 정지궤도 — 멀리 있는 태양
+            sunCore = Make(disc, PxToWorld(160, 500), 0.5f, new Color(1f, 0.95f, 0.82f, 0.9f), 1);
             atmo = Make(glow, Vector3.zero, 3.4f, new Color(0.35f, 0.6f, 1f, 0.35f), 4);
             earth = Make(PlanetArt.Get(0), Vector3.zero, 2.4f, Color.white, 5);
             ringB = Make(PlanetArt.RingBack, Vector3.zero, 1f, Color.white, 4);      // 토성 고리 — 뒤 · 앞
@@ -182,7 +182,8 @@ namespace SalvageRun.Orbit
             kessT = Mathf.MoveTowards(kessT, 0, dt);
             // 조종실에선 카메라가 물러나 지구가 창 가운데 오게 (창 = SweepHud.Win)
             bool cockpit = hud != null && hud.CockpitView;
-            float wantSize = cockpit ? 9.6f : 6f;
+            // 출동 중엔 궤도 띠가 화면에 차도록 당긴다 (사장님 「좀 더 확대」) — 띠가 넓어지면 그만큼 물러난다
+            float wantSize = cockpit ? 9.6f : Mathf.Clamp((float)sim.Bo * 0.0182f, 4.4f, 6.5f);
             cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, wantSize, 1 - Mathf.Exp(-dt * 5f));
             float camY = cockpit ? -0.3f * cam.orthographicSize : 0f;
             camBase = Mathf.Lerp(camBase, camY, 1 - Mathf.Exp(-dt * 5f));
@@ -311,7 +312,7 @@ namespace SalvageRun.Orbit
         /// <summary>🔴 빔 — 화면 아래 선체(포구)에서 조준점까지 (사장님 09-23: "집게보단 우주선에서 빔 쏘는 느낌")</summary>
         void Beam(Vector3 at, bool hit)
         {
-            var muzzle = new Vector3(0, camBase - 6.4f, 0);
+            var muzzle = new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);   // 화면 아래 끝 — 확대해도 청소선에서 나온다
             var core = Add(pixel, at, 0.05f, hit ? new Color(1f, 0.95f, 0.78f, 1f) : new Color(0.6f, 0.65f, 0.75f, 0.5f), 8, 0.22f);
             core.a = muzzle; core.b = at; core.size = hit ? 0.1f : 0.05f;
             var halo = Add(pixel, at, 0.05f, new Color(1f, 0.76f, 0.3f, hit ? 0.55f : 0.22f), 8, 0.3f);
