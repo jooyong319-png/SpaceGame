@@ -489,8 +489,9 @@ namespace SalvageRun.Orbit
                 if (bankruptArmed) { sim.Bankrupt(); bankruptArmed = false; showResult = false; } else bankruptArmed = true;
             }
             // 출동
-            if (GUI.Button(new Rect(ox + 700, y, 246, 62), M.cleanReady ? "청산 출동 ▸" : "출동 ▸", bigBtn) && paidT < 2.4f) Go();
-            GUI.Label(new Rect(ox + 700, y + 64, 246, 14), "<size=10>Space · 한 판 " + Mathf.RoundToInt((float)sim.FuelMax) + "초</size>", center);
+            bool due = S.overdue && !M.cleanReady;                     // 납부일 — 출동 전에 청구서부터
+            if (GUI.Button(new Rect(ox + 700, y, 246, 62), M.cleanReady ? "청산 출동 ▸" : due ? "<size=18>납부일 — 청구서부터</size>" : "출동 ▸", due ? btnOff : bigBtn) && paidT < 2.4f) Go();
+            GUI.Label(new Rect(ox + 700, y + 64, 246, 14), due ? "<size=11><color=" + (dueNag > 0 ? "#ff9b8f" : "#b8a89a") + ">위 청구서 줄: 갚기 · 대출 · 또는 파산</color></size>" : "<size=10>Space · 한 판 " + Mathf.RoundToInt((float)sim.FuelMax) + "초</size>", center);
         }
 
         bool CanPayNow => !sim.M.cleanReady && sim.S.bill < SweepSim.Bills.Length && sim.S.cash >= sim.BillAmount;
@@ -633,7 +634,9 @@ namespace SalvageRun.Orbit
             if (S.bill < SweepSim.Bills.Length && !sim.M.cleanReady)
             {
                 string bl = "청구서 · " + SweepSim.Bills[S.bill].t + " <color=#ffdf95>" + KNum.Fmt(sim.BillAmount) + "</color>" + (S.overdue ? "  <color=#ff8a7a>오늘 납부일</color>" : " · " + S.billDue + "판 남음") + (S.debt > 0 ? "  <color=#ffb3a8>빚 " + KNum.Fmt(S.debt) + "</color>" : "") + (S.cash >= sim.BillAmount ? "  <color=#6fcf97>▶ 눌러서 갚기</color>" : "");
-                if (GUI.Button(new Rect(ox + 240, 8, 500, 30), bl, S.cash >= sim.BillAmount ? btn : btnOff) && S.cash >= sim.BillAmount) sim.PayBill();
+                bool loanPay = S.overdue && S.cash < sim.BillAmount && sim.BillAmount - S.cash <= sim.LoanCap;
+                if (loanPay) bl += "  <color=#6fcf97>▶ 대출 " + KNum.Fmt(sim.BillAmount - S.cash) + " 받아 갚기</color>";
+                if (GUI.Button(new Rect(ox + 240, 8, 500, 30), bl, S.cash >= sim.BillAmount || loanPay ? btn : btnOff)) { if (S.cash >= sim.BillAmount) sim.PayBill(); else if (loanPay) sim.LoanAndPay(); }
             }
             int unreadN = sim.Unread;
             if (GUI.Button(new Rect(ox + 780, 8, 166, 30), "궤도일보" + (unreadN > 0 ? "  <color=#ff8a7a>● " + unreadN + "</color>" : ""), btn)) { newsOpen = true; newsSel = -1; }
