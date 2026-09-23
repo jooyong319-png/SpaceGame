@@ -586,7 +586,7 @@ namespace SalvageRun.Orbit
             claw.enabled = clawRing.enabled = show;
             clawWind.enabled = show && R.fuel > 0;
             holeCore.enabled = holeGlow.enabled = holeRing.enabled = holding;
-            Cursor.visible = !show;
+            Cursor.visible = true;                                         // 마우스는 늘 보인다 — 판 중 · AUTO 여도 (사장님 09-24)
             if (holding)
             {
                 var hp = PxToWorld(R.hx, R.hy);
