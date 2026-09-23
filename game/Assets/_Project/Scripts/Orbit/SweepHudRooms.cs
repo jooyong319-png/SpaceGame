@@ -822,7 +822,7 @@ namespace SalvageRun.Orbit
         {
             int p = sim.Lv("a_auto"), c = sim.Lv("a_ins");
             return (p > 0 ? "<color=#ffdf95>개미의 기도</color> <color=" + UpHex + ">내 종목 ↑</color>" : "<color=#3f4652>개미의 기도 · 잠김</color>") + "   " +
-                   (c > 0 ? "<color=#9ff0bf>행운의 부적 " + c + "</color> <color=#8a9bb3>나쁜 속보 " + new[] { 0, 60, 70, 80 }[Mathf.Min(3, c)] + "% 뒤집기</color>" : "<color=#3f4652>행운의 부적 · 잠김</color>");
+                   (c > 0 ? "<color=#9ff0bf>행운의 부적 " + c + "</color> <color=#8a9bb3>나쁜 속보 " + new[] { 0, 60, 70, 80 }[Mathf.Min(3, c)] + "% 피하기</color>" : "<color=#3f4652>행운의 부적 · 잠김</color>");
         }
     }
 }

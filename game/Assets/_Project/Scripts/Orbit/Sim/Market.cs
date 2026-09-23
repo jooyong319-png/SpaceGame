@@ -160,10 +160,10 @@ namespace SalvageRun.Orbit.Sim
             if (M.newsT >= M.nextNewsT)
             {
                 var nd = NewsBook[M.nextNews];
-                if (luck > 0 && HitsHeld(nd.down) && rng.NextDouble() < luck)          // 🍀 행운의 부적 — 내 종목 악재 → 내 종목 호재로 바꿔 친다
+                if (luck > 0 && HitsHeld(nd.down) && rng.NextDouble() < luck)          // 🍀 행운의 부적 — 내 종목 악재를 피해 간다 (내 종목을 안 때리는 다른 속보로). 호재로 바꾸면 10분에 ×2 까지 나와서 약하게 (09-24 점검)
                 {
                     var good = new List<int>();
-                    for (int k = 0; k < NewsBook.Length; k++) if (NewsBook[k].down == null && HitsHeld(NewsBook[k].up)) good.Add(k);
+                    for (int k = 0; k < NewsBook.Length; k++) if (!HitsHeld(NewsBook[k].down)) good.Add(k);
                     if (good.Count > 0) nd = NewsBook[good[rng.Next(good.Count)]];
                 }
                 Publish(nd.head, nd.body, nd.up, nd.down, nd.size, nd.rumor); RollNews();

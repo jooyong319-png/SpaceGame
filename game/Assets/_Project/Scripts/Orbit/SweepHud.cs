@@ -1416,7 +1416,7 @@ namespace SalvageRun.Orbit
                 case "a_open": return l > 0 ? "열림" : "잠김";
                 case "a_auto": return l > 0 ? "내 종목 봉마다 +0.08% 쪽으로" : "없음";
                 case "a_read": return new[] { "없음", "다음 속보까지 시간", "+ 업종", "+ 제목까지" }[Mathf.Min(3, l)];
-                case "a_ins": return l == 0 ? "없음" : "나쁜 속보 → 좋은 속보 " + new[] { 0, 60, 70, 80 }[Mathf.Min(3, l)] + "%";
+                case "a_ins": return l == 0 ? "없음" : "나쁜 속보 피하기 " + new[] { 0, 60, 70, 80 }[Mathf.Min(3, l)] + "%";
                 case "a_big": return "수수료 " + new[] { "1", "0.6", "0.3", "0" }[Mathf.Min(3, l)] + "% · 배당 +" + (0.03f * l).ToString("0.00") + "%";
                 case "c_fuel": return (30 + 3 * l) + "초";
                 case "c_crit": return (5 * l) + "%";
