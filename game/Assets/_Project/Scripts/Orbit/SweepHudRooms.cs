@@ -57,8 +57,11 @@ namespace SalvageRun.Orbit
                 else if (f == 3)
                 {
                     GUI.color = new Color(0.02f, 0.027f, 0.04f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
+                    bool en0 = GUI.enabled; GUI.enabled = en0 && !partsOpen;
                     Bay(); FlowBottom();
                     if (NavTab(true, "조종실로", "", SweepGame.Amber)) GoFlow(2);
+                    GUI.enabled = en0;
+                    if (partsOpen) PartsWin();
                 }
                 else StockRoom();
             }
@@ -825,9 +828,9 @@ namespace SalvageRun.Orbit
         }
 
         // ───────────────────────────────── ✨ 칸을 샀을 때 — 퍼지는 고리 · 불꽃 · 해금 칸이면 「해금!」 (09-24)
-        struct BuyBurst { public Vector2 p; public Color c; public float t0; public bool big; }
+        struct BuyBurst { public Vector2 p; public Color c; public float t0; public bool big; public string txt; }
         readonly List<BuyBurst> bursts = new List<BuyBurst>();
-        void BuyFx(Vector2 p, Color c, bool big) { bursts.Add(new BuyBurst { p = p, c = c, t0 = Time.unscaledTime, big = big }); if (big) OrbitSfx.Play("launch", 0.35f); }
+        void BuyFx(Vector2 p, Color c, bool big, string txt = "해금!") { bursts.Add(new BuyBurst { p = p, c = c, t0 = Time.unscaledTime, big = big, txt = txt }); if (big) OrbitSfx.Play("launch", 0.35f); }
         void BuyFxDraw()
         {
             float now = Time.unscaledTime;
@@ -840,7 +843,7 @@ namespace SalvageRun.Orbit
                 int seg = 28;
                 for (int s = 0; s < seg; s++) { float an = s * Mathf.PI * 2 / seg; GUI.DrawTexture(new Rect(b.p.x + Mathf.Cos(an) * R - 2, b.p.y + Mathf.Sin(an) * R - 2, 4, 4), white); }
                 for (int s = 0; s < (b.big ? 14 : 8); s++) { float an = s * 2.39996f, d = R * (0.6f + 0.5f * ((s * 37) % 10) / 10f); GUI.color = new Color(1f, 0.93f, 0.7f, a); GUI.DrawTexture(new Rect(b.p.x + Mathf.Cos(an) * d - 1.5f, b.p.y + Mathf.Sin(an) * d - 1.5f, 3, 3), white); }
-                if (b.big) { GUI.color = new Color(1, 1, 1, Mathf.Clamp01(a * 1.5f)); GUI.Label(new Rect(b.p.x - 80, b.p.y - 46 - 30 * k, 160, 30), "<size=18><b><color=#ffdf95>해금!</color></b></size>", center); }
+                if (b.big) { GUI.color = new Color(1, 1, 1, Mathf.Clamp01(a * 1.5f)); GUI.Label(new Rect(b.p.x - 80, b.p.y - 46 - 30 * k, 160, 30), "<size=18><b><color=#" + ColorUtility.ToHtmlStringRGB(Color.Lerp(b.c, Color.white, 0.4f)) + ">" + b.txt + "</color></b></size>", center); }
             }
             GUI.color = Color.white;
         }
@@ -857,8 +860,22 @@ namespace SalvageRun.Orbit
                 var b = new Rect(x, r.y, 76, r.height);
                 GUI.color = on ? new Color(0.35f, 0.12f, 0.1f) : own ? new Color(0.12f, 0.1f, 0.1f) : new Color(0.07f, 0.07f, 0.08f); GUI.DrawTexture(b, white);
                 Frame(b, on ? new Color(1f, 0.55f, 0.5f) : own ? new Color(0.45f, 0.3f, 0.28f) : new Color(0.18f, 0.18f, 0.2f), on ? 2 : 1);
-                GUI.Label(b, "<size=12>" + (on ? "<b><color=#ffd0c8>" : own ? "<color=#c8a8a0>" : "<color=#3f4652>") + SweepSim.WeaponName[w] + (own ? "" : " 🔒") + (on ? "</color></b>" : "</color>") + "</size>", center);
+                GUI.Label(b, "<size=12>" + (on ? "<b><color=#ffd0c8>" : own ? "<color=#c8a8a0>" : "<color=#3f4652>") + SweepSim.WeaponName[w] + (own ? "" : " (잠김)") + (on ? "</color></b>" : "</color>") + "</size>", center);
                 if (own && !on && GUI.Button(b, GUIContent.none, GUIStyle.none) && sim.Equip(w)) { OrbitSfx.Play("grab", 0.7f); BuyFx(b.center, new Color(1f, 0.55f, 0.5f), false); }
+                x += 80;
+            }
+            if (sim.Lv("w_slot2") <= 0) return;
+            float y2 = r.y + r.height + 6; x = r.x + 38;
+            GUI.Label(new Rect(r.x, y2 + 6, 40, 20), "<size=11><color=#b69cff>보조</color></size>", label);
+            for (int w = -1; w < SweepSim.WeaponName.Length; w++)
+            {
+                if (w == sim.Weapon) continue;
+                bool own = w < 0 || sim.WeaponOwned(w), on = sim.S.weapon2 == w;
+                var b = new Rect(x, y2, 76, r.height);
+                GUI.color = on ? new Color(0.2f, 0.14f, 0.32f) : new Color(0.08f, 0.08f, 0.1f); GUI.DrawTexture(b, white);
+                Frame(b, on ? KeyCol : new Color(0.22f, 0.2f, 0.28f), on ? 2 : 1);
+                GUI.Label(b, "<size=12>" + (on ? "<b><color=#d8ccff>" : own ? "<color=#a89cc8>" : "<color=#3f4652>") + (w < 0 ? "없음" : SweepSim.WeaponName[w]) + (on ? "</color></b>" : "</color>") + "</size>", center);
+                if (own && !on && GUI.Button(b, GUIContent.none, GUIStyle.none) && sim.Equip2(w)) { OrbitSfx.Play("grab", 0.7f); BuyFx(b.center, KeyCol, false); }
                 x += 80;
             }
         }

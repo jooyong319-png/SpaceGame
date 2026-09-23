@@ -35,7 +35,9 @@ namespace SalvageRun.Orbit.Sim
     public class SweepState
     {
         public int version = 22;
-        public int weapon;                                                   // ⚔ 장착한 무기 (0 집게 빔 · 1 레이저 · 2 번개)
+        public int weapon, weapon2 = -1, keys;                               // ⚔ 무기 · 보조 무기 · 🔑 열쇠
+        public int[] parts = { -1, -1, -1, -1, -1 };                           // 🔩 부품 칸 다섯
+        public List<int> shop = new List<int>();                             // 가게 진열 (Parts.Key = 열쇠)                                                   // ⚔ 장착한 무기 (0 집게 빔 · 1 레이저 · 2 번개)
         public double cash, billAmount = -1, creditPending, startedAt, debt;   // debt = 갚아야 할 빚 (대출 × 배수)
         public int runs, orbit, bill, billDue = 5, overRuns, contract = -1;
         public bool overdue, rerolled;
@@ -70,7 +72,7 @@ namespace SalvageRun.Orbit.Sim
 
     public class SweepRun
     {
-        public double shipA = -1.57, heat = 1;                            // 청소선 — 궤도 바깥에서 조준 방향으로 따라온다 · 레이저 열
+        public double shipA = -1.57, heat = 1, next2; public bool twin;                            // 청소선 — 궤도 바깥에서 조준 방향으로 따라온다 · 레이저 열
         public double hx, hy, holeCd, clickCd, fuelGot, refill, fuel, max, t, next = 0.3, endT, formT = 9, rushT, rushX, rushY, chainT, holdT, ax = 480, ay = 310, refillT;
         public double ev1T = -1, ev2T = -1, stormT; public int ev1 = -1, ev2 = -1, stormLeft; public bool ev1Warn, ev2Warn, collector;
         public int shots, maxShots, chain, chainBest, packBest, broke, tier, idc;
@@ -193,8 +195,18 @@ namespace SalvageRun.Orbit.Sim
             N("w_chain", "arm", "번개", "맞으면 옆으로 다섯 번 튄다 — 흩어진 잔해에 강하다", new[] { "w_laser" }, 1, 5000, 1, 1, 0, 0),
             N("w_chain_u", "arm", "번개 강화", "1단계 두 번 더 튄다 · 2단계 튈수록 세진다", new[] { "w_chain" }, 1, 9000, 4, 2, 0, 0),
             N("w_chain_a", "arm", "번개 각성", "튄 자리마다 작은 폭발 — 연쇄로 이어진다", new[] { "w_chain_u" }, 1, 90000, 1, 1, 0, 0),
+            // 🔩 부품 거래 · ◆ 핵심 칸 (09-24 설계서 3단계)
+            N("e_shop", "eco", "부품 거래", "부품 가게가 열린다 — 청소선 부품 칸 다섯에 사서 끼운다 · 진열은 출동마다 바뀐다", new[] { "e_save" }, 1, 1500, 1, 1, 0, 0),
+            N("k_claw", "claw", "◆ 과열 사격", "모든 무기 화력 +40% — 대신 연료 −15%", new[] { "c_over" }, 1, 30000, 1, 1, 0, 0),
+            N("k_drone", "drone", "◆ 벌떼", "드론 +4대 — 대신 드론 몫 −25%", new[] { "d_fact" }, 1, 60000, 1, 1, 0, 0),
+            N("k_bh", "bh", "◆ 쌍둥이 블랙홀", "블랙홀이 터지면 그 자리에 한 번 더 열린다 — 대신 여는 확률 −30%", new[] { "s_speed" }, 1, 40000, 1, 1, 0, 0),
+            N("k_eco", "eco", "◆ 큰손", "모든 값 +25% — 대신 청구서 +10%", new[] { "e_used" }, 1, 80000, 1, 1, 0, 0),
+            N("k_route", "route", "◆ 궤도 공명", "행성 값 배수 +0.5 — 대신 잔해 체력 +20%", new[] { "p_sat" }, 1, 150000, 1, 1, 0, 0),
+            N("w_slot2", "arm", "◆ 두 번째 무기 칸", "보조 무기를 함께 쏜다 (절반 빠르기) — 정비고 무기 단추 둘째 줄", new[] { "w_chain" }, 1, 50000, 1, 1, 0, 0),
         };
-        public const int NodeCount = 52;
+        public const int NodeCount = 59;
+        /// <summary>◆ 핵심 칸 — 돈 + 열쇠 하나 (부품 가게에서 산다). 각성도 여기</summary>
+        public static readonly HashSet<string> KeyNodes = new HashSet<string> { "w_laser_a", "w_chain_a", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2" };
         public static readonly string[] WeaponName = { "집게 빔", "레이저", "번개" };
         public static readonly string[] WeaponNode = { null, "w_laser", "w_chain" };
         public static readonly string[] PlanetNode = { null, "p_moon", "p_mars", "p_jup", "p_sat" };
@@ -256,8 +268,15 @@ namespace SalvageRun.Orbit.Sim
             { "w_chain", new TreeSpot { par = "w_laser", tile = 1, x = 4, y = -3, dx = 0, dy = 0 } },
             { "w_chain_u", new TreeSpot { par = "w_chain", tile = 1, x = 5, y = -3, dx = 1, dy = 0 } },
             { "w_chain_a", new TreeSpot { par = "w_chain_u", tile = 2, x = 7, y = -3, dx = 0, dy = 0 } },
+            { "e_shop", new TreeSpot { par = "e_save", tile = 2, x = -2, y = 7, dx = 0, dy = 0 } },
+            { "k_claw", new TreeSpot { par = "c_over", tile = 1, x = -2, y = -11, dx = 0, dy = 0 } },
+            { "k_drone", new TreeSpot { par = "d_fact", tile = 2, x = 14, y = 1, dx = 0, dy = 0 } },
+            { "k_bh", new TreeSpot { par = "s_speed", tile = 4, x = 0, y = 10, dx = 0, dy = 0 } },
+            { "k_eco", new TreeSpot { par = "e_used", tile = 3, x = -5, y = 8, dx = 0, dy = 0 } },
+            { "k_route", new TreeSpot { par = "p_sat", tile = 1, x = -9, y = -3, dx = 0, dy = 0 } },
+            { "w_slot2", new TreeSpot { par = "w_chain", tile = 1, x = 3, y = -4, dx = 0, dy = 0 } },
         };
-        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R", "a_open", "a_auto", "a_read", "a_ins", "a_big", "p_moon", "p_mars", "p_jup", "p_sat", "w_hub", "w_laser", "w_laser_u", "w_laser_a", "w_chain", "w_chain_u", "w_chain_a" };
+        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R", "a_open", "a_auto", "a_read", "a_ins", "a_big", "p_moon", "p_mars", "p_jup", "p_sat", "w_hub", "w_laser", "w_laser_u", "w_laser_a", "w_chain", "w_chain_u", "w_chain_a", "e_shop", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2" };
         public static string VisBranch(string id) => id.StartsWith("w_") ? "arm" : id == "c_fuel" || id == "o_wide" || id == "c_find" ? "hull" : id == "s_speed" ? "bh" : Nodes[NodeIx[id]].branch;
 
         static Node N(string id, string br, string name, string desc, string[] par, int seg, double first, double mult, int max, int depth, int lane)
@@ -354,6 +373,8 @@ namespace SalvageRun.Orbit.Sim
             if (S.bill >= 1 && S.lv[NodeIx["d_n"]] == 0) S.lv[NodeIx["d_n"]] = 1;        // 옛 저장 — 청구서로 받은 것들은 칸으로 옮겨 준다
             if (S.bill >= 2 && S.lv[NodeIx["b_n"]] == 0) S.lv[NodeIx["b_n"]] = 1;
             if (S.bill >= 2 && S.lv[NodeIx["e_quest"]] == 0) S.lv[NodeIx["e_quest"]] = 1;
+            if (S.parts == null || S.parts.Length != 5) S.parts = new[] { -1, -1, -1, -1, -1 };
+            if (ShopOpen && (S.shop == null || S.shop.Count == 0)) RollShop();
             if (M.news.Count == 0) AddNews("first_run");
             if (ContractsOn && (S.contract < 0 || S.contract < Contracts.Length && Contracts[S.contract].orbit < 0)) RollContract();     // 의뢰가 비었거나 이제 없는 압류 딱지 의뢰면 새로
             Preview();
@@ -372,7 +393,8 @@ namespace SalvageRun.Orbit.Sim
         public bool BombsOn => Lv("b_n") > 0;
         public bool WeaponOwned(int w) => w == 0 || (w < WeaponNode.Length && Lv(WeaponNode[w]) > 0);
         public int Weapon => WeaponOwned(S.weapon) ? S.weapon : 0;
-        public bool Equip(int w) { if (!WeaponOwned(w) || R != null && !R.over) return false; S.weapon = w; return true; }
+        public bool Equip(int w) { if (!WeaponOwned(w) || R != null && !R.over) return false; S.weapon = w; if (S.weapon2 == w) S.weapon2 = -1; return true; }
+        public bool Equip2(int w) { if (Lv("w_slot2") <= 0 || w >= 0 && (!WeaponOwned(w) || w == S.weapon) || R != null && !R.over) return false; S.weapon2 = w; return true; }
         public bool ContractsOn => Lv("e_quest") > 0;
         public bool BigsOn => S.orbit >= 2;                              // 큰 잔해는 화성부터 (행성의 성격)
         public int MaxOrbit { get { int m = 0; for (int i = 0; i < Orbits.Length; i++) if (Open(i)) m = i; return m; } }
@@ -390,20 +412,24 @@ namespace SalvageRun.Orbit.Sim
             S.orbit = i; RollContract(); Preview();
             if (Mk != null && StockOpen) { string[] sec = { "", "달", "화성", "목성", "관광" }; Mk.GameEvent("민간 청소선 " + Orbits[i].name + " 진출", "궤도 청소부가 " + Orbits[i].name + " 청소 허가를 땄다. 관련 업계가 들썩인다.", new[] { sec[i], "ship" }, null, 0.14f); }
         }
-        public double FuelMax => (30 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.2 * Cr(0));
-        public double Gap => Math.Max(0.3, 0.6 - 0.045 * Lv("c_spd"));
-        public double ClawR => Lv("c_rad") > 0 ? 22 + 10 * Lv("c_rad") : 0;   // 0 = 하나씩
+        public double FuelMax => Math.Max(12, ((30 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.2 * Cr(0)) + Part("fuel")) * (Lv("k_claw") > 0 ? 0.85 : 1));
+        public double Gap => Math.Max(0.3, 0.6 - 0.045 * Lv("c_spd")) / (1 + Part("spd"));
+        public double ClawR => Lv("c_rad") > 0 ? (22 + 10 * Lv("c_rad")) * (1 + Part("rad")) : 0;   // 0 = 하나씩
         public bool AutoClaw => true;        // 🔴 자동이 기본 (사장님 09-23: "클릭은 빼자 오토는 기본으로")
         public const double PickR = 30;      // 범위 강화 전 — 커서 밑 하나를 잡는 거리
         public int ClawDmg => 1 + Lv("c_pow");
-        public double HpMul => (1 + 0.45 * Math.Max(0, S.bill - 2)) * Orbits[S.orbit].hp;   // 잔해 체력 배율 — 청구서 3장째부터 한 장마다 +45% (초반은 가볍게)
+        public double Part(string k) => Parts.Sum(S.parts, k);
+        public double DmgMul => 1 + Part("dmg") + (Lv("k_claw") > 0 ? 0.4 : 0);
+        public double Pow => ClawDmg * DmgMul;                                  // 무기 화력 (소수는 확률로)
+        int RoundP(double v) => (int)v + (Rnd() < v - (int)v ? 1 : 0);
+        public double HpMul => ((1 + 0.45 * Math.Max(0, S.bill - 2)) * Orbits[S.orbit].hp) * (Lv("k_route") > 0 ? 1.2 : 1);   // 잔해 체력 배율 — 청구서 3장째부터 한 장마다 +45% (초반은 가볍게)
         public int BlastDmg => 2 + 2 * ClawDmg;                    // 폭발은 즉사가 아니라 피해
-        public double Crit => 0.05 * Lv("c_crit");
-        public int DroneCount => DronesOn ? 1 + Lv("d_n") + Lv("d_fact") + Cr(3) : 0;   // 격납고 첫 칸 = 두 대
+        public double Crit => 0.05 * Lv("c_crit") + Part("crit");
+        public int DroneCount => DronesOn ? 1 + Lv("d_n") + Lv("d_fact") + Cr(3) + (Lv("k_drone") > 0 ? 4 : 0) : 0;   // 격납고 첫 칸 = 두 대
         public double DroneCd => Math.Max(0.4, 1 - 0.1 * Lv("d_spd"));
         public double Reach => 80 + 15 * Lv("d_reach");
         public int Grade => 1 + Lv("d_grade");
-        public double DroneMag => 1 + 0.25 * Lv("d_mag");
+        public double DroneMag => (1 + 0.25 * Lv("d_mag")) * (1 + Part("drone")) * (Lv("k_drone") > 0 ? 0.75 : 1);
         public int Bombs => BombsOn ? Math.Min(6, 2 + Lv("b_n") + (S.bill >= 7 ? 1 : 0) + Cr(4)) : 0;
         public double PullR => 90 + 14 * Lv("b_pr");                // 09-24 사장님 「블랙홀 크기 많이 줄이고」 150+20 → 90+14
         public double PullF => 1 + 0.25 * Lv("b_pf");
@@ -411,13 +437,13 @@ namespace SalvageRun.Orbit.Sim
         public double BlastK => 1 + 0.15 * Lv("b_br");
         public double ChainP => Math.Min(0.85, 0.3 + 0.07 * Lv("b_chain"));    // 무기 폭발이 또 번질 확률
         public double HoleCd => 16 - 1.5 * Lv("s_speed");     // (옛 시간 충전 — 이제 안 쓴다)
-        public double HoleChance => R.clean ? 0.05 : 0.012 + 0.002 * Lv("b_n") + 0.0025 * Lv("s_speed");   // 🌀 블랙홀 — 집게가 맞힐 때 이 확률로 그 자리에 저절로 열린다 (09-24 사장님 「자동으로 바닥에 깔리는 걸로」 · Q 스킬 없앰)
+        public double HoleChance => R.clean ? 0.05 : (0.012 + 0.002 * Lv("b_n") + 0.0025 * Lv("s_speed") + Part("hole")) * (Lv("k_bh") > 0 ? 0.7 : 1);   // 🌀 블랙홀 — 집게가 맞힐 때 이 확률로 그 자리에 저절로 열린다 (09-24 사장님 「자동으로 바닥에 깔리는 걸로」 · Q 스킬 없앰)
         public const double HoleDur = 3;                           // 열려 있는 시간 — 끝나면 저절로 터진다
         public double PackK => 0.02 + 0.012 * Lv("b_pack");
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
         public int ChainMax => R.clean ? 5000 : 40 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 15 * Lv("b_chain");
-        public double ValMult => Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * Orbits[S.orbit].mult * Econ;
-        public double Cut => S.debt > 0 ? (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) : 0;   // 빚이 있으면 판 수입에서 떼어 상환
+        public double ValMult => Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (Orbits[S.orbit].mult + (Lv("k_route") > 0 && S.orbit > 0 ? 0.5 : 0)) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1);
+        public double Cut => S.debt > 0 ? Math.Max(0.1, (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) - Part("cut")) : 0;   // 빚이 있으면 판 수입에서 떼어 상환
         // ── 대출 (연체 대신) — 언제든 받을 수 있다. 받은 돈 × 배수를 판 수입에서 조금씩 갚는다
         public static double LoanMult = 3;
         void CheckClean() { if (S.bill >= Bills.Length && S.debt <= 0.5) { S.debt = 0; M.cleanReady = true; } }   // 청구서도 빚도 다 갚아야 청산 출동
@@ -439,8 +465,8 @@ namespace SalvageRun.Orbit.Sim
         // 📈 궤도 증권 — 규칙은 Market.cs. 여기선 돈 · 칸과 잇는다
         public Market Mk;
         public bool StockOpen => Lv("a_open") > 0;
-        public double StockFee => new[] { 0.01, 0.006, 0.003, 0 }[Math.Min(3, Lv("a_big"))];
-        public double StockDiv => 0.0003 * Lv("a_big");
+        public double StockFee => Part("fee0") > 0 ? 0 : new[] { 0.01, 0.006, 0.003, 0 }[Math.Min(3, Lv("a_big"))];
+        public double StockDiv => 0.0003 * Lv("a_big") + Part("div");
         public double LuckAt => new[] { 0, 0.6, 0.7, 0.8 }[Math.Min(3, Lv("a_ins"))];   // 🍀 행운의 부적 — 내 종목 나쁜 속보를 좋은 속보로 (09-24 사장님 「자동 매도 말고 오를 확률」)
         void MakeMarket()
         {
@@ -535,10 +561,45 @@ namespace SalvageRun.Orbit.Sim
             CheckClean();
             return true;
         }
+        // 🔩 부품 가게 — 진열 셋, 출동이 끝날 때마다 새로. 값은 지금 청구서에 맞춰 오른다
+        public bool ShopOpen => Lv("e_shop") > 0;
+        public double ShopBase => Math.Max(120, Math.Round(BillAmount * 0.3 / 10) * 10);
+        public double PartPrice(int id) => id == Parts.Key ? ShopBase * 2.5 : ShopBase * Parts.RarPrice[Parts.Defs[id].rar];
+        public double RerollPrice => Math.Round(ShopBase * 0.25);
+        public void RollShop()
+        {
+            if (S.shop == null) S.shop = new List<int>();
+            S.shop.Clear();
+            var used = new HashSet<int>(S.parts ?? new int[0]);
+            bool key = false;
+            for (int n = 0; n < 3; n++)
+            {
+                if (!key && Rnd() < 0.18) { S.shop.Add(Parts.Key); key = true; continue; }
+                for (int t = 0; t < 30; t++)
+                {
+                    double u = Rnd(); int rar = u < 0.68 ? 0 : u < 0.94 ? 1 : 2;
+                    int id = rng.Next(Parts.Defs.Length);
+                    if (Parts.Defs[id].rar != rar || used.Contains(id) || S.shop.Contains(id)) continue;
+                    S.shop.Add(id); break;
+                }
+            }
+        }
+        public bool BuyPart(int k)
+        {
+            if (!R.over || !ShopOpen || S.shop == null || k < 0 || k >= S.shop.Count) return false;
+            int id = S.shop[k]; double p = PartPrice(id);
+            if (S.cash < p) return false;
+            S.cash -= p; S.shop.RemoveAt(k);
+            if (id == Parts.Key) { S.keys++; return true; }
+            if (S.parts == null || S.parts.Length != 5) S.parts = new[] { -1, -1, -1, -1, -1 };
+            S.parts[Parts.Defs[id].slot] = id;
+            return true;
+        }
+        public bool RerollShop() { if (!R.over || !ShopOpen || S.cash < RerollPrice) return false; S.cash -= RerollPrice; RollShop(); return true; }
         public int TotalLv { get { int n = 0; foreach (var l in S.lv) n += l; return n; } }
         public double Widen => 1 + 0.1 * Lv("o_wide");      // 🔴 정비소에서 산다 (사장님 09-23: "맵 크기도 여기서 늘리게")
         public double Bo => Orbits[S.orbit].bi + (Orbits[S.orbit].bo - Orbits[S.orbit].bi) * Widen;
-        public double BillAmount => S.bill < Bills.Length ? (S.billAmount >= 0 ? S.billAmount : Bills[S.bill].m) : 0;
+        public double BillAmount => S.bill < Bills.Length ? (S.billAmount >= 0 ? S.billAmount : Bills[S.bill].m) * (Lv("k_eco") > 0 ? 1.1 : 1) : 0;
         public bool CanBankrupt => !M.cleanReady && S.bill < Bills.Length && (S.bill >= 3 || S.overdue && S.bill >= 1);
         public int CareerCost(int i) => M.career[i] < Careers[i].cost.Length ? Careers[i].cost[M.career[i]] : -1;
         public int Unread { get { int n = 0; foreach (var it in M.news) if (!it.read) n++; return n; } }
@@ -581,6 +642,8 @@ namespace SalvageRun.Orbit.Sim
             if (!R.over || State(i) != NodeSt.Can) return false;
             S.cash -= TileCost(i); S.lv[i] = TileLv(i, NextTile(i));
             var id = Nodes[i].id;
+            if (KeyNodes.Contains(id)) S.keys--;
+            if (id == "e_shop") RollShop();
             int pi = Array.IndexOf(PlanetNode, id); if (pi > 0) PlanetBought(pi);
             if (id == "e_quest" && S.lv[i] == 1 && S.contract < 0) RollContract();
             Emit(SwEv.NodeBought, 0, 0, i, S.lv[i]);
@@ -595,6 +658,7 @@ namespace SalvageRun.Orbit.Sim
             foreach (var p in n.par) if (S.lv[NodeIx[p]] <= 0) return NodeSt.Hidden;
             var pl = Layout[n.id];
             if (pl.par != "R" && S.lv[NodeIx[pl.par]] < TileLv(NodeIx[pl.par], pl.tile)) return NodeSt.Hidden;
+            if (KeyNodes.Contains(n.id) && S.keys < 1) return NodeSt.Poor;          // ◆ 열쇠가 없다
             return S.cash >= TileCost(i) ? NodeSt.Can : NodeSt.Poor;
         }
         public bool Buy(int i) => BuyTile(i);
@@ -777,7 +841,7 @@ namespace SalvageRun.Orbit.Sim
         {
             var o = Orbits[S.orbit];
             double[] w = (double[])o.mix.Clone();
-            w[Vault] *= 1 + 0.5 * Lv("e_vault");
+            w[Vault] *= (1 + 0.5 * Lv("e_vault")) * (1 + Part("vault"));
             w[Fuel] = 0;                                                  // 🔴 연료는 궤도에 안 떠 있다 — 지구에서 보급한다
             if (!R.clean && S.bill < 1) w[Vault] = 0;                     // 금고는 청구서 1 뒤
             if (!R.clean && S.bill < 2 && S.orbit == 0) w[Tank] = 0;      // 폭발 탱크는 폭탄이 온 뒤
@@ -806,7 +870,7 @@ namespace SalvageRun.Orbit.Sim
             if (a < 0) a = Rnd(0, Math.PI * 2);
             if (rr < 0) { double u = Rnd(); if (o.gap > 0) u = u < 0.5 ? u * (1 - o.gap) : 0.5 * (1 - o.gap) + o.gap + (u - 0.5) * (1 - o.gap); rr = o.bi + u * (Bo - o.bi); }   // 토성 — 가운데 틈을 비운다                  // 띠 안 아무 곳에서 서서히 나타난다 (가장자리에서만 들어오면 바깥에 쏠린다)
             Att at = att ?? Att.None;
-            if (att == null && IsHost(k) && Rnd() < (R.clean ? 0.35 : o.att * (1 + 0.4 * Lv("e_att")))) at = PickAtt();
+            if (att == null && IsHost(k) && Rnd() < (R.clean ? 0.35 : o.att * (1 + 0.4 * Lv("e_att")) * (1 + Part("att")))) at = PickAtt();
             int hp = (int)Math.Round(Types[k].hp * (k == Fuel || k == Tank ? 1 : HpMul)) + (at == Att.Ice ? 2 : 0);   // 청구서를 갚을수록 단단해진다
             var d = new Junk { id = ++R.idc, k = k, hp = hp, max = hp, att = at, a = a, rr = rr, ws = ws > 0 ? ws : Rnd(0.92, 1.08), rot = Rnd(0, 6), vr = Rnd(-1, 1) };
             Place(d);
@@ -866,7 +930,7 @@ namespace SalvageRun.Orbit.Sim
             Supply(dt);
             Motion(dt);
             if (r.holding) Pull(dt);
-            if (aim && r.fuel > 0) Claw(dt);                           // 블랙홀이 열려 있어도 빔은 계속
+            if (aim && r.fuel > 0) { Claw(dt); Fire2(dt); }                           // 블랙홀이 열려 있어도 빔은 계속
             Drones(dt);
 
             // 💥 연쇄
@@ -1063,6 +1127,8 @@ namespace SalvageRun.Orbit.Sim
             r.packed.Clear();
             Emit(SwEv.Release, r.hx, r.hy, n, 0, n >= 6 ? n + "개 압축 · ×" + mult.ToString("0.00") : null);
             DoBlast(r.hx, r.hy, (60 + n * 2.5) * BlastK, false);
+            if (Lv("k_bh") > 0 && !r.twin && r.fuel > 0) { r.twin = true; r.holding = true; r.holdT = 0; r.chain = 0; r.tier = 0; r.shots++; Emit(SwEv.SkillReady, r.hx, r.hy, 2); }   // ◆ 쌍둥이 — 그 자리에 한 번 더
+            else r.twin = false;
             // 모이다 만 것들은 궤도로 돌아간다
             foreach (var d in r.junk) if (d.free && !d.dead && d.capT <= 0) d.capT = 0.6;
         }
@@ -1094,7 +1160,15 @@ namespace SalvageRun.Orbit.Sim
             int w = Weapon;
             r.next = Gap * over * (w == 1 ? 0.25 : 1);                           // 레이저는 네 배 자주 (한 번은 약하게)
             Fire(w);
-            if (Rnd() < 0.1 * Lv("c_double")) Fire(w);
+            if (Rnd() < 0.1 * Lv("c_double") + Part("dbl")) Fire(w);
+        }
+        void Fire2(double dt)
+        {
+            var r = R; int w2 = S.weapon2;
+            if (Lv("w_slot2") <= 0 || w2 < 0 || w2 == Weapon || !WeaponOwned(w2)) return;
+            r.next2 -= dt; if (r.next2 > 0) return;
+            r.next2 = Gap * 2 * (w2 == 1 ? 0.25 : 1);                             // 보조 무기 — 절반 빠르기
+            Fire(w2);
         }
         public double ShipX => EX + Math.Cos(R.shipA) * (Bo + 34);
         public double ShipY => EY + Math.Sin(R.shipA) * (Bo + 34) * Tilt;
@@ -1110,7 +1184,7 @@ namespace SalvageRun.Orbit.Sim
             if (L0 < 1) return;
             double width = (9 + 0.35 * Math.Max(ClawR, PickR * 0.6)) * (u >= 1 ? 1.5 : 1), len = L0 + 280;
             bool crit = Rnd() < Crit, any = false;
-            double per = ClawDmg * 0.3 * (u >= 2 ? r.heat : 1) * (crit ? 3 : 1);
+            double per = Pow * 0.3 * (u >= 2 ? r.heat : 1) * (crit ? 3 : 1);
             for (int b = 0; b < (awk ? 2 : 1); b++)
             {
                 double ang = Math.Atan2(dy0, dx0) + (awk ? (b == 0 ? -0.09 : 0.09) : 0), ux = Math.Cos(ang), uy = Math.Sin(ang);
@@ -1141,7 +1215,7 @@ namespace SalvageRun.Orbit.Sim
             if (cur == null) { Emit(SwEv.Strike, r.ax, r.ay, PickR, 0); return; }
             bool crit = Rnd() < Crit;
             int jumps = 5 + (u >= 1 ? 2 : 0);
-            double dmg = ClawDmg * 1.3 * (crit ? 3 : 1);
+            double dmg = Pow * 1.3 * (crit ? 3 : 1);
             double px = ShipX, py = ShipY;
             var hit = new List<Junk>();
             for (int j = 0; j <= jumps && cur != null; j++)
@@ -1173,12 +1247,12 @@ namespace SalvageRun.Orbit.Sim
                     if (dd < lim * lim && dd < bd) { bd = dd; best = d; }
                 }
                 bool c1 = best != null && Rnd() < Crit;
-                if (best != null) { Hit(best, ClawDmg * (c1 ? 3 : 1), 0, true); HoleRoll(); }
+                if (best != null) { Hit(best, Math.Max(1, RoundP(Pow * (c1 ? 3 : 1))), 0, true); HoleRoll(); }
                 Emit(SwEv.Strike, r.ax, r.ay, PickR, best != null ? 1 : 0);
                 if (c1) Emit(SwEv.Crit, r.ax, r.ay - 20);
                 return;
             }
-            double R0 = ClawR; bool hit = false, crit = Rnd() < Crit; int dmg = ClawDmg * (crit ? 3 : 1);
+            double R0 = ClawR; bool hit = false, crit = Rnd() < Crit; int dmg = Math.Max(1, RoundP(Pow * (crit ? 3 : 1)));
             var list = r.junk;
             for (int i = 0; i < list.Count; i++)
             {
@@ -1285,7 +1359,7 @@ namespace SalvageRun.Orbit.Sim
             double v = Types[d.k].val * ValMult * mult;
             if (d.att == Att.Pouch) v *= 2;
             if (src == 1) v *= DroneMag;
-            v *= 1 + Math.Min(r.chain, 200) / 200.0;                    // 잇달아 부수면 값이 더 붙는다 (최대 ×2 · 어떤 무기든 — 연쇄 폭발을 무기 특성으로 옮긴 만큼)
+            v *= 1 + Math.Min(r.chain, 200 + Part("combo")) / 200.0;                    // 잇달아 부수면 값이 더 붙는다 (최대 ×2 · 어떤 무기든 — 연쇄 폭발을 무기 특성으로 옮긴 만큼)
             Pay(d, src, v, d.x, d.y, true);
             Emit(SwEv.Broke, d.x, d.y, 0, d.k * 100 + (int)d.att);
             if (d.k == Fuel && AddFuel(3) > 0) Emit(SwEv.Pop, d.x, d.y, 0, 1, "연료 +3초");
@@ -1359,6 +1433,7 @@ namespace SalvageRun.Orbit.Sim
             S.lastClaw = r.earnClaw; S.lastDrone = r.earnDrone; S.lastBlast = r.earnBlast; S.runEarn.Add(r.earnClaw + r.earnDrone + r.earnBlast); if (S.runEarn.Count > 6) S.runEarn.RemoveAt(0); S.lastBroke = r.broke; S.lastChain = r.chainBest;
             S.lastContract = r.contractText == null ? 0 : r.contractOk ? 1 : 2;
             LottoDraw();                                                // 🎱 추첨 날이면
+            if (ShopOpen) RollShop();                                   // 🔩 가게 진열이 바뀐다
             CheckClean();                                               // 판 수입에서 떼어 빚을 다 갚았을 수도
             RollContract();
             Emit(SwEv.RunEnd);

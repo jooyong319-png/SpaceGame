@@ -69,7 +69,7 @@ static class Program
                 for (int loop = 0; loop < 60; loop++)
                 {
                     int best = -1; double bc = double.MaxValue;
-                    for (int i = 0; i < SweepSim.NodeCount; i++) if (!SweepSim.Nodes[i].id.StartsWith("p_") && !SweepSim.Nodes[i].id.StartsWith("w_") && sim.State(i) == NodeSt.Can && sim.TileCost(i) < bc) { bc = sim.TileCost(i); best = i; }
+                    for (int i = 0; i < SweepSim.NodeCount; i++) if (!SweepSim.Nodes[i].id.StartsWith("p_") && !SweepSim.Nodes[i].id.StartsWith("w_") && !SweepSim.Nodes[i].id.StartsWith("k_") && SweepSim.Nodes[i].id != "e_shop" && sim.State(i) == NodeSt.Can && sim.TileCost(i) < bc) { bc = sim.TileCost(i); best = i; }
                     if (best < 0 || reserve == double.MaxValue || sim.S.cash - bc < reserve) break;
                     sim.Buy(best);
                 }
