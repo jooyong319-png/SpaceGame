@@ -680,9 +680,10 @@ namespace SalvageRun.Orbit
             if (hoverP >= 0)
             {
                 var o = SweepSim.Orbits[hoverP];
-                string st = sim.Open(hoverP) ? "열림" : sim.OnSale(hoverP) ? "허가증 " + KNum.Fmt(o.permit) + (S.cash >= o.permit ? " — 눌러서 사기" : " — 돈이 모자라다") : "청구서 " + o.sell + "장을 갚으면 판매";
-                GUI.Label(new Rect(ds.x + 6, ds.y + 1, ds.width - 12, 20), "<size=12><color=#ffdf95>" + o.name + " ×" + o.mult + "</color> · " + o.desc + "</size>", label);
-                GUI.Label(new Rect(ds.x + 6, ds.y + 18, ds.width - 12, 20), "<size=11><color=#8a9bb3>" + st + "</color></size>", label);
+                // 첫 줄 = 이름 · 배수 · 상태 (짧게), 둘째 줄 = 특징 — 칸 폭 230 에 맞춘다
+                string st = sim.Open(hoverP) ? "<color=#6fcf97>열림</color>" : sim.OnSale(hoverP) ? (S.cash >= o.permit ? "<color=#ffdf95>허가증 " + KNum.Fmt(o.permit) + " · 두 번</color>" : "<color=#ee7766>허가증 " + KNum.Fmt(o.permit) + "</color>") : "<color=#8a9bb3>청구서 " + o.sell + " 뒤 판매</color>";
+                GUI.Label(new Rect(ds.x + 6, ds.y - 2, ds.width - 12, 22), "<size=12><color=#ffdf95>" + o.name + " ×" + o.mult + "</color>  " + st + "</size>", label);
+                GUI.Label(new Rect(ds.x + 6, ds.y + 16, ds.width - 12, 22), "<size=11><color=#8a9bb3>" + o.desc + "</color></size>", label);
                 c = null;
             }
             else c = sim.CurContract;
