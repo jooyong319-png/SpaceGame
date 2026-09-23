@@ -606,106 +606,18 @@ namespace SalvageRun.Orbit
             // ① 청구서 — 조종대 위 홀로그램 (09-24 C안)
             HoloBill(due);
 
-            // ② 출동 보고 (왼쪽 위)
-            var rp = new Rect(ox + 15, 36, 140, 118);
-            double lE = S.lastClaw + S.lastDrone + S.lastBlast;
-            Plate(rp, "출동 보고 · " + S.runs, S.lastBroke >= 0 ? "<color=#6fcf97>+" + KNum.Fmt(lE) + "</color>" : "", SweepGame.Amber, false);
-            var rs = Scr(rp, 26, 84);
-            if (S.lastBroke < 0) GUI.Label(new Rect(rs.x + 8, rs.y + 8, rs.width - 16, 40), "<size=12><color=#8a9bb3>아직 출동 전</color></size>", label);
-            else
-            {
-                double tot = System.Math.Max(1, lE);
-                float bx = rs.x + 8, bw = rs.width - 16;
-                float w0 = bw * (float)(S.lastClaw / tot), w1 = bw * (float)(S.lastDrone / tot);
-                GUI.color = SweepGame.Amber; GUI.DrawTexture(new Rect(bx, rs.y + 8, w0, 6), white);
-                GUI.color = SweepGame.Cyan; GUI.DrawTexture(new Rect(bx + w0, rs.y + 8, w1, 6), white);
-                GUI.color = SweepGame.Violet; GUI.DrawTexture(new Rect(bx + w0 + w1, rs.y + 8, bw - w0 - w1, 6), white); GUI.color = Color.white;
-                GUI.Label(new Rect(bx, rs.y + 20 - 3, bw, 24), "<size=12><color=#8a9bb3>부순 것</color></size>", label); GUI.Label(new Rect(bx, rs.y + 20 - 3, bw, 24), "<size=12>" + S.lastBroke + "</size>", cost);
-                GUI.Label(new Rect(bx, rs.y + 38 - 3, bw, 24), "<size=12><color=#8a9bb3>최대 연쇄</color></size>", label); GUI.Label(new Rect(bx, rs.y + 38 - 3, bw, 24), "<size=12>" + S.lastChain + "</size>", cost);
-                GUI.Label(new Rect(bx, rs.y + 56 - 3, bw, 24), "<size=12><color=#8a9bb3>의뢰</color></size>", label);
-                GUI.Label(new Rect(bx, rs.y + 56 - 3, bw, 24), S.lastContract == 0 ? "<size=12>—</size>" : S.lastContract == 1 ? "<size=12><color=#6fcf97>성공</color></size>" : "<size=12><color=#ee7766>실패</color></size>", cost);
-            }
-
-            // ③ 궤도일보 (오른쪽 위) — 누르면 신문
-            var nr = new Rect(ox + 769, 36, 176, 150);
-            int unread = sim.Unread;
-            if (Plate(nr, "궤도일보", unread > 0 ? "<color=#ff8a7a>새 기사 " + unread + "</color>" : "기사 " + M.news.Count, SweepGame.Amber, true)) { newsOpen = true; newsSel = -1; }
-            var pr = new Rect(nr.x + 8, nr.y + 26, nr.width - 16, nr.height - 34);
-            GUI.DrawTexture(pr, texPaper);
-            GUI.DrawTexture(new Rect(pr.x + 6, pr.y + 20, pr.width - 12, 2), texInk);
-            paperSmall.fontSize = 11; GUI.Label(new Rect(pr.x + 6, pr.y + 3 - 3, pr.width - 12, 22), "궤도일보 · 출동 " + S.runs + "일째", paperSmall);
-            if (M.news.Count > 0)
-            {
-                var it = M.news[M.news.Count - 1];
-                paperBody.fontSize = 13; GUI.Label(new Rect(pr.x + 6, pr.y + 26, pr.width - 12, 40), "<b>" + Clip(it.head, 28) + "</b>", paperBody);
-                paperBody.fontSize = 11; GUI.Label(new Rect(pr.x + 6, pr.y + 66, pr.width - 12, 44), Clip(it.body, 40), paperBody);
-            }
-            paperBody.fontSize = 14;
-
-            // ④ 회사 명판 (오른쪽 가운데) — 신용 · 파산 스위치
-            var cp = new Rect(ox + 805, 196, 140, 118);
-            Plate(cp, "회사 명판", M.company + "대", SweepGame.Amber, false);
-            var cs = Scr(cp, 26, 84);
-            GUI.Label(new Rect(cs.x + 8, cs.y + 6 - 3, cs.width - 16, 24), "<size=12><color=#ffdf95>궤도 청소부 (" + M.company + "대)</color></size>", label);
-            GUI.Label(new Rect(cs.x + 8, cs.y + 26 - 3, cs.width - 16, 24), "<size=12><color=#8a9bb3>쌓인 신용</color></size>", label); GUI.Label(new Rect(cs.x + 8, cs.y + 26 - 3, cs.width - 16, 24), "<size=12>+" + S.creditPending + "</size>", cost);
-            if (sim.CanBankrupt)
-            {
-                if (GUI.Button(new Rect(cs.x + 6, cs.y + 50, cs.width - 12, 26), bankruptArmed ? "<color=#ffb3a8><size=11>한 번 더 → 파산</size></color>" : "<color=#ffb3a8><size=11>파산 스위치 (덮개)</size></color>", btnOff))
-                { if (bankruptArmed) { sim.Bankrupt(); bankruptArmed = false; showResult = false; flow = 2; } else bankruptArmed = true; }
-            }
-            else GUI.Label(new Rect(cs.x + 6, cs.y + 50, cs.width - 12, 26), "<size=11><color=#5a2a24>파산 스위치 (잠김)</color></size>", center);
+            // ② 출동 보고 — 초록 브라운관 · ③ 궤도일보 — LED 전광판 · ④ 회사 명판 — 황동판 (09-24 사장님 BBA)
+            CrtReport(new Rect(ox + 12, 34, 158, 120));
+            LedNews(new Rect(ox + 769, 36, 176, 150));
+            BrassPlate(new Rect(ox + 769, 192, 176, 52));
 
             // ⑤ ‹ 정비고로 · 증권 하러 가기 › — 화면 양옆 탭 (누르면 옆 방으로 슥)
             int canN = 0; for (int b = 0; b < 4; b++) canN += CanCount(b);
             if (NavTab(false, "정비고로", canN > 0 ? "<color=#f2c14e>살 칸 " + canN + "</color>" : "", SweepGame.Amber)) GoFlow(3);
             if (NavTab(true, "증권 하러 가기", sim.StockOpen ? "" : "<color=#5f6878>잠김</color>", new Color(0.62f, 0.94f, 0.75f))) GoFlow(4);
 
-            SweepSim.Contract? c;
-            // ⑥ 항로 다이얼 · 의뢰 카드 (아래 오른쪽) — 행성 다섯. 열린 곳은 누르면 간다, 판매 중이면 허가증을 산다 (두 번)
-            var dl = new Rect(ox + 662, 398, 250, 132);
-            Plate(dl, "항로 다이얼", "의뢰 카드", SweepGame.Amber, false);
-            int hoverP = -1;
-            if (!M.cleanReady)
-                for (int i = 0; i < SweepSim.Orbits.Length; i++)
-                {
-                    var o = SweepSim.Orbits[i];
-                    var cell = new Rect(dl.x + 8 + i * 47, dl.y + 24, 45, 58);
-                    var ic = new Rect(cell.x + 6, cell.y + 2, 33, 33);
-                    bool open = sim.Open(i), sale = sim.OnSale(i);
-                    if (cell.Contains(Event.current.mousePosition)) hoverP = i;
-                    if (i == S.orbit) { GUI.color = new Color(0.95f, 0.76f, 0.31f, 0.18f); GUI.DrawTexture(cell, white); GUI.color = Color.white; Frame(cell, SweepGame.Amber, 2); }
-                    GUI.color = open ? Color.white : sale ? new Color(0.5f, 0.5f, 0.55f) : new Color(0.13f, 0.14f, 0.17f);
-                    GUI.DrawTexture(ic, PlanetArt.Get(i).texture);
-                    if (i == 4) { GUI.color = open ? new Color(0.9f, 0.82f, 0.6f, 0.8f) : GUI.color; GUI.DrawTexture(new Rect(ic.x - 5, ic.center.y - 2, ic.width + 10, 3), white); }
-                    GUI.color = Color.white;
-                    string sub = open ? "<color=#dde3ea>" + o.name + "</color>" : sale ? (permitArmed == i ? "<color=#ffdf95>한 번 더</color>" : "<color=#ffdf95>" + KNum.Fmt(o.permit) + "</color>") : "<color=#5a6a80>청구서 " + o.sell + "</color>";
-                    GUI.Label(new Rect(cell.x - 4, cell.y + 36, cell.width + 8, 22), "<size=10>" + sub + "</size>", center);
-                    if (GUI.Button(cell, GUIContent.none, GUIStyle.none))
-                    {
-                        if (open) { sim.SetOrbit(i); permitArmed = -1; }
-                        else if (sale && S.cash >= o.permit) { if (permitArmed == i) { sim.BuyPermit(i); permitArmed = -1; OrbitSfx.Play("buy", 0.9f); } else permitArmed = i; }
-                        else OrbitSfx.Play("tick", 0.5f, 0.6f, 0.05f);
-                    }
-                }
-            var ds = Scr(dl, 86, 38);
-            if (hoverP >= 0)
-            {
-                var o = SweepSim.Orbits[hoverP];
-                // 첫 줄 = 이름 · 배수 · 상태 (짧게), 둘째 줄 = 특징 — 칸 폭 230 에 맞춘다
-                string st = sim.Open(hoverP) ? "<color=#6fcf97>열림</color>" : sim.OnSale(hoverP) ? (S.cash >= o.permit ? "<color=#ffdf95>허가증 " + KNum.Fmt(o.permit) + " · 두 번</color>" : "<color=#ee7766>허가증 " + KNum.Fmt(o.permit) + "</color>") : "<color=#8a9bb3>청구서 " + o.sell + " 뒤 판매</color>";
-                GUI.Label(new Rect(ds.x + 6, ds.y - 2, ds.width - 12, 22), "<size=12><color=#ffdf95>" + o.name + " ×" + o.mult + "</color>  " + st + "</size>", label);
-                GUI.Label(new Rect(ds.x + 6, ds.y + 16, ds.width - 12, 22), "<size=11><color=#8a9bb3>" + o.desc + "</color></size>", label);
-                c = null;
-            }
-            else c = sim.CurContract;
-            if (hoverP >= 0) { }
-            else if (c != null && !M.cleanReady)
-            {
-                GUI.Label(new Rect(ds.x + 8, ds.y + 4 - 3, ds.width - 70, 26), "<size=12><color=#8a9bb3>의뢰</color> " + c.Value.text + "</size>", label);
-                GUI.Label(new Rect(ds.x + 8, ds.y + 22 - 3, ds.width - 70, 24), "<size=11><color=#8a9bb3>성공하면 판 수입 +" + (25 + 10 * sim.Lv("e_quest")) + "%</color></size>", label);
-                if (!S.rerolled && GUI.Button(new Rect(ds.xMax - 58, ds.y + 10, 52, 24), "<size=11>바꾸기</size>", btnOff)) sim.Reroll();
-            }
-            else GUI.Label(new Rect(ds.x + 8, ds.y + 12 - 3, ds.width - 16, 26), "<size=12><color=#8a9bb3>의뢰는 청구서 2 뒤에 들어온다</color></size>", label);
+            // ⑥ 항로 — 조종대 오른쪽 홀로그램 (행성 다섯 · 의뢰)
+            RouteHolo();
 
             // ⑦ 출동 버튼 (가운데 아래) — 받침 위에 둥근 누름 버튼, 윗면에 「출동」
             {
@@ -738,16 +650,8 @@ namespace SalvageRun.Orbit
                 if (GUI.Button(hit, GUIContent.none, GUIStyle.none) && paidT < 2.4f) Go();
             }
 
-            // 🎟 복권 (출동 버튼 오른쪽)
-            {
-                var lb = new Rect(ox + 566, 470, 86, 60);
-                bool ov = lb.Contains(Event.current.mousePosition);
-                GUI.color = PlateCol; GUI.DrawTexture(lb, white); GUI.color = Color.white;
-                Frame(lb, ov ? SweepGame.Mag : Bezel, 2);
-                GUI.Label(new Rect(lb.x, lb.y + 8, lb.width, 26), "<size=17><b><color=#e9a8ff>복권</color></b></size>", center);
-                GUI.Label(new Rect(lb.x, lb.y + 34, lb.width, 18), "<size=10><color=#8a9bb3>즉석 " + sim.ScratchLeft + " · 로또 " + sim.LottoMine + "</color></size>", center);
-                if (GUI.Button(lb, GUIContent.none, GUIStyle.none)) { lottoOpen = true; OrbitSfx.Play("tick", 0.6f); }
-            }
+            // 🎟 복권 — 분홍 홀로그램 (출동 버튼 오른쪽)
+            LottoHolo();
             // 아래 한 줄
             string tip = due ? "<color=" + (dueNag > 0 ? "#ff9b8f" : "#b8a89a") + ">납부일 — 왼쪽 홀로그램 청구서: 납부 · 대출 · 또는 파산</color>" : "Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 " + Mathf.RoundToInt((float)(sim.Widen - 1) * 100) + "% · 한 판 " + Mathf.RoundToInt((float)sim.FuelMax) + "초";
             GUI.Label(new Rect(ox + 200, 570 - 3, 560, 26), "<size=12>" + tip + "</size>", center);
@@ -785,8 +689,11 @@ namespace SalvageRun.Orbit
             var S = sim.S; var ev = Event.current;
             GUI.DrawTexture(new Rect(0, 0, vw, RefH), texDim);
             var r = new Rect(vw / 2 - 300, 60, 600, 480);
-            GUI.color = new Color(0.06f, 0.035f, 0.08f, 0.98f); GUI.DrawTexture(r, white); GUI.color = Color.white;
-            Frame(r, SweepGame.Mag, 2);
+            GUI.color = new Color(0.07f, 0.03f, 0.09f, 0.96f); GUI.DrawTexture(r, white);                    // 분홍 홀로그램 테 (09-24)
+            GUI.color = new Color(1f, 0.66f, 0.94f, 0.05f); for (float yy = r.y + 2; yy < r.yMax; yy += 4) GUI.DrawTexture(new Rect(r.x, yy, r.width, 1), white);
+            Frame(r, new Color(1f, 0.66f, 0.94f, 0.85f), 1.5f);
+            GUI.color = new Color(1f, 0.66f, 0.94f); foreach (var cn in new[] { new Vector2(r.x, r.y), new Vector2(r.xMax - 14, r.y), new Vector2(r.x, r.yMax - 3), new Vector2(r.xMax - 14, r.yMax - 3) }) GUI.DrawTexture(new Rect(cn.x, cn.y, 14, 3), white);
+            GUI.color = Color.white;
             string[] tabs = { "즉석 복권", "궤도 로또" };
             for (int i = 0; i < 2; i++)
             {
@@ -874,7 +781,8 @@ namespace SalvageRun.Orbit
             {
                 var nb = new Rect(r.x + 40 + ((n - 1) % 6) * 58, r.y + 116 + ((n - 1) / 6) * 58, 50, 50);
                 bool on = lottoPick.Contains(n);
-                GUI.color = on ? new Color(0.75f, 0.35f, 0.85f) : new Color(0.16f, 0.1f, 0.2f); GUI.DrawTexture(nb, texDisc); GUI.color = Color.white;
+                GUI.color = on ? new Color(1f, 0.55f, 0.92f, 0.55f) : new Color(1f, 0.66f, 0.94f, 0.06f); GUI.DrawTexture(nb, texDisc);          // 빛 구슬
+                GUI.color = new Color(1f, 0.66f, 0.94f, on ? 1f : 0.45f); GUI.DrawTexture(nb, texRing); GUI.color = Color.white;
                 GUI.Label(nb, "<size=18><b>" + (on ? "<color=#ffffff>" : "<color=#b89ac6>") + n + "</color></b></size>", center);
                 if (GUI.Button(nb, GUIContent.none, GUIStyle.none)) { if (on) lottoPick.Remove(n); else if (lottoPick.Count < 3) lottoPick.Add(n); OrbitSfx.Play("tick", 0.4f); }
             }

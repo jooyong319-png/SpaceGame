@@ -501,5 +501,225 @@ namespace SalvageRun.Orbit
                 if (GUI.Button(new Rect(card.x + 90, card.y + 90, 180, 40), "<size=14>‹ 정비고로</size>", btn)) GoFlow(3);
             }
         }
+
+        // ───────────────────────────────── 09-24 조종실 물건들 (사장님 BBA + 홀로그램 셋)
+        static readonly Color HoloPink = new Color(1f, 0.66f, 0.94f), Amber3 = new Color(1f, 0.67f, 0.24f);
+        float Flick(float seed) => reduceMotion ? 1 : Mathf.PerlinNoise(Time.unscaledTime * 1.7f, seed) > 0.8f ? 0.5f + 0.4f * Mathf.PerlinNoise(Time.unscaledTime * 40, seed + 1) : 1f;
+
+        /// <summary>홀로그램 바탕 — 원반 · 빛기둥 · 반투명 판 · 주사선 · 꺾쇠</summary>
+        void HoloBase(Rect p, float ex, float ey, float emW, Color hc, float fl, bool hover)
+        {
+            const int N = 30; float step = (ey - p.y) / N;
+            for (int i = 0; i < N; i++)
+            {
+                float k = i / (float)(N - 1), y = ey - 2 - step * (i + 1), bwid = Mathf.Lerp(emW * 0.55f, p.width + 16, k);
+                GUI.color = new Color(hc.r, hc.g, hc.b, (0.09f - 0.06f * k) * fl);
+                GUI.DrawTexture(new Rect(ex - bwid / 2, y, bwid, step + 0.5f), white);
+            }
+            float e = emW / 140f;
+            GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(ex - 76 * e, ey - 2, 152 * e, 34 * e), texDisc);
+            GUI.color = new Color(0.17f, 0.23f, 0.31f); GUI.DrawTexture(new Rect(ex - 70 * e, ey - 8, 140 * e, 30 * e), texDisc);
+            GUI.color = new Color(hc.r * 0.25f, hc.g * 0.25f, hc.b * 0.3f); GUI.DrawTexture(new Rect(ex - 54 * e, ey - 6, 108 * e, 20 * e), texDisc);
+            GUI.color = new Color(hc.r, hc.g, hc.b, 0.8f * fl); GUI.DrawTexture(new Rect(ex - 36 * e, ey - 3, 72 * e, 12 * e), texDisc);
+            GUI.color = new Color(hc.r, hc.g, hc.b, 0.22f * fl); GUI.DrawTexture(new Rect(ex - 90 * e, ey - 26 * e, 180 * e, 56 * e), texDisc);
+            GUI.color = new Color(hc.r * 0.3f, hc.g * 0.4f, hc.b * 0.5f, (hover ? 0.34f : 0.22f) * fl); GUI.DrawTexture(p, white);
+            GUI.color = new Color(hc.r, hc.g, hc.b, 0.06f * fl);
+            for (float y = p.y + 2; y < p.yMax; y += 4) GUI.DrawTexture(new Rect(p.x, y, p.width, 1), white);
+            if (!reduceMotion) { GUI.color = new Color(hc.r, hc.g, hc.b, 0.08f * fl); GUI.DrawTexture(new Rect(p.x, p.y + Mathf.Repeat(Time.unscaledTime * 50 + p.x, p.height - 8), p.width, 8), white); }
+            Frame(p, new Color(hc.r, hc.g, hc.b, (hover ? 1f : 0.8f) * fl), hover ? 2f : 1.5f);
+            GUI.color = new Color(hc.r, hc.g, hc.b, fl);
+            foreach (var c in new[] { new Vector2(p.x, p.y), new Vector2(p.xMax - 10, p.y), new Vector2(p.x, p.yMax - 3), new Vector2(p.xMax - 10, p.yMax - 3) }) GUI.DrawTexture(new Rect(c.x, c.y, 10, 3), white);
+            GUI.color = Color.white;
+        }
+
+        // 🟦 항로 홀로그램 — 행성 다섯 빛 구슬 · 열린 곳은 누르면 간다 · 판매 중이면 허가증 (두 번)
+        void RouteHolo()
+        {
+            var S = sim.S; var M = sim.M;
+            var p = new Rect(ox + 685, 262, 200, 186);
+            float fl = Flick(2.1f);
+            HoloBase(p, ox + 785, 506, 140, Holo, fl, false);
+            GUI.color = new Color(1, 1, 1, fl);
+            GUI.Label(new Rect(p.x + 10, p.y + 5, p.width - 20, 20), "<size=12><b><color=#bff4ff>NAV // 항로</color></b></size>", label);
+            GUI.Label(new Rect(p.x + 10, p.y + 5, p.width - 20, 20), "<size=11><color=#7fcfe0>지금 " + SweepSim.Orbits[S.orbit].name + "</color></size>", cost);
+            int hoverP = -1; float cw = (p.width - 12) / SweepSim.Orbits.Length;
+            if (!M.cleanReady)
+                for (int i = 0; i < SweepSim.Orbits.Length; i++)
+                {
+                    var o = SweepSim.Orbits[i];
+                    var cell = new Rect(p.x + 6 + i * cw, p.y + 26, cw, 50);
+                    bool open = sim.Open(i), sale = sim.OnSale(i);
+                    if (cell.Contains(Event.current.mousePosition)) hoverP = i;
+                    if (i == S.orbit) { GUI.color = new Color(1f, 0.87f, 0.58f, 0.14f * fl); GUI.DrawTexture(cell, white); Frame(cell, new Color(1f, 0.87f, 0.58f, fl), 1.5f); }
+                    var ic = new Rect(cell.center.x - 13, cell.y + 3, 26, 26);
+                    GUI.color = new Color(Holo.r, Holo.g, Holo.b, (hoverP == i ? 0.5f : 0.25f) * fl); GUI.DrawTexture(new Rect(ic.x - 5, ic.y - 5, ic.width + 10, ic.height + 10), texDisc);
+                    GUI.color = open ? new Color(1, 1, 1, 0.9f * fl) : sale ? new Color(0.6f, 0.65f, 0.7f, 0.8f * fl) : new Color(0.2f, 0.24f, 0.28f, 0.8f * fl);
+                    GUI.DrawTexture(ic, PlanetArt.Get(i).texture);
+                    if (i == 4) GUI.DrawTexture(new Rect(ic.x - 4, ic.center.y - 1, ic.width + 8, 2), white);
+                    GUI.color = new Color(1, 1, 1, fl);
+                    string sub = open ? "<color=#dff8ff>" + o.name + "</color>" : sale ? (permitArmed == i ? "<color=#ffdf95>한 번 더</color>" : "<color=#ffdf95>" + KNum.Fmt(o.permit) + "</color>") : "<color=#4f7380>잠김</color>";
+                    GUI.Label(new Rect(cell.x - 4, cell.y + 30, cell.width + 8, 18), "<size=9>" + sub + "</size>", center);
+                    GUI.color = Color.white;
+                    if (GUI.Button(cell, GUIContent.none, GUIStyle.none))
+                    {
+                        if (open) { sim.SetOrbit(i); permitArmed = -1; OrbitSfx.Play("tick", 0.5f); }
+                        else if (sale && S.cash >= o.permit) { if (permitArmed == i) { sim.BuyPermit(i); permitArmed = -1; OrbitSfx.Play("buy", 0.9f); } else permitArmed = i; }
+                        else OrbitSfx.Play("tick", 0.5f, 0.6f, 0.05f);
+                    }
+                }
+            GUI.color = new Color(1, 1, 1, fl);
+            float x = p.x + 10, w = p.width - 20;
+            int show = hoverP >= 0 ? hoverP : S.orbit;
+            var so = SweepSim.Orbits[show];
+            string st = sim.Open(show) ? "<color=#9ff0bf>열림</color>" : sim.OnSale(show) ? (S.cash >= so.permit ? "<color=#ffdf95>허가증 " + KNum.Fmt(so.permit) + " · 두 번</color>" : "<color=#ff9b8f>허가증 " + KNum.Fmt(so.permit) + "</color>") : "<color=#7fcfe0>청구서 " + so.sell + " 뒤 판매</color>";
+            if (M.cleanReady) GUI.Label(new Rect(x, p.y + 34, w, 40), "<size=12><color=#bff4ff>청산 출동 — 항로 고정</color></size>", center);
+            else
+            {
+                GUI.Label(new Rect(x, p.y + 80, w, 20), "<size=12><b><color=#ffdf95>" + so.name + " ×" + so.mult + "</color></b>  " + st + "</size>", label);
+                GUI.Label(new Rect(x, p.y + 98, w, 30), "<size=10><color=#7fcfe0>" + so.desc + "</color></size>", small);
+            }
+            GUI.color = new Color(Holo.r, Holo.g, Holo.b, 0.35f * fl);
+            for (float xx = x; xx < x + w; xx += 6) GUI.DrawTexture(new Rect(xx, p.y + 130, 3, 1), white);
+            GUI.color = new Color(1, 1, 1, fl);
+            var ct = sim.CurContract;
+            if (ct != null && !M.cleanReady)
+            {
+                GUI.Label(new Rect(x, p.y + 134, w - (S.rerolled ? 0 : 46), 32), "<size=10><color=#7fcfe0>의뢰</color> <color=#dff8ff>" + ct.Value.text + "</color></size>", small);
+                GUI.Label(new Rect(x, p.y + 162, w, 18), "<size=10><color=#7fcfe0>성공하면 판 수입 +" + (25 + 10 * sim.Lv("e_quest")) + "%</color></size>", label);
+                GUI.color = Color.white;
+                if (!S.rerolled && HoloBtn(new Rect(p.xMax - 52, p.y + 136, 44, 20), "<size=10>바꾸기</size>", Holo, true, fl)) sim.Reroll();
+            }
+            else GUI.Label(new Rect(x, p.y + 140, w, 36), "<size=10><color=#7fcfe0>의뢰는 청구서 2 뒤에 들어온다</color></size>", small);
+            GUI.color = Color.white;
+        }
+
+        // 🩷 복권 홀로그램 (출동 버튼 오른쪽) — 누르면 복권 창
+        void LottoHolo()
+        {
+            var p = new Rect(ox + 588, 404, 108, 92);
+            bool ov = p.Contains(Event.current.mousePosition);
+            float fl = Flick(5.3f);
+            HoloBase(p, ox + 642, 524, 100, HoloPink, fl, ov);
+            GUI.color = new Color(1, 1, 1, fl);
+            GUI.Label(new Rect(p.x, p.y + 6, p.width, 18), "<size=11><b><color=#ffd6f7>LOTTO</color></b></size>", center);
+            GUI.Label(new Rect(p.x, p.y + 26, p.width, 32), "<size=22><b><color=#ffe8fb>복권</color></b></size>", center);
+            GUI.Label(new Rect(p.x, p.y + 62, p.width, 18), "<size=10><color=#ffb8ee>즉석 " + sim.ScratchLeft + " · 로또 " + sim.LottoMine + "장</color></size>", center);
+            GUI.color = Color.white;
+            if (GUI.Button(p, GUIContent.none, GUIStyle.none)) { lottoOpen = true; OrbitSfx.Play("tick", 0.6f); }
+        }
+
+        // 📺 출동 보고 — 초록 브라운관 (B) · 최근 출동 여섯 번 벌이 막대
+        void CrtReport(Rect r)
+        {
+            var S = sim.S;
+            GUI.color = new Color(0, 0, 0, 0.45f); GUI.DrawTexture(new Rect(r.x + 3, r.y + 5, r.width, r.height), white);
+            GUI.color = new Color(0.2f, 0.23f, 0.18f); GUI.DrawTexture(r, white);
+            Frame(r, new Color(0.3f, 0.34f, 0.26f), 2);
+            var sc = new Rect(r.x + 7, r.y + 7, r.width - 14, r.height - 14);
+            GUI.color = new Color(0.045f, 0.07f, 0.045f); GUI.DrawTexture(sc, white);
+            GUI.color = new Color(0.55f, 1f, 0.6f, 0.05f); GUI.DrawTexture(new Rect(sc.x + 10, sc.y + 8, sc.width - 20, sc.height - 16), texDisc);
+            GUI.color = Color.white;
+            bool cur = Mathf.Repeat(Time.unscaledTime, 1f) < 0.55f;
+            float x = sc.x + 6, w = sc.width - 12;
+            GUI.Label(new Rect(x, sc.y + 2, w, 18), "<size=11><color=#8dff9a>> 출동 #" + S.runs + " 기록</color></size>", label);
+            if (S.lastBroke < 0) GUI.Label(new Rect(x, sc.y + 24, w, 40), "<size=11><color=#8dff9a>기록 없음" + (cur ? "▮" : "") + "</color></size>", label);
+            else
+            {
+                var h = S.runEarn; int n = h.Count; double mx = 1; foreach (var v in h) mx = System.Math.Max(mx, v);
+                var bar = new Rect(x, sc.y + 22, w, 38); float bw = (w - 5 * 3) / 6f;
+                for (int i = 0; i < 6; i++)
+                {
+                    int k = n - 6 + i; if (k < 0) continue;
+                    float bh = Mathf.Max(2, bar.height * (float)(h[k] / mx));
+                    GUI.color = new Color(0.55f, 1f, 0.6f, k == n - 1 ? 0.95f : 0.45f);
+                    GUI.DrawTexture(new Rect(bar.x + i * (bw + 3), bar.yMax - bh, bw, bh), white);
+                }
+                GUI.color = Color.white;
+                double lE = S.lastClaw + S.lastDrone + S.lastBlast;
+                GUI.Label(new Rect(x, sc.y + 62, w, 18), "<size=10><color=#6fd67a>부순것 " + S.lastBroke + " · 연쇄 " + S.lastChain + (S.lastContract == 1 ? " · 의뢰 ○" : S.lastContract == 2 ? " · 의뢰 ✕" : "") + "</color></size>", label);
+                GUI.Label(new Rect(x, sc.y + 78, w, 22), "<size=14><b><color=#b8ffc0>+" + KNum.Fmt(lE) + "</color></b><color=#8dff9a>" + (cur ? " ▮" : "") + "</color></size>", label);
+            }
+            GUI.color = new Color(0, 0, 0, 0.28f);
+            for (float y = sc.y; y < sc.yMax; y += 3) GUI.DrawTexture(new Rect(sc.x, y, sc.width, 1), white);
+            GUI.color = Color.white;
+        }
+
+        // 🟧 궤도일보 — LED 전광판 (B) · 글자가 흘러간다 · 누르면 신문
+        GUIStyle ledSt, ledR;
+        void LedNews(Rect r)
+        {
+            var S = sim.S; var M = sim.M;
+            if (ledSt == null) { ledSt = new GUIStyle(label) { wordWrap = false, clipping = TextClipping.Overflow }; ledR = new GUIStyle(label) { alignment = TextAnchor.UpperRight }; }
+            bool ov = r.Contains(Event.current.mousePosition);
+            GUI.color = new Color(0, 0, 0, 0.45f); GUI.DrawTexture(new Rect(r.x + 3, r.y + 5, r.width, r.height), white);
+            GUI.color = new Color(0.045f, 0.035f, 0.028f); GUI.DrawTexture(r, white);
+            Frame(r, ov ? Amber3 : new Color(0.17f, 0.15f, 0.13f), 3);
+            int unread = sim.Unread;
+            GUI.Label(new Rect(r.x + 10, r.y + 6, r.width - 20, 18), "<size=10><color=#ffab3d>ORBIT NEWS · " + S.runs + "일째</color></size>", label);
+            if (unread > 0) GUI.Label(new Rect(r.x + 10, r.y + 6, r.width - 20, 18), "<size=10><color=#ff5a3a>●</color> <color=#ffab3d>새 " + unread + "</color></size>", ledR);
+            string a = M.news.Count > 0 ? (unread > 0 ? "속보 ▸ " : "") + M.news[M.news.Count - 1].head : "오늘은 조용하다";
+            string b = M.news.Count > 1 ? M.news[M.news.Count - 2].head + (M.news.Count > 2 ? "  ▸  " + M.news[M.news.Count - 3].head : "") : "궤도 청소부 영업 중";
+            LedStrip(new Rect(r.x + 8, r.y + 26, r.width - 16, 34), a, 15, 38f);
+            LedStrip(new Rect(r.x + 8, r.y + 66, r.width - 16, 26), b, 12, 26f);
+            GUI.Label(new Rect(r.x + 10, r.yMax - 26, r.width - 20, 20), "<size=10><color=" + (ov ? "#ffdf95" : "#7a6a55") + ">누르면 신문 ▸</color></size>", label);
+            if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { newsOpen = true; newsSel = -1; }
+        }
+        void LedStrip(Rect s, string text, int size, float speed)
+        {
+            GUI.color = new Color(0.085f, 0.04f, 0.015f); GUI.DrawTexture(s, white);
+            GUI.color = new Color(1f, 0.67f, 0.24f, 0.05f);
+            for (float xx = s.x + 1; xx < s.xMax; xx += 3) GUI.DrawTexture(new Rect(xx, s.y, 1, s.height), white);
+            GUI.color = Color.white;
+            string t = "<size=" + size + "><b><color=#ffab3d>" + text + "</color></b></size>";
+            float tw = ledSt.CalcSize(new GUIContent(t)).x;
+            float off = reduceMotion ? 4 : s.width - Mathf.Repeat(Time.unscaledTime * speed, s.width + tw + 20);
+            GUI.BeginGroup(s);
+            GUI.color = new Color(1f, 0.55f, 0.1f, 0.25f); GUI.Label(new Rect(off, (s.height - size - 8) / 2 + 1, tw + 10, size + 10), t, ledSt);
+            GUI.color = Color.white; GUI.Label(new Rect(off, (s.height - size - 8) / 2, tw + 10, size + 10), t, ledSt);
+            GUI.EndGroup();
+        }
+
+        // 🟨 회사 명판 — 황동판 · 파산은 빨간 안전덮개 (A)
+        void BrassPlate(Rect r)
+        {
+            var S = sim.S; var M = sim.M;
+            GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(r.x + 3, r.y + 5, r.width, r.height), white);
+            GUI.color = new Color(0.66f, 0.51f, 0.22f); GUI.DrawTexture(r, white);
+            GUI.color = new Color(0.9f, 0.77f, 0.46f, 0.7f); GUI.DrawTexture(new Rect(r.x, r.y, r.width, r.height * 0.38f), white);
+            GUI.color = new Color(1f, 0.95f, 0.8f, 0.6f); GUI.DrawTexture(new Rect(r.x, r.y, r.width, 1), white);
+            GUI.color = new Color(0.38f, 0.28f, 0.1f); GUI.DrawTexture(new Rect(r.x, r.yMax - 2, r.width, 2), white);
+            foreach (var sp in new[] { new Vector2(r.x + 4, r.y + 4), new Vector2(r.xMax - 10, r.y + 4), new Vector2(r.x + 4, r.yMax - 10), new Vector2(r.xMax - 10, r.yMax - 10) })
+            { GUI.color = new Color(0.4f, 0.3f, 0.12f); GUI.DrawTexture(new Rect(sp.x, sp.y, 6, 6), texDisc); GUI.color = new Color(1, 1, 1, 0.35f); GUI.DrawTexture(new Rect(sp.x + 1, sp.y + 1, 2, 2), texDisc); }
+            GUI.color = Color.white;
+            GUI.Label(new Rect(r.x + 14, r.y + 6, r.width - 60, 22), "<size=13><b><color=#3b2a08>궤도 청소부 " + M.company + "대</color></b></size>", label);
+            GUI.Label(new Rect(r.x + 14, r.y + 26, r.width - 60, 20), "<size=10><color=#4a360c>쌓인 신용 +" + S.creditPending + "</color></size>", label);
+            var cv = new Rect(r.xMax - 48, r.y + 7, 36, r.height - 14);
+            bool can = sim.CanBankrupt, ov = can && cv.Contains(Event.current.mousePosition);
+            if (!can)
+            {
+                GUI.color = new Color(0.25f, 0.2f, 0.12f); GUI.DrawTexture(cv, white); Frame(cv, new Color(0.35f, 0.27f, 0.12f), 1);
+                GUI.Label(cv, "<size=9><color=#8a6a30>잠김</color></size>", center);
+            }
+            else if (!bankruptArmed)
+            {
+                GUI.color = new Color(0.2f, 0.05f, 0.04f); GUI.DrawTexture(cv, white);
+                GUI.color = new Color(1f, 0.25f, 0.18f, ov ? 0.7f : 0.5f); GUI.DrawTexture(cv, white);
+                GUI.color = new Color(0, 0, 0, 0.22f); for (float yy = cv.y + 3; yy < cv.yMax; yy += 6) GUI.DrawTexture(new Rect(cv.x, yy, cv.width, 2), white);
+                Frame(cv, new Color(0.75f, 0.15f, 0.1f), ov ? 2 : 1.5f);
+                GUI.Label(cv, "<size=10><b><color=#ffe0dc>파산</color></b></size>", center);
+                if (GUI.Button(cv, GUIContent.none, GUIStyle.none)) { bankruptArmed = true; OrbitSfx.Play("tick", 0.7f, 0.2f, 0.02f); }
+            }
+            else
+            {
+                GUI.color = new Color(1f, 0.25f, 0.18f, 0.5f); GUI.DrawTexture(new Rect(cv.x, cv.y - 12, cv.width, 8), white);
+                GUI.color = new Color(0.12f, 0.03f, 0.03f); GUI.DrawTexture(cv, white);
+                float gl = 0.6f + 0.4f * Mathf.Sin(Time.unscaledTime * 8);
+                GUI.color = new Color(1f, 0.2f, 0.15f, gl); GUI.DrawTexture(new Rect(cv.x + 6, cv.y + 5, cv.width - 12, cv.height - 10), texDisc);
+                GUI.color = Color.white;
+                GUI.Label(new Rect(cv.x - 30, cv.yMax + 1, cv.width + 36, 16), "<size=9><color=#ff9b8f>한 번 더 → 파산</color></size>", center);
+                if (GUI.Button(cv, GUIContent.none, GUIStyle.none)) { sim.Bankrupt(); bankruptArmed = false; showResult = false; flow = 2; }
+            }
+            GUI.color = Color.white;
+        }
     }
 }

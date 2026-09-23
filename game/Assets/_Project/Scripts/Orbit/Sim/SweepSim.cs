@@ -46,6 +46,7 @@ namespace SalvageRun.Orbit.Sim
         public int lottoRound = 1, lottoDrawAt = 3;                      // 다음 추첨 = 출동 번호
         public int[] lottoLast; public int lottoLastRound, lottoLastHit; public double lottoLastWin;
         public List<LoanRec> loanLog = new List<LoanRec>();          // 대출 창에 보이는 내역 (최근 30개)
+        public List<double> runEarn = new List<double>();                 // 최근 출동 벌이 (조종실 브라운관 막대 · 6개)
         public double lastClaw, lastDrone, lastBlast; public int lastBroke = -1, lastChain, lastContract;   // 조종실 출동 보고 — 껐다 켜도 남게 (lastContract 0 없음 · 1 성공 · 2 실패)
     }
 
@@ -1232,7 +1233,7 @@ namespace SalvageRun.Orbit.Sim
                 else S.overRuns++;
             }
             if (r.cut > 0) LogLoan(1, r.cut);
-            S.lastClaw = r.earnClaw; S.lastDrone = r.earnDrone; S.lastBlast = r.earnBlast; S.lastBroke = r.broke; S.lastChain = r.chainBest;
+            S.lastClaw = r.earnClaw; S.lastDrone = r.earnDrone; S.lastBlast = r.earnBlast; S.runEarn.Add(r.earnClaw + r.earnDrone + r.earnBlast); if (S.runEarn.Count > 6) S.runEarn.RemoveAt(0); S.lastBroke = r.broke; S.lastChain = r.chainBest;
             S.lastContract = r.contractText == null ? 0 : r.contractOk ? 1 : 2;
             LottoDraw();                                                // 🎱 추첨 날이면
             CheckClean();                                               // 판 수입에서 떼어 빚을 다 갚았을 수도
