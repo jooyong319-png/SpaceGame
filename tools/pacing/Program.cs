@@ -58,6 +58,10 @@ static class Program
                     continue;
                 }
                 if (sim.S.bill >= SweepSim.Bills.Length && sim.RepayDebt()) log.Add($"{Min(),6:0.0}분  {sim.M.company}대  🏦 빚 갚는 중 · 남은 빚 {sim.S.debt:0}");
+                // 행성 허가증 — 기한이 3판 넘게 남았거나, 사고도 청구서 몫이 남으면 산다
+                for (int pi = 1; pi < SweepSim.Orbits.Length; pi++)
+                    if (sim.OnSale(pi) && !sim.S.overdue && sim.S.cash >= SweepSim.Orbits[pi].permit && (sim.S.billDue >= 3 || sim.S.cash - SweepSim.Orbits[pi].permit >= sim.BillAmount) && sim.BuyPermit(pi))
+                        log.Add($"{Min(),6:0.0}분  {sim.M.company}대  🪐 {SweepSim.Orbits[pi].name} 허가증 ({SweepSim.Orbits[pi].permit:0})");
                 sim.SetOrbit(sim.MaxOrbit);
                 // 사기 — 청구서 몫은 남겨 두고 싼 것부터
                 // 기한이 한 판 남았거나 연체 중이면 모은다 (사람도 그렇게 한다)

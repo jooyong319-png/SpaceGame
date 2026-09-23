@@ -29,7 +29,7 @@ namespace SalvageRun.Orbit
         readonly List<SpriteRenderer> droneViews = new List<SpriteRenderer>();
         readonly List<SpriteRenderer> cableViews = new List<SpriteRenderer>();
         readonly List<SpriteRenderer> podViews = new List<SpriteRenderer>();
-        SpriteRenderer earth, atmo, rim, band, bandGlow, claw, clawRing, clawWind, holeCore, holeGlow, holeRing, moon, sun, sunCore;
+        SpriteRenderer earth, ringB, ringF, atmo, rim, band, bandGlow, claw, clawRing, clawWind, holeCore, holeGlow, holeRing, moon, sun, sunCore;
         float t, saveTimer, bandInner = -1, earthR = 120, camBase;
         public bool aimOn, holdOn;
         bool castPending;
@@ -79,7 +79,9 @@ namespace SalvageRun.Orbit
             sun = Make(glow, PxToWorld(96, 528), 7.5f, new Color(1f, 0.86f, 0.6f, 0.18f), 0);     // 정지궤도 — 멀리 있는 태양
             sunCore = Make(disc, PxToWorld(96, 528), 0.5f, new Color(1f, 0.95f, 0.82f, 0.9f), 1);
             atmo = Make(glow, Vector3.zero, 3.4f, new Color(0.35f, 0.6f, 1f, 0.35f), 4);
-            earth = Make(disc, Vector3.zero, 2.4f, new Color(0.26f, 0.47f, 0.84f), 5);
+            earth = Make(PlanetArt.Get(0), Vector3.zero, 2.4f, Color.white, 5);
+            ringB = Make(PlanetArt.RingBack, Vector3.zero, 1f, Color.white, 4);      // 토성 고리 — 뒤 · 앞
+            ringF = Make(PlanetArt.RingFront, Vector3.zero, 1f, Color.white, 6);
             rim = Make(ring, Vector3.zero, 2.5f, new Color(1f, 0.87f, 0.58f, 0), 6);
             band = Make(disc, Vector3.zero, 7f, new Color(1, 1, 1, 0.05f), 1);
             bandGlow = Make(ring, Vector3.zero, 7f, new Color(1f, 0.76f, 0.3f, 0), 2);
@@ -363,22 +365,44 @@ namespace SalvageRun.Orbit
 
         // ───────────────────────────────── 궤도 · 지구 (궤도마다 카메라가 물러난다 §1-5)
 
+        // 🪐 행성마다 크기 · 대기 빛 · 띠 색 (지구 · 달 · 화성 · 목성 · 토성)
+        static readonly float[] PlanetR = { 118, 80, 96, 150, 104 };
+        static readonly Color[] AtmoCol = { new Color(0.35f, 0.6f, 1f, 0.35f), new Color(0.8f, 0.8f, 0.85f, 0.06f), new Color(1f, 0.5f, 0.35f, 0.18f), new Color(1f, 0.8f, 0.55f, 0.2f), new Color(1f, 0.9f, 0.6f, 0.16f) };
+        static readonly Color[] BandCol = { new Color(0.43f, 0.55f, 0.78f), new Color(0.6f, 0.6f, 0.66f), new Color(0.8f, 0.45f, 0.35f), new Color(0.8f, 0.62f, 0.42f), new Color(0.85f, 0.75f, 0.5f) };
+        int shownPlanet = -1;
+
         void DrawWorld()
         {
-            var o = SweepSim.Orbits[sim.S.orbit];
-            float wantR = sim.S.orbit == 0 ? 120 : sim.S.orbit == 1 ? 80 : 46;
-            earthR = Mathf.Lerp(earthR, wantR, 1 - Mathf.Exp(-Time.deltaTime * 2.5f));
+            int pi = sim.S.orbit;
+            var o = SweepSim.Orbits[pi];
+            if (pi != shownPlanet) { shownPlanet = pi; earth.sprite = PlanetArt.Get(pi); }
+            earthR = Mathf.Lerp(earthR, PlanetR[pi], 1 - Mathf.Exp(-Time.deltaTime * 2.5f));
             float d = earthR * 2 / PxPerUnit;
-            earth.transform.localScale = Vector3.one * d / disc.bounds.size.x;
+            earth.transform.localScale = Vector3.one * d / earth.sprite.bounds.size.x;
+            earth.transform.rotation = Quaternion.Euler(0, 0, pi == 3 || pi == 4 ? 0 : -8f);
+            atmo.color = AtmoCol[pi];
             atmo.transform.localScale = Vector3.one * d * 1.45f * (1f + 0.02f * Mathf.Sin(t)) / glow.bounds.size.x;
             rim.transform.localScale = Vector3.one * (d + 0.12f) / ring.bounds.size.x;
             rim.color = new Color(1f, 0.87f, 0.58f, rimLit);
-            moon.enabled = sim.S.orbit == 1;
-            bool geo = sim.S.orbit == 2;
+            // 토성 — 고리가 행성을 감싼다 (띠 안쪽까지만)
+            bool saturn = pi == 4;
+            ringB.enabled = ringF.enabled = saturn;
+            if (saturn)
+            {
+                float rw = (float)o.bi * 0.95f * 2 / PxPerUnit;
+                var sc = new Vector3(rw / ringB.sprite.bounds.size.x, rw * 0.3f / ringB.sprite.bounds.size.y, 1);
+                ringB.transform.localScale = ringF.transform.localScale = sc;
+                ringB.transform.rotation = ringF.transform.rotation = Quaternion.Euler(0, 0, -6f);
+            }
+            // 멀리 — 지구에선 달이, 화성 너머로는 작은 해가 보인다
+            moon.enabled = pi == 0;
+            if (pi == 0 && moon.sprite != PlanetArt.Get(1)) { moon.sprite = PlanetArt.Get(1); moon.color = Color.white; moon.transform.localScale = Vector3.one * 0.6f / moon.sprite.bounds.size.x; }
+            bool geo = pi >= 2;
             sun.enabled = sunCore.enabled = geo;
             if (geo)
             {
-                float pulse = 1f + 0.03f * Mathf.Sin(t * 0.8f);
+                float far = pi == 2 ? 1f : pi == 3 ? 0.6f : 0.42f;
+                float pulse = (1f + 0.03f * Mathf.Sin(t * 0.8f)) * far;
                 sun.transform.localScale = Vector3.one * 7.5f * pulse / glow.bounds.size.x;
                 sunCore.transform.localScale = Vector3.one * 0.5f * pulse / disc.bounds.size.x;
             }
@@ -386,7 +410,7 @@ namespace SalvageRun.Orbit
             if (Mathf.Abs(inner - bandInner) > 0.001f) { bandInner = inner; bandSprite = Ring(256, inner); band.sprite = bandSprite; }
             float outer = (float)sim.Bo * 2 / PxPerUnit;
             band.transform.localScale = new Vector3(outer / bandSprite.bounds.size.x, outer * (float)SweepSim.Tilt / bandSprite.bounds.size.y, 1);
-            Color bc = sim.S.orbit == 0 ? new Color(0.43f, 0.55f, 0.78f) : sim.S.orbit == 1 ? new Color(0.55f, 0.45f, 0.82f) : new Color(0.78f, 0.55f, 0.45f);
+            Color bc = BandCol[pi];
             bc.a = 0.035f + bandLit * 0.025f; band.color = bc;
             bandGlow.transform.localScale = new Vector3(outer / ring.bounds.size.x, outer * (float)SweepSim.Tilt / ring.bounds.size.y, 1);
             bandGlow.color = new Color(1f, 0.8f, 0.4f, bandLit * 0.4f + edgeGlow * 0.12f);

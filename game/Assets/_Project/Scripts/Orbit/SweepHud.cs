@@ -22,7 +22,7 @@ namespace SalvageRun.Orbit
 
         // 결산
         bool showResult, bankruptArmed; public bool newsOpen;
-        float dueNag; public bool loanOpen;
+        float dueNag; public bool loanOpen; int permitArmed = -1;
         int prevBestChain, prevBestPack, runNewsFrom;
         SweepRun last;
         double shown;
@@ -122,7 +122,7 @@ namespace SalvageRun.Orbit
             scale = Screen.height / RefH; vw = Screen.width / scale; ox = Mathf.Max(0, (vw - 960) / 2);
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1));
             Effects();
-            if (!sim.R.over) { WindowEdge(); Pops(); RunHud(); }
+            if (!sim.R.over) { Storm(); WindowEdge(); Pops(); RunHud(); }
             if (sim.M.won) Ending();
             else if (sim.M.careerOpen) Career();
             else if (sim.R.over)
@@ -168,6 +168,21 @@ namespace SalvageRun.Orbit
         }
 
         /// <summary>출동 중에도 「창으로 내다본다」 — 가장자리에 옅은 선체와 창틀 모서리 (사장님 09-23)</summary>
+        // 🔴 화성 모래 폭풍 — 22초마다 5초쯤 붉은 먼지가 화면을 덮는다 (화면만, 규칙은 그대로)
+        void Storm()
+        {
+            var o = SweepSim.Orbits[sim.S.orbit];
+            if (!o.storm || sim.R.clean) return;
+            float ph = (float)(sim.R.t % 22.0);
+            float a = ph < 14 ? 0 : ph < 15.5f ? (ph - 14) / 1.5f : ph < 19.5f ? 1 : ph < 21 ? 1 - (ph - 19.5f) / 1.5f : 0;
+            if (a <= 0) return;
+            GUI.color = new Color(0.72f, 0.36f, 0.2f, 0.42f * a); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white);
+            GUI.color = new Color(0.9f, 0.55f, 0.35f, 0.18f * a);
+            for (int i = 0; i < 6; i++) { float x = Mathf.Repeat(Time.time * (60 + i * 25) + i * 170, vw + 400) - 200; GUI.DrawTexture(new Rect(x, 80 + i * 80, 380, 60), texDisc); }
+            GUI.color = Color.white;
+            if (ph > 14 && ph < 15.2f) GUI.Label(new Rect(0, 90, vw, 26), "<size=18><color=#ffb080>모래 폭풍!</color></size>", center);
+        }
+
         void WindowEdge()
         {
             GUI.color = new Color(0.03f, 0.05f, 0.08f, 0.32f);
@@ -634,23 +649,45 @@ namespace SalvageRun.Orbit
             }
             GUI.Label(new Rect(ht.x, ht.yMax - 32, ht.width, 26), "<size=17><color=#ffdf95>정비고로 ▾</color></size>", center);
 
-            // ⑥ 궤도 다이얼 · 의뢰 카드 (아래 오른쪽) — 다이얼은 사장님이 나중에 다시
-            var dl = new Rect(ox + 662, 410, 250, 116);
-            Plate(dl, "궤도 다이얼", "의뢰 카드", SweepGame.Amber, false);
+            SweepSim.Contract? c;
+            // ⑥ 항로 다이얼 · 의뢰 카드 (아래 오른쪽) — 행성 다섯. 열린 곳은 누르면 간다, 판매 중이면 허가증을 산다 (두 번)
+            var dl = new Rect(ox + 662, 398, 250, 132);
+            Plate(dl, "항로 다이얼", "의뢰 카드", SweepGame.Amber, false);
+            int hoverP = -1;
             if (!M.cleanReady)
-                for (int i = 0; i <= 2; i++)
+                for (int i = 0; i < SweepSim.Orbits.Length; i++)
                 {
-                    var o = SweepSim.Orbits[i]; var br = new Rect(dl.x + 8 + i * 79, dl.y + 26, 75, 30);
-                    if (i > sim.MaxOrbit) { GUI.color = ScreenCol; GUI.DrawTexture(br, white); GUI.color = Color.white; GUI.Label(br, "<size=11><color=#5a6a80>" + o.name + " 잠김</color></size>", center); }
-                    else
+                    var o = SweepSim.Orbits[i];
+                    var cell = new Rect(dl.x + 8 + i * 47, dl.y + 24, 45, 58);
+                    var ic = new Rect(cell.x + 6, cell.y + 2, 33, 33);
+                    bool open = sim.Open(i), sale = sim.OnSale(i);
+                    if (cell.Contains(Event.current.mousePosition)) hoverP = i;
+                    if (i == S.orbit) { GUI.color = new Color(0.95f, 0.76f, 0.31f, 0.18f); GUI.DrawTexture(cell, white); GUI.color = Color.white; Frame(cell, SweepGame.Amber, 2); }
+                    GUI.color = open ? Color.white : sale ? new Color(0.5f, 0.5f, 0.55f) : new Color(0.13f, 0.14f, 0.17f);
+                    GUI.DrawTexture(ic, PlanetArt.Get(i).texture);
+                    if (i == 4) { GUI.color = open ? new Color(0.9f, 0.82f, 0.6f, 0.8f) : GUI.color; GUI.DrawTexture(new Rect(ic.x - 5, ic.center.y - 2, ic.width + 10, 3), white); }
+                    GUI.color = Color.white;
+                    string sub = open ? "<color=#dde3ea>" + o.name + "</color>" : sale ? (permitArmed == i ? "<color=#ffdf95>한 번 더</color>" : "<color=#ffdf95>" + KNum.Fmt(o.permit) + "</color>") : "<color=#5a6a80>청구서 " + o.sell + "</color>";
+                    GUI.Label(new Rect(cell.x - 4, cell.y + 36, cell.width + 8, 22), "<size=10>" + sub + "</size>", center);
+                    if (GUI.Button(cell, GUIContent.none, GUIStyle.none))
                     {
-                        if (GUI.Button(br, "<size=12>" + o.name + " ×" + o.mult + "</size>", i == S.orbit ? btn : btnOff)) sim.SetOrbit(i);
-                        if (i == S.orbit) Frame(br, SweepGame.Amber, 2);
+                        if (open) { sim.SetOrbit(i); permitArmed = -1; }
+                        else if (sale && S.cash >= o.permit) { if (permitArmed == i) { sim.BuyPermit(i); permitArmed = -1; OrbitSfx.Play("buy", 0.9f); } else permitArmed = i; }
+                        else OrbitSfx.Play("tick", 0.5f, 0.6f, 0.05f);
                     }
                 }
-            var ds = Scr(dl, 62, 46);
-            var c = sim.CurContract;
-            if (c != null && !M.cleanReady)
+            var ds = Scr(dl, 86, 38);
+            if (hoverP >= 0)
+            {
+                var o = SweepSim.Orbits[hoverP];
+                string st = sim.Open(hoverP) ? "열림" : sim.OnSale(hoverP) ? "허가증 " + KNum.Fmt(o.permit) + (S.cash >= o.permit ? " — 눌러서 사기" : " — 돈이 모자라다") : "청구서 " + o.sell + "장을 갚으면 판매";
+                GUI.Label(new Rect(ds.x + 6, ds.y + 1, ds.width - 12, 20), "<size=12><color=#ffdf95>" + o.name + " ×" + o.mult + "</color> · " + o.desc + "</size>", label);
+                GUI.Label(new Rect(ds.x + 6, ds.y + 18, ds.width - 12, 20), "<size=11><color=#8a9bb3>" + st + "</color></size>", label);
+                c = null;
+            }
+            else c = sim.CurContract;
+            if (hoverP >= 0) { }
+            else if (c != null && !M.cleanReady)
             {
                 GUI.Label(new Rect(ds.x + 8, ds.y + 4 - 3, ds.width - 70, 26), "<size=12><color=#8a9bb3>의뢰</color> " + c.Value.text + "</size>", label);
                 GUI.Label(new Rect(ds.x + 8, ds.y + 22 - 3, ds.width - 70, 24), "<size=11><color=#8a9bb3>성공하면 판 수입 +" + (25 + 10 * sim.Lv("e_quest")) + "%</color></size>", label);

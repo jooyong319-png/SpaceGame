@@ -31,11 +31,12 @@ namespace SalvageRun.Orbit.Sim
     [Serializable]
     public class SweepState
     {
-        public int version = 21;
+        public int version = 22;
         public double cash, billAmount = -1, creditPending, startedAt, debt;   // debt = 갚아야 할 빚 (대출 × 배수)
         public int runs, orbit, bill, billDue = 5, overRuns, contract = -1;
         public bool overdue, rerolled;
         public int[] lv = new int[SweepSim.NodeCount];
+        public int planets = 1;                                          // 연 행성 (비트) — 지구는 늘
         public List<LoanRec> loanLog = new List<LoanRec>();          // 대출 창에 보이는 내역 (최근 30개)
         public double lastClaw, lastDrone, lastBlast; public int lastBroke = -1, lastChain, lastContract;   // 조종실 출동 보고 — 껐다 켜도 남게 (lastContract 0 없음 · 1 성공 · 2 실패)
     }
@@ -106,12 +107,16 @@ namespace SalvageRun.Orbit.Sim
         static bool IsHost(int k) => k == Sat || k == Rocket || k == Vault || k == Big;
 
         // ───────────────────────── 궤도 셋 (§4-1)
-        public struct OrbitDef { public string name; public double bi, bo, mult, att; public double[] mix; public int nMin, nMax; public int[] forms, events; }
+        // 🪐 행성 다섯 — 궤도 자리 (09-23 사장님 「여러 행성을 청소해 주는 느낌」). 청구서를 갚으면 허가증이 팔리고, 돈 내고 연다
+        // spin 궤도 도는 빠르기 · hp 잔해 체력 배율 · pull 안쪽으로 끌리는 힘(목성) · gap 띠 가운데 빈 틈(토성 두 겹 고리) · storm 모래 폭풍(화성, 화면만)
+        public struct OrbitDef { public string name, desc; public double bi, bo, mult, att, spin, hp, pull, gap, permit; public int sell; public bool storm; public double[] mix; public int nMin, nMax; public int[] forms, events; }
         public static readonly OrbitDef[] Orbits =
         {
-            new OrbitDef { name = "저궤도",   bi = 150, bo = 262, mult = 1,  att = 0.10, mix = new double[] { 60, 22, 4, 2, 5, 4, 1.2 }, nMin = 90,  nMax = 150, forms = new[] { 0, 0 },       events = new[] { 0, 1 } },
-            new OrbitDef { name = "중궤도",   bi = 132, bo = 272, mult = 2,  att = 0.20, mix = new double[] { 48, 22, 12, 3, 5, 7, 1.5 }, nMin = 120, nMax = 220, forms = new[] { 1, 2, 0 }, events = new[] { 2, 1 } },
-            new OrbitDef { name = "정지궤도", bi = 112, bo = 292, mult = 3,  att = 0.30, mix = new double[] { 38, 18, 8, 8, 5, 6, 3 },    nMin = 170, nMax = 280, forms = new[] { 3, 4, 1 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = "지구", desc = "기본 궤도",                         bi = 150, bo = 262, mult = 1, att = 0.10, spin = 1,    hp = 1,   sell = 0, permit = 0,       mix = new double[] { 60, 22, 4, 2, 5, 4, 1.2 },  nMin = 90,  nMax = 150, forms = new[] { 0, 0 },       events = new[] { 0, 1 } },
+            new OrbitDef { name = "달",   desc = "느린 궤도 · 금고 위성이 많다",       bi = 118, bo = 240, mult = 1.5, att = 0.15, spin = 0.6,  hp = 1.1, sell = 2, permit = 1500,     mix = new double[] { 48, 22, 6, 9, 5, 4, 1.2 },  nMin = 100, nMax = 170, forms = new[] { 0, 1 },       events = new[] { 0, 3 } },
+            new OrbitDef { name = "화성", desc = "모래 폭풍 · 얼음 껍질",             bi = 132, bo = 272, mult = 2, att = 0.25, spin = 1.1,  hp = 1.3, sell = 3, permit = 20000,    storm = true, mix = new double[] { 48, 22, 12, 3, 5, 7, 1.5 }, nMin = 120, nMax = 220, forms = new[] { 1, 2, 0 }, events = new[] { 2, 1 } },
+            new OrbitDef { name = "목성", desc = "강한 중력 — 잔해가 안쪽에 몰린다 · 장갑판", bi = 188, bo = 318, mult = 3, att = 0.30, spin = 1.3,  hp = 1.6, sell = 5, permit = 1500000,  pull = 9, mix = new double[] { 40, 18, 10, 6, 5, 8, 2.5 }, nMin = 170, nMax = 280, forms = new[] { 3, 4, 1 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = "토성", desc = "두 겹 고리 · 케이블 망",            bi = 150, bo = 300, mult = 4.5, att = 0.30, spin = 0.9,  hp = 2.0, sell = 6, permit = 15000000, gap = 0.28, mix = new double[] { 38, 18, 8, 8, 5, 6, 3 }, nMin = 180, nMax = 290, forms = new[] { 2, 2, 3, 4 }, events = new[] { 3, 4 } },
         };
         public static readonly string[] FormNames = { "무리", "탱크 사슬", "케이블 망", "호송대", "난파 구역" };
         public static readonly string[] EventNames = { "연료 보급선", "충돌 사고", "파편 폭풍", "금고 호송대", "대충돌" };
@@ -217,11 +222,11 @@ namespace SalvageRun.Orbit.Sim
         public static readonly Bill[] Bills =
         {
             new Bill { t = "연료비",           m = 45,     due = 5, credit = 2,  perk = "드론 2대 · 금고 위성 · 부착물이 나온다" },
-            new Bill { t = "청소선 할부 1회",  m = 700,    due = 4, credit = 3,  perk = "블랙홀 폭탄 — 지구에서 판마다 2발 올려 보낸다" },
-            new Bill { t = "궤도 사용료",      m = 2500,   due = 4, credit = 5,  perk = "중궤도 면허 (값 ×2)" },
-            new Bill { t = "보험료",           m = 120000, due = 5, credit = 8,  perk = "큰 잔해 등장 · 연쇄 +10%" },
-            new Bill { t = "청소선 할부 2회",  m = 200000, due = 4, credit = 12, perk = "드론 등급 +1" },
-            new Bill { t = "법인세",           m = 4000000, due = 5, credit = 18, perk = "정지궤도 면허 (값 ×3)" },
+            new Bill { t = "청소선 할부 1회",  m = 700,    due = 4, credit = 3,  perk = "블랙홀 스킬 · 🌙 달 허가증 판매 (×1.5)" },
+            new Bill { t = "궤도 사용료",      m = 2500,   due = 4, credit = 5,  perk = "🔴 화성 허가증 판매 (값 ×2)" },
+            new Bill { t = "보험료",           m = 180000, due = 5, credit = 8,  perk = "큰 잔해 등장 · 연쇄 +10%" },
+            new Bill { t = "청소선 할부 2회",  m = 300000, due = 4, credit = 12, perk = "드론 등급 +1 · 🪐 목성 허가증 판매 (×3)" },
+            new Bill { t = "법인세",           m = 4000000, due = 5, credit = 18, perk = "💫 토성 허가증 판매 (값 ×4.5)" },
             new Bill { t = "청소선 할부 3회",  m = 20000000, due = 5, credit = 26, perk = "폭탄 +1 · 붕괴 한계 +50%" },
             new Bill { t = "청소선 할부 완납", m = 60000000, due = 6, credit = 0,  perk = "빚 청산 → 청산 출동" },
         };
@@ -247,14 +252,18 @@ namespace SalvageRun.Orbit.Sim
             new Contract { orbit = 0, kind = 1, target = 6,   text = "로켓 동체 6개" },
             new Contract { orbit = 0, kind = 2, target = 150, text = "조각 150개" },
             new Contract { orbit = 0, kind = 3, target = 20,  text = "죽은 위성 20개" },
-            new Contract { orbit = 1, kind = 4, target = 40,  text = "연쇄 40" },
-            new Contract { orbit = 1, kind = 5, target = 15,  text = "폭발 탱크 15개" },
-            new Contract { orbit = 1, kind = 6, target = 25,  text = "한 번에 25개 압축" },
             new Contract { orbit = 1, kind = 0, target = 5,   text = "금고 위성 5개" },
-            new Contract { orbit = 2, kind = 7, target = 3,   text = "큰 잔해 3개" },
-            new Contract { orbit = 2, kind = 0, target = 12,  text = "금고 위성 12개" },
-            new Contract { orbit = 2, kind = 4, target = 150, text = "연쇄 150" },
-            new Contract { orbit = 2, kind = 6, target = 60,  text = "한 번에 60개 압축" },
+            new Contract { orbit = 1, kind = 2, target = 250, text = "조각 250개" },
+            new Contract { orbit = 1, kind = 3, target = 30,  text = "죽은 위성 30개" },
+            new Contract { orbit = 2, kind = 4, target = 40,  text = "연쇄 40" },
+            new Contract { orbit = 2, kind = 5, target = 15,  text = "폭발 탱크 15개" },
+            new Contract { orbit = 2, kind = 6, target = 25,  text = "한 번에 25개 압축" },
+            new Contract { orbit = 3, kind = 7, target = 3,   text = "큰 잔해 3개" },
+            new Contract { orbit = 3, kind = 4, target = 150, text = "연쇄 150" },
+            new Contract { orbit = 3, kind = 6, target = 60,  text = "한 번에 60개 압축" },
+            new Contract { orbit = 4, kind = 0, target = 12,  text = "금고 위성 12개" },
+            new Contract { orbit = 4, kind = 4, target = 200, text = "연쇄 200" },
+            new Contract { orbit = 4, kind = 7, target = 4,   text = "큰 잔해 4개" },
             new Contract { orbit = -1, kind = 8, target = 5,  text = "압류 딱지 5개" },
         };
 
@@ -280,7 +289,12 @@ namespace SalvageRun.Orbit.Sim
                 for (int i = 0; i < 35; i++) nl[i < at ? i : i + 1] = s.lv[i];
                 s.lv = nl; s.version = 21;
             }
-            if (s == null || s.version != 21) { S = new SweepState(); S.startedAt = M.playSeconds; }
+            if (s != null && s.version == 21)
+            {
+                s.planets = 1 | (s.bill >= 3 ? 2 : 0) | (s.bill >= 6 ? 4 : 0);
+                s.version = 22;
+            }
+            if (s == null || s.version != 22) { S = new SweepState(); S.startedAt = M.playSeconds; }
             else S = s;
             if (S.lv == null || S.lv.Length != NodeCount) S.lv = new int[NodeCount];
             if (M.news.Count == 0) AddNews("first_run");
@@ -301,14 +315,24 @@ namespace SalvageRun.Orbit.Sim
         public bool BombsOn => S.bill >= 2;
         public bool ContractsOn => S.bill >= 2;
         public bool BigsOn => S.bill >= 4;
-        public int MaxOrbit => S.bill >= 6 ? 2 : S.bill >= 3 ? 1 : 0;
+        public int MaxOrbit { get { int m = 0; for (int i = 0; i < Orbits.Length; i++) if (Open(i)) m = i; return m; } }
+        public bool Open(int i) => i == 0 || (S.planets & (1 << i)) != 0;
+        public bool OnSale(int i) => !Open(i) && S.bill >= Orbits[i].sell;
+        public bool BuyPermit(int i)
+        {
+            if (!R.over || !OnSale(i) || S.cash < Orbits[i].permit) return false;
+            S.cash -= Orbits[i].permit; S.planets |= 1 << i;
+            AddNews(null, Orbits[i].name + " 청소 허가 — 민간 청소선 첫 진입", "케슬러 금융이 " + Orbits[i].name + " 궤도 청소 허가증을 내줬다. " + Orbits[i].desc + ". 값은 지구의 " + Orbits[i].mult + "배라고 한다.");
+            S.orbit = i; RollContract(); Preview();
+            return true;
+        }
         public double FuelMax => (30 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.2 * Cr(0));
         public double Gap => Math.Max(0.3, 0.6 - 0.045 * Lv("c_spd"));
         public double ClawR => Lv("c_rad") > 0 ? 22 + 10 * Lv("c_rad") : 0;   // 0 = 하나씩
         public bool AutoClaw => true;        // 🔴 자동이 기본 (사장님 09-23: "클릭은 빼자 오토는 기본으로")
         public const double PickR = 30;      // 범위 강화 전 — 커서 밑 하나를 잡는 거리
         public int ClawDmg => 1 + Lv("c_pow");
-        public double HpMul => 1 + 0.45 * Math.Max(0, S.bill - 2);   // 잔해 체력 배율 — 청구서 3장째부터 한 장마다 +45% (초반은 가볍게)
+        public double HpMul => (1 + 0.45 * Math.Max(0, S.bill - 2)) * Orbits[S.orbit].hp;   // 잔해 체력 배율 — 청구서 3장째부터 한 장마다 +45% (초반은 가볍게)
         public int BlastDmg => 2 + 2 * ClawDmg;                    // 폭발은 즉사가 아니라 피해
         public double Crit => 0.05 * Lv("c_crit");
         public int DroneCount => DronesOn ? 2 + Lv("d_n") + Lv("d_fact") + Cr(3) : 0;
@@ -332,7 +356,8 @@ namespace SalvageRun.Orbit.Sim
         // ── 대출 (연체 대신) — 언제든 받을 수 있다. 받은 돈 × 배수를 판 수입에서 조금씩 갚는다
         public static double LoanMult = 3;
         void CheckClean() { if (S.bill >= Bills.Length && S.debt <= 0.5) { S.debt = 0; M.cleanReady = true; } }   // 청구서도 빚도 다 갚아야 청산 출동
-        public double LoanCap => M.cleanReady || S.bill >= Bills.Length ? 0 : Math.Max(0, Math.Floor(BillAmount - S.debt / LoanMult));   // 한도 = 지금 청구서 금액 − 남은 원금
+        public double LoanCap => M.cleanReady || S.bill >= Bills.Length - 1 ? 0 :   // 마지막 할부(완납)엔 대출이 안 된다 — 빚으로 빚을 끝내면 끝없이 갚기만 한다
+             Math.Max(0, Math.Floor(BillAmount - S.debt / LoanMult));   // 한도 = 지금 청구서 금액 − 남은 원금
         public bool TakeLoan(double amt)
         {
             amt = Math.Min(Math.Ceiling(amt), LoanCap);
@@ -472,7 +497,7 @@ namespace SalvageRun.Orbit.Sim
 
         public void CloseCareer() { M.careerOpen = false; }
 
-        public void SetOrbit(int i) { if (R.over && i >= 0 && i <= MaxOrbit && i != S.orbit) { S.orbit = i; RollContract(); Preview(); } }
+        public void SetOrbit(int i) { if (R.over && i >= 0 && i < Orbits.Length && Open(i) && i != S.orbit) { S.orbit = i; RollContract(); Preview(); } }
 
         public void RollContract()
         {
@@ -560,7 +585,7 @@ namespace SalvageRun.Orbit.Sim
         {
             if (!R.over || S.bill >= Bills.Length && !M.cleanReady && S.debt <= 0) return;   // 청구서를 다 갚아도 빚이 남았으면 갚으러 출동한다
             bool clean = M.cleanReady;
-            if (clean) S.orbit = 2;
+            if (clean) S.orbit = MaxOrbit;
             S.runs++; S.rerolled = false;
             var r = new SweepRun { clean = clean };
             r.max = r.fuel = clean ? 45 : FuelMax;
@@ -617,8 +642,10 @@ namespace SalvageRun.Orbit.Sim
             var list = new List<Att> { Att.Pouch, Att.Pouch };
             if (S.bill >= 1) list.Add(Att.Beacon);
             if (S.bill >= 2) list.Add(Att.Magnet);
-            if (S.orbit >= 1 || R.clean) { list.Add(Att.Det); list.Add(Att.Det); list.Add(Att.Ice); }
-            if (S.orbit >= 2 || R.clean) { list.Add(Att.Armor); list.Add(Att.Armor); }
+            if (S.orbit >= 2 || R.clean) { list.Add(Att.Det); list.Add(Att.Det); list.Add(Att.Ice); }
+            if (S.orbit == 2) { list.Add(Att.Ice); list.Add(Att.Ice); }             // 화성 — 얼음 껍질
+            if (S.orbit >= 3 || R.clean) { list.Add(Att.Armor); list.Add(Att.Armor); }
+            if (S.orbit == 3) list.Add(Att.Armor);                                   // 목성 — 장갑판
             return list[rng.Next(list.Count)];
         }
 
@@ -627,7 +654,7 @@ namespace SalvageRun.Orbit.Sim
             var o = Orbits[S.orbit];
             if (k < 0) k = PickType();
             if (a < 0) a = Rnd(0, Math.PI * 2);
-            if (rr < 0) rr = o.bi + Rnd() * (Bo - o.bi);                  // 띠 안 아무 곳에서 서서히 나타난다 (가장자리에서만 들어오면 바깥에 쏠린다)
+            if (rr < 0) { double u = Rnd(); if (o.gap > 0) u = u < 0.5 ? u * (1 - o.gap) : 0.5 * (1 - o.gap) + o.gap + (u - 0.5) * (1 - o.gap); rr = o.bi + u * (Bo - o.bi); }   // 토성 — 가운데 틈을 비운다                  // 띠 안 아무 곳에서 서서히 나타난다 (가장자리에서만 들어오면 바깥에 쏠린다)
             Att at = att ?? Att.None;
             if (att == null && IsHost(k) && (R.clean || S.bill >= 1) && Rnd() < (R.clean ? 0.35 : o.att * (1 + 0.4 * Lv("e_att")))) at = PickAtt();
             int hp = (int)Math.Round(Types[k].hp * (k == Fuel || k == Tank ? 1 : HpMul)) + (at == Att.Ice ? 2 : 0);   // 청구서를 갚을수록 단단해진다
@@ -822,7 +849,8 @@ namespace SalvageRun.Orbit.Sim
                 }
                 else
                 {
-                    d.a += 0.12 * d.ws * dt;
+                    d.a += 0.12 * d.ws * dt * o.spin;
+                    if (o.pull > 0 && d.tr <= 0 && d.rr > o.bi + 6) d.rr = Math.Max(o.bi + 6, d.rr - o.pull * dt * (Types[d.k].heavy ? 0.5 : 1));   // 목성 — 안쪽으로 끌린다
                     if (d.tr > 0) { double step = (25 + 20 * (d.ws - 0.92) / 0.16) * dt; if (Math.Abs(d.tr - d.rr) <= step) { d.rr = d.tr; d.tr = 0; } else d.rr += Math.Sign(d.tr - d.rr) * step; }
                     Place(d);
                 }
