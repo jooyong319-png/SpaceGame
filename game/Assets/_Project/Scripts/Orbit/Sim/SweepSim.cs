@@ -225,6 +225,7 @@ namespace SalvageRun.Orbit.Sim
             else S = s;
             if (S.lv == null || S.lv.Length != NodeCount) S.lv = new int[NodeCount];
             if (M.news.Count == 0) AddNews("first_run");
+            if (ContractsOn && S.contract < 0) RollContract();     // 의뢰가 비어 있으면 채운다
             Preview();
         }
 

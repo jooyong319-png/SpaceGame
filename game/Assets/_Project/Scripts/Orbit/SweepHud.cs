@@ -45,6 +45,7 @@ namespace SalvageRun.Orbit
         public void OnRunEnd()
         {
             showResult = true; bankruptArmed = false; last = sim.R; resultT = 2.6f;
+            bannerT = 0; banner = null;          // 판 중 예고가 조종실까지 남지 않게
             sim.M.flags.Remove("hint_seen_now");
             if (!sim.M.flags.Contains("hint_claw")) sim.M.flags.Add("hint_claw");
             if (sim.DronesOn && !sim.M.flags.Contains("hint_drone")) sim.M.flags.Add("hint_drone");
@@ -142,7 +143,7 @@ namespace SalvageRun.Orbit
                 chainSt.fontSize = game.kessText == "케슬러!" ? 30 : 44; chainSt.normal.textColor = new Color(1f, 0.6f, 0.3f, Mathf.Min(1, game.kessT * 1.5f));
                 GUI.Label(new Rect(vw / 2 - 300, 142, 600, 60), game.kessText, chainSt);
             }
-            if (bannerT > 0 && banner != null)
+            if (bannerT > 0 && banner != null && !sim.R.over)
             {
                 var c = bannerKind == -1 ? SweepGame.Amber2 : new Color(1f, 0.55f, 0.48f, Mathf.Sin(Time.time * 12) > -0.3f ? 1 : 0.55f);
                 pop.fontSize = 17; pop.normal.textColor = c;

@@ -380,7 +380,7 @@ namespace SalvageRun.Orbit
             Color bc = sim.S.orbit == 0 ? new Color(0.43f, 0.55f, 0.78f) : sim.S.orbit == 1 ? new Color(0.55f, 0.45f, 0.82f) : new Color(0.78f, 0.55f, 0.45f);
             bc.a = 0.035f + bandLit * 0.025f; band.color = bc;
             bandGlow.transform.localScale = new Vector3(outer / ring.bounds.size.x, outer * (float)SweepSim.Tilt / ring.bounds.size.y, 1);
-            bandGlow.color = new Color(1f, 0.8f, 0.4f, bandLit * 0.7f + edgeGlow * 0.2f);
+            bandGlow.color = new Color(1f, 0.8f, 0.4f, bandLit * 0.4f + edgeGlow * 0.12f);
         }
 
         void DrawJunk()
