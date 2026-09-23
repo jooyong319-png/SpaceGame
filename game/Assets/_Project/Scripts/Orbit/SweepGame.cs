@@ -162,7 +162,8 @@ namespace SalvageRun.Orbit
             if (!sim.R.over)
             {
                 float sdt = dt * timeScale;
-                if (hitStop > 0) { hitStop -= dt; sdt = 0; }
+                if (hud != null && hud.launchT > 0) sdt = 0;                   // 🚀 출발 연출 중 — 판은 아직
+                else if (hitStop > 0) { hitStop -= dt; sdt = 0; }
                 else if (slowMo > 0) { slowMo -= dt; sdt *= 0.4f; }
                 int steps = Mathf.Max(1, Mathf.CeilToInt(sdt / 0.03f));
                 if (sdt > 0) { for (int i = 0; i < steps; i++) sim.Tick(sdt / steps, aimPx.x, aimPx.y, aimOn, holdOn || castPending); castPending = false; }   // 히트스톱 중에 누른 것도 멈춤이 풀리면 열린다

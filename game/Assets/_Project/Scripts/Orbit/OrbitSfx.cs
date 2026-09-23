@@ -52,6 +52,7 @@ namespace SalvageRun.Orbit
             Make("lock", 1.4f, t => (Sweep(t, 70, 28, 1.4f) * 0.9f + N() * 0.5f * Env(t, 0.002f, 0.25f)) * Env(t, 0.005f, 0.5f));
             Make("cine", 2.4f, t => (Sweep(t, 55, 30, 2.4f) * 0.8f + N() * 0.35f * Env(t, 0.01f, 0.6f) + Mathf.Sin(6.2832f * 110 * t) * 0.2f * Mathf.Clamp01(t)) * Env(t, 0.01f, 1.1f));
             // rev17 — 지구 보급 · 붕괴 경고 (2026-09-23)
+            Make("launch", 1.1f, t => (Sweep(t, 55, 480, 1.1f) * 0.45f + N() * 0.4f * Env(t, 0.04f, 0.45f)) * Env(t, 0.06f, 0.55f) * 0.6f);   // 출발
             Make("supply", 0.5f, t => (Sweep(t, 300, 1100, 0.5f) * 0.5f + N() * 0.25f * Env(t, 0.01f, 0.12f)) * Env(t, 0.02f, 0.22f) * 0.5f);
             Make("grab", 0.22f, t => (Mathf.Sin(6.2832f * 880 * t) * 0.5f + Mathf.Sin(6.2832f * 1320 * t) * 0.4f) * Env(t, 0.003f, 0.08f) * 0.45f);
             Make("danger", 0.5f, t => (Square(t, t % 0.25f < 0.125f ? 320 : 250) * 0.3f + Sweep(t, 180, 120, 0.5f) * 0.3f) * Env(t % 0.25f, 0.004f, 0.1f) * 0.7f);

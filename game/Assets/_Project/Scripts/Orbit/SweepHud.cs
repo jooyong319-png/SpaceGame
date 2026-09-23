@@ -22,7 +22,7 @@ namespace SalvageRun.Orbit
 
         // 결산
         bool showResult, bankruptArmed; public bool newsOpen;
-        float dueNag; public bool loanOpen; int permitArmed = -1;
+        float dueNag; public bool loanOpen; public float launchT; const float LaunchLen = 1.3f; int permitArmed = -1;
         int prevBestChain, prevBestPack, runNewsFrom;
         SweepRun last;
         double shown;
@@ -62,7 +62,7 @@ namespace SalvageRun.Orbit
             prevBestChain = sim.M.bestChain; prevBestPack = sim.M.bestPack; runNewsFrom = sim.M.news.Count;
             showResult = false; bankruptArmed = false;
             sim.StartRun();
-            OrbitSfx.Play("buy", 0.8f);
+            launchT = LaunchLen; OrbitSfx.Play("launch", 1f); game.shake = 0.18f;   // 🚀 출발 — 창을 뚫고 나간다
         }
 
         static Texture2D Tex(Color c) { var t = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave }; t.SetPixel(0, 0, c); t.Apply(); return t; }
@@ -108,6 +108,7 @@ namespace SalvageRun.Orbit
             for (int i = 0; i < nodePulse.Length; i++) nodePulse[i] = Mathf.Max(0, nodePulse[i] - dt * 3);
             if (tickT <= 0) { tickT = 8f; tickI++; }
             dueNag = Mathf.Max(0, dueNag - dt);
+            if (launchT > 0) { launchT -= dt; if (launchT <= 0) OrbitSfx.Play("tick", 0.7f); }
             var kb = Keyboard.current;
             if (kb != null && kb.spaceKey.wasPressedThisFrame && sim.R.over && !sim.M.careerOpen && !sim.M.won && !newsOpen && paidT < 2.4f)
             {
@@ -123,7 +124,7 @@ namespace SalvageRun.Orbit
             scale = Screen.height / RefH; vw = Screen.width / scale; ox = Mathf.Max(0, (vw - 960) / 2);
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1));
             Effects();
-            if (!sim.R.over) { Storm(); WindowEdge(); Pops(); RunHud(); }
+            if (!sim.R.over) { Storm(); WindowEdge(); Pops(); RunHud(); if (launchT > 0) Launch(); }
             if (sim.M.won) Ending();
             else if (sim.M.careerOpen) Career();
             else if (sim.R.over)
@@ -182,6 +183,44 @@ namespace SalvageRun.Orbit
             for (int i = 0; i < 6; i++) { float x = Mathf.Repeat(Time.time * (60 + i * 25) + i * 170, vw + 400) - 200; GUI.DrawTexture(new Rect(x, 80 + i * 80, 380, 60), texDisc); }
             GUI.color = Color.white;
             if (ph > 14 && ph < 15.2f) GUI.Label(new Rect(0, 90, vw, 26), "<size=18><color=#ffb080>모래 폭풍!</color></size>", center);
+        }
+
+        // 🚀 출발 1.3초 — 조종실 선체가 커지며 밖으로 날아가고, 별 줄기가 쏟아지고, 행성 이름이 뜬다 (사장님 「출발 후가 2% 빠진 느낌」)
+        void Launch()
+        {
+            float k = 1 - Mathf.Clamp01(launchT / LaunchLen);                 // 0 → 1
+            var ctr = new Vector2(vw / 2, 300);
+            // 별 줄기 — 가운데서 바깥으로
+            for (int i = 0; i < 56; i++)
+            {
+                float ang = i * 2.39996f, spd = 0.55f + (i * 37 % 11) * 0.06f;
+                var dir = new Vector2(Mathf.Cos(ang), Mathf.Sin(ang));
+                float r0 = 30 + k * spd * 760, r1 = r0 + 20 + k * 220 * spd;
+                Line(ctr + dir * r0, ctr + dir * r1, new Color(0.85f, 0.9f, 1f, 0.75f * (1 - k)), 1.6f + (i % 3) * 0.6f);
+            }
+            // 조종실 선체가 커지며 날아간다 (처음 0.55초)
+            if (hullTex != null && k < 0.55f)
+            {
+                float a = 1 - k / 0.55f, sc = 1 + k * 3.2f;
+                var m = GUI.matrix;
+                GUIUtility.ScaleAroundPivot(new Vector2(sc, sc), new Vector2(ox + 480, 190));
+                GUI.color = new Color(1, 1, 1, a); GUI.DrawTexture(new Rect(ox, 0, 960, 600), hullTex); GUI.color = Color.white;
+                GUI.matrix = m;
+            }
+            // 도착 제목
+            float ta = Mathf.Clamp01((k - 0.25f) / 0.2f) * Mathf.Clamp01((1 - k) / 0.2f + 0.35f);
+            if (ta > 0)
+            {
+                var o = SweepSim.Orbits[sim.S.orbit];
+                float dy = (1 - Mathf.Clamp01((k - 0.25f) / 0.25f)) * 14;
+                title.fontSize = 38;
+                GUI.color = new Color(1, 1, 1, ta);
+                GUI.Label(new Rect(0, 150 + dy, vw, 50), "<color=#ffdf95>" + (sim.R.clean ? "청산 출동" : o.name + " 궤도") + "</color>", title);
+                var c = sim.CurContract;
+                title.fontSize = 16;
+                GUI.Label(new Rect(0, 200 + dy, vw, 26), "출동 " + sim.S.runs + " · 연료 " + Mathf.RoundToInt((float)sim.R.max) + "초" + (c != null && !sim.R.clean ? " · 의뢰: " + c.Value.text : ""), title);
+                GUI.color = Color.white; title.fontSize = 18;
+            }
         }
 
         void WindowEdge()
