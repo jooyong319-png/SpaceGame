@@ -177,5 +177,67 @@ namespace SalvageRun.Orbit
             GUI.Label(new Rect(r.x + 84, r.y + 30, r.width - 92, 76), "<size=12><color=#e8edf3>" + anchorHead + "</color></size>", small);
             GUI.color = Color.white;
         }
+
+        // ───────────────────────────────── 📈 내 주식 미리보기 (09-24 사장님 시안 A · A — 수익률 높은 게 맨 위)
+        readonly List<int> myIdx = new List<int>();
+        double MyPct(int i) { var s = sim.Mk.M.st[i]; return s.shares > 0 && s.cost > 0 ? s.shares * s.price / s.cost - 1 : 0; }
+        void MyStocks()
+        {
+            myIdx.Clear();
+            var ms = sim.Mk.M.st;
+            for (int i = 0; i < ms.Count; i++) if (ms[i].shares > 0) myIdx.Add(i);
+            myIdx.Sort((a, b) => MyPct(b).CompareTo(MyPct(a)));
+        }
+        double MyTotal() { double v = 0, c = 0; foreach (var s in sim.Mk.M.st) if (s.shares > 0) { v += s.shares * s.price; c += s.cost; } return c > 0 ? v / c - 1 : 0; }
+        static string PctTxt(double v) => "<color=" + (v >= 0 ? UpHex : DnHex) + ">" + (v >= 0 ? "+" : "−") + System.Math.Abs(v * 100).ToString("0.0") + "%</color>";
+        bool Hot(int i) { var s = sim.Mk.M.st[i]; return s.pushLeft > 0 && s.push > 0; }
+
+        /// <summary>조종실 — 창 오른쪽 위 주황 LED 시세판 (증권 탭 쪽). 누르면 증권 방으로</summary>
+        void MyStockBoard()
+        {
+            if (!sim.StockOpen || sim.Mk == null) return;
+            MyStocks();
+            int n = Mathf.Min(3, myIdx.Count);
+            var r = new Rect(ox + 598, 50, 156, 30 + Mathf.Max(1, n) * 17 + 16);
+            bool ov = r.Contains(Event.current.mousePosition);
+            GUI.color = new Color(0, 0, 0, 0.45f); GUI.DrawTexture(new Rect(r.x + 3, r.y + 4, r.width, r.height), white);
+            GUI.color = new Color(0.045f, 0.035f, 0.028f, 0.96f); GUI.DrawTexture(r, white);
+            Frame(r, ov ? Amber3 : new Color(0.17f, 0.15f, 0.13f), 3);
+            GUI.Label(new Rect(r.x + 9, r.y + 6, r.width - 18, 18), "<size=10><color=#ffab3d>MY STOCK</color></size>", label);
+            if (n > 0) GUI.Label(new Rect(r.x + 9, r.y + 5, r.width - 18, 18), "<size=12><b>" + PctTxt(MyTotal()) + "</b></size>", ledR ?? cost);
+            for (int k = 0; k < n; k++)
+            {
+                int i = myIdx[k]; float y = r.y + 26 + k * 17;
+                if (Hot(i)) { GUI.color = new Color(1f, 0.36f, 0.36f, 0.14f + 0.1f * Mathf.Sin(Time.unscaledTime * 10)); GUI.DrawTexture(new Rect(r.x + 4, y, r.width - 8, 16), white); GUI.color = Color.white; }
+                GUI.Label(new Rect(r.x + 9, y - 1, r.width - 18, 18), "<size=11><b><color=#e8d8c0>" + Clip(Market.Defs[i].name, 7) + "</color></b></size>", label);
+                GUI.Label(new Rect(r.x + 9, y - 1, r.width - 18, 18), "<size=11><b>" + PctTxt(MyPct(i)) + "</b></size>", ledR ?? cost);
+            }
+            if (n == 0) GUI.Label(new Rect(r.x + 9, r.y + 26, r.width - 18, 18), "<size=11><color=#7a6a55>보유 종목 없음</color></size>", label);
+            if (myIdx.Count > 3) GUI.Label(new Rect(r.x + 9, r.yMax - 17, r.width - 18, 16), "<size=9><color=#7a6a55>외 " + (myIdx.Count - 3) + "</color></size>", label);
+            GUI.Label(new Rect(r.x + 9, r.yMax - 17, r.width - 18, 16), "<size=9><color=" + (ov ? "#ffdf95" : "#7a6a55") + ">증권 ›</color></size>", ledR ?? cost);
+            if (GUI.Button(r, GUIContent.none, GUIStyle.none)) GoFlow(4);
+        }
+
+        /// <summary>출동 중 — 오른쪽 위 작은 칩 (전체 + 종목 셋, 수익률 높은 순 · 급등 중이면 빨갛게 빛남)</summary>
+        void MyStockChips()
+        {
+            if (!sim.StockOpen || sim.Mk == null) return;
+            MyStocks();
+            if (myIdx.Count == 0) return;
+            float y = 76, right = vw - 14;
+            void Chip(string txt, bool hot)
+            {
+                float w = label.CalcSize(new GUIContent(txt)).x * 0.86f + 16;
+                var r = new Rect(right - w, y, w, 22);
+                GUI.color = new Color(0.04f, 0.055f, 0.08f, 0.85f); GUI.DrawTexture(r, white);
+                if (hot) { float p = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 10); GUI.color = new Color(1f, 0.36f, 0.36f, 0.12f + 0.12f * p); GUI.DrawTexture(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), white); Frame(r, UpCol, 1 + p); }
+                else Frame(r, new Color(0.16f, 0.2f, 0.26f), 1);
+                GUI.color = Color.white;
+                GUI.Label(new Rect(r.x + 8, r.y + 1, r.width, 20), txt, label);
+                y += 25;
+            }
+            Chip("<size=12>내 주식 <b>" + PctTxt(MyTotal()) + "</b></size>", false);
+            for (int k = 0; k < Mathf.Min(3, myIdx.Count); k++) { int i = myIdx[k]; Chip("<size=12>" + Clip(Market.Defs[i].name, 7) + " <b>" + PctTxt(MyPct(i)) + (Hot(i) ? " ▲" : "") + "</b></size>", Hot(i)); }
+        }
     }
 }

@@ -126,7 +126,7 @@ namespace SalvageRun.Orbit
             scale = Screen.height / RefH; vw = Screen.width / scale; ox = Mathf.Max(0, (vw - 960) / 2);
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1));
             Effects();
-            if (!sim.R.over) { Storm(); WindowEdge(); Pops(); RunHud(); if (launchT > 0) Launch(); }
+            if (!sim.R.over) { Storm(); WindowEdge(); Pops(); RunHud(); MyStockChips(); if (launchT > 0) Launch(); }
             if (sim.M.won) Ending();
             else if (sim.M.careerOpen) Career();
             else if (sim.R.over)
@@ -612,6 +612,7 @@ namespace SalvageRun.Orbit
             CrtReport(new Rect(ox + 12, 34, 158, 120));
             LedNews(new Rect(ox + 769, 36, 176, 150));
             BrassPlate(new Rect(ox + 769, 192, 176, 52));
+            MyStockBoard();                                             // 📈 내 주식 시세판
 
             // ⑤ ‹ 정비고로 · 증권 하러 가기 › — 화면 양옆 탭 (누르면 옆 방으로 슥)
             int canN = 0; for (int b = 0; b < 4; b++) canN += CanCount(b);
