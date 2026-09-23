@@ -360,12 +360,15 @@ namespace SalvageRun.Orbit
                     case SwEv.Vac:
                     {
                         var s0 = PxToWorld(e.x, e.y); float ang = (float)e.v, half = (float)e.x2, rng2 = (float)e.y2 / PxPerUnit;
-                        for (int q = -1; q <= 1; q++)
+                        // 🌀 부채꼴 — 밝은 테두리 둘 + 안쪽 옅은 살 넷 (09-24: 원뿔이 안 보였다)
+                        for (int q = -2; q <= 2; q++)
                         {
-                            float aa = ang + q * half; var tip = PxToWorld(e.x + Mathf.Cos(aa) * e.y2, e.y + Mathf.Sin(aa) * e.y2);
-                            var ln = Add(pixel, s0, 0.05f, new Color(0.7f, 0.9f, 1f, q == 0 ? 0.12f : 0.22f), 8, 0.1f); ln.a = s0; ln.b = tip; ln.size = q == 0 ? rng2 * 0.5f : 0.04f;
+                            bool edge = q == -2 || q == 2;
+                            float aa = ang + q * half * 0.5f; var tip = PxToWorld(e.x + Mathf.Cos(aa) * e.y2, e.y + Mathf.Sin(aa) * e.y2);
+                            var ln = Add(pixel, s0, 0.05f, edge ? new Color(0.75f, 0.95f, 1f, 0.55f) : new Color(0.6f, 0.85f, 1f, 0.07f), 8, 0.1f); ln.a = s0; ln.b = tip;
+                            ln.size = edge ? 0.07f : Mathf.Max(0.1f, rng2 * half * 0.5f);
                         }
-                        if (Random.value < 0.6f) { float aa = ang + Random.Range(-half, half), dd = Random.Range(0.4f, 1f) * (float)e.y2; var p = Add(pixel, PxToWorld(e.x + Mathf.Cos(aa) * dd, e.y + Mathf.Sin(aa) * dd), 0.08f, new Color(0.8f, 0.95f, 1f, 0.9f), 0, 0.3f); p.v = (s0 - p.sr.transform.position) * 3f; }
+                        for (int n = 0; n < 2; n++) { float aa = ang + Random.Range(-half, half), dd = Random.Range(0.4f, 1f) * (float)e.y2; var p = Add(pixel, PxToWorld(e.x + Mathf.Cos(aa) * dd, e.y + Mathf.Sin(aa) * dd), 0.08f, new Color(0.85f, 1f, 1f, 1f), 0, 0.35f); p.v = (s0 - p.sr.transform.position) * 3f; }
                         break;
                     }
                     case SwEv.Shell:
