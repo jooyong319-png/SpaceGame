@@ -572,22 +572,22 @@ namespace SalvageRun.Orbit
 
             // ② 출동 보고 (왼쪽 가운데)
             var rp = new Rect(ox + 15, 236, 140, 118);
-            var L = last;
-            Plate(rp, "출동 보고 · " + S.runs, L != null && !L.clean ? "<color=#6fcf97>+" + KNum.Fmt(L.Earned) + "</color>" : "", SweepGame.Amber, false);
+            double lE = S.lastClaw + S.lastDrone + S.lastBlast;
+            Plate(rp, "출동 보고 · " + S.runs, S.lastBroke >= 0 ? "<color=#6fcf97>+" + KNum.Fmt(lE) + "</color>" : "", SweepGame.Amber, false);
             var rs = Scr(rp, 26, 84);
-            if (L == null || L.clean) GUI.Label(new Rect(rs.x + 8, rs.y + 8, rs.width - 16, 40), "<size=12><color=#8a9bb3>아직 출동 전</color></size>", label);
+            if (S.lastBroke < 0) GUI.Label(new Rect(rs.x + 8, rs.y + 8, rs.width - 16, 40), "<size=12><color=#8a9bb3>아직 출동 전</color></size>", label);
             else
             {
-                double tot = System.Math.Max(1, L.earnClaw + L.earnDrone + L.earnBlast);
+                double tot = System.Math.Max(1, lE);
                 float bx = rs.x + 8, bw = rs.width - 16;
-                float w0 = bw * (float)(L.earnClaw / tot), w1 = bw * (float)(L.earnDrone / tot);
+                float w0 = bw * (float)(S.lastClaw / tot), w1 = bw * (float)(S.lastDrone / tot);
                 GUI.color = SweepGame.Amber; GUI.DrawTexture(new Rect(bx, rs.y + 8, w0, 6), white);
                 GUI.color = SweepGame.Cyan; GUI.DrawTexture(new Rect(bx + w0, rs.y + 8, w1, 6), white);
                 GUI.color = SweepGame.Violet; GUI.DrawTexture(new Rect(bx + w0 + w1, rs.y + 8, bw - w0 - w1, 6), white); GUI.color = Color.white;
-                GUI.Label(new Rect(bx, rs.y + 20, bw, 18), "<size=12><color=#8a9bb3>부순 것</color></size>", label); GUI.Label(new Rect(bx, rs.y + 20, bw, 18), "<size=12>" + L.broke + "</size>", cost);
-                GUI.Label(new Rect(bx, rs.y + 38, bw, 18), "<size=12><color=#8a9bb3>최대 연쇄</color></size>", label); GUI.Label(new Rect(bx, rs.y + 38, bw, 18), "<size=12>" + L.chainBest + "</size>", cost);
+                GUI.Label(new Rect(bx, rs.y + 20, bw, 18), "<size=12><color=#8a9bb3>부순 것</color></size>", label); GUI.Label(new Rect(bx, rs.y + 20, bw, 18), "<size=12>" + S.lastBroke + "</size>", cost);
+                GUI.Label(new Rect(bx, rs.y + 38, bw, 18), "<size=12><color=#8a9bb3>최대 연쇄</color></size>", label); GUI.Label(new Rect(bx, rs.y + 38, bw, 18), "<size=12>" + S.lastChain + "</size>", cost);
                 GUI.Label(new Rect(bx, rs.y + 56, bw, 18), "<size=12><color=#8a9bb3>의뢰</color></size>", label);
-                GUI.Label(new Rect(bx, rs.y + 56, bw, 18), L.contractText == null ? "<size=12>—</size>" : L.contractOk ? "<size=12><color=#6fcf97>성공</color></size>" : "<size=12><color=#ee7766>실패</color></size>", cost);
+                GUI.Label(new Rect(bx, rs.y + 56, bw, 18), S.lastContract == 0 ? "<size=12>—</size>" : S.lastContract == 1 ? "<size=12><color=#6fcf97>성공</color></size>" : "<size=12><color=#ee7766>실패</color></size>", cost);
             }
 
             // ③ 궤도일보 (오른쪽 위) — 누르면 신문

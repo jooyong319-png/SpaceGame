@@ -37,6 +37,7 @@ namespace SalvageRun.Orbit.Sim
         public bool overdue, rerolled;
         public int[] lv = new int[SweepSim.NodeCount];
         public List<LoanRec> loanLog = new List<LoanRec>();          // 대출 창에 보이는 내역 (최근 30개)
+        public double lastClaw, lastDrone, lastBlast; public int lastBroke = -1, lastChain, lastContract;   // 조종실 출동 보고 — 껐다 켜도 남게 (lastContract 0 없음 · 1 성공 · 2 실패)
     }
 
     [Serializable]
@@ -1099,6 +1100,8 @@ namespace SalvageRun.Orbit.Sim
                 else S.overRuns++;
             }
             if (r.cut > 0) LogLoan(1, r.cut);
+            S.lastClaw = r.earnClaw; S.lastDrone = r.earnDrone; S.lastBlast = r.earnBlast; S.lastBroke = r.broke; S.lastChain = r.chainBest;
+            S.lastContract = r.contractText == null ? 0 : r.contractOk ? 1 : 2;
             CheckClean();                                               // 판 수입에서 떼어 빚을 다 갚았을 수도
             RollContract();
             Emit(SwEv.RunEnd);
