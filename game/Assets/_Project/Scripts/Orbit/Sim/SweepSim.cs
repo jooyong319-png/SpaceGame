@@ -53,7 +53,7 @@ namespace SalvageRun.Orbit.Sim
 
     public class SweepRun
     {
-        public double clickCd, fuelGot, refill, fuel, max, t, next = 0.3, endT, formT = 9, rushT, rushX, rushY, chainT, holdT, ax = 480, ay = 310, refillT;
+        public double hx, hy, holeCd, clickCd, fuelGot, refill, fuel, max, t, next = 0.3, endT, formT = 9, rushT, rushX, rushY, chainT, holdT, ax = 480, ay = 310, refillT;
         public double ev1T = -1, ev2T = -1, stormT; public int ev1 = -1, ev2 = -1, stormLeft; public bool ev1Warn, ev2Warn, collector;
         public int shots, maxShots, chain, chainBest, packBest, broke, tier, idc;
         public bool over, holding, clean, contractOk;
@@ -69,7 +69,7 @@ namespace SalvageRun.Orbit.Sim
         public double Earned => earnClaw + earnDrone + earnBlast;
     }
 
-    public enum SwEv { Supply, SupplyGet, Strike, Broke, Coin, Pop, Beam, Ring, Blast, Tier, Crit, Collapse, Warn, EventGo, Collector, Shatter, Release, RunEnd, BillPaid, Overdue, Bankrupt, News, Won }
+    public enum SwEv { Supply, SupplyGet, Strike, Broke, Coin, Pop, Beam, Ring, Blast, Tier, Crit, Collapse, Warn, EventGo, Collector, Shatter, Release, RunEnd, BillPaid, Overdue, Bankrupt, News, Won, SkillReady }
 
     public struct SwEvent
     {
@@ -133,9 +133,9 @@ namespace SalvageRun.Orbit.Sim
             N("d_fix", "drone", "수리 드론", "출동 +2초", new[] { "d_mag" }, 4, 2000, 1.8, 3, 3, 1),
             N("d_pair", "drone", "편대", "한 번에 둘씩", new[] { "d_mag", "d_grade" }, 6, 18000, 1, 1, 3, 3),
             N("d_fact", "drone", "드론 공장", "드론 +1 (공장제)", new[] { "d_pair" }, 6, 30000, 2.5, 2, 4, 2),
-            N("b_n", "bh", "폭탄 보급", "폭탄 한 발 더", new string[0], 3, 750, 2.2, 4, 0, 1),
+            N("b_n", "bh", "블랙홀 충전", "블랙홀을 한 번 더 쟁여 둔다", new string[0], 3, 750, 2.2, 4, 0, 1),
             N("c_find", "bh", "연료 보급", "연료를 올려 보낸다", new string[0], 3, 240, 1.8, 5, 0, 3),
-            N("s_speed", "bh", "보급 속도", "보급이 빨리 닿는다", new[] { "b_n", "c_find" }, 3, 500, 1.6, 4, 1, 2),
+            N("s_speed", "bh", "재충전", "블랙홀이 빨리 차고 보급도 빨리 닿는다", new[] { "b_n", "c_find" }, 3, 500, 1.6, 4, 1, 2),
             N("b_pr", "bh", "흡입 반경", "더 넓게 빨아들인다", new[] { "b_n" }, 3, 600, 1.6, 6, 1, 0),
             N("b_cap", "bh", "붕괴 한계", "더 많이 모아도 버틴다", new[] { "b_n" }, 3, 660, 1.6, 6, 2, 1),
             N("b_pf", "bh", "흡입 세기", "더 빨리 빨려 든다", new[] { "b_pr" }, 4, 1800, 1.6, 5, 2, 0),
@@ -204,7 +204,7 @@ namespace SalvageRun.Orbit.Sim
             => new Node { id = id, branch = br, name = name, desc = desc, par = par, seg = seg, first = first, mult = mult, max = max, depth = depth, lane = lane };
         static readonly Dictionary<string, int> NodeIx = new Dictionary<string, int>();
         public static readonly string[] BranchIds = { "claw", "drone", "bh", "eco" };
-        public static readonly string[] BranchNames = { "빔 · 선체", "드론 격납고", "보급 · 폭탄", "사무실" };
+        public static readonly string[] BranchNames = { "빔 · 선체", "드론 격납고", "블랙홀 · 보급", "사무실" };
         public static readonly int[] BranchNeed = { 0, 1, 2, 0 };
 
         // ───────────────────────── 청구서 여덟 (§7-3)
@@ -315,6 +315,8 @@ namespace SalvageRun.Orbit.Sim
         public int Cap => (int)Math.Round((18 + 8 * Lv("b_cap")) * (S.bill >= 7 ? 1.5 : 1));
         public double BlastK => 1 + 0.15 * Lv("b_br");
         public double ChainP => Math.Min(0.93, 0.25 + 0.07 * Lv("b_chain") + (S.bill >= 4 ? 0.1 : 0));
+        public double HoleCd => 16 - 1.5 * Lv("s_speed");     // 블랙홀 스킬 — 한 칸 차는 시간
+        public const double HoleDur = 3;                           // 열려 있는 시간 — 끝나면 저절로 터진다
         public double PackK => 0.02 + 0.012 * Lv("b_pack");
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
         public int ChainMax => R.clean ? 5000 : 25 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 12 * Lv("b_chain") + (S.bill >= 4 ? 10 : 0) + (S.bill >= 7 ? 30 : 0);
@@ -522,9 +524,8 @@ namespace SalvageRun.Orbit.Sim
             S.runs++; S.rerolled = false;
             var r = new SweepRun { clean = clean };
             r.max = r.fuel = clean ? 45 : FuelMax;
-            r.maxShots = clean ? 6 : Bombs; r.shots = clean ? 6 : 0;
-            int nb = clean ? 0 : Bombs, nfuel = clean ? 0 : Lv("c_find");
-            for (int i = 0; i < nb; i++) r.pods.Add(new Pod { kind = 1, t = 3 + i * Math.Max(4, r.max * 0.55 / Math.Max(1, nb)) });
+            r.maxShots = clean ? 6 : Bombs; r.shots = clean ? 6 : Math.Min(1, Bombs);   // 블랙홀은 스킬 — 한 칸 들고 나가서 시간 따라 찬다
+            int nfuel = clean ? 0 : Lv("c_find");
             for (int i = 0; i < nfuel; i++) r.pods.Add(new Pod { kind = 0, t = 9 + i * 7 });
             R = r;
             var o = Orbits[S.orbit];
@@ -641,15 +642,17 @@ namespace SalvageRun.Orbit.Sim
             if (r.fuel > 0) r.fuel -= dt;
             if (r.clean) { r.refillT += dt; if (r.refillT > 2) { r.refillT = 0; if (r.shots < r.maxShots) r.shots++; } }
 
-            // 🌀 폭탄 — 누르면 모으고 떼면 터진다
-            if (hold && aim && !r.holding && r.shots > 0 && r.fuel > 0) { r.holding = true; r.holdT = 0; r.chain = 0; r.tier = 0; }
-            if (r.holding && (!hold || r.fuel <= 0)) Release();
+            // 🌀 블랙홀 스킬 — 누르면 그 자리에 열려 3초 빨아들이고 저절로 터진다. 칸은 시간 따라 찬다
+            if (!r.clean && r.shots < r.maxShots) { r.holeCd += dt; if (r.holeCd >= HoleCd) { r.holeCd = 0; r.shots++; Emit(SwEv.SkillReady, r.ax, r.ay, r.shots); } }
+            else r.holeCd = 0;
+            if (hold && !r.holding && r.shots > 0 && r.fuel > 0) { r.holding = true; r.holdT = 0; r.chain = 0; r.tier = 0; r.hx = r.ax; r.hy = r.ay; }
+            if (r.holding && (r.holdT >= HoleDur || r.fuel <= 0)) Release();
 
             Schedule(dt);
             Supply(dt);
             Motion(dt);
             if (r.holding) Pull(dt);
-            if (aim && !r.holding && r.fuel > 0) Claw(dt);
+            if (aim && r.fuel > 0) Claw(dt);                           // 블랙홀이 열려 있어도 빔은 계속
             Drones(dt);
 
             // 💥 연쇄
@@ -795,7 +798,7 @@ namespace SalvageRun.Orbit.Sim
             foreach (var d in r.junk)
             {
                 if (d.dead || Types[d.k].big || d.att == Att.Armor) continue;
-                double dx = r.ax - d.x, dy = r.ay - d.y, dist = Math.Sqrt(dx * dx + dy * dy) + 1;
+                double dx = r.hx - d.x, dy = r.hy - d.y, dist = Math.Sqrt(dx * dx + dy * dy) + 1;
                 if (dist > pr) continue;
                 if (!d.free) { d.free = true; d.vx = d.vy = 0; }
                 d.capT = 0;
@@ -807,15 +810,15 @@ namespace SalvageRun.Orbit.Sim
                 {
                     d.dead = true; r.packed.Add(d);
                     foreach (var l in new[] { d.link1, d.link2 })
-                        if (l != null && !l.dead && !l.free) { l.free = true; l.vx = (r.ax - l.x) * 1.5; l.vy = (r.ay - l.y) * 1.5; }
+                        if (l != null && !l.dead && !l.free) { l.free = true; l.vx = (r.hx - l.x) * 1.5; l.vy = (r.hy - l.y) * 1.5; }
                 }
             }
             if (r.packed.Count > Cap)
             {
                 // 붕괴 — 절반은 절반 값으로 흩어지고, 나머지는 그 자리에서 터진다
                 int lost = r.packed.Count / 2;
-                for (int i = 0; i < lost; i++) { var d = r.packed[0]; r.packed.RemoveAt(0); Pay(d, 2, Types[d.k].val * ValMult * 0.5, r.ax, r.ay, false); }
-                Emit(SwEv.Collapse, r.ax, r.ay, lost);
+                for (int i = 0; i < lost; i++) { var d = r.packed[0]; r.packed.RemoveAt(0); Pay(d, 2, Types[d.k].val * ValMult * 0.5, r.hx, r.hy, false); }
+                Emit(SwEv.Collapse, r.hx, r.hy, lost);
                 Release();
             }
         }
@@ -831,12 +834,12 @@ namespace SalvageRun.Orbit.Sim
             double mult = 1 + n * PackK;
             foreach (var d in r.packed)
             {
-                d.x = r.ax + Rnd(-8, 8); d.y = r.ay + Rnd(-8, 8); d.dead = false;
+                d.x = r.hx + Rnd(-8, 8); d.y = r.hy + Rnd(-8, 8); d.dead = false;
                 Kill(d, 2, mult);
             }
             r.packed.Clear();
-            Emit(SwEv.Release, r.ax, r.ay, n, 0, n >= 6 ? n + "개 압축 · ×" + mult.ToString("0.00") : null);
-            DoBlast(r.ax, r.ay, (60 + n * 2.5) * BlastK, false);
+            Emit(SwEv.Release, r.hx, r.hy, n, 0, n >= 6 ? n + "개 압축 · ×" + mult.ToString("0.00") : null);
+            DoBlast(r.hx, r.hy, (60 + n * 2.5) * BlastK, false);
             // 모이다 만 것들은 궤도로 돌아간다
             foreach (var d in r.junk) if (d.free && !d.dead && d.capT <= 0) d.capT = 0.6;
         }

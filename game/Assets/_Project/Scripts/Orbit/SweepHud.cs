@@ -53,7 +53,7 @@ namespace SalvageRun.Orbit
             if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb")) sim.M.flags.Add("hint_bomb");
         }
 
-        void Go()
+        public void Go()
         {
             bayOpen = false; flow = 0;
             prevBestChain = sim.M.bestChain; prevBestPack = sim.M.bestPack; runNewsFrom = sim.M.news.Count;
@@ -220,8 +220,8 @@ namespace SalvageRun.Orbit
             x += 210;
             if (R.maxShots > 0)
             {
-                GUI.Label(new Rect(x, 14, 40, 20), "폭탄", dim);
-                for (int i = 0; i < R.maxShots; i++) { GUI.color = i < R.shots ? SweepGame.Violet : new Color(0.17f, 0.18f, 0.24f); GUI.DrawTexture(new Rect(x + 34 + i * 15, 18, 11, 11), texDisc); }
+                GUI.Label(new Rect(x, 14, 40, 20), "블랙홀", dim);
+                for (int i = 0; i < R.maxShots; i++) { GUI.color = i < R.shots ? SweepGame.Violet : new Color(0.17f, 0.18f, 0.24f); GUI.DrawTexture(new Rect(x + 50 + i * 15, 18, 11, 11), texDisc); }
                 GUI.color = Color.white;
             }
             GUI.Label(new Rect(vw - 330, 14, 316, 20), "주식회사 궤도 청소부 (" + sim.M.company + "대) · " + SweepSim.Orbits[S.orbit].name, cost);
@@ -232,6 +232,7 @@ namespace SalvageRun.Orbit
                 GUI.color = k > 0.8f ? SweepGame.Red : SweepGame.Violet; GUI.DrawTexture(new Rect(vw - 200, 42, 186 * k, 8), white); GUI.color = Color.white;
                 GUI.Label(new Rect(vw - 330, 52, 316, 18), "압축 " + R.packed.Count + " / 붕괴 " + sim.Cap, cost);
             }
+            if (R.maxShots > 0 && !R.over) SkillSlot(R);
             var c = sim.CurContract;
             if (c != null && !R.clean)
             {
@@ -242,7 +243,7 @@ namespace SalvageRun.Orbit
             string hint = null;
             if (R.clean) hint = null; else
             if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = "궤도 위에 커서를 대면 청소선이 빔을 쏜다 — 처음엔 한 점씩";
-            else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "지구에서 폭탄이 올라온다 — 누르고 있으면 빨아들이고, 떼면 모인 만큼 터진다 (모으는 동안 빔은 쉰다)";
+            else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "블랙홀 스킬이 열렸다 — Q(또는 아래 칸)를 누르면 커서 자리에 3초 열려 빨아들이고 터진다";
             else if (sim.DronesOn && !sim.M.flags.Contains("hint_drone") && R.t < 8) hint = "드론은 알아서 줍는다 — 한 방에 부서지는 것만";
             if (hint != null) GUI.Label(new Rect(vw / 2 - 360, RefH - 70, 720, 20), hint, center);
             if (game.timeScale > 1) GUI.Label(new Rect(vw - 120, RefH - 46, 106, 18), "시험 속도 ×3", cost);
@@ -255,7 +256,7 @@ namespace SalvageRun.Orbit
         public bool CockpitView => false;       // 조종실 화면은 뺐다 — 결산 → 청구서 → 정비고 한 줄 흐름으로 (09-23)
         public int flow;                         // 0 출동 중 · 1 결산 · 2 청구서 · 3 정비고
         static readonly Color[] BranchCol = { SweepGame.Amber, SweepGame.Cyan, SweepGame.Violet, SweepGame.Green };
-        static readonly string[] BayDesc = { "조준점 하나 → 넓은 착탄 → 한 번에 여럿", "알아서 줍는다 — 한 방에 부서지는 것만", "지구에서 올려 보낸다 — 폭탄과 연료", "돈 · 청구서 · 추심 · 기사" };
+        static readonly string[] BayDesc = { "조준점 하나 → 넓은 착탄 → 한 번에 여럿", "알아서 줍는다 — 한 방에 부서지는 것만", "블랙홀 스킬 · 지구에서 연료 보급", "돈 · 청구서 · 추심 · 기사" };
         public static readonly Rect Win = new Rect(200, 44, 560, 344);
 
         static string Clip(string s, int n) => s.Length <= n ? s : s.Substring(0, n - 1) + "…";
@@ -745,6 +746,33 @@ namespace SalvageRun.Orbit
             return 0;
         }
 
+        public static bool CastReq;
+        public bool overSkill;
+        void SkillSlot(SweepRun R)
+        {
+            var r = new Rect(vw / 2 - 34, RefH - 92, 68, 68);
+            overSkill = r.Contains(Event.current.mousePosition);
+            bool ready = R.shots > 0 && !R.holding;
+            GUI.color = new Color(0.05f, 0.05f, 0.08f, 0.9f); GUI.DrawTexture(r, white);
+            if (R.shots < R.maxShots && !R.clean)
+            {
+                float k = Mathf.Clamp01((float)(R.holeCd / sim.HoleCd));
+                GUI.color = new Color(0.42f, 0.31f, 0.78f, 0.35f); GUI.DrawTexture(new Rect(r.x, r.yMax - r.height * k, r.width, r.height * k), white);
+            }
+            if (R.holding)
+            {
+                float k = 1 - Mathf.Clamp01((float)(R.holdT / SweepSim.HoleDur));
+                GUI.color = SweepGame.Violet; GUI.DrawTexture(new Rect(r.x, r.yMax - 4, r.width * k, 4), white);
+            }
+            GUI.color = ready ? new Color(0.85f, 0.78f, 1f) : new Color(0.35f, 0.33f, 0.42f);
+            DrawIcon(new Rect(r.x + 12, r.y + 10, 44, 44), "b_n");
+            GUI.color = Color.white;
+            Frame(r, ready ? SweepGame.Violet : new Color(0.22f, 0.21f, 0.26f), ready && overSkill ? 3 : 2);
+            GUI.Label(new Rect(r.x + 4, r.y + 2, 30, 18), "<size=11>Q</size>", dim);
+            GUI.Label(new Rect(r.xMax - 34, r.yMax - 20, 30, 18), "<size=12>" + R.shots + "</size>", cost);
+            if (GUI.Button(r, GUIContent.none, GUIStyle.none) && ready) CastReq = true;
+        }
+
         static Texture2D iconTex;
         void DrawIcon(Rect r, string id)
         {
@@ -945,9 +973,9 @@ namespace SalvageRun.Orbit
                 case "d_fix": return "+" + (2 * l) + "초";
                 case "d_pair": return l > 0 ? "둘씩" : "하나씩";
                 case "d_fact": return "+" + l + "대";
-                case "b_n": return "판마다 " + (2 + l) + "발";
+                case "b_n": return "최대 " + (2 + l) + "칸";
                 case "c_find": return "판마다 " + l + "번";
-                case "s_speed": return "속도 " + (240 + 60 * l);
+                case "s_speed": return (16 - 1.5 * l).ToString("0.#") + "초마다";
                 case "b_pr": return "반경 " + (150 + 20 * l);
                 case "b_cap": return (18 + 8 * l) + "개";
                 case "b_pf": return "×" + (1 + 0.25f * l).ToString("0.00");

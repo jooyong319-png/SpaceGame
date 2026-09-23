@@ -85,11 +85,10 @@ static class Program
                     if (!hold && retarget <= 0) { retarget = 1.5; Densest(sim, rng, ref tx, ref ty); }
                     double k = Math.Min(1, Dt * (hold ? 1.2 : 3)); ax += (tx - ax) * k; ay += (ty - ay) * k;
                 }
-                // 폭탄 — 빽빽한 곳에서 누르고, 붕괴 한계 85% 이거나 3초면 뗀다
-                if (!hold && R.shots > 0 && R.t > 3 && R.fuel > 4 && rng.NextDouble() < Dt / 2.5) { hold = true; Densest(sim, rng, ref tx, ref ty); }
-                if (hold && (R.packed.Count >= sim.Cap * 0.85 || R.holdT > 3)) hold = false;
-                sim.Tick(Dt, ax, ay, true, hold);
-                if (!R.holding && hold && R.shots <= 0) hold = false;
+                // 블랙홀 스킬 — 칸이 있으면 가끔 빽빽한 곳에 연다 (3초 뒤 저절로 터진다)
+                bool cast = false;
+                if (!R.holding && R.shots > 0 && R.t > 3 && R.fuel > 4 && rng.NextDouble() < Dt / 2.5) { Densest(sim, rng, ref tx, ref ty); ax = tx; ay = ty; cast = true; }
+                sim.Tick(Dt, ax, ay, true, cast);
                 while (sim.Events.Count > 0) sim.Events.Dequeue();
             }
             hold = false;

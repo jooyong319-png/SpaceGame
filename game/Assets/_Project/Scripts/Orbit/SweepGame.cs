@@ -8,7 +8,7 @@ namespace SalvageRun.Orbit
 {
     /// <summary>
     /// 🔴 rev17 「궤도 청소부」 — 화면 · 입력 · 연출 · 저장. 규칙은 전부 Sim/SweepSim.cs (정본 wiki/rev17-detail.md).
-    /// 커서 = 집게 (대고 있으면 저절로 친다). 왼쪽 단추를 누르고 있으면 블랙홀 — 떼면 모인 만큼 연쇄 폭발.
+    /// 커서 = 조준점 (빔은 저절로 쏜다). Q 또는 아래 칸 = 블랙홀 스킬 — 3초 빨아들이고 모인 만큼 연쇄 폭발.
     /// 그림은 평평한 도형 + 빛 (§1). 도트 안 해도 된다.
     /// </summary>
     public class SweepGame : MonoBehaviour
@@ -197,7 +197,10 @@ namespace SalvageRun.Orbit
             Vector3 w = cam.ScreenToWorldPoint(new Vector3(sp.x, sp.y, 10));
             aimPx = new Vector2(480 + (w.x - cam.transform.position.x) * PxPerUnit, 310 - (w.y - cam.transform.position.y) * PxPerUnit);
             aimOn = true;
-            holdOn = mouse.leftButton.isPressed;      // 누르고 있으면 블랙홀 (집게는 저절로 친다)
+            if (hud.overSkill) aimOn = false;          // 스킬 칸 위 — 빔 자리는 그대로 둔다
+            var kb = Keyboard.current;
+            holdOn = SweepHud.CastReq || (kb != null && kb.qKey.wasPressedThisFrame);   // 블랙홀 스킬 (Q · 아래 칸)
+            SweepHud.CastReq = false;
         }
 
         public Vector3 PxToWorld(double x, double y) => new Vector3((float)(x - 480) / PxPerUnit, (float)(310 - y) / PxPerUnit, 0);
@@ -212,6 +215,7 @@ namespace SalvageRun.Orbit
                 var at = PxToWorld(e.x, e.y);
                 switch (e.kind)
                 {
+                    case SwEv.SkillReady: OrbitSfx.Play("tick", 0.5f, 1.4f, 0.05f); break;
                     case SwEv.Supply:
                         PopAt(e.x, e.y - 10, e.text, e.k == 1 ? Violet : Green, 15);
                         Add(ring, at, 0.1f, e.k == 1 ? Violet : Green, 5, 0.5f, 0.9f);
@@ -505,27 +509,27 @@ namespace SalvageRun.Orbit
         {
             var R = sim.R;
             bool show = aimOn && !R.over;
-            bool holding = show && R.holding;
-            claw.enabled = clawRing.enabled = show && !holding;
-            clawWind.enabled = show && !holding && R.fuel > 0;
+            bool holding = R.holding && !R.over;
+            claw.enabled = clawRing.enabled = show;
+            clawWind.enabled = show && R.fuel > 0;
             holeCore.enabled = holeGlow.enabled = holeRing.enabled = holding;
             Cursor.visible = !show;
-            if (!show) return;
-            var at = PxToWorld(aimPx.x, aimPx.y);
             if (holding)
             {
+                var hp = PxToWorld(R.hx, R.hy);
                 int n = R.packed.Count; float k = (float)n / Mathf.Max(1, sim.Cap);
                 float core = (9 + n * 0.5f) / PxPerUnit * 2;
                 var shakeOff = k > 0.8f ? (Vector3)(Random.insideUnitCircle * 0.04f) : Vector3.zero;
-                holeCore.transform.position = at + shakeOff; holeCore.transform.localScale = Vector3.one * core / disc.bounds.size.x;
-                holeGlow.transform.position = at + shakeOff; holeGlow.transform.localScale = Vector3.one * core * 3.2f / glow.bounds.size.x;
+                holeCore.transform.position = hp + shakeOff; holeCore.transform.localScale = Vector3.one * core / disc.bounds.size.x;
+                holeGlow.transform.position = hp + shakeOff; holeGlow.transform.localScale = Vector3.one * core * 3.2f / glow.bounds.size.x;
                 holeGlow.color = k > 0.8f ? new Color(0.9f, 0.3f, 0.25f, 0.9f) : new Color(0.42f, 0.31f, 0.78f, 0.9f);
                 if (k > 0.8f) OrbitSfx.Play("danger", 0.6f, 0.45f, 0.05f);        // 붕괴 직전 — 떼라는 신호
-                holeRing.transform.position = at; holeRing.transform.localScale = Vector3.one * (float)sim.PullR * 2 / PxPerUnit / ring.bounds.size.x;
+                holeRing.transform.position = hp; holeRing.transform.localScale = Vector3.one * (float)sim.PullR * 2 / PxPerUnit / ring.bounds.size.x;
                 // 소용돌이 — 모인 것들이 가운데서 돈다
-                if (Random.value < 0.5f && n > 0) { float a = Random.value * 6.28f, rr = core * 0.8f; var p = Add(pixel, at + new Vector3(Mathf.Cos(a), Mathf.Sin(a)) * rr, 0.06f, Grey, 0, 0.3f); p.v = new Vector3(-Mathf.Sin(a), Mathf.Cos(a)) * 2f; }
-                return;
+                if (Random.value < 0.5f && n > 0) { float a = Random.value * 6.28f, rr = core * 0.8f; var p = Add(pixel, hp + new Vector3(Mathf.Cos(a), Mathf.Sin(a)) * rr, 0.06f, Grey, 0, 0.3f); p.v = new Vector3(-Mathf.Sin(a), Mathf.Cos(a)) * 2f; }
             }
+            if (!show) return;
+            var at = PxToWorld(aimPx.x, aimPx.y);
             bool area = sim.ClawR > 0, auto = sim.AutoClaw;
             float r = (float)(area ? sim.ClawR : SweepSim.PickR) * 2 / PxPerUnit;
             bool fuel = R.fuel > 0;
