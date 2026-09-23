@@ -558,7 +558,7 @@ namespace SalvageRun.Orbit
             }
 
             // ① 청구서 단말 (왼쪽 위)
-            var bt = new Rect(ox + 15, 36, 176, 190);
+            var bt = new Rect(ox + 15, 36, 176, 196);
             bool due = S.overdue && !M.cleanReady;
             string dueTxt = M.cleanReady ? Led(SweepGame.Green) + "빚 청산" : S.bill >= SweepSim.Bills.Length ? Led(SweepGame.Red) + "빚만 남음" : due ? "<color=#ff8a7a>" + Led(SweepGame.Red) + "오늘 납부일</color>" : Led(SweepGame.Amber) + "기한 " + S.billDue + "판";
             Plate(bt, "청구서 단말", dueTxt, SweepGame.Amber, false);
@@ -585,7 +585,16 @@ namespace SalvageRun.Orbit
                 else if (loanPay && due) { if (GUI.Button(new Rect(bt.x + 8, by, bt.width - 16, 24), "<size=12>대출 " + KNum.Fmt(need) + " 받아 갚기</size>", btn)) sim.LoanAndPay(); }
                 else GUI.Label(new Rect(bt.x + 8, by, bt.width - 16, 24), "<size=12><color=#8a9bb3>" + Mathf.RoundToInt((float)(S.cash / System.Math.Max(1, sim.BillAmount)) * 100) + "% 모였다</color></size>", center);
             }
-            if (!M.cleanReady && GUI.Button(new Rect(bt.x + 8, by + 26, bt.width - 16, 22), "<size=11>" + (S.debt > 0 ? "<color=#ffb3a8>빚 " + KNum.Fmt(S.debt) + "</color> · " : "") + "대출 창구</size>", btnOff)) loanOpen = true;
+            // 대출 창구 — 잘 보이게 (사장님: 「너무 안 보여」). 호박색 테두리 · 밝은 글씨 · 빚이 있으면 옆에 빨갛게
+            if (!M.cleanReady)
+            {
+                var lb = new Rect(bt.x + 8, by + 27, bt.width - 16, 30);
+                bool lh = lb.Contains(Event.current.mousePosition);
+                GUI.color = lh ? new Color(0.36f, 0.26f, 0.08f) : new Color(0.25f, 0.18f, 0.06f); GUI.DrawTexture(lb, white); GUI.color = Color.white;
+                Frame(lb, lh ? SweepGame.Amber2 : SweepGame.Amber, 2);
+                GUI.Label(lb, "<size=13><color=#ffdf95>대출 창구 ▸</color></size>" + (S.debt > 0 ? "  <size=11><color=#ffb3a8>빚 " + KNum.Fmt(S.debt) + "</color></size>" : ""), center);
+                if (GUI.Button(lb, GUIContent.none, GUIStyle.none)) loanOpen = true;
+            }
 
             // ② 출동 보고 (왼쪽 가운데)
             var rp = new Rect(ox + 15, 236, 140, 118);
