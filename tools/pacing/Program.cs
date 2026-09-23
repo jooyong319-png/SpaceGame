@@ -17,6 +17,7 @@ static class Program
 
     static void Main(string[] args)
     {
+        if (double.TryParse(Environment.GetEnvironmentVariable("LOANMULT"), out double lm)) SweepSim.LoanMult = lm;
         var seeds = args.Length > 0 && int.TryParse(args[0], out int one) ? new[] { one } : new[] { 3, 7, 11 };
         bool verbose = args.Contains("verbose");
         foreach (var s in seeds) Run(s, verbose);
@@ -44,13 +45,19 @@ static class Program
             if (!sim.M.cleanReady)
             {
                 if (sim.PayBill()) log.Add($"{Min(),6:0.0}분  {sim.M.company}대  청구서 {sim.S.bill} 갚음  (출동 {sim.S.runs})");
-                // 막혔다 — 연체 두 판째거나, 이번 판 수입으로 세 판 안에 못 갚으면 파산
-                if (sim.CanBankrupt && sim.S.overdue && (sim.S.bill >= 3 && sim.S.overRuns >= 1 || sim.S.overRuns >= 8))
+                // 납부일 — 모자라면 대출받아 갚는다. 한도가 모자라면 파산
+                if (sim.S.overdue && sim.S.cash < sim.BillAmount)
+                {
+                    double need = sim.BillAmount - sim.S.cash;
+                    if (sim.LoanAndPay()) log.Add($"{Min(),6:0.0}분  {sim.M.company}대  🏦 대출 {need:0} 받아 청구서 {sim.S.bill} 갚음 · 빚 {sim.S.debt:0}");
+                }
+                if (sim.CanBankrupt && sim.S.overdue)
                 {
                     log.Add($"{Min(),6:0.0}분  {sim.M.company}대  💥 파산 (청구서 {sim.S.bill} · 출동 {sim.S.runs} · 신용 +{sim.S.creditPending})");
                     sim.Bankrupt();
                     continue;
                 }
+                if (sim.S.bill >= SweepSim.Bills.Length && sim.RepayDebt()) log.Add($"{Min(),6:0.0}분  {sim.M.company}대  🏦 빚 갚는 중 · 남은 빚 {sim.S.debt:0}");
                 sim.SetOrbit(sim.MaxOrbit);
                 // 사기 — 청구서 몫은 남겨 두고 싼 것부터
                 // 기한이 한 판 남았거나 연체 중이면 모은다 (사람도 그렇게 한다)

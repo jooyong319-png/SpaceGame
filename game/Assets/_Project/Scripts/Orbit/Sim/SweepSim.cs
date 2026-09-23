@@ -29,7 +29,7 @@ namespace SalvageRun.Orbit.Sim
     public class SweepState
     {
         public int version = 21;
-        public double cash, billAmount = -1, creditPending, startedAt;
+        public double cash, billAmount = -1, creditPending, startedAt, debt;   // debt = 갚아야 할 빚 (대출 × 배수)
         public int runs, orbit, bill, billDue = 5, overRuns, contract = -1;
         public bool overdue, rerolled;
         public int[] lv = new int[SweepSim.NodeCount];
@@ -40,7 +40,7 @@ namespace SalvageRun.Orbit.Sim
     {
         public double credit, broken, playSeconds;
         public int[] career = new int[SweepSim.CareerCount];
-        public int company = 1, bankrupt, bestChain, bestPack, totalRuns, scoops;
+        public int company = 1, bankrupt, loans, bestChain, bestPack, totalRuns, scoops;
         public bool won, careerOpen, cleanReady;
         public List<NewsItem> news = new List<NewsItem>();
         public List<string> flags = new List<string>();
@@ -150,7 +150,7 @@ namespace SalvageRun.Orbit.Sim
             N("e_talk", "eco", "청구서 협상", "기한 +1판", new[] { "e_vault" }, 4, 3600, 3.0, 2, 2, 0),
             N("e_tip", "eco", "제보망", "블랙박스가 더 자주", new[] { "e_att" }, 3, 1500, 1.8, 3, 2, 2),
             N("e_save", "eco", "적금", "판 끝에 이자", new[] { "e_quest" }, 4, 2500, 1.9, 5, 2, 4),
-            N("e_guard", "eco", "추심 방어", "추심 30% → 20%", new[] { "e_talk", "e_tip" }, 5, 9000, 1, 1, 3, 1),
+            N("e_guard", "eco", "상환 조절", "빚 상환으로 떼는 몫 30% → 20%", new[] { "e_talk", "e_tip" }, 5, 9000, 1, 1, 3, 1),
             N("e_used", "eco", "중고 거래", "모든 칸 -5%", new[] { "e_save" }, 4, 6000, 2.0, 3, 3, 3),
         };
         public const int NodeCount = 36;
@@ -323,7 +323,34 @@ namespace SalvageRun.Orbit.Sim
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
         public int ChainMax => R.clean ? 5000 : 25 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 12 * Lv("b_chain") + (S.bill >= 4 ? 10 : 0) + (S.bill >= 7 ? 30 : 0);
         public double ValMult => Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * Orbits[S.orbit].mult * Econ;
-        public double Cut => S.overdue ? (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) : 0;
+        public double Cut => S.debt > 0 ? (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) : 0;   // 빚이 있으면 판 수입에서 떼어 상환
+        // ── 대출 (연체 대신) — 언제든 받을 수 있다. 받은 돈 × 배수를 판 수입에서 조금씩 갚는다
+        public static double LoanMult = 3;
+        void CheckClean() { if (S.bill >= Bills.Length && S.debt <= 0.5) { S.debt = 0; M.cleanReady = true; } }   // 청구서도 빚도 다 갚아야 청산 출동
+        public double LoanCap => M.cleanReady || S.bill >= Bills.Length ? 0 : Math.Max(0, Math.Floor(BillAmount - S.debt / LoanMult));   // 한도 = 지금 청구서 금액 − 남은 원금
+        public bool TakeLoan(double amt)
+        {
+            amt = Math.Min(Math.Ceiling(amt), LoanCap);
+            if (amt <= 0) return false;
+            S.cash += amt; S.debt += amt * LoanMult; M.loans++;
+            return true;
+        }
+        public bool LoanAndPay()
+        {
+            if (S.cash >= BillAmount) return PayBill();
+            double need = BillAmount - S.cash;
+            if (need > LoanCap) return false;
+            TakeLoan(need);
+            return PayBill();
+        }
+        public bool RepayDebt()
+        {
+            double p = Math.Min(S.cash, S.debt);
+            if (p <= 0) return false;
+            S.cash -= p; S.debt -= p;
+            CheckClean();
+            return true;
+        }
         public int TotalLv { get { int n = 0; foreach (var l in S.lv) n += l; return n; } }
         public double Widen => 1 + 0.1 * Lv("o_wide");      // 🔴 정비소에서 산다 (사장님 09-23: "맵 크기도 여기서 늘리게")
         public double Bo => Orbits[S.orbit].bi + (Orbits[S.orbit].bo - Orbits[S.orbit].bi) * Widen;
@@ -404,7 +431,7 @@ namespace SalvageRun.Orbit.Sim
             string nid = "bill" + S.bill;
             AddNews(nid);
             Emit(SwEv.BillPaid, 0, 0, S.bill, 0, b.t + " 납부 완료 — " + b.perk);
-            if (S.bill >= Bills.Length) M.cleanReady = true;
+            CheckClean();
             if (S.bill == 2 && S.contract < 0) RollContract();
         }
 
@@ -520,7 +547,7 @@ namespace SalvageRun.Orbit.Sim
         // ───────────────────────── 출동
         public void StartRun()
         {
-            if (!R.over || S.bill >= Bills.Length && !M.cleanReady) return;
+            if (!R.over || S.bill >= Bills.Length && !M.cleanReady && S.debt <= 0) return;   // 청구서를 다 갚아도 빚이 남았으면 갚으러 출동한다
             bool clean = M.cleanReady;
             if (clean) S.orbit = 2;
             S.runs++; S.rerolled = false;
@@ -546,7 +573,7 @@ namespace SalvageRun.Orbit.Sim
                 r.ev1 = ev[rng.Next(ev.Length)]; r.ev1T = Rnd(10, 14);
                 if (r.max >= 40) { r.ev2 = ev[rng.Next(ev.Length)]; r.ev2T = Rnd(22, 26); }
             }
-            r.collector = S.overdue;
+            r.collector = false;                                        // 추심선은 대출로 바뀌며 쉰다
             // 블랙박스 — 청구서 2 뒤 · 판마다 25%
             if ((S.bill >= 2 || clean) && M.scoops < 6 && (clean || Rnd() < 0.25 + 0.1 * Lv("e_tip")))
             {
@@ -1029,10 +1056,10 @@ namespace SalvageRun.Orbit.Sim
                 Emit(SwEv.Coin, x, y, toBill, 3);
                 return;
             }
-            double cut = Cut, got = v * (1 - cut);
-            S.cash += got; r.cut += v - got;
+            double cutAmt = Math.Min(v * Cut, S.debt), got = v - cutAmt;
+            S.cash += got; r.cut += cutAmt; S.debt -= cutAmt;
             if (src == 0) r.earnClaw += got; else if (src == 1) r.earnDrone += got; else r.earnBlast += got;
-            if (coin) Emit(SwEv.Coin, x, y, got, src + (cut > 0 ? 10 : 0));
+            if (coin) Emit(SwEv.Coin, x, y, got, src + (cutAmt > 0 ? 10 : 0));
         }
 
         void EndRun()
@@ -1057,10 +1084,11 @@ namespace SalvageRun.Orbit.Sim
                 else if (!S.overdue)
                 {
                     S.billDue--;
-                    if (S.billDue <= 0) { S.overdue = true; S.overRuns = 0; AddNews("overdue1"); Emit(SwEv.Overdue); }
+                    if (S.billDue <= 0) { S.overdue = true; S.overRuns = 0; Emit(SwEv.Overdue); }   // 납부일 — 갚거나 · 대출받아 갚거나 · 파산 (연체 이자 · 추심은 없앴다)
                 }
-                else { S.overRuns++; S.billAmount = Math.Ceiling(BillAmount * (Cr(5) > 0 ? 1.05 : 1.1)); }
+                else S.overRuns++;
             }
+            CheckClean();                                               // 판 수입에서 떼어 빚을 다 갚았을 수도
             RollContract();
             Emit(SwEv.RunEnd);
         }
