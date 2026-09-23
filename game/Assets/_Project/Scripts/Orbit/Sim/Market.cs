@@ -41,7 +41,7 @@ namespace SalvageRun.Orbit.Sim
     public class Market
     {
         public const float CandleSec = 6f;
-        public const int Keep = 60;
+        public const int Keep = 240;                                    // 1분 봉 24개 (증권 방 09-24)
         public static readonly StockDef[] Defs =
         {
             new StockDef { id = "kes",   name = "케슬러 금융",   sector = "금융", desc = "안정 · 배당",     mu = 0.0010, vol = 0.016, div = 0.0012 },
@@ -95,7 +95,7 @@ namespace SalvageRun.Orbit.Sim
                 {
                     var s = new StockState { price = 40 + rng.NextDouble() * 160 };
                     // 지난 봉 40개를 미리 — 처음 열어도 차트가 있다
-                    for (int k = 0; k < 40; k++) { StartCandle(s); for (int j = 0; j < 12; j++) Wiggle(i, s, CandleSec / 12); Close(s); }
+                    for (int k = 0; k < 120; k++) { StartCandle(s); for (int j = 0; j < 12; j++) Wiggle(i, s, CandleSec / 12); Close(s); }
                     M.st.Add(s);
                 }
             }

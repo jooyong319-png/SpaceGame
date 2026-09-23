@@ -159,7 +159,7 @@ namespace SalvageRun.Orbit
                 if (kb.f2Key.wasPressedThisFrame) timeScale = timeScale > 1f ? 1f : 3f;
                 if (kb.mKey.wasPressedThisFrame && OrbitSfx.I != null) OrbitSfx.I.ToggleMute();
                 if (kb.aKey.wasPressedThisFrame && !sim.R.over) ToggleAuto();                  // 🎯 자동 조준 ON/OFF
-                if (kb.sKey.wasPressedThisFrame && sim.StockOpen && hud != null) hud.stockOpen = !hud.stockOpen;   // 📈 주식 창
+                if (kb.sKey.wasPressedThisFrame && hud != null) { if (sim.R.over) { if (hud.flow == 2) hud.GoFlow(4); else if (hud.flow == 4) hud.GoFlow(2); } else if (sim.StockOpen) hud.stockOpen = !hud.stockOpen; }   // 📈 판 중 = 주식 창 · 조종실 = 증권 방
             }
             ReadAim();
             sim.MarketTick(dt);                                             // 📈 시장은 늘 흐른다 (판 중이든 조종실이든)
@@ -192,7 +192,8 @@ namespace SalvageRun.Orbit
             cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, wantSize, 1 - Mathf.Exp(-dt * 5f));
             float camY = cockpit ? -0.3f * cam.orthographicSize : 0f;
             camBase = Mathf.Lerp(camBase, camY, 1 - Mathf.Exp(-dt * 5f));
-            cam.transform.position = new Vector3(0, camBase, -10) + (Vector3)(Random.insideUnitCircle * shake);
+            float camX = hud != null ? -hud.CockpitDx * 2f * cam.orthographicSize / 600f : 0f;   // 옆 방으로 밀리면 창밖도 같이
+            cam.transform.position = new Vector3(camX, camBase, -10) + (Vector3)(Random.insideUnitCircle * shake);
             saveTimer += dt;
             if (saveTimer > 5f) { saveTimer = 0; Save(); }
         }
