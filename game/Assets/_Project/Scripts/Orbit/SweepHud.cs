@@ -970,7 +970,7 @@ namespace SalvageRun.Orbit
         class GTile { public int stat, j, lpar = -1; public List<int> xpar = new List<int>(); public Vector2Int cell; public Vector2Int inDir; }
         static List<GTile> gtiles;
         static readonly Vector2Int[] Dirs8 = { new Vector2Int(0, -1), new Vector2Int(1, -1), new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(0, 1), new Vector2Int(-1, 1), new Vector2Int(-1, 0), new Vector2Int(-1, -1) };
-        Vector2 camC; float camZ = 1f; Vector2 pan; bool dragging; Vector2 dragFrom;
+        Vector2 camC; float camZ = 1f, userZ = 1f; Vector2 pan; bool dragging, dragMoved; int dragBtn; Vector2 dragFrom, dragStart;
 
         static Vector2Int Rot(Vector2Int d, int k) { int i = System.Array.IndexOf(Dirs8, d); return Dirs8[((i + k) % 8 + 8) % 8]; }
 
@@ -1272,11 +1272,26 @@ namespace SalvageRun.Orbit
             camZ = Mathf.Lerp(camZ, wantZ, 1 - Mathf.Exp(-Time.deltaTime * 4));
             camC = Vector2.Lerp(camC, wantC, 1 - Mathf.Exp(-Time.deltaTime * 4));
             var ev = Event.current;
-            if (ev.type == EventType.MouseDown && ev.button == 1 && area.Contains(ev.mousePosition)) { dragging = true; dragFrom = ev.mousePosition; }
-            if (ev.type == EventType.MouseDrag && dragging) { pan += ev.mousePosition - dragFrom; dragFrom = ev.mousePosition; }
-            if (ev.type == EventType.MouseUp && ev.button == 1) dragging = false;
-            Vector2 ToScr(Vector2Int c) => area.center + pan + ((Vector2)c - camC) * cellPx * camZ;
-            float tile = 44f * camZ;
+            // 🔍 확대 (09-24 사장님 「PC 게임이니 확대」) — 휠 = 마우스 자리를 중심으로 0.6~3배 · 끌기(왼쪽/오른쪽) = 이동 · [+][−][맞춤]
+            var zb = new Rect(ox + 16, area.y + 8, 118, 30);
+            void ZoomAt(Vector2 at, float nz)
+            {
+                nz = Mathf.Clamp(nz, 0.6f, 3f);
+                float z0 = camZ * userZ, z1 = camZ * nz;
+                var wc = (at - area.center - pan) / (cellPx * z0);      // 마우스 아래 칸 좌표 (camC 기준)
+                pan = at - area.center - wc * cellPx * z1; userZ = nz;
+            }
+            if (ev.type == EventType.ScrollWheel && area.Contains(ev.mousePosition)) { ZoomAt(ev.mousePosition, userZ * (ev.delta.y > 0 ? 1 / 1.15f : 1.15f)); ev.Use(); }
+            if (ev.type == EventType.MouseDown && (ev.button == 1 || ev.button == 0) && area.Contains(ev.mousePosition) && !zb.Contains(ev.mousePosition)) { dragging = true; dragMoved = false; dragBtn = ev.button; dragFrom = dragStart = ev.mousePosition; }
+            if (ev.type == EventType.MouseDrag && dragging)
+            {
+                if (!dragMoved && (ev.mousePosition - dragStart).sqrMagnitude > 36) dragMoved = true;   // 6px 넘게 움직여야 끌기 — 칸 누르기와 안 헷갈리게
+                if (dragMoved) { pan += ev.mousePosition - dragFrom; dragFrom = ev.mousePosition; ev.Use(); }
+            }
+            if (ev.type == EventType.MouseUp && dragging && ev.button == dragBtn) { dragging = false; if (dragMoved) ev.Use(); }
+            float zz = camZ * userZ;
+            Vector2 ToScr(Vector2Int c) => area.center + pan + ((Vector2)c - camC) * cellPx * zz;
+            float tile = 44f * zz;
 
             // 선 — 둘 다 산 것이면 금색
             for (int k = 0; k < nT; k++)
@@ -1289,8 +1304,8 @@ namespace SalvageRun.Orbit
                     if (st[pk] == 0) continue;
                     bool gold = st[k] == 3 && st[pk] == 3;
                     var a = ToScr(gtiles[pk].cell); var b = ToScr(t.cell);
-                    if (gold) Line(a, b, new Color(1f, 0.72f, 0.2f, 0.3f), 8 * camZ);
-                    Line(a, b, gold ? new Color(1f, 0.74f, 0.2f) : new Color(0.32f, 0.3f, 0.28f, st[k] == 1 ? 0.5f : 0.9f), (gold ? 3.2f : 2f) * camZ);
+                    if (gold) Line(a, b, new Color(1f, 0.72f, 0.2f, 0.3f), 8 * zz);
+                    Line(a, b, gold ? new Color(1f, 0.74f, 0.2f) : new Color(0.32f, 0.3f, 0.28f, st[k] == 1 ? 0.5f : 0.9f), (gold ? 3.2f : 2f) * zz);
                 }
             }
             // 칸
@@ -1309,10 +1324,10 @@ namespace SalvageRun.Orbit
                 bool can = next && ns == NodeSt.Can;
                 bool diamond = !isRoot && n.max == 1;
                 var pc = ToScr(t.cell);
-                float grow = isRoot ? 0 : nodePulse[t.stat] * 8 * camZ;
+                float grow = isRoot ? 0 : nodePulse[t.stat] * 8 * zz;
                 float sz = (isRoot ? tile * 1.25f : diamond ? tile * 0.92f : tile) + grow;
                 var r = new Rect(pc.x - sz / 2, pc.y - sz / 2, sz, sz);
-                if (can) { GUI.color = new Color(1f, 0.78f, 0.3f, 0.28f + 0.18f * Mathf.Sin(Time.time * 5 + k)); GUI.DrawTexture(new Rect(r.x - 9 * camZ, r.y - 9 * camZ, r.width + 18 * camZ, r.height + 18 * camZ), texDisc); }
+                if (can) { GUI.color = new Color(1f, 0.78f, 0.3f, 0.28f + 0.18f * Mathf.Sin(Time.time * 5 + k)); GUI.DrawTexture(new Rect(r.x - 9 * zz, r.y - 9 * zz, r.width + 18 * zz, r.height + 18 * zz), texDisc); }
                 if (diamond) GUI.matrix = m0 * Matrix4x4.TRS(new Vector3(pc.x, pc.y, 0), Quaternion.Euler(0, 0, 45), Vector3.one) * Matrix4x4.TRS(new Vector3(-pc.x, -pc.y, 0), Quaternion.identity, Vector3.one);
                 Color bg = owned ? Color.Lerp(bcol, new Color(0.1f, 0.08f, 0.06f), 0.62f) : next ? new Color(0.09f, 0.09f, 0.1f) : new Color(0.06f, 0.06f, 0.07f);
                 GUI.color = bg; GUI.DrawTexture(r, white);
@@ -1335,8 +1350,15 @@ namespace SalvageRun.Orbit
                 }
             }
             GUI.color = Color.white;
+            {
+                float bw3 = 36;
+                if (GUI.Button(new Rect(zb.x, zb.y, bw3, zb.height), "<size=16>−</size>", btnOff)) ZoomAt(area.center, userZ / 1.25f);
+                if (GUI.Button(new Rect(zb.x + bw3 + 3, zb.y, bw3, zb.height), "<size=16>+</size>", btnOff)) ZoomAt(area.center, userZ * 1.25f);
+                if (GUI.Button(new Rect(zb.x + (bw3 + 3) * 2, zb.y, 40, zb.height), "<size=11>맞춤</size>", btnOff)) { userZ = 1; pan = Vector2.zero; }
+                GUI.Label(new Rect(zb.xMax + 8, zb.y + 6, 260, 20), "<size=11><color=#5f6878>" + Mathf.RoundToInt(userZ * 100) + "%</color></size>", label);
+            }
             if (hover >= 0) Tip(hover, ToScr(gtiles[hover].cell), st[hover], tile);
-            else GUI.Label(new Rect(0, area.yMax - 18, vw, 16), "<size=11>칸에 마우스를 올리면 무엇인지 보인다 · 빛나는 칸을 누르면 산다 · 오른쪽 단추로 끌면 옮겨 본다</size>", center);
+            else GUI.Label(new Rect(0, area.yMax - 18, vw, 16), "<size=11>칸에 마우스를 올리면 무엇인지 보인다 · 빛나는 칸을 누르면 산다 · 휠 = 확대 · 끌기 = 이동</size>", center);
         }
 
         void Tip(int k, Vector2 at, int vis, float tile)
