@@ -343,7 +343,7 @@ namespace SalvageRun.Orbit
             GUI.Label(new Rect(r.x, by + 14, r.width, 18), "<color=#f2c14e>빔 " + Mathf.RoundToInt(a * 100) + "</color> · <color=#6fd3e8>드론 " + Mathf.RoundToInt(b * 100) + "</color> · <color=#b69cff>폭발 " + Mathf.RoundToInt((1 - a - b) * 100) + "</color> %  ·  부순 것 " + R.broke, center);
             string rec = "최대 연쇄 " + R.chainBest + (R.chainBest > prevBestChain && R.chainBest >= 10 ? " <color=#ff8a7a>새 기록!</color>" : "") + "   최대 압축 " + R.packBest + (R.packBest > prevBestPack && R.packBest >= 5 ? " <color=#ff8a7a>새 기록!</color>" : "");
             GUI.Label(new Rect(r.x, by + 34, r.width, 18), rec, center);
-            if (R.contractOk) GUI.Label(new Rect(r.x, by + 52, r.width, 18), "<color=#6fcf97>의뢰 성공 +" + KNum.Fmt(R.bonus) + "</color>", center);
+            if (R.contractText != null) GUI.Label(new Rect(r.x, by + 52, r.width, 18), R.contractOk ? "<color=#6fcf97>의뢰 · " + R.contractText + " 성공 +" + KNum.Fmt(R.bonus) + "</color>" : "<color=#ee7766>의뢰 · " + R.contractText + " 실패 (" + R.contractProg + "/" + R.contractTarget + ")</color>", center);
             else if (R.cut > 0) GUI.Label(new Rect(r.x, by + 52, r.width, 18), "<color=#ee7766>추심으로 떼인 것 -" + KNum.Fmt(R.cut) + "</color>", center);
             GUI.color = Color.white;
         }
@@ -401,7 +401,7 @@ namespace SalvageRun.Orbit
             Row("부순 것", R.broke.ToString());
             Row("최대 연쇄", R.chainBest + (R.chainBest > prevBestChain && R.chainBest >= 10 ? " <color=#ff8a7a>새 기록</color>" : ""));
             Row("최대 압축", R.packBest + (R.packBest > prevBestPack && R.packBest >= 5 ? " <color=#ff8a7a>새 기록</color>" : ""));
-            if (R.contractOk) Row("의뢰 성공", "<color=#6fcf97>+" + KNum.Fmt(R.bonus) + "</color>");
+            if (R.contractText != null) Row("의뢰", R.contractOk ? "<color=#6fcf97>성공 +" + KNum.Fmt(R.bonus) + "</color>" : "<color=#ee7766>실패 " + R.contractProg + "/" + R.contractTarget + "</color>");
             if (R.interest > 0) Row("적금 이자", "<color=#6fcf97>+" + KNum.Fmt(R.interest) + "</color>");
             if (R.cut > 0) Row("추심", "<color=#ee7766>-" + KNum.Fmt(R.cut) + "</color>");
             if (R.toBill > 0) Row("압류로 갚은 빚", "<color=#ff8a7a>" + KNum.Fmt(R.toBill) + "</color>");

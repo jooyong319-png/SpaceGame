@@ -58,6 +58,7 @@ namespace SalvageRun.Orbit.Sim
         public int shots, maxShots, chain, chainBest, packBest, broke, tier, idc;
         public bool over, holding, clean, contractOk;
         public double earnClaw, earnDrone, earnBlast, cut, toBill, bonus, interest;
+        public string contractText; public int contractProg, contractTarget;     // 지난 판 의뢰 — 결산에 성공/실패를 보여 준다
         public int cVault, cFuel, cChip, cSat, cTank, cBig, cTag;
         public int cleanKills, cleanGoal = 1;
         public readonly List<Junk> junk = new List<Junk>();
@@ -956,6 +957,7 @@ namespace SalvageRun.Orbit.Sim
                 return;
             }
             var c = CurContract;
+            if (c != null) { r.contractText = c.Value.text; r.contractTarget = c.Value.target; r.contractProg = Math.Min(ContractProgress(r), c.Value.target); }
             if (c != null && ContractProgress(r) >= c.Value.target) { r.contractOk = true; r.bonus = Math.Ceiling(r.Earned * (0.25 + 0.1 * Lv("e_quest"))); S.cash += r.bonus; }
             if (Lv("e_save") > 0) { r.interest = Math.Min(r.Earned, Math.Floor(S.cash * 0.02 * Lv("e_save"))); S.cash += r.interest; }
             if (S.bill < Bills.Length)
