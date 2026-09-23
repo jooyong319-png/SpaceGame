@@ -1153,7 +1153,7 @@ namespace SalvageRun.Orbit.Sim
                 if (d.dead) continue;
                 d.hit = 0; d.fade = 1; d.rot += d.vr * dt;
                 if (d.free) Recapture(d, o.bi, Bo);
-                d.a += 0.12 * d.ws * dt; Place(d);
+                d.a += 0.12 * d.ws * dt * o.spin; Place(d);                  // 행성마다 도는 빠르기 (창밖도)
             }
             double mid = (o.bi + Bo) / 2;
             foreach (var dr in R.drones) { dr.a += dt * 0.45; dr.x = EX + Math.Cos(dr.a) * mid; dr.y = EY + Math.Sin(dr.a) * mid * Tilt; }
