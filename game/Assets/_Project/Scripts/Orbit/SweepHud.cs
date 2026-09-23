@@ -137,7 +137,6 @@ namespace SalvageRun.Orbit
                 GUI.enabled = true;
                 if (loanOpen) LoanWin();
                 if (lottoOpen) LottoWin();
-                LottoToast();
             }
             if (!sim.M.won) NewsBanner();
             if (newsOpen) News();
@@ -697,14 +696,9 @@ namespace SalvageRun.Orbit
             Frame(r, new Color(1f, 0.66f, 0.94f, 0.85f), 1.5f);
             GUI.color = new Color(1f, 0.66f, 0.94f); foreach (var cn in new[] { new Vector2(r.x, r.y), new Vector2(r.xMax - 14, r.y), new Vector2(r.x, r.yMax - 3), new Vector2(r.xMax - 14, r.yMax - 3) }) GUI.DrawTexture(new Rect(cn.x, cn.y, 14, 3), white);
             GUI.color = Color.white;
-            string[] tabs = { "즉석 복권", "궤도 로또" };
-            for (int i = 0; i < 2; i++)
-            {
-                var tb = new Rect(r.x + 16 + i * 150, r.y + 12, 144, 34);
-                if (GUI.Button(tb, "<size=15>" + (lottoTab == i ? "<color=#f3c8ff><b>" + tabs[i] + "</b></color>" : "<color=#8a7f99>" + tabs[i] + "</color>") + "</size>", lottoTab == i ? btn : btnOff)) lottoTab = i;
-            }
+            GUI.Label(new Rect(r.x + 20, r.y + 14, 200, 30), "<size=18><b><color=#f3c8ff>즉석 복권</color></b></size>", label);   // 🎱 궤도 로또는 뺐다 (09-24 사장님 「로또는 의미가 없다」)
             GUI.Label(new Rect(r.x, r.y + 18, r.width - 20, 24), "<size=13><color=#8a9bb3>돈</color> " + KNum.Fmt(S.cash) + "</size>", cost);
-            if (lottoTab == 0) Scratch(r, ev); else Lotto(r);
+            Scratch(r, ev);
             if (GUI.Button(new Rect(r.xMax - 106, r.yMax - 46, 92, 34), "닫기", btnOff)) lottoOpen = false;
         }
 

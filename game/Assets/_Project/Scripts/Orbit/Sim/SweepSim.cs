@@ -457,7 +457,12 @@ namespace SalvageRun.Orbit.Sim
         /// <summary>출동이 끝날 때 — 추첨 날이면 번호를 뽑고 당첨금을 준다</summary>
         void LottoDraw()
         {
-            if (S.lotto.Count == 0) return;                               // 표를 산 출동이 끝나면 바로 추첨 (사장님 「출발 갔다 오면 당첨 번호」)
+            if (S.lotto.Count == 0) return;
+            // 🎱 궤도 로또는 뺐다 (09-24) — 옛 저장에 남은 표는 값을 돌려준다
+            foreach (var t in S.lotto) S.cash += t.price;
+            S.lotto.Clear();
+            return;
+#pragma warning disable CS0162
             var pool = new List<int>(); for (int i = 1; i <= 12; i++) pool.Add(i);
             var d = new int[3]; for (int k = 0; k < 3; k++) { int j = luck.Next(pool.Count); d[k] = pool[j]; pool.RemoveAt(j); }
             Array.Sort(d);

@@ -592,9 +592,9 @@ namespace SalvageRun.Orbit
             float fl = Flick(5.3f);
             HoloBase(p, ox + 642, 524, 100, HoloPink, fl, ov);
             GUI.color = new Color(1, 1, 1, fl);
-            GUI.Label(new Rect(p.x, p.y + 6, p.width, 18), "<size=11><b><color=#ffd6f7>LOTTO</color></b></size>", center);
+            GUI.Label(new Rect(p.x, p.y + 6, p.width, 18), "<size=11><b><color=#ffd6f7>SCRATCH</color></b></size>", center);
             GUI.Label(new Rect(p.x, p.y + 26, p.width, 32), "<size=22><b><color=#ffe8fb>복권</color></b></size>", center);
-            GUI.Label(new Rect(p.x, p.y + 62, p.width, 18), "<size=10><color=#ffb8ee>즉석 " + sim.ScratchLeft + " · 로또 " + sim.LottoMine + "장</color></size>", center);
+            GUI.Label(new Rect(p.x, p.y + 62, p.width, 18), "<size=10><color=#ffb8ee>즉석 복권 " + sim.ScratchLeft + "장</color></size>", center);
             GUI.color = Color.white;
             if (GUI.Button(p, GUIContent.none, GUIStyle.none)) { lottoOpen = true; OrbitSfx.Play("tick", 0.6f); }
         }
