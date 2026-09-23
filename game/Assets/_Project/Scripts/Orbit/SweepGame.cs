@@ -30,6 +30,7 @@ namespace SalvageRun.Orbit
         readonly List<SpriteRenderer> cableViews = new List<SpriteRenderer>();
         readonly List<SpriteRenderer> podViews = new List<SpriteRenderer>();
         SpriteRenderer shipView, shipFlame;
+        readonly List<SpriteRenderer> mineViews = new List<SpriteRenderer>();
         SpriteRenderer earth, ringB, ringF, atmo, rim, band, bandGlow, claw, clawRing, clawWind, holeCore, holeGlow, holeRing, moon, sun, sunCore;
         float t, saveTimer, bandInner = -1, earthR = 120, camBase;
         public bool aimOn, holdOn;
@@ -348,9 +349,41 @@ namespace SalvageRun.Orbit
                     {
                         var s0 = PxToWorld(e.x, e.y); var s1 = PxToWorld(e.x2, e.y2); bool awk = (e.k & 2) != 0, cr = (e.k & 1) != 0;
                         float w = (float)e.v * 2 / PxPerUnit;
-                        var halo = Add(pixel, s0, 0.05f, awk ? new Color(1f, 0.45f, 0.9f, 0.35f) : new Color(1f, 0.3f, 0.25f, 0.35f), 8, 0.13f); halo.a = s0; halo.b = s1; halo.size = w;
-                        var core = Add(pixel, s0, 0.05f, cr ? new Color(1f, 1f, 0.8f, 1f) : new Color(1f, 0.85f, 0.8f, 0.95f), 8, 0.1f); core.a = s0; core.b = s1; core.size = Mathf.Max(0.05f, w * 0.22f);
-                        if (Random.value < 0.25f) OrbitSfx.PlayPitch("tick", 0.12f, 2.2f + Random.value * 0.3f);
+                        bool fence = (e.k & 16) != 0, ice = (e.k & 32) != 0, sling = (e.k & 4) != 0;
+                        Color hc = ice ? new Color(0.55f, 0.85f, 1f, 0.4f) : fence ? new Color(1f, 0.4f, 0.45f, 0.5f) : sling ? new Color(1f, 0.6f, 0.2f, 0.45f) : awk ? new Color(1f, 0.45f, 0.9f, 0.35f) : new Color(1f, 0.3f, 0.25f, 0.35f);
+                        Color cc = ice ? new Color(0.9f, 0.98f, 1f, 1f) : fence ? new Color(1f, 0.75f, 0.75f, 1f) : cr ? new Color(1f, 1f, 0.8f, 1f) : new Color(1f, 0.85f, 0.8f, 0.95f);
+                        var halo = Add(pixel, s0, 0.05f, hc, 8, 0.13f); halo.a = s0; halo.b = s1; halo.size = w;
+                        var core = Add(pixel, s0, 0.05f, cc, 8, 0.1f); core.a = s0; core.b = s1; core.size = Mathf.Max(0.04f, w * 0.22f);
+                        if (!fence && Random.value < 0.25f) OrbitSfx.PlayPitch("tick", 0.12f, ice ? 2.8f : 2.2f + Random.value * 0.3f);
+                        break;
+                    }
+                    case SwEv.Vac:
+                    {
+                        var s0 = PxToWorld(e.x, e.y); float ang = (float)e.v, half = (float)e.x2, rng2 = (float)e.y2 / PxPerUnit;
+                        for (int q = -1; q <= 1; q++)
+                        {
+                            float aa = ang + q * half; var tip = PxToWorld(e.x + Mathf.Cos(aa) * e.y2, e.y + Mathf.Sin(aa) * e.y2);
+                            var ln = Add(pixel, s0, 0.05f, new Color(0.7f, 0.9f, 1f, q == 0 ? 0.12f : 0.22f), 8, 0.1f); ln.a = s0; ln.b = tip; ln.size = q == 0 ? rng2 * 0.5f : 0.04f;
+                        }
+                        if (Random.value < 0.6f) { float aa = ang + Random.Range(-half, half), dd = Random.Range(0.4f, 1f) * (float)e.y2; var p = Add(pixel, PxToWorld(e.x + Mathf.Cos(aa) * dd, e.y + Mathf.Sin(aa) * dd), 0.08f, new Color(0.8f, 0.95f, 1f, 0.9f), 0, 0.3f); p.v = (s0 - p.sr.transform.position) * 3f; }
+                        break;
+                    }
+                    case SwEv.Shell:
+                    {
+                        var s0 = PxToWorld(e.x, e.y); var s1 = PxToWorld(e.x2, e.y2);
+                        var tr = Add(pixel, s0, 0.05f, new Color(1f, 0.7f, 0.3f, 0.8f), 8, 0.35f); tr.a = s0; tr.b = s1; tr.size = 0.12f;
+                        OrbitSfx.PlayPitch("tick", 0.4f, 0.7f);
+                        break;
+                    }
+                    case SwEv.Rail:
+                    {
+                        var s0 = PxToWorld(e.x, e.y); var s1 = PxToWorld(e.x2, e.y2);
+                        var h = Add(pixel, s0, 0.05f, new Color(0.7f, 0.85f, 1f, 0.55f), 8, 0.35f); h.a = s0; h.b = s1; h.size = 0.7f;
+                        var c = Add(pixel, s0, 0.05f, Color.white, 8, 0.28f); c.a = s0; c.b = s1; c.size = 0.16f;
+                        Add(glow, s0, 1.2f, new Color(0.8f, 0.9f, 1f, 0.8f), 7, 0.3f);
+                        shake = Mathf.Max(shake, 0.2f); flash = Mathf.Max(flash, 0.12f);
+                        OrbitSfx.PlayPitch("launch", 0.55f, 1.6f);
+                        if (e.v >= 5) PopAt(e.x2 * 0.3 + e.x * 0.7, e.y2 * 0.3 + e.y * 0.7 - 20, (int)e.v + "개 관통!", Cyan, 18);
                         break;
                     }
                     case SwEv.Bolt:
@@ -552,6 +585,7 @@ namespace SalvageRun.Orbit
                 if (v.sprite != s) v.sprite = s;
                 float dmg = 1f - (float)d.hp / Mathf.Max(1, d.max);
                 if (d.max > 1) c = Color.Lerp(c, new Color(0.3f, 0.26f, 0.24f), dmg * 0.55f);   // 금 간 만큼 어두워진다
+                if (d.frz > 0) c = Color.Lerp(c, Ice, 0.75f);                      // 냉동 빔 — 언 것
                 if (d.hit > 0) c = Color.white;
                 c.a = (float)d.fade;
                 v.color = c;
@@ -645,6 +679,14 @@ namespace SalvageRun.Orbit
             bool holding = R.holding && !R.over;
             claw.enabled = show; clawRing.enabled = show && sim.Weapon == 0;       // 원 = 집게 빔의 범위 (다른 무기엔 없다)
             shipView.enabled = shipFlame.enabled = !R.over;
+            for (int i = 0; i < mineViews.Count || i < R.mines.Count; i++)
+            {
+                if (i >= mineViews.Count) mineViews.Add(Make(disc, Vector3.zero, 0.22f, Red, 64));
+                var mv = mineViews[i]; bool on = !R.over && i < R.mines.Count; mv.enabled = on; if (!on) continue;
+                var m = R.mines[i]; mv.transform.position = PxToWorld(m.x, m.y);
+                float bl = m.t > 0 ? 0.35f : 0.6f + 0.4f * Mathf.Sin(Time.time * 10 + i);
+                mv.color = new Color(1f, 0.3f, 0.25f, bl); mv.transform.localScale = Vector3.one * 0.22f / disc.bounds.size.x;
+            }
             if (!R.over)
             {
                 var sp = PxToWorld(sim.ShipX, sim.ShipY); var ap = PxToWorld(R.ax, R.ay); var dd = ap - sp;

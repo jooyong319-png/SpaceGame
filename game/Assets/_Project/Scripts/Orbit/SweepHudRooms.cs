@@ -857,6 +857,7 @@ namespace SalvageRun.Orbit
             for (int w = 0; w < SweepSim.WeaponName.Length; w++)
             {
                 bool own = sim.WeaponOwned(w), on = sim.Weapon == w;
+                if (!own) continue;                                             // 산 무기만 (여덟 개가 다 늘어서지 않게)
                 var b = new Rect(x, r.y, 76, r.height);
                 GUI.color = on ? new Color(0.35f, 0.12f, 0.1f) : own ? new Color(0.12f, 0.1f, 0.1f) : new Color(0.07f, 0.07f, 0.08f); GUI.DrawTexture(b, white);
                 Frame(b, on ? new Color(1f, 0.55f, 0.5f) : own ? new Color(0.45f, 0.3f, 0.28f) : new Color(0.18f, 0.18f, 0.2f), on ? 2 : 1);
@@ -871,6 +872,7 @@ namespace SalvageRun.Orbit
             {
                 if (w == sim.Weapon) continue;
                 bool own = w < 0 || sim.WeaponOwned(w), on = sim.S.weapon2 == w;
+                if (!own) continue;
                 var b = new Rect(x, y2, 76, r.height);
                 GUI.color = on ? new Color(0.2f, 0.14f, 0.32f) : new Color(0.08f, 0.08f, 0.1f); GUI.DrawTexture(b, white);
                 Frame(b, on ? KeyCol : new Color(0.22f, 0.2f, 0.28f), on ? 2 : 1);
