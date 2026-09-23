@@ -52,6 +52,7 @@ namespace SalvageRun.Orbit
             if (!sim.M.flags.Contains("hint_claw")) sim.M.flags.Add("hint_claw");
             if (sim.DronesOn && !sim.M.flags.Contains("hint_drone")) sim.M.flags.Add("hint_drone");
             if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb")) sim.M.flags.Add("hint_bomb");
+            if (sim.S.orbit > 0 && !sim.M.flags.Contains("hint_p" + sim.S.orbit)) sim.M.flags.Add("hint_p" + sim.S.orbit);
         }
 
         public void Go()
@@ -265,6 +266,7 @@ namespace SalvageRun.Orbit
             if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = "궤도 위에 커서를 대면 청소선이 빔을 쏜다 — 처음엔 한 점씩";
             else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "블랙홀 스킬이 열렸다 — Q(또는 아래 칸)를 누르면 커서 자리에 3초 열려 빨아들이고 터진다";
             else if (sim.DronesOn && !sim.M.flags.Contains("hint_drone") && R.t < 8) hint = "드론은 알아서 줍는다 — 한 방에 부서지는 것만";
+            else if (sim.S.orbit > 0 && !sim.M.flags.Contains("hint_p" + sim.S.orbit) && R.t < 8) hint = PlanetHint[sim.S.orbit];   // 새 행성 첫 판
             if (hint != null) GUI.Label(new Rect(vw / 2 - 360, RefH - 70, 720, 20), hint, center);
             if (game.timeScale > 1) GUI.Label(new Rect(vw - 120, RefH - 46, 106, 18), "시험 속도 ×3", cost);
         }
@@ -884,6 +886,7 @@ namespace SalvageRun.Orbit
             if (GUI.Button(r, GUIContent.none, GUIStyle.none) && ready) CastReq = true;
         }
 
+        static readonly string[] PlanetHint = { "", "달 — 궤도가 느리다 · 금고 위성이 많으니 노려 보자", "화성 — 22초마다 모래 폭풍이 온다 · 얼음 껍질은 먼저 깨 두자", "목성 — 중력이 잔해를 안쪽으로 모은다 · 안쪽 가장자리에 블랙홀을", "토성 — 고리가 두 겹 · 가운데 틈은 비어 있다" };
         static Texture2D iconTex;
         void DrawIcon(Rect r, string id)
         {
