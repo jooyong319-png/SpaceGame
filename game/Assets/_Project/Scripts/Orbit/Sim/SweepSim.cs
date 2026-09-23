@@ -14,7 +14,7 @@ namespace SalvageRun.Orbit.Sim
     {
         public int id, k, hp, max;
         public Att att;
-        public double a, rr, ws, x, y, vx, vy, capT, fade, hit, rot, vr;
+        public double a, rr, ws, x, y, vx, vy, capT, fade, hit, rot, vr, tr;
         public bool free, dead, convoy;
         public Junk link1, link2;
     }
@@ -303,6 +303,8 @@ namespace SalvageRun.Orbit.Sim
         public bool AutoClaw => true;        // 🔴 자동이 기본 (사장님 09-23: "클릭은 빼자 오토는 기본으로")
         public const double PickR = 30;      // 범위 강화 전 — 커서 밑 하나를 잡는 거리
         public int ClawDmg => 1 + Lv("c_pow");
+        public double HpMul => 1 + 0.45 * Math.Max(0, S.bill - 2);   // 잔해 체력 배율 — 청구서 3장째부터 한 장마다 +45% (초반은 가볍게)
+        public int BlastDmg => 2 + 2 * ClawDmg;                    // 폭발은 즉사가 아니라 피해
         public double Crit => 0.05 * Lv("c_crit");
         public int DroneCount => DronesOn ? 2 + Lv("d_n") + Lv("d_fact") + Cr(3) : 0;
         public double DroneCd => Math.Max(0.4, 1 - 0.1 * Lv("d_spd"));
@@ -587,10 +589,10 @@ namespace SalvageRun.Orbit.Sim
             var o = Orbits[S.orbit];
             if (k < 0) k = PickType();
             if (a < 0) a = Rnd(0, Math.PI * 2);
-            if (rr < 0) rr = edge ? Bo - Rnd(0, 18) : o.bi + Rnd() * (Bo - o.bi);
+            if (rr < 0) rr = o.bi + Rnd() * (Bo - o.bi);                  // 띠 안 아무 곳에서 서서히 나타난다 (가장자리에서만 들어오면 바깥에 쏠린다)
             Att at = att ?? Att.None;
             if (att == null && IsHost(k) && (R.clean || S.bill >= 1) && Rnd() < (R.clean ? 0.35 : o.att * (1 + 0.4 * Lv("e_att")))) at = PickAtt();
-            int hp = Types[k].hp + (at == Att.Ice ? 2 : 0);
+            int hp = (int)Math.Round(Types[k].hp * (k == Fuel || k == Tank ? 1 : HpMul)) + (at == Att.Ice ? 2 : 0);   // 청구서를 갚을수록 단단해진다
             var d = new Junk { id = ++R.idc, k = k, hp = hp, max = hp, att = at, a = a, rr = rr, ws = ws > 0 ? ws : Rnd(0.92, 1.08), rot = Rnd(0, 6), vr = Rnd(-1, 1) };
             Place(d);
             R.junk.Add(d);
@@ -667,7 +669,7 @@ namespace SalvageRun.Orbit.Sim
             r.chainT -= dt;
             if (r.chainT <= 0 && r.pend.Count == 0 && !r.holding) { r.chain = 0; r.tier = 0; }
 
-            // 치우기 · 다시 채우기 (띠 바깥 가장자리에서 스며든다)
+            // 치우기 · 다시 채우기 (띠 안 아무 곳에서 스며든다)
             r.junk.RemoveAll(d => d.dead && !r.packed.Contains(d));
             int target = r.clean ? 400 : JunkTarget, alive = Alive();
             r.refill = Math.Min(6, r.refill + dt * target * RefillRate);
@@ -780,15 +782,23 @@ namespace SalvageRun.Orbit.Sim
                     d.x += d.vx * dt; d.y += d.vy * dt; d.vx *= 1 - 0.9 * dt; d.vy *= 1 - 0.9 * dt;
                     if (d.capT > 0) { d.capT -= dt; if (d.capT <= 0) Recapture(d, o.bi, Bo); }
                 }
-                else { d.a += 0.12 * d.ws * dt; Place(d); }
+                else
+                {
+                    d.a += 0.12 * d.ws * dt;
+                    if (d.tr > 0) { double step = (25 + 20 * (d.ws - 0.92) / 0.16) * dt; if (Math.Abs(d.tr - d.rr) <= step) { d.rr = d.tr; d.tr = 0; } else d.rr += Math.Sign(d.tr - d.rr) * step; }
+                    Place(d);
+                }
             }
         }
 
-        static void Recapture(Junk d, double bi, double bo)
+        void Recapture(Junk d, double bi, double bo)
         {
-            d.free = false; d.capT = 0; d.vx = d.vy = 0;
+            d.free = false; d.capT = 0; d.vx = d.vy = 0; d.tr = 0;
             d.a = Math.Atan2((d.y - EY) / Tilt, d.x - EX);
-            d.rr = Math.Min(bo, Math.Max(bi, Math.Sqrt((d.x - EX) * (d.x - EX) + (d.y - EY) / Tilt * (d.y - EY) / Tilt)));
+            double rad = Math.Sqrt((d.x - EX) * (d.x - EX) + (d.y - EY) / Tilt * (d.y - EY) / Tilt);
+            // 띠 밖에서 붙잡히면 끝에 들러붙지 않고 띠 안 아무 자리로 천천히 내려간다 (바깥 테두리에만 쌓이던 것)
+            if (rad > bo || rad < bi) { d.rr = Math.Max(bi * 0.8, Math.Min(bo + 60, rad)); d.tr = bi + Rnd() * (bo - bi); }
+            else d.rr = rad;
         }
 
         void Pull(double dt)
@@ -956,7 +966,7 @@ namespace SalvageRun.Orbit.Sim
                 double dx = d.x - x, dy = d.y - y, rr = Rb + Types[d.k].r;
                 if (dx * dx + dy * dy > rr * rr) continue;
                 if (Types[d.k].big) { d.hp -= 3; d.hit = 0.15; if (d.hp <= 0) Kill(d, 2, 1); }
-                else Kill(d, 2, 1);
+                else { d.hp -= BlastDmg; d.hit = 0.15; if (d.hp <= 0) Kill(d, 2, 1); }
             }
         }
 

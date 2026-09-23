@@ -45,7 +45,7 @@ static class Program
             {
                 if (sim.PayBill()) log.Add($"{Min(),6:0.0}분  {sim.M.company}대  청구서 {sim.S.bill} 갚음  (출동 {sim.S.runs})");
                 // 막혔다 — 연체 두 판째거나, 이번 판 수입으로 세 판 안에 못 갚으면 파산
-                if (sim.CanBankrupt && sim.S.bill >= 3 && sim.S.overdue && sim.S.overRuns >= 1)
+                if (sim.CanBankrupt && sim.S.overdue && (sim.S.bill >= 3 && sim.S.overRuns >= 1 || sim.S.overRuns >= 8))
                 {
                     log.Add($"{Min(),6:0.0}분  {sim.M.company}대  💥 파산 (청구서 {sim.S.bill} · 출동 {sim.S.runs} · 신용 +{sim.S.creditPending})");
                     sim.Bankrupt();
