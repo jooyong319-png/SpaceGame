@@ -37,6 +37,7 @@ namespace SalvageRun.Orbit.Sim
         public bool overdue, rerolled;
         public int[] lv = new int[SweepSim.NodeCount];
         public int planets = 1;                                          // 연 행성 (비트) — 지구는 늘
+        public MarketState market;                                       // 📈 궤도 증권 — 회사마다 (파산하면 새 장)
         public List<LoanRec> loanLog = new List<LoanRec>();          // 대출 창에 보이는 내역 (최근 30개)
         public double lastClaw, lastDrone, lastBlast; public int lastBroke = -1, lastChain, lastContract;   // 조종실 출동 보고 — 껐다 켜도 남게 (lastContract 0 없음 · 1 성공 · 2 실패)
     }
@@ -163,12 +164,12 @@ namespace SalvageRun.Orbit.Sim
             N("e_save", "eco", "적금", "판 끝에 이자", new[] { "e_quest" }, 4, 2500, 1.9, 5, 2, 4),
             N("e_guard", "eco", "상환 조절", "빚 상환으로 떼는 몫 30% → 20%", new[] { "e_talk", "e_tip" }, 5, 9000, 1, 1, 3, 1),
             N("e_used", "eco", "중고 거래", "모든 칸 -5%", new[] { "e_save" }, 4, 6000, 2.0, 3, 3, 3),
-            // 🔨 고철 경매 줄기 (09-23 사장님 「경매 · 정비소에서 이점을」) — 맨 끝에 붙여 옛 저장의 칸 순서를 안 흔든다
-            N("a_open", "eco", "고철 경매장", "판이 끝나면 번 돈을 경매에 걸 수 있다", new[] { "e_val" }, 2, 500, 1, 1, 1, 1),
-            N("a_auto", "eco", "자동 낙찰", "정한 배수에서 알아서 낙찰", new[] { "a_open" }, 2, 800, 1, 1, 1, 1),
-            N("a_read", "eco", "시세 예측", "폭락 직전에 진짜 경고가 뜬다", new[] { "a_auto" }, 2, 1500, 2.5, 3, 1, 1),
-            N("a_ins", "eco", "경매 보험", "폭락해도 건 돈 일부를 돌려받는다", new[] { "a_read" }, 3, 4000, 2.5, 3, 1, 1),
-            N("a_big", "eco", "큰손 입찰", "시작 배수가 오른다", new[] { "a_ins" }, 4, 20000, 3, 3, 1, 1),
+            // 📈 증권 줄기 (09-23 사장님 「진짜 주식처럼 · 정비소에서 이점을」) — 맨 끝에 붙여 옛 저장의 칸 순서를 안 흔든다 (경매 칸 자리를 그대로 썼다)
+            N("a_open", "eco", "증권 계좌", "궤도 증권이 열린다 — 판 중에도 조종실에서도 사고판다", new[] { "e_val" }, 2, 500, 1, 1, 1, 1),
+            N("a_auto", "eco", "목표가 매도", "정한 수익률에 닿으면 알아서 판다", new[] { "a_open" }, 2, 800, 1, 1, 1, 1),
+            N("a_read", "eco", "내부자 정보", "다음 속보를 미리 안다 — 시간 · 업종 · 제목", new[] { "a_auto" }, 2, 1500, 2.5, 3, 1, 1),
+            N("a_ins", "eco", "손절 매도", "많이 떨어지면 알아서 판다 (-20 · -15 · -10%)", new[] { "a_read" }, 3, 4000, 2.5, 3, 1, 1),
+            N("a_big", "eco", "큰손 계좌", "수수료가 줄고 배당이 붙는다", new[] { "a_ins" }, 4, 20000, 3, 3, 1, 1),
         };
         public const int NodeCount = 41;
         // ───────────────────────── 정비소 트리 자리 (손으로 격자에 놓았다 · 시안 https://claude.ai/artifact/NLZseBQWXKMGfuAmFDFJcR)
@@ -308,6 +309,7 @@ namespace SalvageRun.Orbit.Sim
             }
             if (s == null || s.version != 22) { S = new SweepState(); S.startedAt = M.playSeconds; }
             else S = s;
+            MakeMarket();
             if (S.lv == null) S.lv = new int[NodeCount];
             else if (S.lv.Length < NodeCount) { var lv = S.lv; Array.Resize(ref lv, NodeCount); S.lv = lv; }   // 칸이 늘면 산 것은 그대로 두고 뒤에 붙인다 (경매 줄기 · 09-23)
             else if (S.lv.Length > NodeCount) { var lv = S.lv; Array.Resize(ref lv, NodeCount); S.lv = lv; }
@@ -338,6 +340,7 @@ namespace SalvageRun.Orbit.Sim
             S.cash -= Orbits[i].permit; S.planets |= 1 << i;
             AddNews(null, Orbits[i].name + " 청소 허가 — 민간 청소선 첫 진입", "케슬러 금융이 " + Orbits[i].name + " 궤도 청소 허가증을 내줬다. " + Orbits[i].desc + ". 값은 지구의 " + Orbits[i].mult + "배라고 한다.");
             S.orbit = i; RollContract(); Preview();
+            if (Mk != null && StockOpen) { string[] sec = { "", "달", "화성", "목성", "관광" }; Mk.GameEvent("민간 청소선 " + Orbits[i].name + " 진출", "궤도 청소부가 " + Orbits[i].name + " 청소 허가를 땄다. 관련 업계가 들썩인다.", new[] { sec[i], "ship" }, null, 0.14f); }
             return true;
         }
         public double FuelMax => (30 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.2 * Cr(0));
@@ -385,51 +388,26 @@ namespace SalvageRun.Orbit.Sim
             S.loanLog.Add(new LoanRec { kind = kind, amt = amt, run = S.runs });
             if (S.loanLog.Count > 30) S.loanLog.RemoveAt(0);
         }
-        // 🔨 고철 경매 — 주식 봉 차트 (09-23 사장님 「봉 하나 생길 때마다 파시겠습니까?」)
-        // 봉마다: 12% 폭락 · 아니면 70% 초록(+10~30%) / 30% 빨강(-3~12%). 한 봉 더 보는 기대값 ≈ 0.98 — 버틸수록 살짝 손해, 언제 팔지가 판단
-        public bool AucOpen => Lv("a_open") > 0;
-        public double AucStartMult => 1 + 0.07 * Lv("a_big");
-        public double AucInsure => new[] { 0, 0.15, 0.25, 0.35 }[Math.Min(3, Lv("a_ins"))];
-        public double AucStake, AucPrice, AucNextF; public bool AucLive, AucWarn; public int AucCandles;
-        void AucRoll()
+        // 📈 궤도 증권 — 규칙은 Market.cs. 여기선 돈 · 칸과 잇는다
+        public Market Mk;
+        public bool StockOpen => Lv("a_open") > 0;
+        public double StockFee => new[] { 0.01, 0.006, 0.003, 0 }[Math.Min(3, Lv("a_big"))];
+        public double StockDiv => 0.0003 * Lv("a_big");
+        public float StopLossAt => new[] { 0f, 0.2f, 0.15f, 0.1f }[Math.Min(3, Lv("a_ins"))];
+        void MakeMarket()
         {
-            double u = rng.NextDouble();
-            AucNextF = u < 0.12 ? 0 : rng.NextDouble() < 0.7 ? 1.10 + rng.NextDouble() * 0.20 : 0.88 + rng.NextDouble() * 0.09;
-            // 시세 예측 — 폭락이면 단계별로 알아챈다, 낮은 단계는 헛경보도 가끔
-            int lv = Math.Min(3, Lv("a_read"));
-            double hit = new[] { 0, 0.6, 0.8, 1.0 }[lv], fa = new[] { 0, 0.1, 0.06, 0 }[lv];
-            AucWarn = AucNextF == 0 ? rng.NextDouble() < hit : rng.NextDouble() < fa;
+            if (S.market == null) S.market = new MarketState { seed = 1 + (int)(M.playSeconds * 7) % 100000 + M.company * 131 };
+            Mk = new Market(S.market);
         }
-        public bool AuctionStart(double stake)
+        /// <summary>시장 시간 — 판 중이든 조종실이든 (계좌를 열었을 때만). 배당 · 자동 매도 돈은 바로 들어온다</summary>
+        public void MarketTick(double dt)
         {
-            stake = Math.Floor(Math.Min(stake, S.cash));
-            if (!AucOpen || AucLive || stake <= 0) return false;
-            AucStake = stake; S.cash -= stake; AucLive = true; AucPrice = AucStartMult; AucCandles = 0;
-            AucRoll();
-            return true;
+            if (!StockOpen || Mk == null) return;
+            S.market.stopLoss = StopLossAt;
+            S.cash += Mk.Update(dt, Lv("a_auto") > 0, Lv("a_ins") > 0, StockFee, StockDiv);
         }
-        /// <summary>한 봉 더 — true 면 폭락</summary>
-        public bool AuctionStep()
-        {
-            if (!AucLive) return false;
-            AucCandles++;
-            if (AucNextF == 0) return true;
-            AucPrice *= AucNextF; AucRoll();
-            return false;
-        }
-        public double AuctionSell()
-        {
-            if (!AucLive) return 0;
-            AucLive = false; double m = AucPrice, got = Math.Floor(AucStake * m); S.cash += got;
-            if (m > M.bestAuc) { M.bestAuc = m; if (m >= 5) AddNews(null, "고철 경매 ×" + m.ToString("0.0") + " — 「이 값에 산 사람이 누구냐」", "궤도 청소부가 내놓은 고철이 경매에서 시세의 " + m.ToString("0.0") + "배에 팔렸다. 낙찰자는 끝내 이름을 밝히지 않았다."); }
-            return got;
-        }
-        public double AuctionCrash()
-        {
-            if (!AucLive) return 0;
-            AucLive = false; double back = Math.Floor(AucStake * AucInsure); S.cash += back;
-            return back;
-        }
+        public void StockBuy(int i, double frac) { if (!StockOpen) return; double money = Math.Floor(S.cash * frac); if (money < 1) return; S.cash -= Mk.Buy(i, money, StockFee); }
+        public void StockSell(int i, double frac) { if (!StockOpen) return; S.cash += Math.Floor(Mk.Sell(i, frac, StockFee)); }
 
         public bool LoanAndPay()
         {
@@ -540,6 +518,7 @@ namespace SalvageRun.Orbit.Sim
             AddNews(M.bankrupt == 1 ? "bankrupt1" : M.bankrupt == 2 ? "bankrupt2" : null, "궤도 청소부 (" + M.company + "대), 출동 " + S.runs + "번 만에 파산", "청구서 " + S.bill + "장을 갚고 문을 닫았다. 빚은 날아갔고, 조종사의 경력은 남았다.");
             M.company++;
             S = new SweepState { startedAt = M.playSeconds };
+            MakeMarket();
             M.careerOpen = true;
             Preview();
             if (M.company == 2) AddNews("company2");

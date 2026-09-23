@@ -159,8 +159,10 @@ namespace SalvageRun.Orbit
                 if (kb.f2Key.wasPressedThisFrame) timeScale = timeScale > 1f ? 1f : 3f;
                 if (kb.mKey.wasPressedThisFrame && OrbitSfx.I != null) OrbitSfx.I.ToggleMute();
                 if (kb.aKey.wasPressedThisFrame && !sim.R.over) ToggleAuto();                  // 🎯 자동 조준 ON/OFF
+                if (kb.sKey.wasPressedThisFrame && sim.StockOpen && hud != null) hud.stockOpen = !hud.stockOpen;   // 📈 주식 창
             }
             ReadAim();
+            sim.MarketTick(dt);                                             // 📈 시장은 늘 흐른다 (판 중이든 조종실이든)
             if (!sim.R.over)
             {
                 float sdt = dt * timeScale;
@@ -208,14 +210,14 @@ namespace SalvageRun.Orbit
             bool inside = !(sp.x < 0 || sp.y < 0 || sp.x > Screen.width || sp.y > Screen.height);
             if ((sp - lastMouse).sqrMagnitude > 4) { idleT = 0; lastMouse = sp; } else idleT += Time.deltaTime;
             // 🎯 자동 조준 — 사면 늘 스스로 잔해를 찾는다. 왼쪽 단추를 누르고 있을 때만 마우스로 직접 (사장님 「마우스 따라다니는데?」)
-            bool manual = inside && !hud.overSkill && !hud.overAuto && mouse.leftButton.isPressed;
+            bool manual = inside && !hud.overSkill && !hud.overAuto && !hud.overStock && mouse.leftButton.isPressed;
             autoAiming = autoMode && !sim.R.over && !manual;
             if (autoAiming) { AutoAim(3); return; }
             if (!inside) return;
             Vector3 w = cam.ScreenToWorldPoint(new Vector3(sp.x, sp.y, 10));
             aimPx = new Vector2(480 + (w.x - cam.transform.position.x) * PxPerUnit, 310 - (w.y - cam.transform.position.y) * PxPerUnit);
             aimOn = true;
-            if (hud.overSkill || hud.overAuto) aimOn = false;          // 스킬 칸 위 — 빔 자리는 그대로 둔다
+            if (hud.overSkill || hud.overAuto || hud.overStock) aimOn = false;          // 스킬 칸 위 — 빔 자리는 그대로 둔다
         }
 
         Vector2 lastMouse, autoTarget; float idleT, autoRetarget; Junk autoJunk;
