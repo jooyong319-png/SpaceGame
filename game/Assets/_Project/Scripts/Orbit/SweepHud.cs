@@ -992,19 +992,29 @@ namespace SalvageRun.Orbit
             return 0;
         }
 
-        // 🎯 자동 조준 스위치 — 판 화면 아래, 블랙홀 칸 왼쪽. 키보드 A 로도 (정비소에선 뺐다 · 09-23)
+        // 🎯 AUTO — 판 화면 오른쪽 아래 단추 · 키보드 A. 켜지면 화면 가운데에 「AUTO...」 (사장님 09-23)
         public bool overAuto;
         void AutoSwitch()
         {
-            var r = new Rect(vw / 2 - 34 - 118, RefH - 92 + 19, 106, 34);
-            overAuto = r.Contains(Event.current.mousePosition);
             bool on = game.autoMode;
-            GUI.color = on ? new Color(0.25f, 0.18f, 0.06f, 0.95f) : new Color(0.05f, 0.05f, 0.08f, 0.9f); GUI.DrawTexture(r, white); GUI.color = Color.white;
+            // 가운데 — 은은하게, 점이 늘었다 줄었다
+            if (on && !sim.R.over)
+            {
+                int dots = (int)(Time.unscaledTime * 2.2f) % 4;
+                float a = 0.22f + 0.1f * Mathf.Sin(Time.unscaledTime * 3f);
+                GUI.color = new Color(1f, 0.87f, 0.58f, a);
+                GUI.Label(new Rect(vw / 2 - 150, 250, 300, 60), "<size=44><b>AUTO" + new string('.', dots) + "</b></size>", center);
+                GUI.color = Color.white;
+            }
+            // 오른쪽 아래 단추
+            var r = new Rect(vw - 142, RefH - 70, 124, 46);
+            overAuto = r.Contains(Event.current.mousePosition);
+            if (on) { GUI.color = new Color(0.95f, 0.76f, 0.31f, 0.18f + 0.08f * Mathf.Sin(Time.unscaledTime * 3f)); GUI.DrawTexture(new Rect(r.x - 10, r.y - 10, r.width + 20, r.height + 20), texDisc); }
+            GUI.color = on ? new Color(0.3f, 0.21f, 0.06f, 0.95f) : new Color(0.05f, 0.05f, 0.08f, 0.9f); GUI.DrawTexture(r, white); GUI.color = Color.white;
             Frame(r, on ? SweepGame.Amber : new Color(0.3f, 0.3f, 0.36f), overAuto ? 3 : 2);
-            GUI.Label(r, on ? "<size=13><color=#ffdf95>◎ 자동 ON</color></size>" : "<size=13><color=#8a9bb3>◎ 자동 OFF</color></size>", center);
-            GUI.Label(new Rect(r.x + 3, r.y - 15, 30, 14), "<size=10>A</size>", dim);
+            GUI.Label(new Rect(r.x, r.y + 2, r.width, 28), on ? "<size=20><b><color=#ffdf95>AUTO</color></b></size>" : "<size=20><b><color=#5f6878>AUTO</color></b></size>", center);
+            GUI.Label(new Rect(r.x, r.y + 26, r.width, 18), "<size=10><color=" + (on ? "#e8c77e" : "#5f6878") + ">" + (on ? "켜짐" : "꺼짐") + " · A</color></size>", center);
             if (GUI.Button(r, GUIContent.none, GUIStyle.none)) game.ToggleAuto();
-            if (on && game.autoAiming) GUI.Label(new Rect(vw / 2 - 150, RefH - 118, 300, 20), "<size=11><color=#8a9bb3>왼쪽 단추를 누르고 있으면 직접 조준</color></size>", center);
         }
 
         public static bool CastReq;
