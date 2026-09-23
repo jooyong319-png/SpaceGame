@@ -32,6 +32,7 @@ namespace SalvageRun.Orbit
         SpriteRenderer earth, atmo, rim, band, bandGlow, claw, clawRing, clawWind, holeCore, holeGlow, holeRing, moon, sun, sunCore;
         float t, saveTimer, bandInner = -1, earthR = 120, camBase;
         public bool aimOn, holdOn;
+        bool castPending;
         public Vector2 aimPx;
         public static bool TestAim, TestHold;
         public static Vector2 TestPx;
@@ -160,9 +161,9 @@ namespace SalvageRun.Orbit
                 if (hitStop > 0) { hitStop -= dt; sdt = 0; }
                 else if (slowMo > 0) { slowMo -= dt; sdt *= 0.4f; }
                 int steps = Mathf.Max(1, Mathf.CeilToInt(sdt / 0.03f));
-                if (sdt > 0) for (int i = 0; i < steps; i++) sim.Tick(sdt / steps, aimPx.x, aimPx.y, aimOn, holdOn);
+                if (sdt > 0) { for (int i = 0; i < steps; i++) sim.Tick(sdt / steps, aimPx.x, aimPx.y, aimOn, holdOn || castPending); castPending = false; }   // 히트스톱 중에 누른 것도 멈춤이 풀리면 열린다
             }
-            else sim.IdleTick(dt);             // 조종실 창밖 — 궤도는 계속 돈다
+            else { sim.IdleTick(dt); castPending = false; }             // 조종실 창밖 — 궤도는 계속 돈다
             Consume();
             DrawWorld();
             DrawJunk();
@@ -190,6 +191,9 @@ namespace SalvageRun.Orbit
         {
             var mouse = Mouse.current;
             aimOn = false; holdOn = false;
+            var kb = Keyboard.current;
+            if (SweepHud.CastReq || (kb != null && kb.qKey.wasPressedThisFrame && hud != null && !hud.Blocking)) castPending = true;   // 블랙홀 스킬 (Q · 아래 칸) — 커서가 창 밖이어도
+            SweepHud.CastReq = false;
             if (TestAim && hud != null && !hud.Blocking) { aimPx = TestPx; aimOn = true; holdOn = TestHold; return; }   // 에디터 시험용 (MCP 자동 플레이)
             if (mouse == null || hud == null || hud.Blocking) return;
             Vector2 sp = mouse.position.ReadValue();
@@ -198,9 +202,6 @@ namespace SalvageRun.Orbit
             aimPx = new Vector2(480 + (w.x - cam.transform.position.x) * PxPerUnit, 310 - (w.y - cam.transform.position.y) * PxPerUnit);
             aimOn = true;
             if (hud.overSkill) aimOn = false;          // 스킬 칸 위 — 빔 자리는 그대로 둔다
-            var kb = Keyboard.current;
-            holdOn = SweepHud.CastReq || (kb != null && kb.qKey.wasPressedThisFrame);   // 블랙홀 스킬 (Q · 아래 칸)
-            SweepHud.CastReq = false;
         }
 
         public Vector3 PxToWorld(double x, double y) => new Vector3((float)(x - 480) / PxPerUnit, (float)(310 - y) / PxPerUnit, 0);
