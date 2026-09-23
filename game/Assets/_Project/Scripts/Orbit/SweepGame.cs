@@ -188,7 +188,7 @@ namespace SalvageRun.Orbit
             // 조종실에선 카메라가 물러나 지구가 창 가운데 오게 (창 = SweepHud.Win)
             bool cockpit = hud != null && hud.CockpitView;
             // 출동 중엔 궤도 띠가 화면에 차도록 당긴다 (사장님 「좀 더 확대」) — 띠가 넓어지면 그만큼 물러난다
-            float wantSize = cockpit ? 9.6f : Mathf.Clamp((float)sim.Bo * 0.0182f, 4.4f, 6.5f);
+            float wantSize = cockpit ? 9.6f : Mathf.Clamp((float)sim.Bo * 0.0145f, 3.8f, 7f);   // 09-24 「화면에 작게 보인다」 — 더 당긴다 (띠는 30% 넓어짐)
             cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, wantSize, 1 - Mathf.Exp(-dt * 5f));
             float camY = cockpit ? -0.3f * cam.orthographicSize : 0f;
             camBase = Mathf.Lerp(camBase, camY, 1 - Mathf.Exp(-dt * 5f));

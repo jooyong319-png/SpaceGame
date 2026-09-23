@@ -1182,11 +1182,7 @@ namespace SalvageRun.Orbit
             overSkill = r.Contains(Event.current.mousePosition);
             bool ready = R.shots > 0 && !R.holding;
             GUI.color = new Color(0.05f, 0.05f, 0.08f, 0.9f); GUI.DrawTexture(r, white);
-            if (R.shots < R.maxShots && !R.clean)
-            {
-                float k = Mathf.Clamp01((float)(R.holeCd / sim.HoleCd));
-                GUI.color = new Color(0.42f, 0.31f, 0.78f, 0.35f); GUI.DrawTexture(new Rect(r.x, r.yMax - r.height * k, r.width, r.height * k), white);
-            }
+            if (R.shots < R.maxShots && !R.clean) GUI.Label(new Rect(r.x - 20, r.yMax + 1, r.width + 40, 16), "<size=9><color=#8a7fb0>공격 " + (sim.HoleChance * 100).ToString("0.#") + "%</color></size>", center);   // 확률로 찬다
             if (R.holding)
             {
                 float k = 1 - Mathf.Clamp01((float)(R.holdT / SweepSim.HoleDur));
@@ -1434,7 +1430,7 @@ namespace SalvageRun.Orbit
                 case "d_fact": return "+" + l + "대";
                 case "b_n": return "최대 " + (2 + l) + "칸";
                 case "c_find": return "판마다 " + l + "번";
-                case "s_speed": return (16 - 1.5 * l).ToString("0.#") + "초마다";
+                case "s_speed": return "공격마다 " + (1.2f + 0.25f * l).ToString("0.##") + "%";
                 case "b_pr": return "반경 " + (150 + 20 * l);
                 case "b_cap": return (18 + 8 * l) + "개";
                 case "b_pf": return "×" + (1 + 0.25f * l).ToString("0.00");

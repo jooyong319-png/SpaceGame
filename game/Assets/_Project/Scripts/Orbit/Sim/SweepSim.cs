@@ -122,11 +122,11 @@ namespace SalvageRun.Orbit.Sim
         public struct OrbitDef { public string name, desc; public double bi, bo, mult, att, spin, hp, pull, gap, permit; public int sell; public bool storm; public double[] mix; public int nMin, nMax; public int[] forms, events; }
         public static readonly OrbitDef[] Orbits =
         {
-            new OrbitDef { name = "지구", desc = "기본 궤도",                         bi = 150, bo = 262, mult = 1, att = 0.10, spin = 1,    hp = 1,   sell = 0, permit = 0,       mix = new double[] { 60, 22, 4, 2, 5, 4, 1.2 },  nMin = 90,  nMax = 150, forms = new[] { 0, 0 },       events = new[] { 0, 1 } },
-            new OrbitDef { name = "달",   desc = "느린 궤도 · 금고 위성이 많다",       bi = 118, bo = 240, mult = 1.5, att = 0.15, spin = 0.6,  hp = 1.1, sell = 2, permit = 1500,     mix = new double[] { 48, 22, 6, 9, 5, 4, 1.2 },  nMin = 100, nMax = 170, forms = new[] { 0, 1 },       events = new[] { 0, 3 } },
-            new OrbitDef { name = "화성", desc = "모래 폭풍 · 얼음 껍질",             bi = 132, bo = 272, mult = 2, att = 0.25, spin = 1.1,  hp = 1.3, sell = 3, permit = 20000,    storm = true, mix = new double[] { 48, 22, 12, 3, 5, 7, 1.5 }, nMin = 120, nMax = 220, forms = new[] { 1, 2, 0 }, events = new[] { 2, 1 } },
-            new OrbitDef { name = "목성", desc = "중력이 잔해를 안쪽에 모은다 · 장갑판", bi = 188, bo = 318, mult = 3, att = 0.30, spin = 1.3,  hp = 1.6, sell = 5, permit = 1500000,  pull = 9, mix = new double[] { 40, 18, 10, 6, 5, 8, 2.5 }, nMin = 170, nMax = 280, forms = new[] { 3, 4, 1 }, events = new[] { 3, 4 } },
-            new OrbitDef { name = "토성", desc = "두 겹 고리 · 케이블 망",            bi = 150, bo = 300, mult = 4.5, att = 0.30, spin = 0.9,  hp = 2.0, sell = 6, permit = 15000000, gap = 0.28, mix = new double[] { 38, 18, 8, 8, 5, 6, 3 }, nMin = 180, nMax = 290, forms = new[] { 2, 2, 3, 4 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = "지구", desc = "기본 궤도",                         bi = 150, bo = 296, mult = 1, att = 0.10, spin = 1,    hp = 1,   sell = 0, permit = 0,       mix = new double[] { 60, 22, 4, 2, 5, 4, 1.2 },  nMin = 127, nMax = 212, forms = new[] { 0, 0 },       events = new[] { 0, 1 } },
+            new OrbitDef { name = "달",   desc = "느린 궤도 · 금고 위성이 많다",       bi = 118, bo = 277, mult = 1.5, att = 0.15, spin = 0.6,  hp = 1.1, sell = 2, permit = 1500,     mix = new double[] { 48, 22, 6, 9, 5, 4, 1.2 },  nMin = 144, nMax = 244, forms = new[] { 0, 1 },       events = new[] { 0, 3 } },
+            new OrbitDef { name = "화성", desc = "모래 폭풍 · 얼음 껍질",             bi = 132, bo = 314, mult = 2, att = 0.25, spin = 1.1,  hp = 1.3, sell = 3, permit = 20000,    storm = true, mix = new double[] { 48, 22, 12, 3, 5, 7, 1.5 }, nMin = 172, nMax = 316, forms = new[] { 1, 2, 0 }, events = new[] { 2, 1 } },
+            new OrbitDef { name = "목성", desc = "중력이 잔해를 안쪽에 모은다 · 장갑판", bi = 188, bo = 357, mult = 3, att = 0.30, spin = 1.3,  hp = 1.6, sell = 5, permit = 1500000,  pull = 9, mix = new double[] { 40, 18, 10, 6, 5, 8, 2.5 }, nMin = 238, nMax = 392, forms = new[] { 3, 4, 1 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = "토성", desc = "두 겹 고리 · 케이블 망",            bi = 150, bo = 345, mult = 4.5, att = 0.30, spin = 0.9,  hp = 2.0, sell = 6, permit = 15000000, gap = 0.28, mix = new double[] { 38, 18, 8, 8, 5, 6, 3 }, nMin = 257, nMax = 415, forms = new[] { 2, 2, 3, 4 }, events = new[] { 3, 4 } },
         };
         public static readonly string[] FormNames = { "무리", "탱크 사슬", "케이블 망", "호송대", "난파 구역" };
         public static readonly string[] EventNames = { "연료 보급선", "충돌 사고", "파편 폭풍", "금고 호송대", "대충돌" };
@@ -155,7 +155,7 @@ namespace SalvageRun.Orbit.Sim
             N("d_fact", "drone", "드론 공장", "드론 +1 (공장제)", new[] { "d_pair" }, 6, 30000, 2.5, 2, 4, 2),
             N("b_n", "bh", "블랙홀 충전", "블랙홀을 한 번 더 쟁여 둔다", new string[0], 3, 750, 2.2, 4, 0, 1),
             N("c_find", "bh", "연료 보급", "연료를 올려 보낸다", new string[0], 3, 240, 1.8, 5, 0, 3),
-            N("s_speed", "bh", "재충전", "블랙홀이 빨리 차고 보급도 빨리 닿는다", new[] { "b_n", "c_find" }, 3, 500, 1.6, 4, 1, 2),
+            N("s_speed", "bh", "재충전", "공격할 때 블랙홀이 찰 확률이 오르고 보급도 빨리 닿는다", new[] { "b_n", "c_find" }, 3, 500, 1.6, 4, 1, 2),
             N("b_pr", "bh", "흡입 반경", "더 넓게 빨아들인다", new[] { "b_n" }, 3, 600, 1.6, 6, 1, 0),
             N("b_cap", "bh", "붕괴 한계", "더 많이 모아도 버틴다", new[] { "b_n" }, 3, 660, 1.6, 6, 2, 1),
             N("b_pf", "bh", "흡입 세기", "더 빨리 빨려 든다", new[] { "b_pr" }, 4, 1800, 1.6, 5, 2, 0),
@@ -366,12 +366,13 @@ namespace SalvageRun.Orbit.Sim
         public int Grade => 1 + Lv("d_grade") + (S.bill >= 5 ? 1 : 0);
         public double DroneMag => 1 + 0.25 * Lv("d_mag");
         public int Bombs => BombsOn ? Math.Min(6, 2 + Lv("b_n") + (S.bill >= 7 ? 1 : 0) + Cr(4)) : 0;
-        public double PullR => 150 + 20 * Lv("b_pr");
+        public double PullR => 90 + 14 * Lv("b_pr");                // 09-24 사장님 「블랙홀 크기 많이 줄이고」 150+20 → 90+14
         public double PullF => 1 + 0.25 * Lv("b_pf");
         public int Cap => (int)Math.Round((18 + 8 * Lv("b_cap")) * (S.bill >= 7 ? 1.5 : 1));
         public double BlastK => 1 + 0.15 * Lv("b_br");
         public double ChainP => Math.Min(0.93, 0.25 + 0.07 * Lv("b_chain") + (S.bill >= 4 ? 0.1 : 0));
-        public double HoleCd => 16 - 1.5 * Lv("s_speed");     // 블랙홀 스킬 — 한 칸 차는 시간
+        public double HoleCd => 16 - 1.5 * Lv("s_speed");     // (옛 시간 충전 — 이제 안 쓴다)
+        public double HoleChance => 0.012 + 0.0025 * Lv("s_speed");   // 🌀 블랙홀 — 집게가 맞힐 때마다 이 확률로 한 칸 (09-24 사장님 「공격 시 확률로」)
         public const double HoleDur = 3;                           // 열려 있는 시간 — 끝나면 저절로 터진다
         public double PackK => 0.02 + 0.012 * Lv("b_pack");
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
@@ -819,8 +820,7 @@ namespace SalvageRun.Orbit.Sim
             if (r.clean) { r.refillT += dt; if (r.refillT > 2) { r.refillT = 0; if (r.shots < r.maxShots) r.shots++; } }
 
             // 🌀 블랙홀 스킬 — 누르면 그 자리에 열려 3초 빨아들이고 저절로 터진다. 칸은 시간 따라 찬다
-            if (!r.clean && r.shots < r.maxShots) { r.holeCd += dt; if (r.holeCd >= HoleCd) { r.holeCd = 0; r.shots++; Emit(SwEv.SkillReady, r.ax, r.ay, r.shots); } }
-            else r.holeCd = 0;
+            r.holeCd = 0;                                               // 시간으로는 안 찬다 — Strike 에서 확률로
             if (hold && !r.holding && r.shots > 0 && r.fuel > 0) { r.holding = true; r.holdT = 0; r.chain = 0; r.tier = 0; r.hx = r.ax; r.hy = r.ay; }
             if (r.holding && (r.holdT >= HoleDur || r.fuel <= 0)) Release();
 
@@ -1065,7 +1065,7 @@ namespace SalvageRun.Orbit.Sim
                     if (dd < lim * lim && dd < bd) { bd = dd; best = d; }
                 }
                 bool c1 = best != null && Rnd() < Crit;
-                if (best != null) Hit(best, ClawDmg * (c1 ? 3 : 1), 0, true);
+                if (best != null) { Hit(best, ClawDmg * (c1 ? 3 : 1), 0, true); HoleRoll(); }
                 Emit(SwEv.Strike, r.ax, r.ay, PickR, best != null ? 1 : 0);
                 if (c1) Emit(SwEv.Crit, r.ax, r.ay - 20);
                 return;
@@ -1082,6 +1082,13 @@ namespace SalvageRun.Orbit.Sim
             }
             Emit(SwEv.Strike, r.ax, r.ay, R0, hit ? 1 : 0);
             if (hit && crit) Emit(SwEv.Crit, r.ax, r.ay - R0 - 8);
+            if (hit) HoleRoll();
+        }
+        void HoleRoll()
+        {
+            var r = R;
+            if (r.clean || r.shots >= r.maxShots || Rnd() >= HoleChance) return;
+            r.shots++; Emit(SwEv.SkillReady, r.ax, r.ay, r.shots);
         }
 
         void Hit(Junk d, int dmg, int src, bool spread)
