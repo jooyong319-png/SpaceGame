@@ -163,7 +163,7 @@ namespace SalvageRun.Orbit.Sim
             N("e_guard", "eco", "상환 조절", "빚 상환으로 떼는 몫 30% → 20%", new[] { "e_talk", "e_tip" }, 5, 9000, 1, 1, 3, 1),
             N("e_used", "eco", "중고 거래", "모든 칸 -5%", new[] { "e_save" }, 4, 6000, 2.0, 3, 3, 3),
             // 🎯 자동 조준 (09-23 사장님 「자동 공격 기능 — 강화하면 생기는 느낌」) — 맨 끝에 붙여 옛 저장의 칸 순서를 안 흔든다
-            N("c_auto", "claw", "자동 조준", "마우스를 멈추면 조준점이 스스로 잔해를 찾는다", new[] { "c_pow" }, 1, 150, 3.0, 3, 1, 2),
+            N("c_auto", "claw", "자동 조준", "빔이 스스로 잔해를 찾는다 (누르고 있으면 직접)", new[] { "c_pow" }, 1, 150, 3.0, 3, 1, 2),
         };
         public const int NodeCount = 37;
         // ───────────────────────── 정비소 트리 자리 (손으로 격자에 놓았다 · 시안 https://claude.ai/artifact/NLZseBQWXKMGfuAmFDFJcR)

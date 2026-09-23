@@ -293,7 +293,7 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(vw - 330, 52, 316, 18), "압축 " + R.packed.Count + " / 붕괴 " + sim.Cap, cost);
             }
             if (R.maxShots > 0 && !R.over) SkillSlot(R);
-            if (game.autoAiming) GUI.Label(new Rect(vw / 2 - 120, RefH - 118, 240, 20), "<size=12><color=#f2c14e>◎ 자동 조준</color> <color=#8a9bb3>— 마우스를 움직이면 직접</color></size>", center);
+            if (game.autoAiming) GUI.Label(new Rect(vw / 2 - 120, RefH - 118, 240, 20), "<size=12><color=#f2c14e>◎ 자동 조준</color> <color=#8a9bb3>— 왼쪽 단추를 누르고 있으면 직접</color></size>", center);
             var c = sim.CurContract;
             if (c != null && !R.clean)
             {
