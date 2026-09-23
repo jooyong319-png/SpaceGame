@@ -160,7 +160,7 @@ namespace SalvageRun.Orbit
                 GUI.color = prog >= 1 ? new Color(0.62f, 0.94f, 0.75f, fl) : new Color(Holo.r, Holo.g, Holo.b, 0.9f * fl); GUI.DrawTexture(new Rect(x, y0 + 126, w * prog, 5), white);
                 GUI.color = new Color(1, 1, 1, fl);
                 GUI.Label(new Rect(x, y0 + 132, w, 18), "<size=10><color=#7fcfe0>" + Mathf.RoundToInt(prog * 100) + "% 모였다</color></size>", label);
-                GUI.Label(new Rect(x, y0 + 150, w, 36), "<size=11><color=#7fcfe0>갚으면 →</color> <color=#dff8ff>" + Clip(b.perk, 22) + "</color></size>", small);
+                GUI.Label(new Rect(x, y0 + 150, w, 36), "<size=11><color=#7fcfe0>" + Clip(b.perk, 26) + "</color></size>", small);
                 GUI.color = Color.white;
                 bool can = S.cash >= sim.BillAmount; double need = sim.BillAmount - S.cash;
                 bool loanOk = !can && sim.LoanCap > 0 && need <= sim.LoanCap;
@@ -548,21 +548,20 @@ namespace SalvageRun.Orbit
                     GUI.DrawTexture(ic, PlanetArt.Get(i).texture);
                     if (i == 4) GUI.DrawTexture(new Rect(ic.x - 4, ic.center.y - 1, ic.width + 8, 2), white);
                     GUI.color = new Color(1, 1, 1, fl);
-                    string sub = open ? "<color=#dff8ff>" + o.name + "</color>" : sale ? (permitArmed == i ? "<color=#ffdf95>한 번 더</color>" : "<color=#ffdf95>" + KNum.Fmt(o.permit) + "</color>") : "<color=#4f7380>잠김</color>";
+                    string sub = open ? "<color=#dff8ff>" + o.name + "</color>" : sale ? "<color=#ffdf95>" + KNum.Fmt(o.permit) + "</color>" : "<color=#4f7380>잠김</color>";
                     GUI.Label(new Rect(cell.x - 4, cell.y + 30, cell.width + 8, 18), "<size=9>" + sub + "</size>", center);
                     GUI.color = Color.white;
                     if (GUI.Button(cell, GUIContent.none, GUIStyle.none))
                     {
                         if (open) { sim.SetOrbit(i); permitArmed = -1; OrbitSfx.Play("tick", 0.5f); }
-                        else if (sale && S.cash >= o.permit) { if (permitArmed == i) { sim.BuyPermit(i); permitArmed = -1; OrbitSfx.Play("buy", 0.9f); } else permitArmed = i; }
-                        else OrbitSfx.Play("tick", 0.5f, 0.6f, 0.05f);
+                        else GoFlow(3);                                          // 항로는 정비고에서 산다 (09-24)
                     }
                 }
             GUI.color = new Color(1, 1, 1, fl);
             float x = p.x + 10, w = p.width - 20;
             int show = hoverP >= 0 ? hoverP : S.orbit;
             var so = SweepSim.Orbits[show];
-            string st = sim.Open(show) ? "<color=#9ff0bf>열림</color>" : sim.OnSale(show) ? (S.cash >= so.permit ? "<color=#ffdf95>허가증 " + KNum.Fmt(so.permit) + " · 두 번</color>" : "<color=#ff9b8f>허가증 " + KNum.Fmt(so.permit) + "</color>") : "<color=#7fcfe0>청구서 " + so.sell + " 뒤 판매</color>";
+            string st = sim.Open(show) ? "<color=#9ff0bf>열림</color>" : "<color=#ffdf95>정비고 항로 " + KNum.Fmt(so.permit) + " ›</color>";
             if (M.cleanReady) GUI.Label(new Rect(x, p.y + 34, w, 40), "<size=12><color=#bff4ff>청산 출동 — 항로 고정</color></size>", center);
             else
             {
@@ -823,6 +822,27 @@ namespace SalvageRun.Orbit
             int p = sim.Lv("a_auto"), c = sim.Lv("a_ins");
             return (p > 0 ? "<color=#ffdf95>개미의 기도</color> <color=" + UpHex + ">내 종목 ↑</color>" : "<color=#3f4652>개미의 기도 · 잠김</color>") + "   " +
                    (c > 0 ? "<color=#9ff0bf>행운의 부적 " + c + "</color> <color=#8a9bb3>나쁜 속보 " + new[] { 0, 60, 70, 80 }[Mathf.Min(3, c)] + "% 피하기</color>" : "<color=#3f4652>행운의 부적 · 잠김</color>");
+        }
+
+        // ───────────────────────────────── ✨ 칸을 샀을 때 — 퍼지는 고리 · 불꽃 · 해금 칸이면 「해금!」 (09-24)
+        struct BuyBurst { public Vector2 p; public Color c; public float t0; public bool big; }
+        readonly List<BuyBurst> bursts = new List<BuyBurst>();
+        void BuyFx(Vector2 p, Color c, bool big) { bursts.Add(new BuyBurst { p = p, c = c, t0 = Time.unscaledTime, big = big }); if (big) OrbitSfx.Play("launch", 0.35f); }
+        void BuyFxDraw()
+        {
+            float now = Time.unscaledTime;
+            for (int i = bursts.Count - 1; i >= 0; i--)
+            {
+                var b = bursts[i]; float t = now - b.t0, L = b.big ? 1.1f : 0.6f;
+                if (t > L) { bursts.RemoveAt(i); continue; }
+                float k = t / L, a = 1 - k, R = (b.big ? 90 : 46) * Mathf.Sqrt(k);
+                GUI.color = new Color(b.c.r, b.c.g, b.c.b, a * 0.8f);
+                int seg = 28;
+                for (int s = 0; s < seg; s++) { float an = s * Mathf.PI * 2 / seg; GUI.DrawTexture(new Rect(b.p.x + Mathf.Cos(an) * R - 2, b.p.y + Mathf.Sin(an) * R - 2, 4, 4), white); }
+                for (int s = 0; s < (b.big ? 14 : 8); s++) { float an = s * 2.39996f, d = R * (0.6f + 0.5f * ((s * 37) % 10) / 10f); GUI.color = new Color(1f, 0.93f, 0.7f, a); GUI.DrawTexture(new Rect(b.p.x + Mathf.Cos(an) * d - 1.5f, b.p.y + Mathf.Sin(an) * d - 1.5f, 3, 3), white); }
+                if (b.big) { GUI.color = new Color(1, 1, 1, Mathf.Clamp01(a * 1.5f)); GUI.Label(new Rect(b.p.x - 80, b.p.y - 46 - 30 * k, 160, 30), "<size=18><b><color=#ffdf95>해금!</color></b></size>", center); }
+            }
+            GUI.color = Color.white;
         }
     }
 }

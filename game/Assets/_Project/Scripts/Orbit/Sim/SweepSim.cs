@@ -85,7 +85,7 @@ namespace SalvageRun.Orbit.Sim
         public double Earned => earnClaw + earnDrone + earnBlast;
     }
 
-    public enum SwEv { Supply, SupplyGet, Strike, Broke, Coin, Pop, Beam, Ring, Blast, Tier, Crit, Collapse, Warn, EventGo, Collector, Shatter, Release, RunEnd, BillPaid, Overdue, Bankrupt, News, Won, SkillReady }
+    public enum SwEv { Supply, SupplyGet, Strike, Broke, Coin, Pop, Beam, Ring, Blast, Tier, Crit, Collapse, Warn, EventGo, Collector, Shatter, Release, RunEnd, BillPaid, Overdue, Bankrupt, News, Won, SkillReady, NodeBought }
 
     public struct SwEvent
     {
@@ -144,7 +144,7 @@ namespace SalvageRun.Orbit.Sim
             N("c_double", "claw", "연사", "한 번 더 쏠 확률", new[] { "c_spd" }, 3, 900, 1.7, 5, 3, 2),
             N("c_magnet", "claw", "견인 빔", "주변 조각을 끌어온다", new[] { "c_rad", "c_fuel" }, 3, 1200, 1.8, 3, 3, 4),
             N("c_over", "claw", "과부하", "판 끝 5초 두 배 빠르게", new[] { "c_crit", "c_double" }, 4, 3000, 1, 1, 4, 1),
-            N("d_n", "drone", "드론 +1", "드론이 한 대 더", new string[0], 2, 240, 1.8, 8, 0, 2),
+            N("d_n", "drone", "드론 격납고", "첫 칸 = 드론 두 대가 알아서 줍는다 · 그 뒤 한 대씩 더", new string[0], 1, 60, 2.2, 8, 0, 2),
             N("d_spd", "drone", "드론 속도", "더 자주 줍는다", new[] { "d_n" }, 2, 300, 1.6, 6, 1, 1),
             N("d_reach", "drone", "드론 거리", "더 멀리서 집는다", new[] { "d_n" }, 3, 660, 1.6, 5, 1, 3),
             N("d_mag", "drone", "드론 수거", "드론 몫 +25%", new[] { "d_spd" }, 3, 900, 1.6, 5, 2, 0),
@@ -153,9 +153,9 @@ namespace SalvageRun.Orbit.Sim
             N("d_fix", "drone", "수리 드론", "출동 +2초", new[] { "d_mag" }, 4, 2000, 1.8, 3, 3, 1),
             N("d_pair", "drone", "편대", "한 번에 둘씩", new[] { "d_mag", "d_grade" }, 6, 18000, 1, 1, 3, 3),
             N("d_fact", "drone", "드론 공장", "드론 +1 (공장제)", new[] { "d_pair" }, 6, 30000, 2.5, 2, 4, 2),
-            N("b_n", "bh", "블랙홀", "집게로 칠 때 블랙홀이 저절로 열린다 — 단계마다 더 자주", new string[0], 3, 750, 2.2, 4, 0, 1),
+            N("b_n", "bh", "블랙홀", "집게로 칠 때 블랙홀이 저절로 열린다 — 단계마다 더 자주", new string[0], 1, 400, 2.6, 4, 0, 1),
             N("c_find", "bh", "연료 보급", "연료를 올려 보낸다", new string[0], 3, 240, 1.8, 5, 0, 3),
-            N("s_speed", "bh", "재충전", "블랙홀이 더 자주 열리고 보급도 빨리 닿는다", new[] { "b_n", "c_find" }, 3, 500, 1.6, 4, 1, 2),
+            N("s_speed", "bh", "재충전", "블랙홀이 더 자주 열리고 보급도 빨리 닿는다", new[] { "b_n" }, 3, 500, 1.6, 4, 1, 2),
             N("b_pr", "bh", "흡입 반경", "더 넓게 빨아들인다", new[] { "b_n" }, 3, 600, 1.6, 6, 1, 0),
             N("b_cap", "bh", "붕괴 한계", "더 많이 모아도 버틴다", new[] { "b_n" }, 3, 660, 1.6, 6, 2, 1),
             N("b_pf", "bh", "흡입 세기", "더 빨리 빨려 든다", new[] { "b_pr" }, 4, 1800, 1.6, 5, 2, 0),
@@ -166,10 +166,10 @@ namespace SalvageRun.Orbit.Sim
             N("e_val", "eco", "고철 시세", "모든 값이 오른다", new string[0], 1, 120, 1.9, 10, 0, 2),
             N("e_vault", "eco", "금고 감별", "금고 위성이 더 자주", new[] { "e_val" }, 2, 360, 1.6, 6, 1, 0),
             N("e_att", "eco", "부착물 감별", "부착물이 더 자주", new[] { "e_val" }, 3, 1200, 1.7, 5, 1, 2),
-            N("e_quest", "eco", "의뢰 보상", "의뢰 보너스가 커진다", new[] { "e_val" }, 3, 800, 1.7, 4, 1, 4),
+            N("e_quest", "eco", "의뢰 게시판", "출동마다 의뢰 카드 — 해내면 판 수입이 오른다 · 단계마다 보상 +10%", new[] { "e_val" }, 1, 250, 2.4, 4, 1, 4),
             N("e_talk", "eco", "청구서 협상", "기한 +1판", new[] { "e_vault" }, 4, 3600, 3.0, 2, 2, 0),
             N("e_tip", "eco", "제보망", "블랙박스가 더 자주", new[] { "e_att" }, 3, 1500, 1.8, 3, 2, 2),
-            N("e_save", "eco", "적금", "판 끝에 이자", new[] { "e_quest" }, 4, 2500, 1.9, 5, 2, 4),
+            N("e_save", "eco", "적금", "판 끝에 이자", new[] { "e_val" }, 4, 2500, 1.9, 5, 2, 4),
             N("e_guard", "eco", "상환 조절", "빚 상환으로 떼는 몫 30% → 20%", new[] { "e_talk", "e_tip" }, 5, 9000, 1, 1, 3, 1),
             N("e_used", "eco", "중고 거래", "모든 칸 -5%", new[] { "e_save" }, 4, 6000, 2.0, 3, 3, 3),
             // 📈 증권 줄기 (09-23 사장님 「진짜 주식처럼 · 정비소에서 이점을」) — 맨 끝에 붙여 옛 저장의 칸 순서를 안 흔든다 (경매 칸 자리를 그대로 썼다)
@@ -178,8 +178,14 @@ namespace SalvageRun.Orbit.Sim
             N("a_read", "eco", "내부자 정보", "다음 속보를 미리 안다 — 시간 · 업종 · 제목", new[] { "a_auto" }, 2, 1500, 2.5, 3, 1, 1),
             N("a_ins", "eco", "행운의 부적", "내 종목에 걸릴 나쁜 속보를 피해 간다 (60 · 70 · 80%)", new[] { "a_read" }, 3, 4000, 2.5, 3, 1, 1),
             N("a_big", "eco", "큰손 계좌", "수수료가 줄고 배당이 붙는다", new[] { "a_ins" }, 4, 20000, 3, 3, 1, 1),
+            // 🪐 항로 (09-24 사장님 「청구서로 늘리는 방식 말고 정비고에서 통일」) — 옛 허가증. 값은 허가증 값 그대로
+            N("p_moon", "route", "달 항로", "달 궤도에 갈 수 있다 — 값 ×1.5 · 느린 궤도 · 금고 위성이 많다", new string[0], 1, 1500, 1, 1, 0, 0),
+            N("p_mars", "route", "화성 항로", "화성 궤도 — 값 ×2 · 모래 폭풍 · 얼음 껍질 · 큰 잔해", new[] { "p_moon" }, 1, 20000, 1, 1, 0, 0),
+            N("p_jup", "route", "목성 항로", "목성 궤도 — 값 ×3 · 중력이 안쪽으로 모은다 · 장갑판", new[] { "p_mars" }, 1, 1500000, 1, 1, 0, 0),
+            N("p_sat", "route", "토성 항로", "토성 궤도 — 값 ×4.5 · 두 겹 고리 · 케이블 망", new[] { "p_jup" }, 1, 15000000, 1, 1, 0, 0),
         };
-        public const int NodeCount = 41;
+        public const int NodeCount = 45;
+        public static readonly string[] PlanetNode = { null, "p_moon", "p_mars", "p_jup", "p_sat" };
         // ───────────────────────── 정비소 트리 자리 (손으로 격자에 놓았다 · 시안 https://claude.ai/artifact/NLZseBQWXKMGfuAmFDFJcR)
         //    par = 이어지는 앞 칸의 능력 (R = 가운데 청소선) · tile = 그 능력의 몇 번째 칸 뒤 · (x, y) 첫 칸 자리 · (dx, dy) 뻗는 방향
         //    🔴 여는 조건도 이것 — 앞 칸을 사야 이 능력의 첫 칸이 열린다 (게임 · 봇 같은 규칙)
@@ -187,48 +193,52 @@ namespace SalvageRun.Orbit.Sim
         public static readonly Dictionary<string, TreeSpot> Layout = new Dictionary<string, TreeSpot>
         {
             { "c_pow", new TreeSpot { par = "R", tile = 0, x = 0, y = -1, dx = 0, dy = -1 } },
-            { "c_spd", new TreeSpot { par = "c_pow", tile = 1, x = -1, y = -2, dx = -1, dy = 0 } },
-            { "c_rad", new TreeSpot { par = "c_pow", tile = 1, x = 1, y = -2, dx = 1, dy = 0 } },
-            { "c_crit", new TreeSpot { par = "c_spd", tile = 2, x = -2, y = -3, dx = 0, dy = -1 } },
-            { "c_double", new TreeSpot { par = "c_spd", tile = 4, x = -4, y = -3, dx = 0, dy = -1 } },
-            { "c_over", new TreeSpot { par = "c_crit", tile = 5, x = -3, y = -8, dx = 0, dy = -1 } },
-            { "c_magnet", new TreeSpot { par = "c_rad", tile = 3, x = 3, y = -3, dx = 0, dy = -1 } },
+            { "c_rad", new TreeSpot { par = "c_pow", tile = 2, x = 1, y = -3, dx = 0, dy = -1 } },
+            { "c_spd", new TreeSpot { par = "c_pow", tile = 2, x = -1, y = -3, dx = 0, dy = -1 } },
             { "c_fuel", new TreeSpot { par = "R", tile = 0, x = -1, y = 0, dx = -1, dy = 0 } },
-            { "o_wide", new TreeSpot { par = "c_fuel", tile = 1, x = -2, y = -1, dx = -1, dy = 0 } },
-            { "c_find", new TreeSpot { par = "c_fuel", tile = 5, x = -6, y = 0, dx = -1, dy = 0 } },
+            { "c_crit", new TreeSpot { par = "c_spd", tile = 2, x = -2, y = -5, dx = 0, dy = -1 } },
+            { "c_double", new TreeSpot { par = "c_spd", tile = 4, x = -3, y = -7, dx = 0, dy = -1 } },
+            { "c_magnet", new TreeSpot { par = "c_rad", tile = 3, x = 2, y = -6, dx = 0, dy = -1 } },
+            { "c_over", new TreeSpot { par = "c_crit", tile = 5, x = -2, y = -10, dx = 0, dy = 0 } },
             { "d_n", new TreeSpot { par = "R", tile = 0, x = 1, y = 0, dx = 1, dy = 0 } },
-            { "d_spd", new TreeSpot { par = "d_n", tile = 2, x = 3, y = -1, dx = 1, dy = 0 } },
-            { "d_reach", new TreeSpot { par = "d_n", tile = 2, x = 3, y = 1, dx = 1, dy = 0 } },
-            { "d_mag", new TreeSpot { par = "d_spd", tile = 5, x = 7, y = -2, dx = 0, dy = -1 } },
-            { "d_fix", new TreeSpot { par = "d_mag", tile = 1, x = 8, y = -3, dx = 1, dy = 0 } },
-            { "d_sig", new TreeSpot { par = "d_n", tile = 5, x = 6, y = 0, dx = 1, dy = 0 } },
-            { "d_grade", new TreeSpot { par = "d_reach", tile = 3, x = 6, y = 2, dx = 1, dy = 0 } },
-            { "d_pair", new TreeSpot { par = "d_sig", tile = 3, x = 9, y = -1, dx = 0, dy = -1 } },
-            { "d_fact", new TreeSpot { par = "d_pair", tile = 1, x = 10, y = -1, dx = 1, dy = 0 } },
+            { "d_spd", new TreeSpot { par = "d_n", tile = 2, x = 3, y = 1, dx = 1, dy = 0 } },
+            { "d_reach", new TreeSpot { par = "d_n", tile = 4, x = 5, y = -1, dx = 1, dy = 0 } },
+            { "d_mag", new TreeSpot { par = "d_spd", tile = 3, x = 5, y = 2, dx = 1, dy = 0 } },
+            { "d_sig", new TreeSpot { par = "d_spd", tile = 5, x = 8, y = 1, dx = 1, dy = 0 } },
+            { "d_grade", new TreeSpot { par = "d_reach", tile = 3, x = 10, y = -1, dx = 1, dy = 0 } },
+            { "d_fix", new TreeSpot { par = "d_mag", tile = 2, x = 6, y = 3, dx = 1, dy = 0 } },
+            { "d_pair", new TreeSpot { par = "d_sig", tile = 3, x = 11, y = 1, dx = 0, dy = 0 } },
+            { "d_fact", new TreeSpot { par = "d_pair", tile = 1, x = 12, y = 1, dx = 1, dy = 0 } },
             { "b_n", new TreeSpot { par = "R", tile = 0, x = 0, y = 1, dx = 0, dy = 1 } },
-            { "s_speed", new TreeSpot { par = "b_n", tile = 4, x = 0, y = 5, dx = 0, dy = 1 } },
-            { "b_pr", new TreeSpot { par = "b_n", tile = 2, x = 1, y = 3, dx = 1, dy = 0 } },
+            { "c_find", new TreeSpot { par = "c_fuel", tile = 5, x = -6, y = 0, dx = -1, dy = 0 } },
+            { "s_speed", new TreeSpot { par = "b_n", tile = 4, x = 0, y = 6, dx = 0, dy = 1 } },
+            { "b_pr", new TreeSpot { par = "b_n", tile = 2, x = 1, y = 4, dx = 1, dy = 0 } },
             { "b_cap", new TreeSpot { par = "b_n", tile = 4, x = 1, y = 5, dx = 1, dy = 0 } },
-            { "b_pf", new TreeSpot { par = "b_pr", tile = 5, x = 6, y = 3, dx = 1, dy = 0 } },
+            { "b_pf", new TreeSpot { par = "b_pr", tile = 5, x = 6, y = 5, dx = 1, dy = 0 } },
             { "b_br", new TreeSpot { par = "b_cap", tile = 3, x = 3, y = 6, dx = 0, dy = 1 } },
             { "b_chain", new TreeSpot { par = "b_br", tile = 2, x = 4, y = 7, dx = 1, dy = 0 } },
-            { "b_pack", new TreeSpot { par = "b_chain", tile = 5, x = 8, y = 8, dx = 0, dy = 1 } },
+            { "b_pack", new TreeSpot { par = "b_chain", tile = 5, x = 9, y = 8, dx = 0, dy = 1 } },
+            { "o_wide", new TreeSpot { par = "c_fuel", tile = 1, x = -2, y = -1, dx = -1, dy = 0 } },
             { "e_val", new TreeSpot { par = "R", tile = 0, x = -1, y = 1, dx = 0, dy = 1 } },
-            { "e_vault", new TreeSpot { par = "e_val", tile = 2, x = -2, y = 2, dx = -1, dy = 0 } },
-            { "e_att", new TreeSpot { par = "e_val", tile = 4, x = -2, y = 4, dx = -1, dy = 0 } },
-            { "e_quest", new TreeSpot { par = "e_val", tile = 5, x = -2, y = 6, dx = -1, dy = 0 } },
-            { "e_talk", new TreeSpot { par = "e_vault", tile = 3, x = -4, y = 1, dx = -1, dy = 0 } },
-            { "e_tip", new TreeSpot { par = "e_att", tile = 3, x = -4, y = 5, dx = -1, dy = 0 } },
+            { "e_vault", new TreeSpot { par = "e_val", tile = 4, x = -2, y = 4, dx = -1, dy = 0 } },
+            { "e_att", new TreeSpot { par = "e_val", tile = 5, x = -2, y = 5, dx = -1, dy = 0 } },
+            { "e_quest", new TreeSpot { par = "e_val", tile = 2, x = -2, y = 2, dx = -1, dy = 0 } },
+            { "e_talk", new TreeSpot { par = "e_vault", tile = 5, x = -7, y = 4, dx = -1, dy = 0 } },
+            { "e_tip", new TreeSpot { par = "e_att", tile = 5, x = -7, y = 5, dx = -1, dy = 0 } },
             { "e_save", new TreeSpot { par = "e_val", tile = 5, x = -1, y = 6, dx = 0, dy = 1 } },
-            { "e_guard", new TreeSpot { par = "e_talk", tile = 2, x = -6, y = 1, dx = -1, dy = 0 } },
+            { "e_guard", new TreeSpot { par = "e_talk", tile = 2, x = -9, y = 4, dx = 0, dy = 0 } },
             { "e_used", new TreeSpot { par = "e_save", tile = 3, x = -2, y = 8, dx = -1, dy = 0 } },
-            { "a_open", new TreeSpot { par = "e_val", tile = 3, x = -2, y = 3, dx = -1, dy = 0 } },
-            { "a_auto", new TreeSpot { par = "a_open", tile = 1, x = -3, y = 3, dx = -1, dy = 0 } },
+            { "a_open", new TreeSpot { par = "e_val", tile = 3, x = -2, y = 3, dx = 0, dy = 0 } },
+            { "a_auto", new TreeSpot { par = "a_open", tile = 1, x = -3, y = 3, dx = 0, dy = 0 } },
             { "a_read", new TreeSpot { par = "a_auto", tile = 1, x = -4, y = 3, dx = -1, dy = 0 } },
             { "a_ins", new TreeSpot { par = "a_read", tile = 3, x = -7, y = 3, dx = -1, dy = 0 } },
             { "a_big", new TreeSpot { par = "a_ins", tile = 3, x = -10, y = 3, dx = -1, dy = 0 } },
+            { "p_moon", new TreeSpot { par = "o_wide", tile = 1, x = -2, y = -2, dx = 0, dy = 0 } },
+            { "p_mars", new TreeSpot { par = "p_moon", tile = 1, x = -4, y = -3, dx = 0, dy = 0 } },
+            { "p_jup", new TreeSpot { par = "p_mars", tile = 1, x = -6, y = -4, dx = 0, dy = 0 } },
+            { "p_sat", new TreeSpot { par = "p_jup", tile = 1, x = -8, y = -5, dx = 0, dy = 0 } },
         };
-        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R", "a_open", "a_auto", "a_read", "a_ins", "a_big" };
+        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R", "a_open", "a_auto", "a_read", "a_ins", "a_big", "p_moon", "p_mars", "p_jup", "p_sat" };
         public static string VisBranch(string id) => id == "c_fuel" || id == "o_wide" || id == "c_find" ? "hull" : id == "s_speed" ? "bh" : Nodes[NodeIx[id]].branch;
 
         static Node N(string id, string br, string name, string desc, string[] par, int seg, double first, double mult, int max, int depth, int lane)
@@ -242,13 +252,13 @@ namespace SalvageRun.Orbit.Sim
         public struct Bill { public string t, perk; public double m, credit; public int due; }
         public static readonly Bill[] Bills =
         {
-            new Bill { t = "연료비",           m = 45,     due = 5, credit = 2,  perk = "드론 2대 · 금고 위성 · 부착물이 나온다" },
-            new Bill { t = "청소선 할부 1회",  m = 700,    due = 4, credit = 3,  perk = "블랙홀 스킬 · 🌙 달 허가증 판매 (×1.5)" },
-            new Bill { t = "궤도 사용료",      m = 2500,   due = 4, credit = 5,  perk = "🔴 화성 허가증 판매 (값 ×2)" },
-            new Bill { t = "보험료",           m = 180000, due = 5, credit = 8,  perk = "큰 잔해 등장 · 연쇄 +10%" },
-            new Bill { t = "청소선 할부 2회",  m = 300000, due = 4, credit = 12, perk = "드론 등급 +1 · 🪐 목성 허가증 판매 (×3)" },
-            new Bill { t = "법인세",           m = 4000000, due = 5, credit = 18, perk = "💫 토성 허가증 판매 (값 ×4.5)" },
-            new Bill { t = "청소선 할부 3회",  m = 20000000, due = 5, credit = 26, perk = "폭탄 +1 · 붕괴 한계 +50%" },
+            new Bill { t = "연료비",           m = 45,     due = 5, credit = 2,  perk = "케슬러 금융이 청소선 한 대를 믿어 주었다" },
+            new Bill { t = "청소선 할부 1회",  m = 700,    due = 4, credit = 3,  perk = "창구 직원이 이름을 외웠다" },
+            new Bill { t = "궤도 사용료",      m = 2500,   due = 4, credit = 5,  perk = "궤도청에 청소선이 정식 등록됐다" },
+            new Bill { t = "보험료",           m = 180000, due = 5, credit = 8,  perk = "궤도 보험이 청소선을 받아 주었다" },
+            new Bill { t = "청소선 할부 2회",  m = 300000, due = 4, credit = 12, perk = "청소선 절반은 이제 내 것" },
+            new Bill { t = "법인세",           m = 4000000, due = 5, credit = 18, perk = "세금을 내는 어엿한 회사가 됐다" },
+            new Bill { t = "청소선 할부 3회",  m = 20000000, due = 5, credit = 26, perk = "케슬러 금융이 먼저 인사를 한다" },
             new Bill { t = "청소선 할부 완납", m = 60000000, due = 6, credit = 0,  perk = "빚 청산 → 청산 출동" },
         };
 
@@ -321,6 +331,10 @@ namespace SalvageRun.Orbit.Sim
             if (S.lv == null) S.lv = new int[NodeCount];
             else if (S.lv.Length < NodeCount) { var lv = S.lv; Array.Resize(ref lv, NodeCount); S.lv = lv; }   // 칸이 늘면 산 것은 그대로 두고 뒤에 붙인다 (경매 줄기 · 09-23)
             else if (S.lv.Length > NodeCount) { var lv = S.lv; Array.Resize(ref lv, NodeCount); S.lv = lv; }
+            for (int pi = 1; pi < PlanetNode.Length; pi++) if ((S.planets & (1 << pi)) != 0 && S.lv[NodeIx[PlanetNode[pi]]] == 0) S.lv[NodeIx[PlanetNode[pi]]] = 1;
+            if (S.bill >= 1 && S.lv[NodeIx["d_n"]] == 0) S.lv[NodeIx["d_n"]] = 1;        // 옛 저장 — 청구서로 받은 것들은 칸으로 옮겨 준다
+            if (S.bill >= 2 && S.lv[NodeIx["b_n"]] == 0) S.lv[NodeIx["b_n"]] = 1;
+            if (S.bill >= 2 && S.lv[NodeIx["e_quest"]] == 0) S.lv[NodeIx["e_quest"]] = 1;
             if (M.news.Count == 0) AddNews("first_run");
             if (ContractsOn && (S.contract < 0 || S.contract < Contracts.Length && Contracts[S.contract].orbit < 0)) RollContract();     // 의뢰가 비었거나 이제 없는 압류 딱지 의뢰면 새로
             Preview();
@@ -335,21 +349,24 @@ namespace SalvageRun.Orbit.Sim
 
         // ───────────────────────── 파생 숫자
         public int Seg => Math.Min(8, S.bill + 1);
-        public bool DronesOn => S.bill >= 1;
-        public bool BombsOn => S.bill >= 2;
-        public bool ContractsOn => S.bill >= 2;
-        public bool BigsOn => S.bill >= 4;
+        public bool DronesOn => Lv("d_n") > 0;                        // 해금은 전부 정비고 (09-24) — 드론 격납고
+        public bool BombsOn => Lv("b_n") > 0;
+        public bool ContractsOn => Lv("e_quest") > 0;
+        public bool BigsOn => S.orbit >= 2;                              // 큰 잔해는 화성부터 (행성의 성격)
         public int MaxOrbit { get { int m = 0; for (int i = 0; i < Orbits.Length; i++) if (Open(i)) m = i; return m; } }
-        public bool Open(int i) => i == 0 || (S.planets & (1 << i)) != 0;
-        public bool OnSale(int i) => !Open(i) && S.bill >= Orbits[i].sell;
+        public bool Open(int i) => i == 0 || (S.planets & (1 << i)) != 0 || Lv(PlanetNode[i]) > 0;
+        public bool OnSale(int i) { if (Open(i)) return false; var st = State(NodeIx[PlanetNode[i]]); return st == NodeSt.Can || st == NodeSt.Poor; }   // 정비고 항로 칸이 다음 차례
         public bool BuyPermit(int i)
         {
             if (!R.over || !OnSale(i) || S.cash < Orbits[i].permit) return false;
-            S.cash -= Orbits[i].permit; S.planets |= 1 << i;
+            return BuyTile(NodeIx[PlanetNode[i]]);
+        }
+        void PlanetBought(int i)
+        {
+            S.planets |= 1 << i;
             AddNews(null, Orbits[i].name + " 청소 허가 — 민간 청소선 첫 진입", "케슬러 금융이 " + Orbits[i].name + " 궤도 청소 허가증을 내줬다. " + Orbits[i].desc + ". 값은 지구의 " + Orbits[i].mult + "배라고 한다.");
             S.orbit = i; RollContract(); Preview();
             if (Mk != null && StockOpen) { string[] sec = { "", "달", "화성", "목성", "관광" }; Mk.GameEvent("민간 청소선 " + Orbits[i].name + " 진출", "궤도 청소부가 " + Orbits[i].name + " 청소 허가를 땄다. 관련 업계가 들썩인다.", new[] { sec[i], "ship" }, null, 0.14f); }
-            return true;
         }
         public double FuelMax => (30 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.2 * Cr(0));
         public double Gap => Math.Max(0.3, 0.6 - 0.045 * Lv("c_spd"));
@@ -360,23 +377,23 @@ namespace SalvageRun.Orbit.Sim
         public double HpMul => (1 + 0.45 * Math.Max(0, S.bill - 2)) * Orbits[S.orbit].hp;   // 잔해 체력 배율 — 청구서 3장째부터 한 장마다 +45% (초반은 가볍게)
         public int BlastDmg => 2 + 2 * ClawDmg;                    // 폭발은 즉사가 아니라 피해
         public double Crit => 0.05 * Lv("c_crit");
-        public int DroneCount => DronesOn ? 2 + Lv("d_n") + Lv("d_fact") + Cr(3) : 0;
+        public int DroneCount => DronesOn ? 1 + Lv("d_n") + Lv("d_fact") + Cr(3) : 0;   // 격납고 첫 칸 = 두 대
         public double DroneCd => Math.Max(0.4, 1 - 0.1 * Lv("d_spd"));
         public double Reach => 80 + 15 * Lv("d_reach");
-        public int Grade => 1 + Lv("d_grade") + (S.bill >= 5 ? 1 : 0);
+        public int Grade => 1 + Lv("d_grade");
         public double DroneMag => 1 + 0.25 * Lv("d_mag");
         public int Bombs => BombsOn ? Math.Min(6, 2 + Lv("b_n") + (S.bill >= 7 ? 1 : 0) + Cr(4)) : 0;
         public double PullR => 90 + 14 * Lv("b_pr");                // 09-24 사장님 「블랙홀 크기 많이 줄이고」 150+20 → 90+14
         public double PullF => 1 + 0.25 * Lv("b_pf");
-        public int Cap => (int)Math.Round((18 + 8 * Lv("b_cap")) * (S.bill >= 7 ? 1.5 : 1));
+        public int Cap => 22 + 9 * Lv("b_cap");
         public double BlastK => 1 + 0.15 * Lv("b_br");
-        public double ChainP => Math.Min(0.93, 0.25 + 0.07 * Lv("b_chain") + (S.bill >= 4 ? 0.1 : 0));
+        public double ChainP => Math.Min(0.93, 0.3 + 0.075 * Lv("b_chain"));
         public double HoleCd => 16 - 1.5 * Lv("s_speed");     // (옛 시간 충전 — 이제 안 쓴다)
         public double HoleChance => R.clean ? 0.05 : 0.012 + 0.002 * Lv("b_n") + 0.0025 * Lv("s_speed");   // 🌀 블랙홀 — 집게가 맞힐 때 이 확률로 그 자리에 저절로 열린다 (09-24 사장님 「자동으로 바닥에 깔리는 걸로」 · Q 스킬 없앰)
         public const double HoleDur = 3;                           // 열려 있는 시간 — 끝나면 저절로 터진다
         public double PackK => 0.02 + 0.012 * Lv("b_pack");
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
-        public int ChainMax => R.clean ? 5000 : 25 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 12 * Lv("b_chain") + (S.bill >= 4 ? 10 : 0) + (S.bill >= 7 ? 30 : 0);
+        public int ChainMax => R.clean ? 5000 : 40 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 15 * Lv("b_chain");
         public double ValMult => Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * Orbits[S.orbit].mult * Econ;
         public double Cut => S.debt > 0 ? (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) : 0;   // 빚이 있으면 판 수입에서 떼어 상환
         // ── 대출 (연체 대신) — 언제든 받을 수 있다. 받은 돈 × 배수를 판 수입에서 조금씩 갚는다
@@ -541,9 +558,13 @@ namespace SalvageRun.Orbit.Sim
         {
             if (!R.over || State(i) != NodeSt.Can) return false;
             S.cash -= TileCost(i); S.lv[i] = TileLv(i, NextTile(i));
+            var id = Nodes[i].id;
+            int pi = Array.IndexOf(PlanetNode, id); if (pi > 0) PlanetBought(pi);
+            if (id == "e_quest" && S.lv[i] == 1 && S.contract < 0) RollContract();
+            Emit(SwEv.NodeBought, 0, 0, i, S.lv[i]);
             return true;
         }
-        public bool BranchOpen(string br) { int b = Array.IndexOf(BranchIds, br); return S.bill >= BranchNeed[b]; }
+        public bool BranchOpen(string br) => true;                        // 가지는 처음부터 다 보인다 — 값으로만 막는다 (09-24)
         public NodeSt State(int i)
         {
             var n = Nodes[i];
@@ -552,7 +573,6 @@ namespace SalvageRun.Orbit.Sim
             foreach (var p in n.par) if (S.lv[NodeIx[p]] <= 0) return NodeSt.Hidden;
             var pl = Layout[n.id];
             if (pl.par != "R" && S.lv[NodeIx[pl.par]] < TileLv(NodeIx[pl.par], pl.tile)) return NodeSt.Hidden;
-            if (n.seg > Seg) return NodeSt.Hidden;
             return S.cash >= TileCost(i) ? NodeSt.Can : NodeSt.Poor;
         }
         public bool Buy(int i) => BuyTile(i);
@@ -577,7 +597,6 @@ namespace SalvageRun.Orbit.Sim
             AddNews(nid);
             Emit(SwEv.BillPaid, 0, 0, S.bill, 0, b.t + " 납부 완료 — " + b.perk);
             CheckClean();
-            if (S.bill == 2 && S.contract < 0) RollContract();
         }
 
         public bool Bankrupt()
@@ -714,14 +733,14 @@ namespace SalvageRun.Orbit.Sim
             for (int i = 0; i < DroneCount; i++) r.drones.Add(new Drone { a = i * Math.PI * 2 / Math.Max(1, DroneCount), cd = Rnd() });
             // 사건 — 10~14초, 22~26초 (연료 40 넘을 때만)
             var ev = o.events;
-            if (S.bill >= 2 || clean)                                     // 판 중 사건은 청구서 2 뒤부터
+            if (S.runs >= 2 || clean)                                     // 판 중 사건 — 세 번째 출동부터 (청구서와 상관없이)
             {
                 r.ev1 = ev[rng.Next(ev.Length)]; r.ev1T = Rnd(10, 14);
                 if (r.max >= 40) { r.ev2 = ev[rng.Next(ev.Length)]; r.ev2T = Rnd(22, 26); }
             }
             r.collector = false;                                        // 추심선은 대출로 바뀌며 쉰다
             // 블랙박스 — 청구서 2 뒤 · 판마다 25%
-            if ((S.bill >= 2 || clean) && M.scoops < 6 && (clean || Rnd() < 0.25 + 0.1 * Lv("e_tip")))
+            if ((S.runs >= 2 || clean) && M.scoops < 6 && (clean || Rnd() < 0.25 + 0.1 * Lv("e_tip")))
             {
                 var hosts = r.junk.FindAll(d => IsHost(d.k) && d.att == Att.None);
                 if (hosts.Count > 0) hosts[rng.Next(hosts.Count)].att = Att.BBox;
@@ -750,8 +769,7 @@ namespace SalvageRun.Orbit.Sim
         Att PickAtt()
         {
             var list = new List<Att> { Att.Pouch, Att.Pouch };
-            if (S.bill >= 1) list.Add(Att.Beacon);
-            if (S.bill >= 2) list.Add(Att.Magnet);
+            list.Add(Att.Beacon); list.Add(Att.Magnet);
             if (S.orbit >= 2 || R.clean) { list.Add(Att.Det); list.Add(Att.Det); list.Add(Att.Ice); }
             if (S.orbit == 2) { list.Add(Att.Ice); list.Add(Att.Ice); }             // 화성 — 얼음 껍질
             if (S.orbit >= 3 || R.clean) { list.Add(Att.Armor); list.Add(Att.Armor); }
@@ -766,7 +784,7 @@ namespace SalvageRun.Orbit.Sim
             if (a < 0) a = Rnd(0, Math.PI * 2);
             if (rr < 0) { double u = Rnd(); if (o.gap > 0) u = u < 0.5 ? u * (1 - o.gap) : 0.5 * (1 - o.gap) + o.gap + (u - 0.5) * (1 - o.gap); rr = o.bi + u * (Bo - o.bi); }   // 토성 — 가운데 틈을 비운다                  // 띠 안 아무 곳에서 서서히 나타난다 (가장자리에서만 들어오면 바깥에 쏠린다)
             Att at = att ?? Att.None;
-            if (att == null && IsHost(k) && (R.clean || S.bill >= 1) && Rnd() < (R.clean ? 0.35 : o.att * (1 + 0.4 * Lv("e_att")))) at = PickAtt();
+            if (att == null && IsHost(k) && Rnd() < (R.clean ? 0.35 : o.att * (1 + 0.4 * Lv("e_att")))) at = PickAtt();
             int hp = (int)Math.Round(Types[k].hp * (k == Fuel || k == Tank ? 1 : HpMul)) + (at == Att.Ice ? 2 : 0);   // 청구서를 갚을수록 단단해진다
             var d = new Junk { id = ++R.idc, k = k, hp = hp, max = hp, att = at, a = a, rr = rr, ws = ws > 0 ? ws : Rnd(0.92, 1.08), rot = Rnd(0, 6), vr = Rnd(-1, 1) };
             Place(d);

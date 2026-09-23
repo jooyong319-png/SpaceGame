@@ -308,7 +308,7 @@ namespace SalvageRun.Orbit
             string hint = null;
             if (R.clean) hint = null; else
             if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = "궤도 위에 커서를 대면 청소선이 빔을 쏜다 — 처음엔 한 점씩";
-            else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "블랙홀 스킬이 열렸다 — Q(또는 아래 칸)를 누르면 커서 자리에 3초 열려 빨아들이고 터진다";
+            else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "블랙홀이 열렸다 — 집게로 칠 때 가끔 저절로 열려 빨아들인다";
             else if (sim.DronesOn && !sim.M.flags.Contains("hint_drone") && R.t < 8) hint = "드론은 알아서 줍는다 — 한 방에 부서지는 것만";
             else if (sim.S.orbit > 0 && !sim.M.flags.Contains("hint_p" + sim.S.orbit) && R.t < 8) hint = PlanetHint[sim.S.orbit];   // 새 행성 첫 판
             if (hint != null) GUI.Label(new Rect(vw / 2 - 360, RefH - 70, 720, 20), hint, center);
@@ -453,7 +453,7 @@ namespace SalvageRun.Orbit
                     if (bankruptArmed) { sim.Bankrupt(); bankruptArmed = false; showResult = false; flow = 2; } else bankruptArmed = true;
                 }
             }
-            else Panel2(RB, sim.S.bill < SweepSim.Bills.Length ? "청구서를 갚으면 열린다" : null);
+            else Panel2(RB, sim.S.bill < SweepSim.Bills.Length ? "다음 청구서" : null);
             if (!stuck && S.bill < SweepSim.Bills.Length)
             {
                 float prog = Mathf.Clamp01((float)(S.cash / System.Math.Max(1, sim.BillAmount)));
@@ -962,6 +962,7 @@ namespace SalvageRun.Orbit
         class GTile { public int stat, j, lpar = -1; public List<int> xpar = new List<int>(); public Vector2Int cell; public Vector2Int inDir; }
         static List<GTile> gtiles;
         static readonly Vector2Int[] Dirs8 = { new Vector2Int(0, -1), new Vector2Int(1, -1), new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(0, 1), new Vector2Int(-1, 1), new Vector2Int(-1, 0), new Vector2Int(-1, -1) };
+        string lastBuyBranch = "";
         Vector2 camC; float camZ = 1f, userZ = 1f; Vector2 pan; bool dragging, dragMoved; int dragBtn; Vector2 dragFrom, dragStart;
 
         static Vector2Int Rot(Vector2Int d, int k) { int i = System.Array.IndexOf(Dirs8, d); return Dirs8[((i + k) % 8 + 8) % 8]; }
@@ -1212,6 +1213,7 @@ namespace SalvageRun.Orbit
             {
                 case "claw": return SweepGame.Amber;
                 case "hull": return new Color(0.56f, 0.72f, 0.9f);
+                case "route": return new Color(0.6f, 0.72f, 1f);
                 case "drone": return SweepGame.Cyan;
                 case "bh": return SweepGame.Violet;
                 default: return SweepGame.Green;
@@ -1296,6 +1298,8 @@ namespace SalvageRun.Orbit
                     Line(a, b, gold ? new Color(1f, 0.74f, 0.2f) : new Color(0.32f, 0.3f, 0.28f, st[k] == 1 ? 0.5f : 0.9f), (gold ? 3.2f : 2f) * zz);
                 }
             }
+            // ⭐ 추천 한 칸 — 모르면 이것만 사도 된다 (09-24 설계서 「무거워도 자연스럽게」)
+            int recK = -1; { double best = double.MaxValue; for (int k = 0; k < nT; k++) { var t = gtiles[k]; if (t.stat < 0 || st[k] != 2 || sim.State(t.stat) != NodeSt.Can) continue; double c = sim.TileCost(t.stat) * (SweepSim.Nodes[t.stat].branch == lastBuyBranch ? 0.6 : 1); if (c < best) { best = c; recK = k; } } }
             // 칸
             int hover = -1;
             bool shift = Keyboard.current != null && Keyboard.current.shiftKey.isPressed;
@@ -1326,7 +1330,10 @@ namespace SalvageRun.Orbit
                 bool lockedTile = !owned && ns == NodeSt.Locked;
                 GUI.color = owned ? new Color(1f, 0.96f, 0.86f) : next ? (lockedTile ? new Color(0.3f, 0.31f, 0.34f) : new Color(0.72f, 0.72f, 0.74f)) : new Color(0.17f, 0.17f, 0.19f);
                 float isz = sz * 0.62f;
-                DrawIcon(new Rect(pc.x - isz / 2, pc.y - isz / 2, isz, isz), isRoot ? "R" : n.id);
+                int planetI = isRoot ? -1 : System.Array.IndexOf(SweepSim.PlanetNode, n.id);
+                if (planetI > 0) { var pr = new Rect(pc.x - isz * 0.62f, pc.y - isz * 0.62f, isz * 1.24f, isz * 1.24f); GUI.color = owned ? Color.white : next ? new Color(0.6f, 0.62f, 0.66f) : new Color(0.2f, 0.2f, 0.22f); GUI.DrawTexture(pr, PlanetArt.Get(planetI).texture); }
+                else DrawIcon(new Rect(pc.x - isz / 2, pc.y - isz / 2, isz, isz), isRoot ? "R" : n.id);
+                if (k == recK) { float rp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 4); GUI.color = new Color(1f, 0.87f, 0.4f, 0.55f + 0.45f * rp); Frame(new Rect(r.x - 5 * zz, r.y - 5 * zz, r.width + 10 * zz, r.height + 10 * zz), GUI.color, 2.5f); GUI.color = Color.white; GUI.Label(new Rect(pc.x - 40, r.yMax + 2 * zz, 80, 16), "<size=10><b><color=#ffdf95>추천</color></b></size>", center); }
                 if (lockedTile && next) { GUI.color = new Color(1f, 0.6f, 0.55f); GUI.Label(new Rect(r.xMax - 14, r.y - 4, 18, 18), "<size=11>잠</size>", center); }
                 GUI.color = Color.white;
                 if (r.Contains(ev.mousePosition)) hover = k;
@@ -1334,7 +1341,7 @@ namespace SalvageRun.Orbit
                 {
                     int times = shift ? 5 : 1;
                     while (times-- > 0 && sim.State(t.stat) == NodeSt.Can) sim.BuyTile(t.stat);
-                    nodePulse[t.stat] = 1; OrbitSfx.Play("buy", 0.7f, 0.01f, 0.15f);
+                    nodePulse[t.stat] = 1; OrbitSfx.Play("buy", 0.7f, 0.01f, 0.15f); lastBuyBranch = n.branch; BuyFx(pc, bcol, n.max == 1);
                 }
             }
             GUI.color = Color.white;
@@ -1345,6 +1352,7 @@ namespace SalvageRun.Orbit
                 if (GUI.Button(new Rect(zb.x + (bw3 + 3) * 2, zb.y, 40, zb.height), "<size=11>맞춤</size>", btnOff)) { userZ = 1; pan = Vector2.zero; }
                 GUI.Label(new Rect(zb.xMax + 8, zb.y + 6, 260, 20), "<size=11><color=#5f6878>" + Mathf.RoundToInt(userZ * 100) + "%</color></size>", label);
             }
+            BuyFxDraw();
             if (hover >= 0) Tip(hover, ToScr(gtiles[hover].cell), st[hover], tile);
             else GUI.Label(new Rect(0, area.yMax - 18, vw, 16), "<size=11>칸에 마우스를 올리면 무엇인지 보인다 · 빛나는 칸을 누르면 산다 · 휠 = 확대 · 끌기 = 이동</size>", center);
         }
@@ -1385,7 +1393,7 @@ namespace SalvageRun.Orbit
             if (vis == 3) foot = "<color=#6fcf97>샀다</color>";
             else if (ns == NodeSt.Locked) foot = "<color=#ff9b8f>청구서 " + SweepSim.BranchNeed[b] + "을 갚으면 열린다</color>";
             else if (ns == NodeSt.Hidden && vis != 2) foot = "<color=#ff9b8f>앞 칸을 먼저 사야 한다</color>";
-            else if (ns == NodeSt.Hidden) foot = n.seg > sim.Seg ? "<color=#ff9b8f>청구서 " + (n.seg - 1) + "을 갚으면 열린다</color>" : "<color=#ff9b8f>이어진 다른 칸도 사야 한다</color>";
+            else if (ns == NodeSt.Hidden) foot = "<color=#ff9b8f>이어진 다른 칸도 사야 한다</color>";
             else foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>";
             center.fontSize = 20; GUI.Label(new Rect(r.x, r.y + 106, r.width, 32), foot, center); center.fontSize = 13;
         }
@@ -1407,6 +1415,7 @@ namespace SalvageRun.Orbit
                 case "c_rad": return l > 0 ? "반지름 " + (22 + 10 * l) : "한 점";
                 case "c_spd": return Mathf.Max(0.3f, 0.6f - 0.045f * l).ToString("0.00") + "초";
                 case "a_open": return l > 0 ? "열림" : "잠김";
+                case "p_moon": case "p_mars": case "p_jup": case "p_sat": return l > 0 ? "열림 — 항로 다이얼에서 고른다" : "잠김";
                 case "a_auto": return l > 0 ? "내 종목 봉마다 +0.08% 쪽으로" : "없음";
                 case "a_read": return new[] { "없음", "다음 속보까지 시간", "+ 업종", "+ 제목까지" }[Mathf.Min(3, l)];
                 case "a_ins": return l == 0 ? "없음" : "나쁜 속보 피하기 " + new[] { 0, 60, 70, 80 }[Mathf.Min(3, l)] + "%";
