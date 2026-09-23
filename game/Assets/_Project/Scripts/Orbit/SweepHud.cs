@@ -734,7 +734,13 @@ namespace SalvageRun.Orbit
             }
         }
 
-        int GTileState(int k)   // 0 안 보임 · 1 실루엣 · 2 다음 칸 · 3 산 것
+        int[] gmemo;
+        int GTileState(int k)   // 0 안 보임 · 1 실루엣 · 2 다음 칸 · 3 산 것 (한 번 그릴 때 한 번만 계산 — 부모를 거슬러 가는 재귀가 겹치면 기하급수로 느려진다)
+        {
+            if (gmemo[k] >= 0) return gmemo[k];
+            return gmemo[k] = GTileCalc(k);
+        }
+        int GTileCalc(int k)
         {
             var t = gtiles[k];
             if (t.stat < 0) return 3;                                   // 청소선 — 늘 있다
@@ -823,6 +829,7 @@ namespace SalvageRun.Orbit
             Vector2 lo = new Vector2(1e9f, 1e9f), hi = new Vector2(-1e9f, -1e9f);
             for (int k = 0; k < nT; k++)
             {
+                if (k == 0) { if (gmemo == null || gmemo.Length != nT) gmemo = new int[nT]; System.Array.Fill(gmemo, -1); }
                 st[k] = GTileState(k);
                 if (st[k] == 0) continue;
                 lo = Vector2.Min(lo, gtiles[k].cell); hi = Vector2.Max(hi, gtiles[k].cell);
