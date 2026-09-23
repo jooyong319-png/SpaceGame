@@ -879,5 +879,31 @@ namespace SalvageRun.Orbit
                 x += 80;
             }
         }
+
+        // ★ 1면 조작 — 조종실 창 위에 신문 두 장. 고른 기사가 증권 속보로 나간다
+        void FrontPick()
+        {
+            var S = sim.S;
+            if (S.front1 < 0 || S.front2 < 0 || sim.Mk == null) return;
+            var w = new Rect(ox + 250, 52, 460, 170);
+            GUI.color = new Color(0, 0, 0, 0.6f); GUI.DrawTexture(new Rect(w.x + 4, w.y + 6, w.width, w.height), white);
+            GUI.color = new Color(0.08f, 0.07f, 0.06f, 0.96f); GUI.DrawTexture(w, white); Frame(w, new Color(1f, 0.36f, 0.81f), 2);
+            GUI.color = Color.white;
+            GUI.Label(new Rect(w.x, w.y + 6, w.width, 22), "<size=14><b><color=#ffb3ea>★ 내일 궤도일보 1면을 고른다</color></b></size>", center);
+            for (int k = 0; k < 2; k++)
+            {
+                var nd = Market.NewsBook[k == 0 ? S.front1 : S.front2];
+                var r = new Rect(w.x + 14 + k * 222, w.y + 34, 210, 122);
+                bool ov = r.Contains(Event.current.mousePosition);
+                GUI.color = ov ? new Color(0.98f, 0.95f, 0.88f) : new Color(0.93f, 0.9f, 0.83f); GUI.DrawTexture(r, white);
+                GUI.color = new Color(0.1f, 0.1f, 0.1f); GUI.DrawTexture(new Rect(r.x + 8, r.y + 24, r.width - 16, 2), white); GUI.color = Color.white;
+                paperSmall.fontSize = 10; GUI.Label(new Rect(r.x + 8, r.y + 3, r.width - 16, 20), "궤도일보 1면", paperSmall);
+                paperBody.fontSize = 13; GUI.Label(new Rect(r.x + 8, r.y + 30, r.width - 16, 40), "<b>" + nd.head.Replace("[소문] ", "") + "</b>", paperBody);
+                string eff = (nd.up != null ? "<color=#b3261e>▲ " + SecName(new NewsDef { up = nd.up }) + "</color>  " : "") + (nd.down != null ? "<color=#1f4fb3>▼ " + SecName(new NewsDef { down = nd.down }) + "</color>" : "");
+                paperBody.fontSize = 11; GUI.Label(new Rect(r.x + 8, r.y + 78, r.width - 16, 40), eff, paperBody);
+                paperBody.fontSize = 14;
+                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { sim.PickFront(k); OrbitSfx.Play("buy", 0.8f); BuyFx(r.center, new Color(1f, 0.36f, 0.81f), true, "1면 확정!"); }
+            }
+        }
     }
 }

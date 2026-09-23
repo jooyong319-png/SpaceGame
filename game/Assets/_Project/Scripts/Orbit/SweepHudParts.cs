@@ -121,7 +121,6 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(f.c.r, f.c.g, f.c.b, 0.3f); GUI.DrawTexture(rr, white); Frame(rr, f.c, 2);
                 GUI.color = Color.white; GUI.Label(rr, "<size=14><b>" + f.txt + "</b></size>", center);
             }
-            BuyFxDraw();
         }
     }
 }

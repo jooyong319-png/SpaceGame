@@ -221,10 +221,11 @@ namespace SalvageRun.Orbit
         /// <summary>출동 중 — 오른쪽 위 작은 칩 (전체 + 종목 셋, 수익률 높은 순 · 급등 중이면 빨갛게 빛남)</summary>
         void MyStockChips()
         {
+            float y = 76, right = vw - 14;
+            if (sim.Grit > 0.005) { var gr = new Rect(right - 130, y, 130, 22); GUI.color = new Color(0.2f, 0.05f, 0.05f, 0.85f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.4f, 0.3f), 1); GUI.color = Color.white; GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width, 20), "<size=12><color=#ffb3a8>근성 화력 <b>+" + Mathf.RoundToInt((float)sim.Grit * 100) + "%</b></color></size>", label); y += 25; }
             if (!sim.StockOpen || sim.Mk == null) return;
             MyStocks();
             if (myIdx.Count == 0) return;
-            float y = 76, right = vw - 14;
             void Chip(string txt, bool hot)
             {
                 float w = label.CalcSize(new GUIContent(txt)).x * 0.86f + 16;
@@ -237,6 +238,7 @@ namespace SalvageRun.Orbit
                 y += 25;
             }
             Chip("<size=12>내 주식 <b>" + PctTxt(MyTotal()) + "</b></size>", false);
+            if (sim.Rage > 0.005) Chip("<size=12><color=#ff8a7a>분노 화력 <b>+" + Mathf.RoundToInt((float)sim.Rage * 100) + "%</b></color></size>", true);
             for (int k = 0; k < Mathf.Min(3, myIdx.Count); k++) { int i = myIdx[k]; Chip("<size=12>" + Clip(Market.Defs[i].name, 7) + " <b>" + PctTxt(MyPct(i)) + (Hot(i) ? " ▲" : "") + "</b></size>", Hot(i)); }
         }
     }

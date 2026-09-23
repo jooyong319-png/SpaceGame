@@ -215,6 +215,7 @@ namespace SalvageRun.Orbit
             if ((sp - lastMouse).sqrMagnitude > 4) { idleT = 0; lastMouse = sp; } else idleT += Time.deltaTime;
             // 🎯 자동 조준 — 사면 늘 스스로 잔해를 찾는다. 왼쪽 단추를 누르고 있을 때만 마우스로 직접 (사장님 「마우스 따라다니는데?」)
             bool manual = inside && !hud.overSkill && !hud.overAuto && !hud.overStock && mouse.leftButton.isPressed;
+            if ((manual || !autoMode) && !sim.R.over) sim.R.idleT = 0;          // ★ 게으름 보너스 — 손을 대면 처음부터
             autoAiming = autoMode && !sim.R.over && !manual;
             if (autoAiming) { AutoAim(3); return; }
             if (!inside) return;
@@ -326,7 +327,23 @@ namespace SalvageRun.Orbit
                         if (Random.value < 0.6f) Add(disc, at, 0.11f, src == 3 ? Red : Amber, 2, 1.6f).v = (Vector3)(Random.insideUnitCircle * 3f);
                         break;
                     }
-                    case SwEv.Pop: PopAt(e.x, e.y, e.text, e.k == 1 ? Green : e.k == 3 ? Orange : Amber2, 16); if (e.k == 3) OrbitSfx.Play("unit", 0.8f); break;
+                    case SwEv.Pop: PopAt(e.x, e.y, e.text, e.k == 1 ? Green : e.k == 3 ? Orange : e.k == 4 ? new Color(1f, 0.5f, 0.85f) : e.k == 5 ? Violet : Amber2, e.k >= 4 ? 19 : 16); if (e.k == 3) OrbitSfx.Play("unit", 0.8f); if (e.k >= 4) OrbitSfx.Play("buy", 0.6f); break;
+                    case SwEv.Meteor:
+                    {
+                        var to = at; var from = to + new Vector3(-6f, 7f, 0);
+                        var tail = Add(pixel, from, 0.05f, new Color(1f, 0.6f, 0.2f, 0.9f), 8, 0.55f); tail.a = from; tail.b = to; tail.size = 0.5f;
+                        var core = Add(pixel, from, 0.05f, new Color(1f, 0.95f, 0.8f, 1f), 8, 0.5f); core.a = from; core.b = to; core.size = 0.15f;
+                        Add(glow, to, 2.2f, new Color(1f, 0.55f, 0.2f, 0.7f), 7, 0.9f);
+                        OrbitSfx.Play("launch", 0.7f); shake = Mathf.Max(shake, 0.25f); flash = Mathf.Max(flash, 0.25f);
+                        PopAt(e.x, e.y - 30, "운석!", Orange, 22);
+                        break;
+                    }
+                    case SwEv.Tourist:
+                    {
+                        var p = Add(droneArt, PxToWorld(-40, 120), 0.9f, new Color(0.6f, 0.85f, 1f), 6, 4f);
+                        p.sr.transform.rotation = Quaternion.Euler(0, 0, -90); p.sr.sortingOrder = 85; p.v = new Vector3(1040f / PxPerUnit / 4f, -0.1f, 0);
+                        break;
+                    }
                     case SwEv.Laser:
                     {
                         var s0 = PxToWorld(e.x, e.y); var s1 = PxToWorld(e.x2, e.y2); bool awk = (e.k & 2) != 0, cr = (e.k & 1) != 0;
@@ -448,6 +465,8 @@ namespace SalvageRun.Orbit
                 case Att.Ice: return Ice;
                 case Att.Armor: return new Color(0.42f, 0.46f, 0.52f);
                 case Att.BBox: return Orange;
+                case Att.Gold: return new Color(1f, 0.84f, 0.2f);
+                case Att.Rock: return new Color(0.8f, 0.55f, 1f);
                 default: return new Color(0.56f, 0.63f, 0.72f);
             }
         }

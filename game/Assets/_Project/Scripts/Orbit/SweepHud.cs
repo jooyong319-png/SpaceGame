@@ -141,7 +141,8 @@ namespace SalvageRun.Orbit
             if (!sim.M.won) NewsBanner();
             if (newsOpen) News();
             RepayOverlay();
-            if (sim.Mk != null) { StockFxOverlay(); if (sim.StockOpen) AnchorBox(); }   // 📈 증권 연출 · 🎙 속보 앵커                                            // 💸 빚 갚기 연출
+            if (sim.Mk != null) { StockFxOverlay(); if (sim.StockOpen) AnchorBox(); }
+            BuyFxDraw();                                               // ✨ 칸 · 부품 · 1면 연출 (어느 화면이든)   // 📈 증권 연출 · 🎙 속보 앵커                                            // 💸 빚 갚기 연출
             if (!sim.M.won && !(CockpitView && flow != 3)) Ticker();          // 조종실엔 궤도일보 모니터가 있다 — 아래 한 줄과 겹친다
         }
 
@@ -610,6 +611,7 @@ namespace SalvageRun.Orbit
             LedNews(new Rect(ox + 769, 36, 176, 150));
             BrassPlate(new Rect(ox + 769, 192, 176, 52));
             MyStockBoard();                                             // 📈 내 주식 시세판
+            FrontPick();                                                // ★ 1면 조작
 
             // ⑤ ‹ 정비고로 · 증권 하러 가기 › — 화면 양옆 탭 (누르면 옆 방으로 슥)
             int canN = 0; for (int b = 0; b < 4; b++) canN += CanCount(b);
@@ -1209,6 +1211,7 @@ namespace SalvageRun.Orbit
 
         static Color VisCol(string id)
         {
+            if (id.StartsWith("q_")) return new Color(1f, 0.36f, 0.81f);
             switch (SweepSim.VisBranch(id))
             {
                 case "claw": return SweepGame.Amber;
@@ -1314,7 +1317,8 @@ namespace SalvageRun.Orbit
                 bool next = st[k] == 2, owned = st[k] == 3;
                 var ns = isRoot ? NodeSt.Max : sim.State(t.stat);
                 bool can = next && ns == NodeSt.Can;
-                bool diamond = !isRoot && n.max == 1;
+                bool circle = !isRoot && n.id.StartsWith("q_");
+                bool diamond = !isRoot && !circle && n.max == 1;
                 var pc = ToScr(t.cell);
                 float grow = isRoot ? 0 : nodePulse[t.stat] * 8 * zz;
                 float sz = (isRoot ? tile * 1.25f : diamond ? tile * 0.92f : tile) + grow;
@@ -1322,9 +1326,9 @@ namespace SalvageRun.Orbit
                 if (can) { GUI.color = new Color(1f, 0.78f, 0.3f, 0.28f + 0.18f * Mathf.Sin(Time.time * 5 + k)); GUI.DrawTexture(new Rect(r.x - 9 * zz, r.y - 9 * zz, r.width + 18 * zz, r.height + 18 * zz), texDisc); }
                 if (diamond) GUI.matrix = m0 * Matrix4x4.TRS(new Vector3(pc.x, pc.y, 0), Quaternion.Euler(0, 0, 45), Vector3.one) * Matrix4x4.TRS(new Vector3(-pc.x, -pc.y, 0), Quaternion.identity, Vector3.one);
                 Color bg = owned ? Color.Lerp(bcol, new Color(0.1f, 0.08f, 0.06f), 0.62f) : next ? new Color(0.09f, 0.09f, 0.1f) : new Color(0.06f, 0.06f, 0.07f);
-                GUI.color = bg; GUI.DrawTexture(r, white);
+                GUI.color = bg; GUI.DrawTexture(r, circle ? texDisc : white);
                 Color edge = can ? new Color(1f, 0.8f, 0.35f) : owned ? Color.Lerp(bcol, Color.black, 0.25f) : new Color(0.22f, 0.21f, 0.2f);
-                Frame(r, edge, can ? 2.5f : 1.5f);
+                if (circle) { GUI.color = edge; GUI.DrawTexture(r, texRing); GUI.color = Color.white; } else Frame(r, edge, can ? 2.5f : 1.5f);
                 GUI.matrix = m0;
                 // 아이콘 — 칸 안에 글자 없이 (시안에서 구운 tree_icons.png)
                 bool lockedTile = !owned && ns == NodeSt.Locked;
@@ -1356,7 +1360,6 @@ namespace SalvageRun.Orbit
             }
             WeaponBar(new Rect(zb.x, zb.yMax + 8, 300, 30));
             PartsButton(new Rect(zb.x, zb.yMax + (sim.Lv("w_slot2") > 0 ? 82 : 46), 230, 26));
-            BuyFxDraw();
             if (hover >= 0) Tip(hover, ToScr(gtiles[hover].cell), st[hover], tile);
             else GUI.Label(new Rect(0, area.yMax - 18, vw, 16), "<size=11>칸에 마우스를 올리면 무엇인지 보인다 · 빛나는 칸을 누르면 산다 · 휠 = 확대 · 끌기 = 이동</size>", center);
         }
@@ -1427,6 +1430,7 @@ namespace SalvageRun.Orbit
                 case "e_shop": return l > 0 ? "부품 가게 열림" : "잠김";
                 case "k_claw": case "k_drone": case "k_bh": case "k_eco": case "k_route": return l > 0 ? "켜짐" : "꺼짐";
                 case "w_slot2": return l > 0 ? "보조 무기 칸 있음" : "없음";
+                case "q_insider": case "q_rage": case "q_front": case "q_debt": case "q_meteor": case "q_sling": case "q_tour": case "q_rock": case "q_gold": case "q_lazy": return l > 0 ? "켜짐" : "꺼짐";
                 case "p_moon": case "p_mars": case "p_jup": case "p_sat": return l > 0 ? "열림 — 항로 다이얼에서 고른다" : "잠김";
                 case "a_auto": return l > 0 ? "내 종목 봉마다 +0.08% 쪽으로" : "없음";
                 case "a_read": return new[] { "없음", "다음 속보까지 시간", "+ 업종", "+ 제목까지" }[Mathf.Min(3, l)];
