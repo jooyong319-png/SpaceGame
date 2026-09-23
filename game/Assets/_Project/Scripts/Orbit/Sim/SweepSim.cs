@@ -26,6 +26,9 @@ namespace SalvageRun.Orbit.Sim
     public class PastCompany { public int company, bill, runs; public double minutes; public bool won; }
 
     [Serializable]
+    public class LoanRec { public int kind, run; public double amt; }   // kind 0 대출 · 1 판 수입에서 자동 상환 · 2 직접 상환
+
+    [Serializable]
     public class SweepState
     {
         public int version = 21;
@@ -33,6 +36,7 @@ namespace SalvageRun.Orbit.Sim
         public int runs, orbit, bill, billDue = 5, overRuns, contract = -1;
         public bool overdue, rerolled;
         public int[] lv = new int[SweepSim.NodeCount];
+        public List<LoanRec> loanLog = new List<LoanRec>();          // 대출 창에 보이는 내역 (최근 30개)
     }
 
     [Serializable]
@@ -332,8 +336,14 @@ namespace SalvageRun.Orbit.Sim
         {
             amt = Math.Min(Math.Ceiling(amt), LoanCap);
             if (amt <= 0) return false;
-            S.cash += amt; S.debt += amt * LoanMult; M.loans++;
+            S.cash += amt; S.debt += amt * LoanMult; M.loans++; LogLoan(0, amt);
             return true;
+        }
+        void LogLoan(int kind, double amt)
+        {
+            if (S.loanLog == null) S.loanLog = new List<LoanRec>();
+            S.loanLog.Add(new LoanRec { kind = kind, amt = amt, run = S.runs });
+            if (S.loanLog.Count > 30) S.loanLog.RemoveAt(0);
         }
         public bool LoanAndPay()
         {
@@ -347,7 +357,7 @@ namespace SalvageRun.Orbit.Sim
         {
             double p = Math.Min(S.cash, S.debt);
             if (p <= 0) return false;
-            S.cash -= p; S.debt -= p;
+            S.cash -= p; S.debt -= p; LogLoan(2, p);
             CheckClean();
             return true;
         }
@@ -1088,6 +1098,7 @@ namespace SalvageRun.Orbit.Sim
                 }
                 else S.overRuns++;
             }
+            if (r.cut > 0) LogLoan(1, r.cut);
             CheckClean();                                               // 판 수입에서 떼어 빚을 다 갚았을 수도
             RollContract();
             Emit(SwEv.RunEnd);
