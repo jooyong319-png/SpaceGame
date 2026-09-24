@@ -549,10 +549,11 @@ namespace SalvageRun.Orbit
             GUI.Label(new Rect(p.x + 10, p.y + 5, p.width - 20, 20), "<size=11><color=#7fcfe0>지금 " + SweepSim.Orbits[S.orbit].name + "</color></size>", cost);
             int hoverP = -1; float cw = (p.width - 12) / SweepSim.Orbits.Length;
             if (!M.cleanReady)
-                for (int i = 0; i < SweepSim.Orbits.Length; i++)
+                for (int oi = 0; oi < SweepSim.OrbitOrder.Length; oi++)          // 가까운 → 먼 순서 (소행성대는 번호 5지만 셋째 자리)
                 {
+                    int i = SweepSim.OrbitOrder[oi];
                     var o = SweepSim.Orbits[i];
-                    var cell = new Rect(p.x + 6 + i * cw, p.y + 26, cw, 50);
+                    var cell = new Rect(p.x + 6 + oi * cw, p.y + 26, cw, 50);
                     bool open = sim.Open(i), sale = sim.OnSale(i);
                     if (cell.Contains(Event.current.mousePosition)) hoverP = i;
                     if (i == S.orbit) { GUI.color = new Color(1f, 0.87f, 0.58f, 0.14f * fl); GUI.DrawTexture(cell, white); Frame(cell, new Color(1f, 0.87f, 0.58f, fl), 1.5f); }
@@ -563,7 +564,7 @@ namespace SalvageRun.Orbit
                     if (i == 4) GUI.DrawTexture(new Rect(ic.x - 4, ic.center.y - 1, ic.width + 8, 2), white);
                     GUI.color = new Color(1, 1, 1, fl);
                     string sub = open ? "<color=#dff8ff>" + o.name + "</color>" : sale ? "<color=#ffdf95>" + KNum.Fmt(o.permit) + "</color>" : "<color=#4f7380>잠김</color>";
-                    GUI.Label(new Rect(cell.x - 4, cell.y + 30, cell.width + 8, 18), "<size=9>" + sub + "</size>", center);
+                    if (i == S.orbit || hoverP == i || sale) GUI.Label(new Rect(cell.x - 16, cell.y + 30, cell.width + 32, 18), "<size=9>" + sub + "</size>", center);   // 9개라 좁다 — 지금 · 가리킨 · 살 수 있는 것만 이름
                     GUI.color = Color.white;
                     if (GUI.Button(cell, GUIContent.none, GUIStyle.none))
                     {
@@ -773,7 +774,7 @@ namespace SalvageRun.Orbit
             // 명판
             var plate = new Rect(r.x - 6, box.yMax + 3, r.width + 12, 18);
             GUI.color = new Color(0.12f, 0.04f, 0.04f, 0.9f); GUI.DrawTexture(plate, white); Frame(plate, new Color(0.7f, 0.18f, 0.12f), 1); GUI.color = Color.white;
-            string pl = !can ? "파산 (청구서 3장부터)" : glassK > 0.95f ? "누르면 파산 · 열쇠 +" + sim.BankruptKeys : "파산";
+            string pl = !can ? "3장부터" : glassK > 0.95f ? "누르면 파산 · 열쇠 +" + sim.BankruptKeys : "파산";
             GUI.Label(plate, "<size=10><b><color=#ffb3a8>" + pl + "</color></b></size>", center);
         }
 

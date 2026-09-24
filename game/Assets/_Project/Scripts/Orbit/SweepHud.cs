@@ -1236,12 +1236,12 @@ namespace SalvageRun.Orbit
             if (GUI.Button(r, GUIContent.none, GUIStyle.none) && ready) CastReq = true;
         }
 
-        static readonly string[] PlanetHint = { "", "달 — 궤도가 느리다 · 금고 위성이 많으니 노려 보자", "화성 — 22초마다 모래 폭풍이 온다 · 얼음 껍질은 먼저 깨 두자", "목성 — 중력이 잔해를 안쪽으로 모은다 · 안쪽 가장자리에 블랙홀을", "토성 — 고리가 두 겹 · 가운데 틈은 비어 있다" };
+        static readonly string[] PlanetHint = { "", "달 — 궤도가 느리다 · 금고 위성이 많으니 노려 보자", "화성 — 22초마다 모래 폭풍이 온다 · 얼음 껍질은 먼저 깨 두자", "목성 — 중력이 잔해를 안쪽으로 모은다 · 안쪽 가장자리에 블랙홀을", "토성 — 고리가 두 겹 · 가운데 틈은 비어 있다" , "소행성대 — 단단한 암석과 광석이 많다", "천왕성 — 옆으로 누운 궤도 · 얼음 결정", "해왕성 — 초속 폭풍이 잔해를 흩는다", "카이퍼 벨트 — 태양계 끝 · 고대 탐사선과 혜성" };
         static Texture2D iconTex;
         void DrawIcon(Rect r, string id)
         {
             if (iconTex == null) iconTex = Resources.Load<Texture2D>("tree_icons");
-            int idx = System.Array.IndexOf(SweepSim.IconOrder, id);
+            int idx = System.Array.IndexOf(SweepSim.IconOrder, SweepSim.IconAlias.TryGetValue(id, out var al) ? al : id);   // ✦ 새 칸은 비슷한 아이콘을 빌린다
             if (iconTex == null || idx < 0) return;
             int cols = 8, rows = Mathf.Max(1, iconTex.height / 96);
             float cw = 1f / cols, ch = 1f / rows;
@@ -1441,7 +1441,7 @@ namespace SalvageRun.Orbit
             string foot;
             if (vis == 3 && SweepSim.Infinite(t.stat)) foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>  <color=#ffdf95>∞ " + sim.S.lv[t.stat] + "번 삼 · 계속 살 수 있다</color>";   // 누적 칸 — 다음 가격 (09-24 친구들 「가격이 안 보인다」)
             else if (vis == 3) foot = "<color=#6fcf97>샀다</color>";
-            else if (ns == NodeSt.Locked) foot = "<color=#ff9b8f>청구서 " + SweepSim.BranchNeed[b] + "을 갚으면 열린다</color>";
+            else if (ns == NodeSt.Locked) foot = SweepSim.Ring4(n.id) ? "<color=#ff9b8f>목성 항로를 열면 — 외행성 면허</color>" : "<color=#ff9b8f>청구서 " + SweepSim.BranchNeed[b] + "을 갚으면 열린다</color>";
             else if (ns == NodeSt.Hidden && vis != 2) foot = "<color=#ff9b8f>앞 칸을 먼저 사야 한다</color>";
             else if (ns == NodeSt.Hidden) foot = "<color=#ff9b8f>이어진 다른 칸도 사야 한다</color>";
             else foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>" + (SweepSim.KeyNodes.Contains(n.id) ? "  <color=#d8ccff>+ 열쇠 1 (가진 것 " + sim.S.keys + ") · 파산해도 남는다</color>" : "");
