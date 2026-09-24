@@ -336,7 +336,7 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(1f, 0.72f - (i % 3) * 0.08f, 0.45f, (0.25f + (i % 4) * 0.1f) * a); GUI.DrawTexture(new Rect(x, y, len, i % 5 == 0 ? 3 : 2), white);
             }
             GUI.color = Color.white;
-            if (ph > 14 && ph < 19.5f) GUI.Label(new Rect(0, 90, vw, 26), "<size=18><color=#ffb080><b>모래 폭풍</b></color></size>  <size=13><color=#ffd0b0>값 ×1.5 · 잔해가 몰려온다</color></size>", center);
+            if (ph > 14 && ph < 19.5f) GUI.Label(new Rect(0, 40, vw, 26), "<size=18><color=#ffb080><b>모래 폭풍</b></color></size>  <size=13><color=#ffd0b0>값 ×1.5 · 잔해가 몰려온다</color></size>", center);
         }
 
         // 🚀 출발 1.3초 — 조종실 선체가 커지며 밖으로 날아가고, 별 줄기가 쏟아지고, 행성 이름이 뜬다 (사장님 「출발 후가 2% 빠진 느낌」)
