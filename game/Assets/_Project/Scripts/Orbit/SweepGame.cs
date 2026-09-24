@@ -484,8 +484,8 @@ namespace SalvageRun.Orbit
                         for (int q = 0; q < 3; q++)
                         {
                             float aa = Random.value * 6.283f; var pp = at + new Vector3(Mathf.Cos(aa), Mathf.Sin(aa)) * R;
-                            var inward = (at - pp) * 2.2f + new Vector3(-Mathf.Sin(aa), Mathf.Cos(aa)) * R * 2.5f;   // 안으로 + 옆으로 = 휘어 든다
-                            Add(pixel, pp, 0.08f, new Color(0.7f, 1f, 0.95f, 0.9f), 0, 0.4f).v = inward;
+                            var inward = (at - pp) * 3.2f + new Vector3(-Mathf.Sin(aa), Mathf.Cos(aa)) * R * 1.1f;   // 안으로 + 조금 옆으로 — 옆 힘이 크면 화면을 가로지르는 호가 됐다 (09-24)
+                            Add(pixel, pp, 0.08f, new Color(0.7f, 1f, 0.95f, 0.9f), 0, 0.28f).v = inward;
                         }
                         if (Random.value < 0.6f) { var sp = Add(pixel, at, 0.07f, new Color(0.6f, 1f, 0.9f, 0.8f), 0, 0.35f); sp.v = (mz - at) / 0.35f; }   // 빨아들인 것이 포구로
                         break;
@@ -1170,11 +1170,11 @@ namespace SalvageRun.Orbit
         static Sprite consoleSpr, mountSpr; static bool consoleTried;
         int curW;                                                                     // 지금 쏘는 무기 — 발동 신호가 먼저 와서 효과가 그 포대에서 나간다
         readonly Vector3[] wTgt = new Vector3[9]; readonly float[] wRec = new float[9];
+        static readonly float[] WSlot = { -96, 96, -192, 192, -288, -384, -480, -576 };
         Vector3 WTurretPos(int w)
         {
             int k = 0; for (int i = 1; i < w; i++) if (sim.WeaponOwned(i)) k++;
-            float side = k % 2 == 0 ? -1 : 1, dist = (k / 2 + 1) * 112;
-            return TW(640 + side * dist, 668);
+            return TW(640 + WSlot[Mathf.Min(k, WSlot.Length - 1)], 668);          // 오른쪽은 두 칸까지 — 그 너머는 이번 판 · 주식 액정 자리
         }
         float WTurretAng(int w, Vector3 b) { var t = wTgt[w] == Vector3.zero ? turAim : wTgt[w]; var d = t - b; return Mathf.Atan2(d.y, d.x); }
         void WeaponTurrets(float dt)

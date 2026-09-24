@@ -199,3 +199,4 @@
 - archive 로: 옛 game · todo · architecture · playtest-questions · unified-wiki-inbox · rev15 · rev16 · rev17-design · polish-log 09-22 부분
 - 새로: index · game(궤도 청소부 정본) · architecture(Orbit) · todo · playtest-questions / rev17-detail 머리에 안내 / playtests 09-24 친구 반응
 - [x] 34 다듬기 — 🧲 자석 펄스 도트 애니 다시(고리 → 보라 불꽃 · 쇳조각이 가운데로 빨려 드는 9장, 옛 것은 ArtUnused/magnet_ring) · 모래 폭풍 안내를 가운데 큰 글자 위로
+- [x] 청소기 알갱이가 화면을 가로지르는 청록 호가 되던 것(옆으로 도는 힘 2.5 → 1.1) · 포대 자리 — 오른쪽은 두 칸까지, 나머지는 왼쪽으로(이번 판 액정에 가리던 것)
