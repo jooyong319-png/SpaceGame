@@ -60,7 +60,7 @@ namespace SalvageRun.Orbit
         public void Go()
         {
             if (sim.S.overdue && !sim.M.cleanReady) { dueNag = 1.6f; OrbitSfx.Play("tick", 0.6f, 0.6f, 0.05f); return; }   // 납부일 — 갚기 · 대출 · 파산 중 하나를 먼저
-            bayOpen = false; flow = 0;
+            bayOpen = false; flow = 0; lobby = false;
             prevBestChain = sim.M.bestChain; prevBestPack = sim.M.bestPack; runNewsFrom = sim.M.news.Count;
             showResult = false; bankruptArmed = false;
             if (sim.Mk != null) { var ms = sim.Mk.M.st; runStockSh = new double[ms.Count]; runStockPx = new double[ms.Count]; for (int i = 0; i < ms.Count; i++) { runStockSh[i] = ms[i].shares; runStockPx[i] = ms[i].price; } }   // 📈 이번 판 주식 통계용
@@ -113,6 +113,12 @@ namespace SalvageRun.Orbit
             dueNag = Mathf.Max(0, dueNag - dt);
             if (launchT > 0) { launchT -= dt; if (launchT <= 0) OrbitSfx.Play("tick", 0.7f); }
             var kb = Keyboard.current;
+            if (lobby && sim.R.over && !sim.M.won)
+            {
+                if (kb != null && kb.escapeKey.wasPressedThisFrame) settingsOpen = false;
+                else if (kb != null && (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame) && !settingsOpen) LobbyContinue();
+                return;
+            }
             if (kb != null && kb.spaceKey.wasPressedThisFrame && sim.R.over && !sim.M.careerOpen && !sim.M.won && !newsOpen && paidT < 2.4f)
             {
                 if (loanOpen || lottoOpen) { } else if (flow == 2) Go(); else if (flow == 3 || flow == 4) GoFlow(2); else flow = 2;   // Space — 결과 · 정비소 → 조종실, 조종실 → 출동
@@ -128,6 +134,13 @@ namespace SalvageRun.Orbit
             scale = Screen.height / RefH; vw = Screen.width / scale; ox = Mathf.Max(0, (vw - 960) / 2);
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1));
             Effects();
+            if (lobby && sim.R.over && !sim.M.won)
+            {   // 🚪 로비 — 켜면 여기부터
+                if (flow == 0 || flow == 1) flow = 2;
+                GUI.enabled = !settingsOpen; Lobby(); GUI.enabled = true;
+                VolumeButton();
+                return;
+            }
             if (!sim.R.over) { Storm(); WindowEdge(); Pops(); RunHud(); VolleyGauge(); MyStockChips(); if (launchT > 0) Launch(); }
             if (sim.M.won) Ending();
             else if (sim.M.careerOpen) Career();
@@ -236,6 +249,7 @@ namespace SalvageRun.Orbit
                 else Screen.SetResolution(Mathf.RoundToInt(Display.main.systemWidth * 0.75f), Mathf.RoundToInt(Display.main.systemHeight * 0.75f), FullScreenMode.Windowed);
             }
             GUI.Label(new Rect(w.x + 24, w.yMax - 30, w.width - 48, 20), "<size=11><color=#8a93a3>저장은 자동 · M = 소리 끄기 · Esc = 닫기</color></size>", label);
+            if (!lobby && sim.R.over && GUI.Button(new Rect(w.xMax - 134, w.yMax - 36, 118, 26), "<size=12>로비로 나가기</size>", btnOff)) { game.Save(); settingsOpen = false; lobby = true; lobbyT = 0; }
             if (changed) SaveSettings();
         }
 

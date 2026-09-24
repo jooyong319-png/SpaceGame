@@ -32,6 +32,7 @@ namespace SalvageRun.Orbit
 
         public void GoFlow(int to)
         {
+            lobby = false;
             if (to == flow) return;
             bool strip = (flow == 2 || flow == 3 || flow == 4) && (to == 2 || to == 3 || to == 4);
             slideFrom = strip ? flow : -1; slideAt = Time.unscaledTime; flow = to;
