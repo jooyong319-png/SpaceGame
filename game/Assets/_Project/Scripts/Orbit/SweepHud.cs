@@ -289,7 +289,7 @@ namespace SalvageRun.Orbit
                 Item("청구서", KNum.Fmt(sim.BillAmount) + " · " + S.billDue + "판" + (S.debt > 0 ? " <color=#ee7766>빚 상환 " + Mathf.RoundToInt((float)sim.Cut * 100) + "%</color>" : ""), label);
             // 💰 이번 판 계산대 — 계기판 위, 포구 오른쪽. 금화가 여기로 날아와 한 숫자로 (시안 DbsvFEEy1K5ddbZsM61B2y)
             {
-                var tr = new Rect(vw / 2 + 108, RefH - 60, 150, 40);
+                var tr = new Rect(vw - 284, RefH - 112, 150, 40);                     // 주식 단추 위 (가운데는 청소선 자리)
                 TallyScreen = new Vector2(tr.center.x * scale, Screen.height - tr.center.y * scale);
                 float pu = game.tallyPulse;
                 GUI.color = new Color(0.063f, 0.082f, 0.114f, 0.95f); GUI.DrawTexture(tr, white);

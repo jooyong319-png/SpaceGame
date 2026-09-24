@@ -838,6 +838,10 @@ namespace SalvageRun.Orbit
             sr.transform.localScale = new Vector3(w * TK / square.bounds.size.x, h * TK / square.bounds.size.y, 1);
         }
         static Sprite hullSpr, turClawSpr;
+        static readonly string[] TurName = { "claw", "laser", "bolt", "vac", "mine", "frz", "clus", "mag", "rail" };
+        static readonly float[] TurW = { 44, 56, 56, 40, 22, 48, 90, 50, 60 };     // 시안 px 가로 — 포신 끝이 sim 포구 길이에 오도록
+        static readonly Sprite[] turSpr = new Sprite[9]; static readonly bool[] turTried = new bool[9];
+        static Sprite TurSprite(int w) { if (w < 0 || w > 8) return null; if (!turTried[w]) { turTried[w] = true; turSpr[w] = Resources.Load<Sprite>("ship/turret_" + TurName[w]); } return turSpr[w]; }
         void TSprite(Sprite s, Vector3 c, float wMock, float ang, int order)            // 그림 조각 — 가로 wMock(시안 px), ang 라디안
         {
             var sr = TPiece(s, Color.white, order); sr.transform.position = c; sr.transform.rotation = Quaternion.Euler(0, 0, ang * Mathf.Rad2Deg);
@@ -884,7 +888,20 @@ namespace SalvageRun.Orbit
                 if (hullSpr != null) TSprite(hullSpr, TW(640, 654), 220, 0, -10);
                 // 방 안 — 창턱 (화면 맨 아래 가는 띠, 선체보다 앞)
                 TBox(TW(640, 720 - 7 * q), 1800 * q, 14 * q, 0, panel, 30); TBox(TW(640, 720 - 14 * q), 1800 * q, 2 * q, 0, edge, 31);
-                switch (w)
+                var ts = TurSprite(w);
+                if (ts != null)                                                            // 🔫 픽셀랩 포대 그림 (위를 보는 그림 → -90°)
+                {
+                    const float up = Mathf.PI / 2;
+                    if (w == 2) { TSprite(ts, B(0), TurW[2], 0, 2); TDisc(B(0), 26 + 6 * pul, new Color(c.r, c.g, c.b, 0.55f), 4, glow); }
+                    else if (w == 6)
+                    {
+                        var pc = TW(651, 641); var d6 = turAim - pc; TSprite(ts, pc, TurW[6], Mathf.Atan2(d6.y, d6.x) - up, 2);
+                        for (int i = 0; i < n; i++) if (recoil[i] > 0) TDisc(B(i), 14, new Color(c.r, c.g, c.b, recoil[i]), 4, glow);
+                    }
+                    else for (int i = 0; i < n; i++) TSprite(ts, TAlong(B(i), A(i), -recoil[i] * 6), TurW[w], A(i) - up, 2);
+                    if (w == 8) { float ch = Mathf.Clamp01(1f - (float)sim.R.next / 1.2f); if (ch > 0.5f) TDisc(TAlong(B(0), A(0), 108), 10 + 24 * ch, new Color(0.75f, 0.9f, 1f, ch * 0.8f), 4, glow); }
+                }
+                else switch (w)
                 {
                     case 0: { var b = B(0); float a = A(0);
                         if (turClawSpr == null) turClawSpr = Resources.Load<Sprite>("ship/turret_claw");
