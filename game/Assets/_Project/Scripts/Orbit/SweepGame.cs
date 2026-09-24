@@ -550,10 +550,10 @@ namespace SalvageRun.Orbit
                     case SwEv.EventGo: hud.Banner(e.text, -1, 1.6f); break;
                     case SwEv.Collector: hud.Banner(e.text, -2, 3f); CollectorShip(); OrbitSfx.Play("warn", 1f); break;
                     case SwEv.RunEnd: Save(); hud.OnRunEnd(); break;
-                    case SwEv.Overdue: OrbitSfx.Play("warn", 1f); break;
+                    case SwEv.Overdue: OrbitSfx.Play("warn", 1f); hud.RadioOverdue(sim.S.bill); break;
                     case SwEv.Act: hud.ShowAct((int)e.v); flash = Mathf.Max(flash, 0.8f); shake = Mathf.Max(shake, 0.25f); OrbitSfx.Play("ending", 1f); OrbitSfx.Play("launch", 0.8f); Save(); break;
-                    case SwEv.BillPaid: hud.OnBillPaid(e.text, (int)e.v); OrbitSfx.Play("unit", 1f); OrbitSfx.Play("buy", 1f, 0.01f); Save(); break;
-                    case SwEv.Bankrupt: OrbitSfx.Play("lock", 1f); Save(); break;
+                    case SwEv.BillPaid: hud.OnBillPaid(e.text, (int)e.v); hud.RadioPaid((int)e.v); OrbitSfx.Play("unit", 1f); OrbitSfx.Play("buy", 1f, 0.01f); Save(); break;
+                    case SwEv.Bankrupt: OrbitSfx.Play("lock", 1f); hud.RadioBankrupt(); Save(); break;
                     case SwEv.News: hud.OnNews(e.text, e.k == 1); break;
                     case SwEv.Won: OrbitSfx.Play("ending", 1f); Save(); hud.OnWon(); break;
                 }

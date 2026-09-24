@@ -161,6 +161,7 @@ namespace SalvageRun.Orbit
             if (!sim.M.won && sim.R.over && !(flow == 2 || flow == 4)) Ticker();          // 출동 중엔 계기판 위라 안 그림 — 속보는 앵커가 읽는다          // 조종실엔 궤도일보 모니터가 있다 — 아래 한 줄과 겹친다
             ActCard();
             GuideBar();
+            if (sim.R.over && !sim.M.won) RadioBox();                      // 📻 윤 대리
             VolumeButton();
         }
 
