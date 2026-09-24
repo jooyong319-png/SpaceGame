@@ -234,7 +234,7 @@ namespace SalvageRun.Orbit
         /// <summary>출동 중 — 오른쪽 위 작은 칩 (전체 + 종목 셋, 수익률 높은 순 · 급등 중이면 빨갛게 빛남)</summary>
         void MyStockChips()
         {
-            float y = 76, right = vw - 14;
+            float y = 124, right = vw - 14;                                   // 연쇄 계기 · 압축 막대 아래
             if (sim.Grit > 0.005) { var gr = new Rect(right - 130, y, 130, 22); GUI.color = new Color(0.2f, 0.05f, 0.05f, 0.85f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.4f, 0.3f), 1); GUI.color = Color.white; GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width, 20), "<size=12><color=#ffb3a8>근성 화력 <b>+" + Mathf.RoundToInt((float)sim.Grit * 100) + "%</b></color></size>", label); y += 25; }
             if (!sim.StockOpen || sim.Mk == null) return;
             MyStocks();

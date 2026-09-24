@@ -218,7 +218,7 @@ namespace SalvageRun.Orbit
             float camY = cockpit ? -0.3f * cam.orthographicSize : -0.1f * cam.orthographicSize;   // 출동 중엔 궤도가 계기판 위로
             camBase = Mathf.Lerp(camBase, camY, 1 - Mathf.Exp(-dt * 5f));
             float camX = hud != null ? -hud.CockpitDx * 2f * cam.orthographicSize / 600f : 0f;   // 옆 방으로 밀리면 창밖도 같이
-            cam.transform.position = new Vector3(camX, camBase, -10) + (Vector3)(Random.insideUnitCircle * shake);
+            cam.transform.position = new Vector3(camX, camBase, -10) + (Vector3)(Random.insideUnitCircle * shake * ShakeMul);
             foreach (var bp in bgParts) bp.sr.transform.position = new Vector3(bp.at.x + camX * bp.par, bp.at.y + camBase * bp.par, 0);   // 멀리 있는 것은 카메라를 거의 따라온다
             if (bgView != null)
             {
@@ -256,6 +256,7 @@ namespace SalvageRun.Orbit
 
         Vector2 lastMouse, autoTarget; float idleT, autoRetarget, autoDwell, autoBanT; int autoHp; Junk autoJunk, autoBan, prevAuto;
         public bool autoAiming, autoMode;
+        public static float ShakeMul = 1f, FlashMul = 1f;               // ⚙ 설정 — 흔들림 · 번쩍임
         float brokeWinT; int brokeWinN;                                   // 💥 최근 0.25초 부서진 수 — 적을 때만 굵은 연출
         public void ToggleAuto() { autoMode = !autoMode; PlayerPrefs.SetInt("orbit.auto", autoMode ? 1 : 0); PlayerPrefs.Save(); OrbitSfx.Play("tick", 0.7f); }
         void AutoAim(int al)
@@ -1105,6 +1106,13 @@ namespace SalvageRun.Orbit
                 // 🚀 창밖 — 청소선 선체 (픽셀랩 그림). 포대 받침이 포구 자리에 오게
                 // 선체는 뺐다 (09-24 사장님 「화면에서 쏘는 걸 보는 거지 우주선이 있을 필요가 없다」) — 포대는 창턱 위에
                 TBox(TW(640, 720 - 34 * q), 1800 * q, 68 * q, 0, panel, -12); TBox(TW(640, 720 - 68 * q), 1800 * q, 2 * q, 0, edge, -11);
+                if (consoleSpr == null && !consoleTried) { consoleTried = true; consoleSpr = Resources.Load<Sprite>("ship/console"); mountSpr = Resources.Load<Sprite>("ship/mount"); }
+                if (consoleSpr != null)
+                {   // 🛠 도트 계기판 — 창턱을 따라 이어 붙인다 (09-24 사장님 10 · 28번 「우주선에서 공격하는 느낌」)
+                    float tw = 68 * q * consoleSpr.bounds.size.x / consoleSpr.bounds.size.y;
+                    for (int k = -4; k <= 4; k++) TSprite(consoleSpr, TW(640 + k * tw, 720 - 34 * q), tw, 0, -11);
+                }
+                if (mountSpr != null) TSprite(mountSpr, TW((float)M[0], (float)M[1]) + new Vector3(0, -12 * TK, 0), 64, 0, -1);
                 var ts = TurSprite(w);
                 if (ts != null)                                                            // 🔫 픽셀랩 포대 그림 (위를 보는 그림 → -90°)
                 {
@@ -1156,6 +1164,7 @@ namespace SalvageRun.Orbit
         }
 
         // 🔫 산 무기마다 창턱에 포대 하나 — 가운데 기본 빔 둘레로 좌우 번갈아 (09-24 사장님 전탄 B안 「여러 곳에서 쏘는 느낌」)
+        static Sprite consoleSpr, mountSpr; static bool consoleTried;
         int curW;                                                                     // 지금 쏘는 무기 — 발동 신호가 먼저 와서 효과가 그 포대에서 나간다
         readonly Vector3[] wTgt = new Vector3[9]; readonly float[] wRec = new float[9];
         Vector3 WTurretPos(int w)
@@ -1174,7 +1183,8 @@ namespace SalvageRun.Orbit
                 wRec[w] = Mathf.Max(0, wRec[w] - dt * 6);
                 if (!sim.WeaponOwned(w)) continue;
                 var b = WTurretPos(w); float a = WTurretAng(w, b); var ts = TurSprite(w);
-                TBox(b + new Vector3(0, -10 * TK, 0), 58, 14, 0, edge, -2); TBox(b + new Vector3(0, -10 * TK, 0), 54, 10, 0, Dark, -1);   // 받침
+                if (mountSpr != null) TSprite(mountSpr, b + new Vector3(0, -12 * TK, 0), 64, 0, -1);                         // 도트 받침
+                else { TBox(b + new Vector3(0, -10 * TK, 0), 58, 14, 0, edge, -2); TBox(b + new Vector3(0, -10 * TK, 0), 54, 10, 0, Dark, -1); }
                 if (ts != null) TSprite(ts, TAlong(b, a, -wRec[w] * 7), TurW[w] * 0.85f, a - up, 2);
                 else { TDisc(b, 14, Dark, 0); TBarrel(b, a, 50, 10, WeaponCol(w), wRec[w]); }
                 if (wRec[w] > 0) TDisc(TAlong(b, a, TurW[w] * 0.8f), 10 + 14 * wRec[w], new Color(WeaponCol(w).r, WeaponCol(w).g, WeaponCol(w).b, wRec[w] * 0.8f), 4, glow);

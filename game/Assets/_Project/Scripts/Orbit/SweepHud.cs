@@ -118,7 +118,7 @@ namespace SalvageRun.Orbit
                 if (loanOpen || lottoOpen) { } else if (flow == 2) Go(); else if (flow == 3 || flow == 4) GoFlow(2); else flow = 2;   // Space — 결과 · 정비소 → 조종실, 조종실 → 출동
             }
             if (sim.R.over && paidT < 2.4f) NavKeys(kb);                 // ← → 조종실 양옆 방
-            if (kb != null && kb.escapeKey.wasPressedThisFrame) { if (partsOpen) partsOpen = false; else if (lottoOpen) lottoOpen = false; else if (loanOpen) { loanOpen = false; pendLoan = 0; } else if (newsOpen) newsOpen = false; else bayOpen = false; }
+            if (kb != null && kb.escapeKey.wasPressedThisFrame) { if (settingsOpen) settingsOpen = false; else if (partsOpen) partsOpen = false; else if (lottoOpen) lottoOpen = false; else if (loanOpen) { loanOpen = false; pendLoan = 0; } else if (newsOpen) newsOpen = false; else bayOpen = false; }
         }
 
         void OnGUI()
@@ -134,7 +134,7 @@ namespace SalvageRun.Orbit
             else if (sim.R.over)
             {
                 if (flow == 0) flow = 2;                                // 켜자마자 · 파산 뒤 = 조종실
-                GUI.enabled = !loanOpen && !lottoOpen && !newsOpen;             // 모달 뒤 버튼 막음 — 뉴스 닫기가 뒤 전광판에 먹혀 다시 열렸다 (09-24 27번)
+                GUI.enabled = !loanOpen && !lottoOpen && !newsOpen && !settingsOpen;             // 모달 뒤 버튼 막음 — 뉴스 닫기가 뒤 전광판에 먹혀 다시 열렸다 (09-24 27번)
                 if (flow == 1) FlowResult(); else Strip();                    // 정비고 ← 조종실 → 증권 (좌우로 밀린다)
                 GUI.enabled = true;
                 if (loanOpen) LoanWin();
@@ -145,7 +145,7 @@ namespace SalvageRun.Orbit
             RepayOverlay();
             if (sim.Mk != null) { StockFxOverlay(); if (sim.StockOpen) AnchorBox(); }
             BuyFxDraw();                                               // ✨ 칸 · 부품 · 1면 연출 (어느 화면이든)   // 📈 증권 연출 · 🎙 속보 앵커                                            // 💸 빚 갚기 연출
-            if (!sim.M.won && !(sim.R.over && (flow == 2 || flow == 4))) Ticker();          // 조종실엔 궤도일보 모니터가 있다 — 아래 한 줄과 겹친다
+            if (!sim.M.won && sim.R.over && !(flow == 2 || flow == 4)) Ticker();          // 출동 중엔 계기판 위라 안 그림 — 속보는 앵커가 읽는다          // 조종실엔 궤도일보 모니터가 있다 — 아래 한 줄과 겹친다
             ActCard();
             VolumeButton();
         }
@@ -164,31 +164,88 @@ namespace SalvageRun.Orbit
             GUI.color = Color.white;
         }
 
-        // 🔊 소리 크기 — 오른쪽 위 구석, 누를 때마다 100 → 70 → 40 → 15 → 끔 (09-24 친구들 「소리 줄이는 것」). M = 음소거는 그대로
-        static readonly float[] VolSteps = { 1f, 0.7f, 0.4f, 0.15f, 0f };
-        float vol = -1;
-        void VolumeButton()
+        // ⚙ 설정 — 늘 오른쪽 위 (09-24 사장님 18번 「소리 설정 버튼 · 항상 오른쪽 위」). 시안 https://claude.ai/artifact/CthkM2c8KDnFcaxG8m5zJt
+        public bool settingsOpen;
+        float vol = -1, sfxVol = 1; int shakeLv, flashLv;
+        static readonly float[] ShakeLvMul = { 1f, 0.4f, 0f }, FlashLvMul = { 1f, 0.35f };
+        void LoadSettings()
         {
-            if (vol < 0) { vol = PlayerPrefs.GetFloat("orbit.vol", 0.7f); AudioListener.volume = vol; }
-            var r = new Rect(vw - 70, 8, 62, 22);
+            vol = PlayerPrefs.GetFloat("orbit.vol", 0.7f); sfxVol = PlayerPrefs.GetFloat("orbit.sfx", 1f);
+            shakeLv = PlayerPrefs.GetInt("orbit.shake", 0); flashLv = PlayerPrefs.GetInt("orbit.flash", 0);
+            ApplySettings();
+        }
+        void ApplySettings()
+        {
+            AudioListener.volume = vol; OrbitSfx.SfxVol = sfxVol;
+            SweepGame.ShakeMul = ShakeLvMul[Mathf.Clamp(shakeLv, 0, 2)]; SweepGame.FlashMul = FlashLvMul[Mathf.Clamp(flashLv, 0, 1)];
+            reduceMotion = shakeLv == 2;
+        }
+        void SaveSettings()
+        {
+            PlayerPrefs.SetFloat("orbit.vol", vol); PlayerPrefs.SetFloat("orbit.sfx", sfxVol);
+            PlayerPrefs.SetInt("orbit.shake", shakeLv); PlayerPrefs.SetInt("orbit.flash", flashLv); PlayerPrefs.Save();
+            ApplySettings();
+        }
+        void VolumeButton()                                                     // 이름은 그대로 — 이제 ⚙ 설정 단추
+        {
+            if (vol < 0) LoadSettings();
+            var r = new Rect(vw - 58, 8, 50, 22);
             bool ov = r.Contains(Event.current.mousePosition);
-            GUI.color = ov ? new Color(0.16f, 0.19f, 0.25f, 0.95f) : new Color(0.08f, 0.1f, 0.13f, 0.85f); GUI.DrawTexture(r, white); Frame(r, new Color(0.3f, 0.34f, 0.42f), 1); GUI.color = Color.white;
-            GUI.Label(r, "<size=12><color=#c8d0dc>" + (vol <= 0 ? "소리 끔" : "소리 " + Mathf.RoundToInt(vol * 100) + "%") + "</color></size>", center);
-            if (GUI.Button(r, GUIContent.none, GUIStyle.none))
+            GUI.color = settingsOpen || ov ? new Color(0.24f, 0.19f, 0.08f, 0.95f) : new Color(0.08f, 0.1f, 0.13f, 0.85f); GUI.DrawTexture(r, white);
+            Frame(r, settingsOpen ? SweepGame.Amber : new Color(0.3f, 0.34f, 0.42f), 1); GUI.color = Color.white;
+            GUI.Label(r, "<size=12><color=" + (settingsOpen ? "#ffdf95" : "#c8d0dc") + ">설정</color></size>", center);
+            if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { settingsOpen = !settingsOpen; OrbitSfx.Play("tick", 0.8f); }
+            if (settingsOpen) SettingsWin();
+        }
+        void SettingsWin()
+        {
+            GUI.color = new Color(0, 0, 0, 0.55f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
+            var w = new Rect(vw / 2 - 250, 110, 500, 330);
+            GUI.color = new Color(0.043f, 0.063f, 0.09f, 0.98f); GUI.DrawTexture(w, white); Frame(w, SweepGame.Amber, 2); GUI.color = Color.white;
+            GUI.Label(new Rect(w.x + 22, w.y + 14, 200, 30), "<size=20><b><color=#ffdf95>설정</color></b></size>", label);
+            if (GUI.Button(new Rect(w.xMax - 104, w.y + 14, 88, 26), "<size=12>닫기 Esc</size>", btn)) settingsOpen = false;
+            float y = w.y + 62;
+            bool changed = false;
+            void Slider(string name, ref float v)
             {
-                int i = 0; for (int k = 0; k < VolSteps.Length; k++) if (Mathf.Abs(VolSteps[k] - vol) < 0.01f) i = k;
-                vol = VolSteps[(i + 1) % VolSteps.Length]; AudioListener.volume = vol;
-                PlayerPrefs.SetFloat("orbit.vol", vol); PlayerPrefs.Save(); OrbitSfx.Play("tick", 0.8f);
+                GUI.Label(new Rect(w.x + 24, y, 140, 24), "<size=14>" + name + "</size>", label);
+                var sr = new Rect(w.x + 170, y + 9, 230, 8);
+                GUI.DrawTexture(sr, texBar); GUI.color = SweepGame.Amber; GUI.DrawTexture(new Rect(sr.x, sr.y, sr.width * v, sr.height), white);
+                GUI.color = new Color(1f, 0.87f, 0.58f); GUI.DrawTexture(new Rect(sr.x + sr.width * v - 6, sr.y - 4, 12, 16), white); GUI.color = Color.white;
+                GUI.Label(new Rect(sr.xMax + 10, y, 60, 24), "<size=13>" + Mathf.RoundToInt(v * 100) + "%</size>", label);
+                var hit = new Rect(sr.x - 8, y, sr.width + 16, 26); var e = Event.current;
+                if ((e.type == EventType.MouseDown || e.type == EventType.MouseDrag) && e.button == 0 && hit.Contains(e.mousePosition)) { v = Mathf.Clamp01((e.mousePosition.x - sr.x) / sr.width); v = Mathf.Round(v * 20) / 20f; changed = true; e.Use(); }
+                y += 40;
             }
+            int Pick(string name, int cur, string[] opts)
+            {
+                GUI.Label(new Rect(w.x + 24, y, 140, 24), "<size=14>" + name + "</size>", label);
+                for (int k = 0; k < opts.Length; k++)
+                    if (GUI.Button(new Rect(w.x + 170 + k * 84, y, 80, 26), "<size=12>" + (k == cur ? "<color=#ffdf95>" + opts[k] + "</color>" : opts[k]) + "</size>", k == cur ? btn : btnOff)) { cur = k; changed = true; OrbitSfx.Play("tick", 0.6f); }
+                y += 40; return cur;
+            }
+            Slider("전체 소리", ref vol);
+            Slider("효과음", ref sfxVol);
+            shakeLv = Pick("화면 흔들림", shakeLv, new[] { "켬", "줄임", "끔" });
+            flashLv = Pick("번쩍임", flashLv, new[] { "켬", "줄임" });
+            int fs = Screen.fullScreenMode == FullScreenMode.Windowed ? 1 : 0;
+            int nf = Pick("화면", fs, new[] { "전체 화면", "창" });
+            if (nf != fs && !Application.isEditor)
+            {
+                if (nf == 0) Screen.SetResolution(Display.main.systemWidth, Display.main.systemHeight, FullScreenMode.FullScreenWindow);
+                else Screen.SetResolution(Mathf.RoundToInt(Display.main.systemWidth * 0.75f), Mathf.RoundToInt(Display.main.systemHeight * 0.75f), FullScreenMode.Windowed);
+            }
+            GUI.Label(new Rect(w.x + 24, w.yMax - 30, w.width - 48, 20), "<size=11><color=#8a93a3>저장은 자동 · M = 소리 끄기 · Esc = 닫기</color></size>", label);
+            if (changed) SaveSettings();
         }
 
         // ───────────────────────────────── 연출 (도파민 사다리 §5)
 
-        int chainHund; float chainPopT;
+        int chainHund, chainTierSeen; float chainPopT;
         void Effects()
         {
             if (game.edgeGlow > 0.01f && !reduceMotion) { GUI.color = new Color(1f, 0.76f, 0.3f, game.edgeGlow * 0.22f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), texVignette); }
-            if (game.flash > 0.01f) { GUI.color = new Color(1f, 0.97f, 0.9f, game.flash * 0.3f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); }   // 흰 번쩍임 0.7 → 0.3 (블룸이 있어 화면이 하얗게 날아갔다)
+            if (game.flash > 0.01f) { GUI.color = new Color(1f, 0.97f, 0.9f, game.flash * 0.3f * SweepGame.FlashMul); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); }   // 흰 번쩍임 0.7 → 0.3 (블룸이 있어 화면이 하얗게 날아갔다)
             GUI.color = Color.white;
             var R = sim.R;
             if (!R.over && R.chain >= 10 && R.chainT > 0)
@@ -197,13 +254,24 @@ namespace SalvageRun.Orbit
                 // 200 넘으면 큰 글자는 200 · 500 · 1000 · 2000 · 5000 … 넘을 때만 1.5초 — 그 사이엔 위쪽 작은 계수기 (09-24: 콤보가 판 내내 가운데를 덮었다)
                 int ms = 0; for (long m = 200; m <= R.chain; m = m.ToString()[0] == '2' ? m * 5 / 2 : m * 2) ms++;   // 1-2-5 눈금
                 if (ms > chainHund) { chainHund = ms; chainPopT = 1.5f; }
+                if (tier > chainTierSeen) { chainTierSeen = tier; chainPopT = Mathf.Max(chainPopT, 1.2f); }
                 chainPopT -= Time.unscaledDeltaTime;
-                bool big = tier < 4 || chainPopT > 0;
-                chainSt.fontSize = big ? new[] { 0, 28, 40, 54, 72 }[tier] : 24;
-                chainSt.normal.textColor = tier >= 3 ? new Color(1f, 0.96f, 0.84f, Mathf.Min(1, (float)R.chainT * 2) * (big ? 1 : 0.85f)) : new Color(1f, 0.87f, 0.58f, Mathf.Min(1, (float)R.chainT * 2));
-                GUI.Label(big ? new Rect(vw / 2 - 300, 70, 600, 80) : new Rect(vw / 2 - 150, 34, 300, 30), "연쇄 ×" + R.chain, chainSt);
+                if (chainPopT > 0)
+                {   // 가운데 큰 글자 — 단계가 오를 때 · 고비를 넘을 때만 (09-24 사장님 9번 · 시안: 평소엔 오른쪽 위 계기)
+                    chainSt.fontSize = new[] { 0, 28, 40, 54, 72 }[tier];
+                    chainSt.normal.textColor = tier >= 3 ? new Color(1f, 0.96f, 0.84f, Mathf.Min(1, chainPopT * 2)) : new Color(1f, 0.87f, 0.58f, Mathf.Min(1, chainPopT * 2));
+                    GUI.Label(new Rect(vw / 2 - 300, 70, 600, 80), "연쇄 ×" + R.chain, chainSt);
+                }
+                var cg = new Rect(vw - 150, 38, 138, 50);
+                GUI.color = new Color(0.05f, 0.06f, 0.09f, 0.85f * Mathf.Min(1, (float)R.chainT * 3)); GUI.DrawTexture(cg, white);
+                Frame(cg, new Color(1f, 0.76f, 0.35f, (0.25f + 0.5f * Mathf.Clamp01(chainPopT)) * Mathf.Min(1, (float)R.chainT * 3)), 1);
+                GUI.color = new Color(1, 1, 1, Mathf.Min(1, (float)R.chainT * 3));
+                GUI.Label(new Rect(cg.x + 8, cg.y + 4, 60, 18), "<size=11><color=#8a93a3>연쇄</color></size>", label);
+                GUI.Label(new Rect(cg.x + 8, cg.y + 1, cg.width - 16, 26), "<size=" + (17 + tier) + "><b><color=#ffdf95>" + R.chain + "</color></b></size>", cost);
+                GUI.Label(new Rect(cg.x + 8, cg.y + 31, cg.width - 16, 18), "<size=10><color=#8a93a3>최고 " + Mathf.Max(R.chainBest, sim.M.bestChain) + "</color></size>", cost);
+                GUI.color = Color.white;
             }
-            else chainHund = 0;
+            else { chainHund = 0; chainTierSeen = 0; }
             if (game.kessT > 0)
             {
                 chainSt.fontSize = game.kessText == "케슬러!" ? 30 : 44; chainSt.normal.textColor = new Color(1f, 0.6f, 0.3f, Mathf.Min(1, game.kessT * 1.5f));
@@ -330,30 +398,29 @@ namespace SalvageRun.Orbit
                 Item("청구서", KNum.Fmt(sim.BillAmount) + " · " + S.billDue + "판" + (S.debt > 0 ? " <color=#ee7766>빚 상환 " + Mathf.RoundToInt((float)sim.Cut * 100) + "%</color>" : ""), label);
             // 💰 이번 판 계산대 — 계기판 위, 포구 오른쪽. 금화가 여기로 날아와 한 숫자로 (시안 DbsvFEEy1K5ddbZsM61B2y)
             {
-                var tr = new Rect(vw - 284, RefH - 112, 150, 40);                     // 주식 단추 위 (가운데는 청소선 자리)
+                var tr = new Rect(vw - 312, RefH - 50, 170, 38);                      // 🟩 계기판 속 액정 (09-24 10 · 28번)
                 TallyScreen = new Vector2(tr.center.x * scale, Screen.height - tr.center.y * scale);
                 float pu = game.tallyPulse;
-                GUI.color = new Color(0.063f, 0.082f, 0.114f, 0.95f); GUI.DrawTexture(tr, white);
-                Frame(tr, Color.Lerp(new Color(0.17f, 0.2f, 0.26f), new Color(1f, 0.76f, 0.35f), pu), 1); GUI.color = Color.white;
-                GUI.Label(new Rect(tr.x, tr.y + 2, tr.width, 16), "<size=11><color=#7f8b9c>이번 판</color></size>", center);
-                GUI.Label(new Rect(tr.x, tr.y + 15, tr.width, 24), "<size=" + (17 + Mathf.RoundToInt(pu * 4)) + "><b><color=#ffc35a>" + (game.runTally > 0 ? "+" + KNum.Fmt(game.runTally) : "—") + "</color></b></size>", center);
+                Lcd(tr, pu);
+                GUI.Label(new Rect(tr.x + 8, tr.y + 2, tr.width, 14), "<size=10><color=#5fa37d>이번 판</color></size>", label);
+                GUI.Label(new Rect(tr.x, tr.y + 14, tr.width - 8, 24), "<size=" + (15 + Mathf.RoundToInt(pu * 3)) + "><b><color=#ffc35a>" + (game.runTally > 0 ? "+" + KNum.Fmt(game.runTally) : "—") + "</color></b></size>", cost);
             }
             GUI.Label(new Rect(x, 14, 40, 20), "연료", dim);
             GUI.DrawTexture(new Rect(x + 34, 19, 160, 9), texBar);
             float fk = Mathf.Clamp01((float)(R.fuel / R.max));
             GUI.DrawTexture(new Rect(x + 34, 19, 160 * fk, 9), R.fuel < 6 ? texRed : texAmber);
             x += 210;
-            if (R.maxShots > 0 && sim.HoleChance > 0)
+            if (false && R.maxShots > 0 && sim.HoleChance > 0)                     // 위 줄 덜기 — 블랙홀 %는 칸 툴팁으로 (09-24 9번)
             {
                 GUI.Label(new Rect(x, 14, 200, 20), "블랙홀 <color=#b69cff>자동 " + (sim.HoleChance * 100).ToString("0.#") + "%</color>" + (R.holding ? "  <color=#b69cff>● 열림</color>" : ""), dim);
             }
-            GUI.Label(new Rect(vw - 404, 14, 316, 20), "주식회사 궤도 청소부 (" + sim.M.company + "대) · " + SweepSim.Orbits[S.orbit].name, cost);
+            GUI.Label(new Rect(vw - 264, 14, 196, 20), "<color=#8a93a3>" + SweepSim.Orbits[S.orbit].name + "</color>", cost);   // 회사 이름은 조종실에만 — 행성 이름만 작게
             if (R.holding)
             {
                 float k = Mathf.Clamp01((float)R.packed.Count / Mathf.Max(1, sim.Cap));
-                GUI.DrawTexture(new Rect(vw - 200, 42, 186, 8), texBar);
-                GUI.color = k > 0.8f ? SweepGame.Red : SweepGame.Violet; GUI.DrawTexture(new Rect(vw - 200, 42, 186 * k, 8), white); GUI.color = Color.white;
-                GUI.Label(new Rect(vw - 330, 52, 316, 18), "압축 " + R.packed.Count + " / 붕괴 " + sim.Cap, cost);
+                GUI.DrawTexture(new Rect(vw - 200, 90, 186, 8), texBar);
+                GUI.color = k > 0.8f ? SweepGame.Red : SweepGame.Violet; GUI.DrawTexture(new Rect(vw - 200, 90, 186 * k, 8), white); GUI.color = Color.white;
+                GUI.Label(new Rect(vw - 330, 100, 316, 18), "압축 " + R.packed.Count + " / 붕괴 " + sim.Cap, cost);
             }
             AutoSwitch();
             if (sim.StockOpen) StockSwitch();
@@ -1118,7 +1185,7 @@ namespace SalvageRun.Orbit
                 GUI.color = Color.white;
             }
             // 🧪 시험용 작은 단추 — 오른쪽 아래 구석 (09-24 사장님 「오토 제거, 테스트할 겸 버튼만」) · 키보드 A 그대로
-            var r = new Rect(vw - 76, RefH - 22, 68, 16);
+            var r = new Rect(vw - 134, RefH - 68, 92, 14);
             overAuto = r.Contains(Event.current.mousePosition);
             GUI.color = on ? new Color(0.3f, 0.21f, 0.06f, 0.85f) : new Color(0.05f, 0.05f, 0.08f, 0.6f); GUI.DrawTexture(r, white); GUI.color = Color.white;
             GUI.Label(r, "<size=9><color=" + (on ? "#ffdf95" : "#4a5260") + ">시험 · 자동 " + (on ? "켬" : "끔") + "</color></size>", center);
@@ -1128,15 +1195,21 @@ namespace SalvageRun.Orbit
         // 📈 주식 — 판 화면 오른쪽 아래 [주식] (키보드 S), 조종실 [증권]. 켜면 오른쪽에 주식 창 (사장님 「오토 도는 동안 주식창 On/Off」)
         public bool stockOpen, overStock;
         public Rect StockRect => new Rect(vw - 478, 54, 466, 470);
+        void Lcd(Rect r, float glow)                                            // 🟩 계기판 액정 — 어두운 초록 · 안쪽 그림자
+        {
+            GUI.color = new Color(0.02f, 0.03f, 0.03f, 0.95f); GUI.DrawTexture(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), white);
+            GUI.color = new Color(0.035f, 0.09f, 0.06f, 0.97f); GUI.DrawTexture(r, white);
+            GUI.color = new Color(0.44f, 0.81f, 0.59f, 0.06f); for (float yy = r.y + 2; yy < r.yMax; yy += 3) GUI.DrawTexture(new Rect(r.x, yy, r.width, 1), white);
+            Frame(r, Color.Lerp(new Color(0.16f, 0.26f, 0.2f), new Color(1f, 0.76f, 0.35f), glow), 1); GUI.color = Color.white;
+        }
         void StockSwitch()
         {
-            var r = new Rect(vw - 142 - 132, RefH - 70, 124, 46);
+            var r = new Rect(vw - 134, RefH - 50, 92, 38);
             bool on = stockOpen, ov = r.Contains(Event.current.mousePosition);
-            GUI.color = on ? new Color(0.08f, 0.22f, 0.14f, 0.95f) : new Color(0.05f, 0.05f, 0.08f, 0.9f); GUI.DrawTexture(r, white); GUI.color = Color.white;
-            Frame(r, on ? SweepGame.Green : new Color(0.3f, 0.3f, 0.36f), ov ? 3 : 2);
-            GUI.Label(new Rect(r.x, r.y + 2, r.width, 28), on ? "<size=20><b><color=#9ff0bf>주식</color></b></size>" : "<size=20><b><color=#5f6878>주식</color></b></size>", center);
+            Lcd(r, ov ? 0.6f : on ? 0.35f : 0);
+            GUI.Label(new Rect(r.x, r.y, r.width, 24), on ? "<size=16><b><color=#9ff0bf>주식</color></b></size>" : "<size=16><b><color=#5fa37d>주식</color></b></size>", center);
             double pl = 0; for (int i = 0; i < sim.Mk.M.st.Count; i++) { var st = sim.Mk.M.st[i]; pl += st.shares * st.price - st.cost; }
-            GUI.Label(new Rect(r.x, r.y + 26, r.width, 18), "<size=10>" + (sim.Mk.TotalValue() > 0 ? (pl >= 0 ? "<color=#ff5c5c>+" : "<color=#5494ff>") + KNum.Fmt(pl) + "</color>" : "<color=#5f6878>S</color>") + "</size>", center);
+            GUI.Label(new Rect(r.x, r.y + 20, r.width, 18), "<size=10>" + (sim.Mk.TotalValue() > 0 ? (pl >= 0 ? "<color=#ff5c5c>+" : "<color=#5494ff>") + KNum.Fmt(pl) + "</color>" : "<color=#5f6878>S</color>") + "</size>", center);
             if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { stockOpen = !stockOpen; OrbitSfx.Play("tick", 0.6f); }
             overStock = ov || (stockOpen && StockRect.Contains(Event.current.mousePosition));
             if (stockOpen) StockWin(StockRect);
