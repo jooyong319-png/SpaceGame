@@ -851,45 +851,21 @@ namespace SalvageRun.Orbit
         // ⚔ 무기 단추 — 정비고 왼쪽 위. 산 무기만 (무기고를 사야 보인다)
         int weaponDrop = -1;                                                  // 펼친 목록 — 0 주 무기 · 1 보조 무기
         /// <summary>⚔ 무기 고르기 — 평소엔 「무기 ▾」 한 칸, 누르면 산 무기 목록이 펼쳐진다 (아홉 개가 트리를 덮지 않게)</summary>
+        // 🔫 무기 효과판 — 산 무기와 발동 확률 (09-24: 무기를 골라 끼우던 목록을 없앴다)
         void WeaponBar(Rect r)
         {
-            if (sim.Lv("w_hub") <= 0) { weaponDrop = -1; return; }
-            bool two = sim.Lv("w_slot2") > 0;
-            for (int row = 0; row < (two ? 2 : 1); row++)
+            weaponDrop = -1;
+            if (sim.Lv("w_hub") <= 0) return;
+            var list = new System.Collections.Generic.List<int>();
+            for (int w = 1; w < SweepSim.ProcBase.Length; w++) if (sim.ProcChance(w) > 0) list.Add(w);
+            var b = new Rect(r.x, r.y, 190, 26 + 18 * System.Math.Max(1, list.Count));
+            GUI.color = new Color(0.07f, 0.08f, 0.11f, 0.94f); GUI.DrawTexture(b, white); Frame(b, new Color(0.25f, 0.28f, 0.34f), 1); GUI.color = Color.white;
+            GUI.Label(new Rect(b.x + 8, b.y + 3, 180, 20), "<size=12><color=#8a9bb3>공격 때 함께 터진다</color></size>", label);
+            if (list.Count == 0) GUI.Label(new Rect(b.x + 8, b.y + 22, 180, 18), "<size=12><color=#5f6878>산 무기가 없다</color></size>", label);
+            for (int i = 0; i < list.Count; i++)
             {
-                var b = new Rect(r.x, r.y + row * (r.height + 4), 190, r.height);
-                bool ov = b.Contains(Event.current.mousePosition), open = weaponDrop == row;
-                Color ac = row == 0 ? new Color(1f, 0.55f, 0.5f) : KeyCol;
-                GUI.color = open ? new Color(ac.r * 0.3f, ac.g * 0.2f, ac.b * 0.25f) : new Color(0.1f, 0.08f, 0.09f); GUI.DrawTexture(b, white);
-                Frame(b, ov || open ? ac : new Color(ac.r * 0.5f, ac.g * 0.45f, ac.b * 0.5f), ov || open ? 2 : 1);
-                int cur = row == 0 ? sim.Weapon : sim.S.weapon2;
-                string nm = cur < 0 ? "없음" : SweepSim.WeaponName[cur];
-                GUI.Label(new Rect(b.x + 8, b.y + 5, 60, 20), "<size=11><color=#" + ColorUtility.ToHtmlStringRGB(ac) + ">" + (row == 0 ? "무기" : "보조") + "</color></size>", label);
-                GUI.Label(new Rect(b.x + 44, b.y + 4, b.width - 60, 22), "<size=13><b><color=#ffe0da>" + nm + "</color></b></size>", label);
-                GUI.Label(new Rect(b.xMax - 22, b.y + 4, 18, 22), "<size=12><color=#8a9bb3>" + (open ? "▴" : "▾") + "</color></size>", label);
-                if (GUI.Button(b, GUIContent.none, GUIStyle.none)) { weaponDrop = open ? -1 : row; OrbitSfx.Play("tick", 0.4f); }
-            }
-            if (weaponDrop < 0) return;
-            // 펼친 목록 — 산 무기만
-            float y = r.y + (two ? 2 : 1) * (r.height + 4) + 2;
-            var items = new List<int>();
-            if (weaponDrop == 1) items.Add(-1);
-            for (int w = 0; w < SweepSim.WeaponName.Length; w++) if (sim.WeaponOwned(w) && !(weaponDrop == 1 && w == sim.Weapon)) items.Add(w);
-            var box = new Rect(r.x, y, 190, items.Count * 26 + 6);
-            GUI.color = new Color(0.06f, 0.05f, 0.06f, 0.97f); GUI.DrawTexture(box, white); Frame(box, new Color(0.35f, 0.25f, 0.24f), 1); GUI.color = Color.white;
-            for (int k = 0; k < items.Count; k++)
-            {
-                int w = items[k]; var it = new Rect(box.x + 3, box.y + 3 + k * 26, box.width - 6, 24);
-                bool on = weaponDrop == 0 ? sim.Weapon == w : sim.S.weapon2 == w, ov = it.Contains(Event.current.mousePosition);
-                if (on || ov) { GUI.color = on ? new Color(0.3f, 0.12f, 0.1f) : new Color(1, 1, 1, 0.06f); GUI.DrawTexture(it, white); GUI.color = Color.white; }
-                string desc = w < 0 ? "" : w == 0 ? "원형 타격" : SweepSim.Nodes[System.Array.IndexOf(SweepSim.IconOrder, SweepSim.WeaponNode[w]) >= 0 ? NodeIndex(SweepSim.WeaponNode[w]) : 0].desc;
-                GUI.Label(new Rect(it.x + 8, it.y + 3, 90, 20), "<size=12>" + (on ? "<b><color=#ffd0c8>" : "<color=#d8c8c0>") + (w < 0 ? "없음" : SweepSim.WeaponName[w]) + (on ? "</color></b>" : "</color>") + "</size>", label);
-                if (w >= 0) GUI.Label(new Rect(it.x + 82, it.y + 5, it.width - 88, 18), "<size=9><color=#6f6268>" + Clip(desc, 16) + "</color></size>", label);
-                if (!on && GUI.Button(it, GUIContent.none, GUIStyle.none))
-                {
-                    bool ok = weaponDrop == 0 ? sim.Equip(w) : sim.Equip2(w);
-                    if (ok) { OrbitSfx.Play("grab", 0.7f); BuyFx(it.center, weaponDrop == 0 ? new Color(1f, 0.55f, 0.5f) : KeyCol, false); weaponDrop = -1; }
-                }
+                int w = list[i]; var c = SweepGame.WeaponCol(w);
+                GUI.Label(new Rect(b.x + 8, b.y + 22 + i * 18, 180, 18), "<size=12><color=#" + ColorUtility.ToHtmlStringRGB(c) + ">● " + SweepSim.WeaponName[w] + "</color>  <b>" + Mathf.RoundToInt((float)sim.ProcChance(w) * 100) + "%</b></size>", label);
             }
         }
         static int NodeIndex(string id) { for (int i = 0; i < SweepSim.Nodes.Length; i++) if (SweepSim.Nodes[i].id == id) return i; return 0; }

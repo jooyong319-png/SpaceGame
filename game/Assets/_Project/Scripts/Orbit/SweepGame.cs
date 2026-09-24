@@ -183,7 +183,7 @@ namespace SalvageRun.Orbit
                 if (kb.sKey.wasPressedThisFrame && hud != null) { if (sim.R.over) { if (hud.flow == 2) hud.GoFlow(4); else if (hud.flow == 4) hud.GoFlow(2); } else if (sim.StockOpen) hud.stockOpen = !hud.stockOpen; }   // 📈 판 중 = 주식 창 · 조종실 = 증권 방
             }
             ReadAim();
-            sim.MarketTick(dt);                                             // 📈 시장은 늘 흐른다 (판 중이든 조종실이든)
+            if (sim.R != null && !sim.R.over) sim.MarketTick(dt);          // 📈 시장은 출동 중에만 흐른다 (09-24 사장님 「끝난 상태에선 움직이지 않게」)
             if (!sim.R.over)
             {
                 float sdt = dt * timeScale;
@@ -312,7 +312,7 @@ namespace SalvageRun.Orbit
                     && System.Math.Abs(e.x - sim.ShipX) < 2 && System.Math.Abs(e.y - sim.ShipY) < 2)
                 {
                     var mw = PxToWorld(e.x, e.y); var nt = ShotFrom(); e.x = 480 + nt.x * PxPerUnit; e.y = 310 - nt.y * PxPerUnit;
-                    if (e.kind == SwEv.Laser || e.kind == SwEv.Rail) { e.x2 += e.x - (480 + mw.x * PxPerUnit); e.y2 += e.y - (310 - mw.y * PxPerUnit); }
+                    if ((e.kind == SwEv.Laser && (e.k & 64) == 0) || e.kind == SwEv.Rail) { e.x2 += e.x - (480 + mw.x * PxPerUnit); e.y2 += e.y - (310 - mw.y * PxPerUnit); }   // 64 = 조준점에서 멈추는 빔
                 }
                 var at = PxToWorld(e.x, e.y);
                 switch (e.kind)
@@ -384,24 +384,45 @@ namespace SalvageRun.Orbit
                         bool fence = (e.k & 16) != 0, ice = (e.k & 32) != 0, sling = (e.k & 4) != 0;
                         Color hc = ice ? new Color(0.55f, 0.85f, 1f, 0.4f) : fence ? new Color(1f, 0.4f, 0.45f, 0.5f) : sling ? new Color(1f, 0.6f, 0.2f, 0.45f) : awk ? new Color(1f, 0.45f, 0.9f, 0.35f) : new Color(1f, 0.3f, 0.25f, 0.35f);
                         Color cc = ice ? new Color(0.9f, 0.98f, 1f, 1f) : fence ? new Color(1f, 0.75f, 0.75f, 1f) : cr ? new Color(1f, 1f, 0.8f, 1f) : new Color(1f, 0.85f, 0.8f, 0.95f);
+                        bool spot = (e.k & 64) != 0; float spotR = spot ? (float)e.v / PxPerUnit : 0;       // 64 = 조준점 원 (레이저 · 냉동)
+                        if (spot) w = ice ? 0.26f : 0.18f;
                         var halo = Add(pixel, s0, 0.05f, hc, 8, 0.13f); halo.a = s0; halo.b = s1; halo.size = w;
                         var core = Add(pixel, s0, 0.05f, cc, 8, 0.1f); core.a = s0; core.b = s1; core.size = Mathf.Max(0.04f, w * 0.22f);
+                        if (spot && !ice)
+                        {   // 🔴 태우는 점 — 조준점 원이 달아오른다
+                            Add(glow, s1, spotR * 2.6f, new Color(1f, 0.35f, 0.25f, 0.55f), 7, 0.12f);
+                            Add(glow, s1, spotR * 1.1f, new Color(1f, 0.95f, 0.85f, 0.9f), 7, 0.09f);
+                            if (Random.value < 0.5f) Add(pixel, s1, 0.07f, new Color(1f, 0.7f, 0.4f), 0, 0.3f).v = (Vector3)(Random.insideUnitCircle.normalized * Random.Range(1.5f, 3.5f));
+                        }
+                        if (spot && ice)
+                        {   // ❄ 서리 원 — 퍼지는 원 · 옅은 서리 · 눈송이
+                            Add(ring, s1, 0.1f, new Color(0.8f, 0.95f, 1f, 0.5f), 5, 0.3f, spotR * 2f);
+                            Add(glow, s1, spotR * 2.4f, new Color(0.6f, 0.88f, 1f, 0.28f), 7, 0.22f);
+                            for (int q = 0; q < 3; q++) { var fp = s1 + (Vector3)(Random.insideUnitCircle * spotR); Add(pixel, fp, 0.08f, new Color(0.9f, 0.98f, 1f), 0, 0.5f).v = (Vector3)(Random.insideUnitCircle * 0.6f); }
+                        }
                         if (cr && !fence) Star(s1, hc, 0.5f, 7, 0.16f);                             // 치명타 — 끝점에서 빛살
                         if (!fence && Random.value < 0.25f) OrbitSfx.PlayPitch("tick", 0.12f, ice ? 2.8f : 2.2f + Random.value * 0.3f);
                         break;
                     }
+                    case SwEv.Proc:
+                    {   // 🔫 확률 효과 발동 — 무기 이름이 조준점 위에 잠깐 · 포대가 그 색으로 번쩍
+                        int pw = (int)e.v; var pc = WeaponCol(pw);
+                        PopAt(e.x, e.y, SweepSim.WeaponName[pw] + "!", pc, 15);
+                        Add(glow, ShotFrom(), 1.1f * cam.orthographicSize / 6f, pc, 7, 0.18f).sr.sortingOrder = 150;
+                        break;
+                    }
                     case SwEv.Vac:
-                    {
-                        var s0 = PxToWorld(e.x, e.y); float ang = (float)e.v, half = (float)e.x2, rng2 = (float)e.y2 / PxPerUnit;
-                        // 🌀 부채꼴 — 밝은 테두리 둘 + 안쪽 옅은 살 넷 (09-24: 원뿔이 안 보였다)
-                        for (int q = -2; q <= 2; q++)
+                    {   // 🌀 소용돌이 — 조준점 원 테두리 · 안으로 휘어 드는 알갱이 · 포구로 흘러가는 줄기 (09-24)
+                        float R = (float)e.v / PxPerUnit; var mz = ShotFrom();
+                        Add(ring, at, R * 2f, new Color(0.45f, 0.95f, 0.85f, 0.35f), 7, 0.12f);
+                        Add(glow, at, R * 1.2f, new Color(0.3f, 0.8f, 0.75f, 0.18f), 7, 0.12f);
+                        for (int q = 0; q < 3; q++)
                         {
-                            bool edge = q == -2 || q == 2;
-                            float aa = ang + q * half * 0.5f; var tip = PxToWorld(e.x + Mathf.Cos(aa) * e.y2, e.y + Mathf.Sin(aa) * e.y2);
-                            var ln = Add(pixel, s0, 0.05f, edge ? new Color(0.75f, 0.95f, 1f, 0.55f) : new Color(0.6f, 0.85f, 1f, 0.07f), 8, 0.1f); ln.a = s0; ln.b = tip;
-                            ln.size = edge ? 0.07f : Mathf.Max(0.1f, rng2 * half * 0.5f);
+                            float aa = Random.value * 6.283f; var pp = at + new Vector3(Mathf.Cos(aa), Mathf.Sin(aa)) * R;
+                            var inward = (at - pp) * 2.2f + new Vector3(-Mathf.Sin(aa), Mathf.Cos(aa)) * R * 2.5f;   // 안으로 + 옆으로 = 휘어 든다
+                            Add(pixel, pp, 0.08f, new Color(0.7f, 1f, 0.95f, 0.9f), 0, 0.4f).v = inward;
                         }
-                        for (int n = 0; n < 2; n++) { float aa = ang + Random.Range(-half, half), dd = Random.Range(0.4f, 1f) * (float)e.y2; var p = Add(pixel, PxToWorld(e.x + Mathf.Cos(aa) * dd, e.y + Mathf.Sin(aa) * dd), 0.08f, new Color(0.85f, 1f, 1f, 1f), 0, 0.35f); p.v = (s0 - p.sr.transform.position) * 3f; }
+                        if (Random.value < 0.6f) { var sp = Add(pixel, at, 0.07f, new Color(0.6f, 1f, 0.9f, 0.8f), 0, 0.35f); sp.v = (mz - at) / 0.35f; }   // 빨아들인 것이 포구로
                         break;
                     }
                     case SwEv.Shell:
@@ -928,7 +949,7 @@ namespace SalvageRun.Orbit
             sim.MountPx(w, turFire, out _, out _, out var tx, out var ty);
             var p = PxToWorld(tx, ty); Add(glow, p, 0.9f * cam.orthographicSize / 6f, WeaponCol(w), 7, 0.1f).sr.sortingOrder = 150; return p;
         }
-        static Color WeaponCol(int w) => w switch { 1 => new Color(1f, 0.3f, 0.37f), 2 => new Color(0.62f, 0.85f, 1f), 3 => new Color(0.37f, 0.9f, 0.78f), 4 => new Color(1f, 0.6f, 0.24f), 5 => new Color(0.75f, 0.94f, 1f), 6 => new Color(1f, 0.82f, 0.4f), 7 => new Color(0.77f, 0.61f, 1f), 8 => Color.white, _ => new Color(1f, 0.76f, 0.35f) };
+        public static Color WeaponCol(int w) => w switch { 1 => new Color(1f, 0.3f, 0.37f), 2 => new Color(0.62f, 0.85f, 1f), 3 => new Color(0.37f, 0.9f, 0.78f), 4 => new Color(1f, 0.6f, 0.24f), 5 => new Color(0.75f, 0.94f, 1f), 6 => new Color(1f, 0.82f, 0.4f), 7 => new Color(0.77f, 0.61f, 1f), 8 => Color.white, _ => new Color(1f, 0.76f, 0.35f) };
         void DrawTurret(bool on)
         {
             turN = 0;
