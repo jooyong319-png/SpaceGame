@@ -422,15 +422,21 @@ namespace SalvageRun.Orbit
                         var halo = Add(pixel, s0, 0.05f, hc, 8, 0.13f); halo.a = s0; halo.b = s1; halo.size = w;
                         var core = Add(pixel, s0, 0.05f, cc, 8, 0.1f); core.a = s0; core.b = s1; core.size = Mathf.Max(0.04f, w * 0.22f);
                         if (spot && !ice)
-                        {   // 🔴 태우는 점 — 조준점 원이 달아오른다
-                            Add(glow, s1, spotR * 2.6f, new Color(1f, 0.35f, 0.25f, 0.55f), 7, 0.12f);
-                            Add(glow, s1, spotR * 1.1f, new Color(1f, 0.95f, 0.85f, 0.9f), 7, 0.09f);
+                        {   // 🔴 태우는 점 — 픽셀랩 끓는 점이 조준점에서 반복 (없으면 빛 번짐)
+                            LoadAnims();
+                            if (animBurn != null)
+                            {
+                                if (burnView == null) burnView = Make(animBurn[0], s1, 1f, Color.white, 59);
+                                burnView.transform.position = s1; burnView.transform.localScale = Vector3.one * spotR * 2.4f / animBurn[0].bounds.size.x; burnT = 0.18f;
+                            }
+                            else { Add(glow, s1, spotR * 2.6f, new Color(1f, 0.35f, 0.25f, 0.55f), 7, 0.12f); Add(glow, s1, spotR * 1.1f, new Color(1f, 0.95f, 0.85f, 0.9f), 7, 0.09f); }
                             if (Random.value < 0.5f) Add(pixel, s1, 0.07f, new Color(1f, 0.7f, 0.4f), 0, 0.3f).v = (Vector3)(Random.insideUnitCircle.normalized * Random.Range(1.5f, 3.5f));
                         }
                         if (spot && ice)
-                        {   // ❄ 서리 원 — 퍼지는 원 · 옅은 서리 · 눈송이
-                            Add(ring, s1, 0.1f, new Color(0.8f, 0.95f, 1f, 0.5f), 5, 0.3f, spotR * 2f);
-                            Add(glow, s1, spotR * 2.4f, new Color(0.6f, 0.88f, 1f, 0.28f), 7, 0.22f);
+                        {   // ❄ 서리 원 — 픽셀랩 얼음 폭발 (0.25초마다 한 번 · 없으면 원 + 서리)
+                            LoadAnims();
+                            if (animFrost != null) { if (Time.time - lastFrost > 0.25f) { lastFrost = Time.time; var fr = Make(animFrost[0], s1, spotR * 2.8f, Color.white, 58); frameFx.Add(new FrameFx { sr = fr, f = animFrost, fps = 18 }); } }
+                            else { Add(ring, s1, 0.1f, new Color(0.8f, 0.95f, 1f, 0.5f), 5, 0.3f, spotR * 2f); Add(glow, s1, spotR * 2.4f, new Color(0.6f, 0.88f, 1f, 0.28f), 7, 0.22f); }
                             for (int q = 0; q < 3; q++) { var fp = s1 + (Vector3)(Random.insideUnitCircle * spotR); Add(pixel, fp, 0.08f, new Color(0.9f, 0.98f, 1f), 0, 0.5f).v = (Vector3)(Random.insideUnitCircle * 0.6f); }
                         }
                         if (cr && !fence) Star(s1, hc, 0.5f, 7, 0.16f);                             // 치명타 — 끝점에서 빛살
@@ -497,7 +503,11 @@ namespace SalvageRun.Orbit
                         break;
                     }
                     case SwEv.Beam: { var p = Add(pixel, at, 0.05f, Cyan, 3, 0.16f); p.a = at; p.b = PxToWorld(e.x2, e.y2); break; }
-                    case SwEv.Ring: RingFx(at, e.k == 1 ? Red : e.k == 2 ? Mag : Orange, 0.45f, (float)e.v * 2 / PxPerUnit); break;
+                    case SwEv.Ring:
+                        LoadAnims();
+                        if (e.k == 2 && animMag != null) { var mg = Make(animMag[0], at, (float)e.v * 2.3f / PxPerUnit, Color.white, 58); frameFx.Add(new FrameFx { sr = mg, f = animMag, fps = 14 }); }   // 🧲 픽셀랩 자석 — 조여든다
+                        else RingFx(at, e.k == 1 ? Red : e.k == 2 ? Mag : Orange, 0.45f, (float)e.v * 2 / PxPerUnit);
+                        break;
                     case SwEv.Blast:
                         RingFx(at, Orange, 0.4f, (float)e.v * 2 / PxPerUnit);
                         Fireball(at, Mathf.Clamp((float)e.v / PxPerUnit * 0.6f, 0.25f, 1.1f));
@@ -521,6 +531,7 @@ namespace SalvageRun.Orbit
                     case SwEv.Collector: hud.Banner(e.text, -2, 3f); CollectorShip(); OrbitSfx.Play("warn", 1f); break;
                     case SwEv.RunEnd: Save(); hud.OnRunEnd(); break;
                     case SwEv.Overdue: OrbitSfx.Play("warn", 1f); break;
+                    case SwEv.Act: hud.ShowAct((int)e.v); flash = Mathf.Max(flash, 0.8f); shake = Mathf.Max(shake, 0.25f); OrbitSfx.Play("ending", 1f); OrbitSfx.Play("launch", 0.8f); Save(); break;
                     case SwEv.BillPaid: hud.OnBillPaid(e.text, (int)e.v); OrbitSfx.Play("unit", 1f); OrbitSfx.Play("buy", 1f, 0.01f); Save(); break;
                     case SwEv.Bankrupt: OrbitSfx.Play("lock", 1f); Save(); break;
                     case SwEv.News: hud.OnNews(e.text, e.k == 1); break;
@@ -967,7 +978,7 @@ namespace SalvageRun.Orbit
             return planetFrames[pi];
         }
         // 🎞 픽셀랩 애니메이션 (09-24) — 폭발 9장 · 소용돌이 9장 · 블랙홀 6장(튀는 3장 뺌)
-        static Sprite[] animExplode, animVortex, animHole;
+        static Sprite[] animExplode, animVortex, animHole, animFrost, animBurn, animMag;   // 서리 · 태우는 점 · 자석 (09-24 「공격 원 모양 다듬기」)
         static Sprite[] LoadAnim(string n, int[] idx) { var a = new Sprite[idx.Length]; for (int i = 0; i < idx.Length; i++) a[i] = Resources.Load<Sprite>("anim/" + n + "_" + idx[i]); return a[0] != null ? a : null; }
         void LoadAnims()
         {
@@ -975,10 +986,13 @@ namespace SalvageRun.Orbit
             animExplode = LoadAnim("explode", new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
             animVortex = LoadAnim("vortex", new[] { 0, 1, 2, 3, 4, 5, 6, 7 });
             animHole = LoadAnim("blackhole", new[] { 0, 1, 2, 6, 7, 8 });
+            animFrost = LoadAnim("frost", new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
+            animBurn = LoadAnim("burn", new[] { 0, 1, 2, 3, 4, 5, 6, 7 });
+            animMag = LoadAnim("magnet", new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
         }
         class FrameFx { public SpriteRenderer sr; public Sprite[] f; public float t, fps; }
         readonly List<FrameFx> frameFx = new List<FrameFx>();
-        SpriteRenderer vacView, holeAnim; float vacT;
+        SpriteRenderer vacView, holeAnim, burnView; float vacT, burnT, lastFrost;
         static readonly Sprite[] attPx = new Sprite[13]; static bool attTried;
         static Sprite AttPx(Att a)
         {
@@ -1123,6 +1137,11 @@ namespace SalvageRun.Orbit
                 var ff = frameFx[i]; ff.t += dt; int fi = (int)(ff.t * ff.fps);
                 if (fi >= ff.f.Length) { Destroy(ff.sr.gameObject); frameFx.RemoveAt(i); continue; }
                 ff.sr.sprite = ff.f[fi];
+            }
+            if (burnView != null)
+            {
+                burnT -= dt; burnView.enabled = burnT > 0 && sim.R != null && !sim.R.over;
+                if (burnView.enabled) burnView.sprite = animBurn[(int)(Time.time * 14) % animBurn.Length];
             }
             if (vacView != null)
             {

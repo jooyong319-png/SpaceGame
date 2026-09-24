@@ -778,6 +778,29 @@ namespace SalvageRun.Orbit
             GUI.Label(plate, "<size=10><b><color=#ffb3a8>" + pl + "</color></b></size>", center);
         }
 
+        // 🎬 막 전환 카드 — 화면 가운데 3.5초 (09-24 레벨 설계: 목성 = 2막 · 해왕성 = 3막)
+        int actN; float actT;
+        public void ShowAct(int n) { actN = n; actT = 3.5f; }
+        void ActCard()
+        {
+            if (actT <= 0) return;
+            actT -= Time.unscaledDeltaTime;
+            float k = Mathf.Clamp01((3.5f - actT) / 0.35f) * Mathf.Clamp01(actT / 0.6f);      // 들어오고 · 사라지고
+            float cy = RefH * 0.42f, h = 150 * k;
+            GUI.color = new Color(0, 0, 0, 0.72f * k); GUI.DrawTexture(new Rect(0, cy - h / 2, vw, h), white);
+            Color ac = actN == 2 ? new Color(1f, 0.76f, 0.35f) : new Color(0.55f, 0.75f, 1f);
+            GUI.color = new Color(ac.r, ac.g, ac.b, k); GUI.DrawTexture(new Rect(0, cy - h / 2, vw, 2), white); GUI.DrawTexture(new Rect(0, cy + h / 2 - 2, vw, 2), white);
+            float sweep = (3.5f - actT) * 900 % (vw + 400) - 200;                                  // 지나가는 빛줄기
+            GUI.color = new Color(ac.r, ac.g, ac.b, 0.25f * k); GUI.DrawTexture(new Rect(sweep, cy - h / 2, 120, h), white);
+            GUI.color = new Color(1, 1, 1, k);
+            string hex = ColorUtility.ToHtmlStringRGB(ac);
+            string t1 = actN == 2 ? "2막 · 외행성" : "3막 · 심우주";
+            string t2 = actN == 2 ? "외행성 면허 — 정비고 바깥 고리 16칸이 열렸다 · 곱하기 칸 · 무기 3단계" : "심우주 — 해왕성 너머 카이퍼 벨트까지 · 마지막 청구서가 기다린다";
+            GUI.Label(new Rect(0, cy - 48, vw, 60), "<size=40><b><color=#" + hex + ">" + t1 + "</color></b></size>", center);
+            GUI.Label(new Rect(0, cy + 16, vw, 26), "<size=15><color=#dfe6ef>" + t2 + "</color></size>", center);
+            GUI.color = Color.white;
+        }
+
         // ───────────────────────────────── 💸 빚 갚기 연출 (09-24 사장님 시안 확정)
         // 돈 → 빚 명세서로 동전 줄기 (닿을 때마다 짤랑 · 숫자 도르르) → 「상환」 도장 쾅 → 다 갚으면 「완납」 + 명세서가 부서지고 번쩍 · 큰 「완납!」
         // 판 끝 자동 상환(수입 30%)은 결산 화면에서 작은 명세서로 짧게

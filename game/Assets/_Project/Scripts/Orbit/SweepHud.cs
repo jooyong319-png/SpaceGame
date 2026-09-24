@@ -144,6 +144,7 @@ namespace SalvageRun.Orbit
             if (sim.Mk != null) { StockFxOverlay(); if (sim.StockOpen) AnchorBox(); }
             BuyFxDraw();                                               // ✨ 칸 · 부품 · 1면 연출 (어느 화면이든)   // 📈 증권 연출 · 🎙 속보 앵커                                            // 💸 빚 갚기 연출
             if (!sim.M.won && !(CockpitView && flow != 3)) Ticker();          // 조종실엔 궤도일보 모니터가 있다 — 아래 한 줄과 겹친다
+            ActCard();
             VolumeButton();
         }
 

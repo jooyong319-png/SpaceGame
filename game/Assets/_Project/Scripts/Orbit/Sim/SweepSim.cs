@@ -91,7 +91,7 @@ namespace SalvageRun.Orbit.Sim
         public double Earned => earnClaw + earnDrone + earnBlast;
     }
 
-    public enum SwEv { Supply, SupplyGet, Strike, Broke, Coin, Pop, Beam, Ring, Blast, Tier, Crit, Collapse, Warn, EventGo, Collector, Shatter, Release, RunEnd, BillPaid, Overdue, Bankrupt, News, Won, SkillReady, NodeBought, Laser, Bolt, Meteor, Tourist, Vac, Shell, Rail , Proc }
+    public enum SwEv { Supply, SupplyGet, Strike, Broke, Coin, Pop, Beam, Ring, Blast, Tier, Crit, Collapse, Warn, EventGo, Collector, Shatter, Release, RunEnd, BillPaid, Overdue, Bankrupt, News, Won, SkillReady, NodeBought, Laser, Bolt, Meteor, Tourist, Vac, Shell, Rail , Proc, Act }
 
     public struct SwEvent
     {
@@ -570,6 +570,9 @@ namespace SalvageRun.Orbit.Sim
         void PlanetBought(int i)
         {
             S.planets |= 1 << i;
+            // 🎬 막 전환 (09-24 레벨 설계) — 목성 = 2막 외행성 · 해왕성 = 3막 심우주
+            if (i == 3) { Emit(SwEv.Act, 0, 0, 2, 0, "2막 · 외행성"); AddNews(null, "외행성 면허 발급 — 청소선, 목성 너머로", "궤도청이 외행성 청소 면허를 내줬다. 정비고 바깥 고리가 열렸다는 소문이다."); }
+            if (i == 7) { Emit(SwEv.Act, 0, 0, 3, 0, "3막 · 심우주"); AddNews(null, "심우주 진입 — 해왕성 궤도에 민간 청소선", "태양이 점처럼 보이는 곳까지 왔다. 마지막 청구서가 기다린다."); }
             AddNews(null, Orbits[i].name + " 청소 허가 — 민간 청소선 첫 진입", "케슬러 금융이 " + Orbits[i].name + " 궤도 청소 허가증을 내줬다. " + Orbits[i].desc + ". 값은 지구의 " + Orbits[i].mult + "배라고 한다.");
             S.orbit = i; RollContract(); Preview();
             if (Mk != null && StockOpen) { string[] sec = { "", "달", "화성", "목성", "관광", "화성", "목성", "관광", "관광" }; Mk.GameEvent("민간 청소선 " + Orbits[i].name + " 진출", "궤도 청소부가 " + Orbits[i].name + " 청소 허가를 땄다. 관련 업계가 들썩인다.", new[] { sec[i], "ship" }, null, 0.14f); }
