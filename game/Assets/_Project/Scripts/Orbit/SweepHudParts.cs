@@ -16,6 +16,13 @@ namespace SalvageRun.Orbit
         struct FlyCard { public Rect a, b; public float t0; public Color c; public string txt; }
         readonly List<FlyCard> flyCards = new List<FlyCard>();
         readonly Rect[] slotRects = new Rect[5];
+        static readonly System.Collections.Generic.Dictionary<int, Texture2D> itemTex = new System.Collections.Generic.Dictionary<int, Texture2D>();
+        static Texture2D ItemTex(int id)                                     // 🖼 가게 물건 도트 (픽셀랩) — shop/part_N · cons_N · key
+        {
+            if (itemTex.TryGetValue(id, out var t)) return t;
+            string n = id == Parts.Key ? "shop/key" : SweepSim.IsCons(id) ? "shop/cons_" + (id - SweepSim.Cons0) : "shop/part_" + id;
+            t = Resources.Load<Texture2D>(n); itemTex[id] = t; return t;
+        }
 
         /// <summary>정비고 왼쪽 위 — [부품 가게] · 열쇠 수</summary>
         void PartsButton(Rect r)
@@ -59,9 +66,10 @@ namespace SalvageRun.Orbit
                 GUI.color = Color.white;
                 GUI.Label(new Rect(r.x, r.y + 2, r.width, 20), "<size=10><color=#8a9bb3>" + Parts.SlotName[i] + "</color></size>", center);
                 if (id < 0) { GUI.Label(new Rect(r.x, r.y + 30, r.width, 24), "<size=11><color=#3f4652>비어 있음</color></size>", center); continue; }
-                var d = Parts.Defs[id];
-                GUI.Label(new Rect(r.x + 6, r.y + 22, r.width - 12, 20), "<size=13><b><color=#" + ColorUtility.ToHtmlStringRGB(RarCol[d.rar]) + ">" + d.name + "</color></b></size>", center);
-                GUI.Label(new Rect(r.x + 8, r.y + 44, r.width - 16, 38), "<size=10><color=#c8d0dc>" + d.desc + "</color></size>", small);
+                var d = Parts.Defs[id]; var stx = ItemTex(id); float sx0 = stx != null ? 50 : 8;
+                if (stx != null) GUI.DrawTexture(new Rect(r.x + 4, r.y + 24, 44, 44), stx);
+                GUI.Label(new Rect(r.x + sx0, r.y + 22, r.width - sx0 - 6, 20), "<size=13><b><color=#" + ColorUtility.ToHtmlStringRGB(RarCol[d.rar]) + ">" + d.name + "</color></b></size>", label);
+                GUI.Label(new Rect(r.x + sx0, r.y + 44, r.width - sx0 - 6, 38), "<size=10><color=#c8d0dc>" + d.desc + "</color></size>", small);
             }
             // 🧃 다음 판 소모품
             string cons = (S.nFuel > 0 ? "연료 +" + S.nFuel + "초  " : "") + (S.nDmg > 0 ? "화력 +" + S.nDmg + "%  " : "") + (S.nVal > 0 ? "값 +" + S.nVal + "%" : "");
@@ -88,9 +96,11 @@ namespace SalvageRun.Orbit
                 string tag = key ? "핵심 칸을 여는 것" : cn ? "소모품 · 한 판" : Parts.RarName[Parts.Defs[id].rar] + " · " + Parts.SlotName[Parts.Defs[id].slot];
                 GUI.Label(new Rect(r.x + 12, r.y + 7, r.width - 24, 20), "<size=11><color=#" + ColorUtility.ToHtmlStringRGB(rc) + ">" + tag + "</color></size>", label);
                 string nm = key ? "양자 열쇠" : cn ? SweepSim.ConsName[id - SweepSim.Cons0] : Parts.Defs[id].name;
-                GUI.Label(new Rect(r.x + 12, r.y + 28, r.width - 24, 26), "<size=18><b><color=#ffffff>" + nm + "</color></b></size>", label);
+                var itx = ItemTex(id); float tx0 = itx != null ? 72 : 12;
+                if (itx != null) { GUI.color = new Color(1, 1, 1, 0.08f); GUI.DrawTexture(new Rect(r.x + 10, r.y + 28, 56, 56), texDisc); GUI.color = Color.white; GUI.DrawTexture(new Rect(r.x + 8, r.y + 26, 60, 60), itx); }
+                GUI.Label(new Rect(r.x + tx0, r.y + 28, r.width - tx0 - 12, 26), "<size=18><b><color=#ffffff>" + nm + "</color></b></size>", label);
                 string desc = key ? "◆ 보라 테두리 핵심 칸 하나를 연다" : cn ? SweepSim.ConsDesc[id - SweepSim.Cons0] : Parts.Defs[id].desc;
-                GUI.Label(new Rect(r.x + 12, r.y + 58, r.width - 24, 44), "<size=12><color=#c8d0dc>" + desc + "</color></size>", small);
+                GUI.Label(new Rect(r.x + tx0, r.y + 58, r.width - tx0 - 12, 44), "<size=12><color=#c8d0dc>" + desc + "</color></size>", small);
                 if (!key && !cn && S.parts != null && S.parts[Parts.Defs[id].slot] >= 0) GUI.Label(new Rect(r.x + 12, r.y + 100, r.width - 24, 20), "<size=10><color=#8a7f99>지금 " + Parts.Defs[S.parts[Parts.Defs[id].slot]].name + " → 바뀐다</color></size>", label);
                 double price = sim.ShelfPrice(k), full = sim.PartPrice(id); bool can = S.cash >= price;
                 var bb = new Rect(r.x + 12, r.yMax - 42, r.width - 24, 30);
