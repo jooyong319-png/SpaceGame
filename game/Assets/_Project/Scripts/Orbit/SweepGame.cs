@@ -46,7 +46,7 @@ namespace SalvageRun.Orbit
         class P { public SpriteRenderer sr; public Vector3 v, a, b; public float age, life, size; public Color c; public int kind; }
         readonly List<P> fx = new List<P>();
         readonly Stack<SpriteRenderer> pool = new Stack<SpriteRenderer>();
-        public class Pop { public Vector2 px; public string text; public Color c; public float age, size; }
+        public class Pop { public Vector2 px; public string text; public Color c; public float age, size; public double val; }
         public readonly List<Pop> pops = new List<Pop>();
 
         public static readonly Color Amber = new Color(0.95f, 0.76f, 0.31f), Amber2 = new Color(1f, 0.87f, 0.58f), Cyan = new Color(0.44f, 0.83f, 0.91f),
@@ -324,7 +324,7 @@ namespace SalvageRun.Orbit
                     {
                         int src = e.k % 10; bool cut = e.k >= 10;
                         Color c = src == 3 ? Red : cut ? new Color(0.9f, 0.65f, 0.6f) : Amber2;
-                        if (e.v >= 1 && (src == 3 || e.v > sim.ValMult * 20)) PopAt(e.x, e.y - 8, (src == 3 ? "빚 -" : "+") + KNum.Fmt(e.v), c, 14 + Mathf.Min(10, Mathf.Log10((float)e.v + 1) * 2));
+                        if (e.v >= 1 && (src == 3 || e.v > sim.ValMult * 20)) CoinPop(e.x, e.y - 8, src == 3 ? "빚 -" : "+", e.v, c);
                         if (Random.value < 0.6f) Add(disc, at, 0.11f, src == 3 ? Red : Amber, 2, 1.6f).v = (Vector3)(Random.insideUnitCircle * 3f);
                         break;
                     }
@@ -468,6 +468,21 @@ namespace SalvageRun.Orbit
             p.v = new Vector3(1040f / PxPerUnit / 3.2f, -0.2f, 0);
             var glowTail = Add(glow, PxToWorld(-70, 152), 0.9f, new Color(1f, 0.35f, 0.3f, 0.5f), 6, 3.2f);
             glowTail.v = p.v;
+        }
+
+        // 💰 값 숫자 — 가까이(45px) · 막(0.35초) 뜬 같은 색 숫자가 있으면 거기에 더한다 (09-24: +257 수십 개가 뭉쳐 글자 덩어리가 됐다)
+        void CoinPop(double x, double y, string pre, double v, Color c)
+        {
+            var at = new Vector2((float)x, (float)y);
+            for (int i = pops.Count - 1; i >= 0; i--)
+            {
+                var q = pops[i];
+                if (q.val <= 0 || q.age > 0.35f || q.c != c || (q.px - at).sqrMagnitude > 45 * 45) continue;
+                q.val += v; q.text = pre + KNum.Fmt(q.val); q.size = 14 + Mathf.Min(12, Mathf.Log10((float)q.val + 1) * 2); q.age = Mathf.Min(q.age, 0.2f);
+                return;
+            }
+            PopAt(x, y, pre + KNum.Fmt(v), c, 14 + Mathf.Min(10, Mathf.Log10((float)v + 1) * 2));
+            pops[pops.Count - 1].val = v;
         }
 
         public void PopAt(double x, double y, string text, Color c, float size)
