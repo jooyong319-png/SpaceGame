@@ -143,7 +143,14 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(1, 1, 1, fl);
             float x = p.x + 12, w = p.width - 24, y0 = p.y + 8;
             GUI.Label(new Rect(x, y0, w, 20), "<size=12><b><color=#bff4ff>KESSLER // 청구</color></b></size>", label);
-            if (M.cleanReady)
+            if (M.endless)
+            {   // ∞ 무한 궤도 — 청구서 자리에 층
+                GUI.Label(new Rect(x, y0 + 26, w, 20), "<size=12><color=#d8ccff>무한 궤도</color></size>", label);
+                GUI.Label(new Rect(x, y0 + 44, w, 44), "<size=34><b><color=#e6dcff>" + M.depth + "층</color></b></size>", label);
+                GUI.Label(new Rect(x, y0 + 92, w, 20), "<size=11><color=#bff4ff>최고 " + M.bestDepth + "층 · ★ " + M.legend + "</color></size>", label);
+                GUI.Label(new Rect(x, y0 + 116, w, 60), "<size=11><color=#7fcfe0>판이 끝날 때마다 한 층 아래로\n층마다 체력 ×1.25 · 값 ×1.2\n5층마다 열쇠 +1</color></size>", small);
+            }
+            else if (M.cleanReady)
             {
                 GUI.Label(new Rect(x, y0 + 50, w, 70), "<size=22><color=#9ff0bf>빚 청산!</color></size>\n<size=12><color=#bff4ff>청산 출동만 남았다</color></size>", center);
             }

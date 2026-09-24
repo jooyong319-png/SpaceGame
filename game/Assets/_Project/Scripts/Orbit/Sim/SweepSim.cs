@@ -60,6 +60,7 @@ namespace SalvageRun.Orbit.Sim
         public double credit, broken, playSeconds;
         public int[] career = new int[SweepSim.CareerCount];
         public int company = 1, bankrupt, loans, bestChain, bestPack, totalRuns, scoops;
+        public int legend, depth, bestDepth; public bool endless;          // ★ 전설 경력(청산마다) · ∞ 무한 궤도 층 (09-24 사장님 12 · 26번)
         public double bestAuc;                                           // 고철 경매 최고 배수
         public List<string> perm = new List<string>();                    // 🔑 ◆ 핵심 칸 — 파산해도 남는다 (09-24 사장님 「열쇠가 떡벽」 → 파산하면 강해진다)
         public bool won, careerOpen, cleanReady;
@@ -633,7 +634,7 @@ namespace SalvageRun.Orbit.Sim
         public double Grit => Lv("q_debt") > 0 && S.debt > 0 ? Math.Min(0.15, S.debt / Math.Max(1, BillAmount) * 0.1) : 0;   // ★ 빚쟁이의 근성
         public double Pow => ClawDmg * DmgMul;                                  // 무기 화력 (소수는 확률로)
         int RoundP(double v) => (int)v + (Rnd() < v - (int)v ? 1 : 0);
-        public double HpMul => ((1 + 0.45 * Math.Max(0, S.bill - 2)) * Orbits[S.orbit].hp) * (Lv("k_route") > 0 ? 1.2 : 1);   // 잔해 체력 배율 — 청구서 3장째부터 한 장마다 +45% (초반은 가볍게)
+        public double HpMul => ((1 + 0.45 * Math.Max(0, S.bill - 2)) * Orbits[S.orbit].hp) * (Lv("k_route") > 0 ? 1.2 : 1) * (M.endless ? Math.Pow(1.25, M.depth) : 1);   // 잔해 체력 배율 — 청구서 3장째부터 한 장마다 +45% (초반은 가볍게)
         public int BlastDmg => 2 + 2 * ClawDmg;                    // 폭발은 즉사가 아니라 피해
         public double Crit => 0.05 * Lv("c_crit") + Part("crit") + (Lv("x_claw_arm") > 0 ? 0.1 : 0);
         public int CritX => (Lv("x_claw_arm") > 0 ? 4 : 3) + Lv("m_crit");
@@ -656,11 +657,17 @@ namespace SalvageRun.Orbit.Sim
         public int ChainMax => R.clean ? 5000 : 40 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 15 * Lv("b_chain");
         // 🌪 모래 폭풍 (화성 · 해왕성) — 22초마다 4.5초. 값 ×1.5 · 왼쪽에서 고철이 몰려온다 (09-24 사장님 36번 「무의미함」)
         public bool StormOn => R != null && !R.over && !R.clean && Orbits[S.orbit].storm && R.t % 22.0 >= 15 && R.t % 22.0 < 19.5;
-        public double ValMult => (StormOn ? 1.5 : 1) * (R != null ? 1 + R.consVal / 100.0 : 1) * Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (Orbits[S.orbit].mult + (Lv("k_route") > 0 && S.orbit > 0 ? 0.5 : 0) + (S.orbit > 0 ? 0.05 * Lv("i_route") : 0)) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1) * (1 + 0.04 * Lv("i_eco")) * PlanetStockBonus * Math.Pow(1.5, Lv("m_val")) * Math.Pow(1.25, Lv("m_route"));
+        public double ValMult => (1 + 0.1 * M.legend) * (M.endless ? Math.Pow(1.2, M.depth) : 1) * (StormOn ? 1.5 : 1) * (R != null ? 1 + R.consVal / 100.0 : 1) * Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (Orbits[S.orbit].mult + (Lv("k_route") > 0 && S.orbit > 0 ? 0.5 : 0) + (S.orbit > 0 ? 0.05 * Lv("i_route") : 0)) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1) * (1 + 0.04 * Lv("i_eco")) * PlanetStockBonus * Math.Pow(1.5, Lv("m_val")) * Math.Pow(1.25, Lv("m_route"));
         public double PlanetStockBonus { get { if (Lv("x_eco_route") <= 0 || Mk == null || S.orbit == 0) return 1; string[] ids = { "", "moon", "mars", "jup", "sat", "", "", "", "" }; if (ids[S.orbit] == "") return 1; for (int i = 0; i < Market.Defs.Length && i < Mk.M.st.Count; i++) if (Market.Defs[i].id == ids[S.orbit] && Mk.M.st[i].shares > 0) return 1.2; return 1; } }   // 새 행성은 종목이 없다
         public double Cut => S.debt > 0 ? Math.Max(0.1, (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) - Part("cut")) : 0;   // 빚이 있으면 판 수입에서 떼어 상환
         // ── 대출 (연체 대신) — 언제든 받을 수 있다. 받은 돈 × 배수를 판 수입에서 조금씩 갚는다
         public static double LoanMult = 3;
+        public void EnterEndless()
+        {
+            M.won = false; M.endless = true; if (M.depth < 1) M.depth = 1; if (M.bestDepth < M.depth) M.bestDepth = M.depth;
+            S.orbit = MaxOrbit; RollContract(); Preview();
+            AddNews(null, "무한 궤도 개장 — 청소선, 끝없는 궤도로", "빚은 끝났다. 이제 누가 더 깊이 내려가는지만 남았다.");
+        }
         void CheckClean() { if (S.bill >= Bills.Length && S.debt <= 0.5) { S.debt = 0; M.cleanReady = true; } }   // 청구서도 빚도 다 갚아야 청산 출동
         public double LoanCap => M.cleanReady || S.bill >= Bills.Length - 1 ? 0 :   // 마지막 할부(완납)엔 대출이 안 된다 — 빚으로 빚을 끝내면 끝없이 갚기만 한다
              Math.Max(0, Math.Floor(BillAmount - S.debt / LoanMult));   // 한도 = 지금 청구서 금액 − 남은 원금
@@ -1101,7 +1108,7 @@ namespace SalvageRun.Orbit.Sim
         // ───────────────────────── 출동
         public void StartRun()
         {
-            if (!R.over || S.bill >= Bills.Length && !M.cleanReady && S.debt <= 0) return;   // 청구서를 다 갚아도 빚이 남았으면 갚으러 출동한다
+            if (!R.over || S.bill >= Bills.Length && !M.cleanReady && S.debt <= 0 && !M.endless) return;   // 청구서를 다 갚아도 빚이 남았으면 갚으러 출동한다
             bool clean = M.cleanReady;
             if (clean) S.orbit = MaxOrbit;
             S.runs++; S.rerolled = false;
@@ -2012,11 +2019,16 @@ namespace SalvageRun.Orbit.Sim
             r.over = true; M.totalRuns++;
             if (r.clean)
             {
-                M.won = true; M.cleanReady = false;
+                M.won = true; M.cleanReady = false; M.legend++;                   // ★ 전설 경력
                 M.history.Add(new PastCompany { company = M.company, bill = S.bill, runs = S.runs, minutes = (M.playSeconds - S.startedAt) / 60, won = true });
                 AddNews("clean");
                 Emit(SwEv.Won);
                 return;
+            }
+            if (M.endless)
+            {   // ∞ 무한 궤도 — 판이 끝날 때마다 한 층 아래로
+                M.depth++; if (M.depth > M.bestDepth) M.bestDepth = M.depth;
+                if (M.depth % 5 == 0) { S.keys++; AddNews(null, "무한 궤도 " + M.depth + "층 — 심연 보급", "깊은 궤도에서 낡은 열쇠 하나가 떠올랐다. (열쇠 +1)"); }
             }
             var c = CurContract;
             if (c != null) { r.contractText = c.Value.text; r.contractTarget = c.Value.target; r.contractProg = Math.Min(ContractProgress(r), c.Value.target); }

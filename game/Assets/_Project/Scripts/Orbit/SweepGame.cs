@@ -158,8 +158,10 @@ namespace SalvageRun.Orbit
                 m.news = old.news; m.history = old.history; m.bestChain = old.bestChain; m.bestPack = old.bestPack; m.scoops = old.scoops;
                 foreach (var f in old.flags) if (f.StartsWith("n:")) m.flags.Add(f);
                 m.company = old.company + 1;
+                m.legend = old.legend; m.bestDepth = old.bestDepth;               // ★ 전설 경력 · 무한 궤도 최고 층은 남는다
             }
             sim = new SweepSim(null, m);
+            if (keepRecords) sim.S.keys += m.legend;                             // ★ 하나당 처음 열쇠 +1
             Save();
         }
 

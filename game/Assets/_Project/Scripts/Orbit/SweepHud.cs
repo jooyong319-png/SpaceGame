@@ -1803,6 +1803,40 @@ namespace SalvageRun.Orbit
 
         // ───────────────────────────────── 엔딩 — 마지막 호외 → 결과판 (§9-5)
 
+        // 🎬 엔딩 크레딧 — 지구 둘레 쓰레기 0, 천천히 올라가는 글 (09-24 사장님 20번 · 시안). 누르거나 Space = 빨리
+        float creditT;
+        public void TestEnd(int st) { endStage = st; creditT = st == 2 ? 3 : 0; }   // 에디터 시험용
+        void Credits()
+        {
+            var M = sim.M;
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            bool fast = (kb != null && kb.spaceKey.isPressed) || (UnityEngine.InputSystem.Mouse.current != null && UnityEngine.InputSystem.Mouse.current.leftButton.isPressed);
+            creditT += Time.unscaledDeltaTime * (fast ? 6 : 1);
+            GUI.color = new Color(0, 0, 0, 0.55f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
+            double minutes = 0; foreach (var h in M.history) minutes += h.minutes;
+            string[,] rows =
+            {
+                { "", "<size=34><b><color=#ffdf95>궤도 청소부</color></b></size>" },
+                { "", "<color=#c8d0dc>오늘도 궤도는 깨끗합니다</color>" },
+                { "만든 사람", "사장님" },
+                { "함께 만든", "Claude" },
+                { "도트", "PixelLab" },
+                { "글꼴", "갈무리 (Galmuri)" },
+                { "엔진", "Unity" },
+                { "먼저 해 본 친구들", "고마워" },
+                { "기록", Mathf.RoundToInt((float)minutes) + "분 · 회사 " + M.company + "대 · 최고 연쇄 " + M.bestChain },
+                { "", "<color=#d8ccff>★ 전설 경력 " + M.legend + "</color>" },
+            };
+            float y = RefH + 20 - creditT * 42;
+            for (int i = 0; i < rows.GetLength(0); i++)
+            {
+                if (rows[i, 0].Length > 0) { GUI.Label(new Rect(0, y, vw, 18), "<size=11><color=#8a93a3>" + rows[i, 0] + "</color></size>", center); y += 20; }
+                GUI.Label(new Rect(0, y, vw, 40), "<size=20><b>" + rows[i, 1] + "</b></size>", center); y += 70;
+            }
+            GUI.Label(new Rect(vw - 320, RefH - 30, 222, 20), "<size=11><color=#5f6878>누르고 있으면 빨리</color></size>", cost);
+            if (GUI.Button(new Rect(vw - 90, RefH - 34, 80, 24), "<size=11>넘기기</size>", btnOff) || y < -40) endStage = 1;
+        }
+
         void Ending()
         {
             var M = sim.M;
@@ -1818,9 +1852,10 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(x, y, w, 90), "지구 둘레에 쓰레기가 하나도 없다. 주식회사 궤도 청소부 (" + M.company + "대)가 청소선 할부를 끝까지 갚고, 마지막 출동에서 궤도를 전부 치웠다. 케슬러 발사는 이번 분기 발사 계획이 없다고 밝혔다.", paperBody); y += 100;
                 if (M.scoops >= 6) { paperHead.fontSize = 24; GUI.Label(new Rect(x, y, w, 60), "케슬러 그룹, 궤도 사업 전면 철수", paperHead); y += 50; }
                 else GUI.Label(new Rect(x, y, w, 20), "(특종 " + M.scoops + " / 6 — 블랙박스를 더 모으면 한 줄이 더 붙는다)", paperSmall);
-                if (GUI.Button(new Rect(pr.center.x - 100, pr.yMax - 70, 200, 44), "결과 보기", bigBtn)) endStage = 1;
+                if (GUI.Button(new Rect(pr.center.x - 100, pr.yMax - 70, 200, 44), "다음", bigBtn)) { endStage = 2; creditT = 0; }
                 return;
             }
+            if (endStage == 2) { Credits(); return; }
             float cx = ox + 180, cw = 600;
             title.fontSize = 44; GUI.Label(new Rect(cx, 40, cw, 60), "빚 청산", title);
             GUI.Label(new Rect(cx, 102, cw, 22), "주식회사 궤도 청소부 (" + M.company + "대) — 청소선은 이제 조종사의 것이다", center);
@@ -1838,11 +1873,14 @@ namespace SalvageRun.Orbit
             for (int i = 0; i < M.history.Count && i < 8; i++)
             {
                 var h = M.history[i];
-                GUI.Label(new Rect(cx, 292 + i * 20, cw, 20), "(" + h.company + "대)  " + (h.won ? "<color=#ffdf95>빚 청산</color>" : SweepSim.Bills[Mathf.Min(h.bill, 7)].t + "에서 파산") + " · 출동 " + h.runs + " · " + Mathf.RoundToInt((float)h.minutes) + "분", label);
+                GUI.Label(new Rect(cx, 292 + i * 20, cw, 20), "(" + h.company + "대)  " + (h.won ? "<color=#ffdf95>빚 청산</color>" : SweepSim.Bills[Mathf.Min(h.bill, SweepSim.Bills.Length - 1)].t + "에서 파산") + " · 출동 " + h.runs + " · " + Mathf.RoundToInt((float)h.minutes) + "분", label);
             }
             GUI.Label(new Rect(cx, 470, cw, 20), "<color=#f2c14e>오늘도 궤도는 깨끗합니다.</color>", center);
-            if (GUI.Button(new Rect(cx + 90, 500, 200, 44), "새 회사로", bigBtn)) { game.NewGame(true); showResult = false; }
-            if (GUI.Button(new Rect(cx + 310, 506, 200, 32), "기록까지 모두 지우기", btn)) { game.WipeAll(); showResult = false; }
+            // ∞ 무한 궤도 · ★ 새 회사 (09-24 사장님 12 · 26번)
+            if (GUI.Button(new Rect(cx - 10, 500, 220, 44), "<color=#d8ccff>무한 궤도로 ▸</color>", bigBtn)) { sim.EnterEndless(); showResult = false; flow = 2; OrbitSfx.Play("launch", 0.8f); }
+            if (GUI.Button(new Rect(cx + 220, 500, 200, 44), "새 회사로 · ★" + M.legend, bigBtn)) { game.NewGame(true); showResult = false; }
+            if (GUI.Button(new Rect(cx + 430, 506, 180, 32), "<size=12>기록까지 모두 지우기</size>", btn)) { game.WipeAll(); showResult = false; }
+            GUI.Label(new Rect(cx, 552, cw, 18), "<size=11><color=#8a93a3>★ 전설 경력 " + M.legend + " — 다음 회사부터 모든 값 +" + (M.legend * 10) + "% · 처음 열쇠 +" + M.legend + "</color></size>", center);
         }
     }
 }
