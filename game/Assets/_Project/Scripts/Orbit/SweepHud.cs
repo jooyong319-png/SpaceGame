@@ -599,7 +599,7 @@ namespace SalvageRun.Orbit
             if (tally < 1)
             {
                 flyT -= Time.deltaTime;
-                if (flyT <= 0 && gained > 0) { flyT = 0.045f; flyers.Add(new Flyer { a = totalPos + new Vector2(Random.Range(-20f, 20f), 0), b = new Vector2(money.x + 40, money.center.y), txt = "+" + KNum.Fmt(System.Math.Max(1, System.Math.Round(gained / 30))) }); OrbitSfx.Play("coin", 0.25f, 0.04f, 0.15f); }
+                if (flyT <= 0 && gained > 0) { flyT = 0.1f; flyers.Add(new Flyer { a = totalPos + new Vector2(Random.Range(-20f, 20f), 0), b = new Vector2(money.x + 40, money.center.y), txt = "+" + KNum.Fmt(System.Math.Max(1, System.Math.Round(gained / 30))) }); OrbitSfx.Play("coin", 0.25f, 0.04f, 0.15f); }
             }
             for (int i = flyers.Count - 1; i >= 0; i--)
             {
@@ -607,7 +607,7 @@ namespace SalvageRun.Orbit
                 if (f.t >= 1) { flyers.RemoveAt(i); game.creditPulse = 1; continue; }
                 float e = f.t * f.t * (3 - 2 * f.t);
                 var p = Vector2.Lerp(f.a, f.b, e) + new Vector2(0, -Mathf.Sin(e * Mathf.PI) * 60);
-                pop.fontSize = 14; pop.normal.textColor = new Color(1f, 0.93f, 0.7f, 1 - f.t * 0.3f);
+                pop.fontSize = 13; pop.normal.textColor = new Color(1f, 0.93f, 0.7f, 0.85f * (1 - f.t * 0.7f));
                 GUI.Label(new Rect(p.x - 40, p.y - 10, 80, 20), f.txt, pop);
             }
 
@@ -1357,6 +1357,7 @@ namespace SalvageRun.Orbit
             }
             if (newsBanner <= 0 || bannerNews == null) return;
             newsBanner -= Time.unscaledDeltaTime;
+            if (!sim.R.over) return;                                         // 출동 중엔 앵커가 읽는다 — 위 띠가 의뢰 카드를 가렸다 (09-25 점검)
             float a = Mathf.Clamp01(newsBanner / 0.5f) * Mathf.Clamp01((5.5f - newsBanner) / 0.25f);
             var b = new Rect(vw / 2 - 300, 50, 600, 46);
             GUI.color = new Color(0.55f, 0.08f, 0.06f, 0.92f * a); GUI.DrawTexture(new Rect(b.x, b.y, 74, b.height), white);
@@ -1573,7 +1574,7 @@ namespace SalvageRun.Orbit
             {   // 🪐 구역 진행 — 지금 구역 칸을 다 찍으면 다음 항로 (09-24 6·21번)
                 int zo = sim.ZoneOpen, zl = sim.ZoneLeft(zo), zt = 0; for (int i = 0; i < SweepSim.Nodes.Length; i++) if (SweepSim.Zone[i] == zo && SweepSim.ZoneNeed(i)) zt++;
                 bool last = zo + 1 >= SweepSim.OrbitOrder.Length;
-                var zr = new Rect(zb.x, zb.yMax + 44, 300, 24);
+                var zr = new Rect(zb.xMax + 58, zb.y + 3, 320, 24);                  // 확대 단추 줄 옆 — 트리 칸과 안 겹치게
                 GUI.color = new Color(0.04f, 0.05f, 0.07f, 0.9f); GUI.DrawTexture(zr, white); GUI.color = Color.white;
                 string nx = last ? "" : SweepSim.Orbits[SweepSim.OrbitOrder[zo + 1]].name;
                 GUI.Label(new Rect(zr.x + 8, zr.y + 3, zr.width - 16, 18), "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> 구역 " + (zt - zl) + "/" + zt + (last ? "" : zl > 0 ? " <color=#8a93a3>— 다 찍으면 " + nx + " 항로</color>" : " <color=#6fcf97>— " + nx + " 항로를 살 수 있다</color>") + "</size>", label);

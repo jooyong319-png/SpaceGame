@@ -347,6 +347,7 @@ namespace SalvageRun.Orbit
             {
                 var e = sim.Events.Dequeue();
                 if ((e.kind == SwEv.Laser || e.kind == SwEv.Vac || e.kind == SwEv.Shell || e.kind == SwEv.Rail || e.kind == SwEv.Bolt) && sim.R != null && !sim.R.over
+                    && (e.kind != SwEv.Bolt || e.v < 0.5)                                     // 번개는 첫 줄기만 — 튀는 줄기까지 포구에서 뻗으면 화면을 가르는 선이 됐다 (09-25)
                     && (curW > 0 || System.Math.Abs(e.x - sim.ShipX) < 2 && System.Math.Abs(e.y - sim.ShipY) < 2))   // 무기 포대가 쏘는 중이면 늘 그 포구에서
                 {
                     var mw = PxToWorld(e.x, e.y); var nt = ShotFrom(); e.x = 480 + nt.x * PxPerUnit; e.y = 310 - nt.y * PxPerUnit;
@@ -432,7 +433,7 @@ namespace SalvageRun.Orbit
                         Color hc = ice ? new Color(0.55f, 0.85f, 1f, 0.4f) : fence ? new Color(1f, 0.4f, 0.45f, 0.5f) : sling ? new Color(1f, 0.6f, 0.2f, 0.45f) : awk ? new Color(1f, 0.45f, 0.9f, 0.35f) : new Color(1f, 0.3f, 0.25f, 0.35f);
                         Color cc = ice ? new Color(0.9f, 0.98f, 1f, 1f) : fence ? new Color(1f, 0.75f, 0.75f, 1f) : cr ? new Color(1f, 1f, 0.8f, 1f) : new Color(1f, 0.85f, 0.8f, 0.95f);
                         bool spot = (e.k & 64) != 0; float spotR = spot ? (float)e.v / PxPerUnit : 0;       // 64 = 조준점 원 (레이저 · 냉동)
-                        if (spot) w = ice ? 0.26f : 0.18f;
+                        if (spot) { w = ice ? 0.08f : 0.07f; hc.a *= 0.6f; }                                      // 굵으면 도트 격자에서 계단 띠가 됐다 (09-25 점검)
                         var halo = Add(pixel, s0, 0.05f, hc, 8, 0.13f); halo.a = s0; halo.b = s1; halo.size = w;
                         var core = Add(pixel, s0, 0.05f, cc, 8, 0.1f); core.a = s0; core.b = s1; core.size = Mathf.Max(0.04f, w * 0.22f);
                         if (spot && !ice)
@@ -487,7 +488,7 @@ namespace SalvageRun.Orbit
                             var inward = (at - pp) * 3.2f + new Vector3(-Mathf.Sin(aa), Mathf.Cos(aa)) * R * 1.1f;   // 안으로 + 조금 옆으로 — 옆 힘이 크면 화면을 가로지르는 호가 됐다 (09-24)
                             Add(pixel, pp, 0.08f, new Color(0.7f, 1f, 0.95f, 0.9f), 0, 0.28f).v = inward;
                         }
-                        if (Random.value < 0.6f) { var sp = Add(pixel, at, 0.07f, new Color(0.6f, 1f, 0.9f, 0.8f), 0, 0.35f); sp.v = (mz - at) / 0.35f; }   // 빨아들인 것이 포구로
+                        // 포구로 흘러가는 줄기는 뺐다 — 포대가 옆으로 가면서 화면을 가로지르는 계단 호가 됐다 (09-25 점검)
                         break;
                     }
                     case SwEv.Shell:
