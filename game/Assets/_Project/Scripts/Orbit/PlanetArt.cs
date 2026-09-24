@@ -9,11 +9,11 @@ namespace SalvageRun.Orbit
     public static class PlanetArt
     {
         const int N = 256;
-        static readonly Sprite[] cache = new Sprite[5];
+        static readonly Sprite[] cache = new Sprite[9];
         static Sprite ringBack, ringFront;
 
         // 🔴 ?? 는 쓰지 않는다 — Play 를 멈추면 유니티가 그림을 지우는데 C# 참조는 남는다. 유니티식 == null 로 봐야 다시 그린다
-        public static Sprite Get(int kind) { if (cache[kind] == null) cache[kind] = Make(kind); return cache[kind]; }
+        public static Sprite Get(int kind) { if (cache[kind] == null) cache[kind] = Make(kind < 5 ? kind : new[] { 1, 4, 3, 1 }[kind - 5]); return cache[kind]; }   // 새 행성 넷은 픽셀랩 그림이 없을 때만 비슷한 것으로
         public static Sprite RingBack { get { if (ringBack == null) ringBack = Ring(false); return ringBack; } }
         public static Sprite RingFront { get { if (ringFront == null) ringFront = Ring(true); return ringFront; } }
 

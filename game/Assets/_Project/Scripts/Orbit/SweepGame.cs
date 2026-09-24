@@ -668,16 +668,18 @@ namespace SalvageRun.Orbit
         // ───────────────────────────────── 궤도 · 지구 (궤도마다 카메라가 물러난다 §1-5)
 
         // 🪐 행성마다 크기 · 대기 빛 · 띠 색 (지구 · 달 · 화성 · 목성 · 토성)
-        static readonly float[] PlanetR = { 118, 80, 96, 150, 104 };
-        static readonly Color[] AtmoCol = { new Color(0.35f, 0.6f, 1f, 0.35f), new Color(0.8f, 0.8f, 0.85f, 0.06f), new Color(1f, 0.5f, 0.35f, 0.18f), new Color(1f, 0.8f, 0.55f, 0.2f), new Color(1f, 0.9f, 0.6f, 0.16f) };
-        static readonly Color[] BandCol = { new Color(0.43f, 0.55f, 0.78f), new Color(0.6f, 0.6f, 0.66f), new Color(0.8f, 0.45f, 0.35f), new Color(0.8f, 0.62f, 0.42f), new Color(0.85f, 0.75f, 0.5f) };
+        static readonly float[] PlanetR = { 118, 80, 96, 150, 104, 64, 130, 125, 58 };   // 5 소행성대(세레스) · 6 천왕성 · 7 해왕성 · 8 카이퍼(명왕성)
+        static readonly Color[] AtmoCol = { new Color(0.35f, 0.6f, 1f, 0.35f), new Color(0.8f, 0.8f, 0.85f, 0.06f), new Color(1f, 0.5f, 0.35f, 0.18f), new Color(1f, 0.8f, 0.55f, 0.2f), new Color(1f, 0.9f, 0.6f, 0.16f) , new Color(0.7f, 0.65f, 0.6f, 0.05f), new Color(0.55f, 0.9f, 0.95f, 0.3f), new Color(0.3f, 0.45f, 1f, 0.35f), new Color(0.85f, 0.8f, 0.75f, 0.05f) };
+        static readonly Color[] BandCol = { new Color(0.43f, 0.55f, 0.78f), new Color(0.6f, 0.6f, 0.66f), new Color(0.8f, 0.45f, 0.35f), new Color(0.8f, 0.62f, 0.42f), new Color(0.85f, 0.75f, 0.5f) , new Color(0.62f, 0.55f, 0.48f), new Color(0.5f, 0.78f, 0.82f), new Color(0.38f, 0.5f, 0.9f), new Color(0.7f, 0.66f, 0.62f) };
         int shownPlanet = -1;
 
         void DrawWorld()
         {
             int pi = sim.S.orbit;
             var o = SweepSim.Orbits[pi];
-            if (pi != shownPlanet) { shownPlanet = pi; earth.sprite = PlanetArt.Get(pi); }   // 픽셀랩 행성은 09-24 사장님 「아쉽다」 → 되돌림 (그림은 Assets/_Project/ArtUnused)
+            if (pi != shownPlanet) { shownPlanet = pi; earth.sprite = PlanetArt.Get(pi); }
+            var pf = PlanetFrames(pi);                                                   // 🪐 픽셀랩 회전 행성 (09-24) — 없으면 코드 그림
+            if (pf != null) earth.sprite = pf[(int)(Time.time * 3f) % pf.Length];
             earthR = Mathf.Lerp(earthR, PlanetR[pi], 1 - Mathf.Exp(-Time.deltaTime * 2.5f));
             float d = earthR * 2 / PxPerUnit;
             earth.transform.localScale = Vector3.one * d / earth.sprite.bounds.size.x;
@@ -703,7 +705,7 @@ namespace SalvageRun.Orbit
             sun.enabled = sunCore.enabled = geo;
             if (geo)
             {
-                float far = pi == 2 ? 1f : pi == 3 ? 0.6f : 0.42f;
+                float far = pi == 2 ? 1f : pi == 5 ? 0.8f : pi == 3 ? 0.6f : pi == 4 ? 0.42f : pi == 6 ? 0.3f : pi == 7 ? 0.22f : 0.15f;   // 멀수록 해가 작다
                 float pulse = (1f + 0.03f * Mathf.Sin(t * 0.8f)) * far;
                 sun.transform.localScale = Vector3.one * 7.5f * pulse / glow.bounds.size.x;
                 sunCore.transform.localScale = Vector3.one * 0.5f * pulse / disc.bounds.size.x;
@@ -957,6 +959,13 @@ namespace SalvageRun.Orbit
             sr.transform.localScale = new Vector3(w * TK / square.bounds.size.x, h * TK / square.bounds.size.y, 1);
         }
         static Sprite hullSpr, turClawSpr, dronePx;
+        static readonly Sprite[][] planetFrames = new Sprite[9][]; static readonly bool[] planetTried = new bool[9];
+        static Sprite[] PlanetFrames(int pi)
+        {
+            if (pi < 0 || pi >= 9) return null;
+            if (!planetTried[pi]) { planetTried[pi] = true; var f = new System.Collections.Generic.List<Sprite>(); for (int i = 0; i < 8; i++) { var sp = Resources.Load<Sprite>("planet_anim/p" + pi + "_" + i); if (sp != null) f.Add(sp); } planetFrames[pi] = f.Count > 0 ? f.ToArray() : null; }
+            return planetFrames[pi];
+        }
         // 🎞 픽셀랩 애니메이션 (09-24) — 폭발 9장 · 소용돌이 9장 · 블랙홀 6장(튀는 3장 뺌)
         static Sprite[] animExplode, animVortex, animHole;
         static Sprite[] LoadAnim(string n, int[] idx) { var a = new Sprite[idx.Length]; for (int i = 0; i < idx.Length; i++) a[i] = Resources.Load<Sprite>("anim/" + n + "_" + idx[i]); return a[0] != null ? a : null; }

@@ -129,9 +129,13 @@ namespace SalvageRun.Orbit.Sim
         {
             new OrbitDef { name = "지구", desc = "기본 궤도",                         bi = 150, bo = 296, mult = 1, att = 0.10, spin = 1,    hp = 1,   sell = 0, permit = 0,       mix = new double[] { 60, 22, 4, 2, 5, 4, 1.2 },  nMin = 127, nMax = 212, forms = new[] { 0, 0 },       events = new[] { 0, 1 } },
             new OrbitDef { name = "달",   desc = "느린 궤도 · 금고 위성이 많다",       bi = 118, bo = 277, mult = 1.5, att = 0.15, spin = 0.6,  hp = 1.1, sell = 2, permit = 1500,     mix = new double[] { 48, 22, 6, 9, 5, 4, 1.2 },  nMin = 144, nMax = 244, forms = new[] { 0, 1 },       events = new[] { 0, 3 } },
-            new OrbitDef { name = "화성", desc = "모래 폭풍 · 얼음 껍질",             bi = 132, bo = 314, mult = 2, att = 0.25, spin = 1.1,  hp = 1.3, sell = 3, permit = 20000,    storm = true, mix = new double[] { 48, 22, 12, 3, 5, 7, 1.5 }, nMin = 172, nMax = 316, forms = new[] { 1, 2, 0 }, events = new[] { 2, 1 } },
-            new OrbitDef { name = "목성", desc = "중력이 잔해를 안쪽에 모은다 · 장갑판", bi = 188, bo = 357, mult = 3, att = 0.30, spin = 1.3,  hp = 1.6, sell = 5, permit = 1500000,  pull = 9, mix = new double[] { 40, 18, 10, 6, 5, 8, 2.5 }, nMin = 238, nMax = 392, forms = new[] { 3, 4, 1 }, events = new[] { 3, 4 } },
-            new OrbitDef { name = "토성", desc = "두 겹 고리 · 케이블 망",            bi = 150, bo = 345, mult = 4.5, att = 0.30, spin = 0.9,  hp = 2.0, sell = 6, permit = 15000000, gap = 0.28, mix = new double[] { 38, 18, 8, 8, 5, 6, 3 }, nMin = 257, nMax = 415, forms = new[] { 2, 2, 3, 4 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = "화성", desc = "모래 폭풍 · 얼음 껍질",             bi = 132, bo = 314, mult = 2.2, att = 0.25, spin = 1.1,  hp = 1.3, sell = 3, permit = 20000,    storm = true, mix = new double[] { 48, 22, 12, 3, 5, 7, 1.5 }, nMin = 172, nMax = 316, forms = new[] { 1, 2, 0 }, events = new[] { 2, 1 } },
+            new OrbitDef { name = "목성", desc = "중력이 잔해를 안쪽에 모은다 · 장갑판", bi = 188, bo = 357, mult = 4.5, att = 0.30, spin = 1.3,  hp = 1.6, sell = 5, permit = 1500000,  pull = 9, mix = new double[] { 40, 18, 10, 6, 5, 8, 2.5 }, nMin = 238, nMax = 392, forms = new[] { 3, 4, 1 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = "토성", desc = "두 겹 고리 · 케이블 망",            bi = 150, bo = 345, mult = 6.5, att = 0.30, spin = 0.9,  hp = 2.0, sell = 6, permit = 15000000, gap = 0.28, mix = new double[] { 38, 18, 8, 8, 5, 6, 3 }, nMin = 257, nMax = 415, forms = new[] { 2, 2, 3, 4 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = "소행성대", desc = "암석 무리 · 단단한 잔해 · 광석",     bi = 140, bo = 330, mult = 3.2, att = 0.28, spin = 1.2,  hp = 1.45, sell = 4, permit = 150000,   mix = new double[] { 44, 20, 12, 4, 5, 7, 2 },   nMin = 205, nMax = 350, forms = new[] { 1, 3, 0 }, events = new[] { 2, 3 } },
+            new OrbitDef { name = "천왕성", desc = "옆으로 누운 궤도 · 얼음 결정",       bi = 180, bo = 380, mult = 10, att = 0.35, spin = 0.8,  hp = 2.8, sell = 8, permit = 120000000, pull = 6, mix = new double[] { 34, 18, 10, 9, 5, 8, 4 }, nMin = 280, nMax = 440, forms = new[] { 2, 3, 4 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = "해왕성", desc = "초속 폭풍 · 무거운 잔해",           bi = 175, bo = 390, mult = 15, att = 0.38, spin = 1.4,  hp = 3.8, sell = 10, permit = 600000000, storm = true, mix = new double[] { 32, 16, 10, 10, 5, 9, 5 }, nMin = 300, nMax = 460, forms = new[] { 3, 4, 2 }, events = new[] { 4, 3 } },
+            new OrbitDef { name = "카이퍼 벨트", desc = "태양계 끝 · 고대 탐사선 · 혜성",   bi = 150, bo = 400, mult = 24, att = 0.40, spin = 0.6,  hp = 5.2, sell = 14, permit = 3000000000, gap = 0.2, mix = new double[] { 30, 16, 10, 12, 5, 9, 6 }, nMin = 320, nMax = 480, forms = new[] { 4, 3, 2, 1 }, events = new[] { 3, 4 } },
         };
         public static readonly string[] FormNames = { "무리", "탱크 사슬", "케이블 망", "호송대", "난파 구역" };
         public static readonly string[] EventNames = { "연료 보급선", "충돌 사고", "파편 폭풍", "금고 호송대", "대충돌" };
@@ -185,9 +189,13 @@ namespace SalvageRun.Orbit.Sim
             N("a_big", "eco", "큰손 계좌", "수수료가 줄고 배당이 붙는다", new[] { "a_ins" }, 4, 20000, 3, 3, 1, 1),
             // 🪐 항로 (09-24 사장님 「청구서로 늘리는 방식 말고 정비고에서 통일」) — 옛 허가증. 값은 허가증 값 그대로
             N("p_moon", "route", "달 항로", "달 궤도에 갈 수 있다 — 값 ×1.5 · 느린 궤도 · 금고 위성이 많다", new string[0], 1, 1500, 1, 1, 0, 0),
-            N("p_mars", "route", "화성 항로", "화성 궤도 — 값 ×2 · 모래 폭풍 · 얼음 껍질 · 큰 잔해", new[] { "p_moon" }, 1, 20000, 1, 1, 0, 0),
-            N("p_jup", "route", "목성 항로", "목성 궤도 — 값 ×3 · 중력이 안쪽으로 모은다 · 장갑판", new[] { "p_mars" }, 1, 1500000, 1, 1, 0, 0),
-            N("p_sat", "route", "토성 항로", "토성 궤도 — 값 ×4.5 · 두 겹 고리 · 케이블 망", new[] { "p_jup" }, 1, 15000000, 1, 1, 0, 0),
+            N("p_mars", "route", "화성 항로", "화성 궤도 — 값 ×2.2 · 모래 폭풍 · 얼음 껍질 · 큰 잔해", new[] { "p_moon" }, 1, 20000, 1, 1, 0, 0),
+            N("p_jup", "route", "목성 항로", "목성 궤도 — 값 ×4.5 · 중력이 안쪽으로 모은다 · 장갑판", new[] { "p_belt" }, 1, 1500000, 1, 1, 0, 0),
+            N("p_sat", "route", "토성 항로", "토성 궤도 — 값 ×6.5 · 두 겹 고리 · 케이블 망", new[] { "p_jup" }, 1, 15000000, 1, 1, 0, 0),
+            N("p_belt", "route", "소행성대 항로", "화성과 목성 사이 소행성대 — 값 ×3.2 · 단단한 암석 · 광석", new[] { "p_mars" }, 1, 150000, 1, 1, 0, 0),
+            N("p_ura", "route", "천왕성 항로", "천왕성 궤도 — 값 ×10 · 옆으로 누운 궤도 · 얼음 결정", new[] { "p_sat" }, 1, 120000000, 1, 1, 0, 0),
+            N("p_nep", "route", "해왕성 항로", "해왕성 궤도 — 값 ×15 · 초속 폭풍 · 무거운 잔해", new[] { "p_ura" }, 1, 600000000, 1, 1, 0, 0),
+            N("p_kui", "route", "카이퍼 벨트 항로", "태양계 끝 카이퍼 벨트 — 값 ×24 · 고대 탐사선 · 혜성", new[] { "p_nep" }, 1, 3000000000, 1, 1, 0, 0),
             // ⚔ 무기고 (09-24 설계서 2단계) — 지금 빔 칸(화력 · 크기 · 연사 · 치명 · 두 번)은 모든 무기 공통
             N("w_hub", "arm", "무기고", "산 무기는 기본 공격이 나갈 때 확률로 함께 터진다 — 많이 살수록 한 번에 여러 개", new string[0], 1, 300, 1, 1, 0, 0),
             N("w_laser", "arm", "레이저", "공격 때 12% — 조준점을 0.7초 동안 태운다", new[] { "w_hub" }, 1, 2500, 1, 1, 0, 0),
@@ -247,12 +255,13 @@ namespace SalvageRun.Orbit.Sim
             N("i_eco", "eco", "∞ 무한 시세", "살 때마다 모든 값 +4%", new[] { "k_eco" }, 1, 2000000, 1.35, 999, 0, 0),
             N("i_route", "route", "∞ 무한 궤도", "살 때마다 행성 값 배수 +0.05", new[] { "k_route" }, 1, 2000000, 1.35, 999, 0, 0),
         };
-        public const int NodeCount = 98;
+        public const int NodeCount = 102;
         /// <summary>◆ 핵심 칸 — 돈 + 열쇠 하나 (부품 가게에서 산다). 각성도 여기</summary>
         public static readonly HashSet<string> KeyNodes = new HashSet<string> { "w_laser_a", "w_chain_a", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2", "w_vac_a", "w_mine_a", "w_frz_a", "w_clus_a", "w_mag_a", "w_rail_a", "x_claw_arm", "x_arm_drone", "x_drone_bh", "x_bh_eco", "x_eco_route", "x_route_claw" };
         public static readonly string[] WeaponName = { "집게 빔", "레이저", "번개", "청소기", "기뢰", "냉동 빔", "분열탄", "자석", "레일건" };
         public static readonly string[] WeaponNode = { null, "w_laser", "w_chain", "w_vac", "w_mine", "w_frz", "w_clus", "w_mag", "w_rail" };
-        public static readonly string[] PlanetNode = { null, "p_moon", "p_mars", "p_jup", "p_sat" };
+        public static readonly string[] PlanetNode = { null, "p_moon", "p_mars", "p_jup", "p_sat", "p_belt", "p_ura", "p_nep", "p_kui" };
+        public static readonly int[] OrbitOrder = { 0, 1, 2, 5, 3, 4, 6, 7, 8 };          // 가까운 → 먼 (소행성대는 번호 5지만 화성과 목성 사이)
         // ───────────────────────── 정비소 트리 자리 (손으로 격자에 놓았다 · 시안 https://claude.ai/artifact/NLZseBQWXKMGfuAmFDFJcR)
         //    par = 이어지는 앞 칸의 능력 (R = 가운데 청소선) · tile = 그 능력의 몇 번째 칸 뒤 · (x, y) 첫 칸 자리 · (dx, dy) 뻗는 방향
         //    🔴 여는 조건도 이것 — 앞 칸을 사야 이 능력의 첫 칸이 열린다 (게임 · 봇 같은 규칙)
@@ -304,6 +313,10 @@ namespace SalvageRun.Orbit.Sim
             { "p_mars", new TreeSpot { par = "p_moon", tile = 1, x = -4, y = -3, dx = 0, dy = 0 } },
             { "p_jup", new TreeSpot { par = "p_mars", tile = 1, x = -6, y = -4, dx = 0, dy = 0 } },
             { "p_sat", new TreeSpot { par = "p_jup", tile = 1, x = -8, y = -5, dx = 0, dy = 0 } },
+            { "p_belt", new TreeSpot { par = "p_mars", tile = 1, x = -5, y = -5, dx = 0, dy = 0 } },
+            { "p_ura", new TreeSpot { par = "p_sat", tile = 1, x = -10, y = -7, dx = 0, dy = 0 } },
+            { "p_nep", new TreeSpot { par = "p_ura", tile = 1, x = -12, y = -8, dx = 0, dy = 0 } },
+            { "p_kui", new TreeSpot { par = "p_nep", tile = 1, x = -14, y = -9, dx = 0, dy = 0 } },
             { "w_hub", new TreeSpot { par = "R", tile = 0, x = 1, y = -1, dx = 0, dy = 0 } },
             { "w_laser", new TreeSpot { par = "w_hub", tile = 1, x = 4, y = -2, dx = 0, dy = 0 } },
             { "w_laser_u", new TreeSpot { par = "w_laser", tile = 1, x = 5, y = -2, dx = 1, dy = 0 } },
@@ -358,7 +371,7 @@ namespace SalvageRun.Orbit.Sim
             { "i_eco", new TreeSpot { par = "k_eco", tile = 1, x = -6, y = 8, dx = 0, dy = 0 } },
             { "i_route", new TreeSpot { par = "k_route", tile = 1, x = -10, y = -3, dx = 0, dy = 0 } },
         };
-        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R", "a_open", "a_auto", "a_read", "a_ins", "a_big", "p_moon", "p_mars", "p_jup", "p_sat", "w_hub", "w_laser", "w_laser_u", "w_laser_a", "w_chain", "w_chain_u", "w_chain_a", "e_shop", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2", "q_insider", "q_rage", "q_front", "q_debt", "q_meteor", "q_sling", "q_tour", "q_rock", "q_gold", "q_lazy", "w_vac", "w_vac_u", "w_vac_a", "w_mine", "w_mine_u", "w_mine_a", "w_frz", "w_frz_u", "w_frz_a", "w_clus", "w_clus_u", "w_clus_a", "w_mag", "w_mag_u", "w_mag_a", "w_rail", "w_rail_u", "w_rail_a", "x_claw_arm", "x_arm_drone", "x_drone_bh", "x_bh_eco", "x_eco_route", "x_route_claw", "i_claw", "i_drone", "i_bh", "i_eco", "i_route" };
+        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R", "a_open", "a_auto", "a_read", "a_ins", "a_big", "p_moon", "p_mars", "p_jup", "p_sat", "w_hub", "w_laser", "w_laser_u", "w_laser_a", "w_chain", "w_chain_u", "w_chain_a", "e_shop", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2", "q_insider", "q_rage", "q_front", "q_debt", "q_meteor", "q_sling", "q_tour", "q_rock", "q_gold", "q_lazy", "w_vac", "w_vac_u", "w_vac_a", "w_mine", "w_mine_u", "w_mine_a", "w_frz", "w_frz_u", "w_frz_a", "w_clus", "w_clus_u", "w_clus_a", "w_mag", "w_mag_u", "w_mag_a", "w_rail", "w_rail_u", "w_rail_a", "x_claw_arm", "x_arm_drone", "x_drone_bh", "x_bh_eco", "x_eco_route", "x_route_claw", "i_claw", "i_drone", "i_bh", "i_eco", "i_route", "p_belt", "p_ura", "p_nep", "p_kui" };
         public static string VisBranch(string id) => id.StartsWith("w_") ? "arm" : id.StartsWith("x_") ? "cross" : id == "c_fuel" || id == "o_wide" || id == "c_find" ? "hull" : id == "s_speed" ? "bh" : Nodes[NodeIx[id]].branch;
 
         static Node N(string id, string br, string name, string desc, string[] par, int seg, double first, double mult, int max, int depth, int lane)
@@ -370,16 +383,20 @@ namespace SalvageRun.Orbit.Sim
 
         // ───────────────────────── 청구서 여덟 (§7-3)
         public struct Bill { public string t, perk; public double m, credit; public int due; }
-        public static readonly Bill[] Bills =
+        public static readonly Bill[] Bills =                                   // 09-24 8장 → 12장 (2시간 · 약 ×3~4씩)
         {
-            new Bill { t = "연료비",           m = 45,     due = 5, credit = 2,  perk = "케슬러 금융이 청소선 한 대를 믿어 주었다" },
-            new Bill { t = "청소선 할부 1회",  m = 700,    due = 4, credit = 3,  perk = "창구 직원이 이름을 외웠다" },
-            new Bill { t = "궤도 사용료",      m = 2500,   due = 4, credit = 5,  perk = "궤도청에 청소선이 정식 등록됐다" },
-            new Bill { t = "보험료",           m = 180000, due = 5, credit = 8,  perk = "궤도 보험이 청소선을 받아 주었다" },
-            new Bill { t = "청소선 할부 2회",  m = 300000, due = 4, credit = 12, perk = "청소선 절반은 이제 내 것" },
-            new Bill { t = "법인세",           m = 4000000, due = 5, credit = 18, perk = "세금을 내는 어엿한 회사가 됐다" },
-            new Bill { t = "청소선 할부 3회",  m = 20000000, due = 5, credit = 26, perk = "케슬러 금융이 먼저 인사를 한다" },
-            new Bill { t = "청소선 할부 완납", m = 60000000, due = 6, credit = 0,  perk = "빚 청산 → 청산 출동" },
+            new Bill { t = "연료비",           m = 45,         due = 5, credit = 2,  perk = "케슬러 금융이 청소선 한 대를 믿어 주었다" },
+            new Bill { t = "청소선 할부 1회",  m = 700,        due = 4, credit = 3,  perk = "창구 직원이 이름을 외웠다" },
+            new Bill { t = "궤도 사용료",      m = 2500,       due = 4, credit = 5,  perk = "궤도청에 청소선이 정식 등록됐다" },
+            new Bill { t = "정비비",           m = 30000,      due = 4, credit = 6,  perk = "정비소 단골이 됐다" },
+            new Bill { t = "보험료",           m = 180000,     due = 5, credit = 8,  perk = "궤도 보험이 청소선을 받아 주었다" },
+            new Bill { t = "청소선 할부 2회",  m = 600000,     due = 4, credit = 10, perk = "청소선 절반은 이제 내 것" },
+            new Bill { t = "법인세",           m = 2500000,    due = 5, credit = 13, perk = "세금을 내는 어엿한 회사가 됐다" },
+            new Bill { t = "청소선 할부 3회",  m = 10000000,   due = 5, credit = 16, perk = "케슬러 금융이 먼저 인사를 한다" },
+            new Bill { t = "외행성 면허세",    m = 40000000,   due = 5, credit = 20, perk = "외행성 면허가 나왔다" },
+            new Bill { t = "청소선 할부 4회",  m = 150000000,  due = 5, credit = 24, perk = "청소선 네 조각 중 셋이 내 것" },
+            new Bill { t = "심우주 보험",      m = 600000000,  due = 6, credit = 28, perk = "심우주에서도 보험이 된다" },
+            new Bill { t = "청소선 할부 완납", m = 2500000000, due = 6, credit = 0,  perk = "빚 청산 → 청산 출동" },
         };
 
         // ───────────────────────── 경력 (§9-4) — 파산할 때만 산다
@@ -415,6 +432,15 @@ namespace SalvageRun.Orbit.Sim
             new Contract { orbit = 4, kind = 0, target = 12,  text = "금고 위성 12개" },
             new Contract { orbit = 4, kind = 4, target = 200, text = "연쇄 200" },
             new Contract { orbit = 4, kind = 7, target = 4,   text = "큰 잔해 4개" },
+            new Contract { orbit = 5, kind = 2, target = 400, text = "조각 400개" },
+            new Contract { orbit = 5, kind = 5, target = 20,  text = "폭발 탱크 20개" },
+            new Contract { orbit = 5, kind = 4, target = 100, text = "연쇄 100" },
+            new Contract { orbit = 6, kind = 0, target = 14,  text = "금고 위성 14개" },
+            new Contract { orbit = 6, kind = 4, target = 250, text = "연쇄 250" },
+            new Contract { orbit = 7, kind = 3, target = 60,  text = "죽은 위성 60개" },
+            new Contract { orbit = 7, kind = 7, target = 5,   text = "큰 잔해 5개" },
+            new Contract { orbit = 8, kind = 0, target = 18,  text = "금고 위성 18개" },
+            new Contract { orbit = 8, kind = 4, target = 300, text = "연쇄 300" },
             new Contract { orbit = -1, kind = 8, target = 5,  text = "압류 딱지 5개" },
         };
 
@@ -506,7 +532,7 @@ namespace SalvageRun.Orbit.Sim
             S.planets |= 1 << i;
             AddNews(null, Orbits[i].name + " 청소 허가 — 민간 청소선 첫 진입", "케슬러 금융이 " + Orbits[i].name + " 궤도 청소 허가증을 내줬다. " + Orbits[i].desc + ". 값은 지구의 " + Orbits[i].mult + "배라고 한다.");
             S.orbit = i; RollContract(); Preview();
-            if (Mk != null && StockOpen) { string[] sec = { "", "달", "화성", "목성", "관광" }; Mk.GameEvent("민간 청소선 " + Orbits[i].name + " 진출", "궤도 청소부가 " + Orbits[i].name + " 청소 허가를 땄다. 관련 업계가 들썩인다.", new[] { sec[i], "ship" }, null, 0.14f); }
+            if (Mk != null && StockOpen) { string[] sec = { "", "달", "화성", "목성", "관광", "화성", "목성", "관광", "관광" }; Mk.GameEvent("민간 청소선 " + Orbits[i].name + " 진출", "궤도 청소부가 " + Orbits[i].name + " 청소 허가를 땄다. 관련 업계가 들썩인다.", new[] { sec[i], "ship" }, null, 0.14f); }
         }
         public double FuelMax => Math.Max(12, ((30 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.2 * Cr(0)) + Part("fuel")) * (Lv("k_claw") > 0 ? 0.85 : 1));
         public double Gap => Math.Max(0.3, 0.6 - 0.045 * Lv("c_spd")) / (1 + Part("spd"));
