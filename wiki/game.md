@@ -11,7 +11,7 @@
 
 - 프로젝트: `C:/Make_Game/SalvageRun/game` (Unity 6000.3 · URP 2D · OnGUI HUD) · git `SpaceGame` (master)
 - itch 주소 `orbit-sweeper` · 🔴 빌드 · 푸시는 사장님이 그때 하라고 할 때만
-- 목표 시간: **첫 빚 청산까지 약 2시간** (봇 115~168분)
+- 목표 시간: **첫 빚 청산까지 약 2시간** (봇 145~185분 · 09-24)
 
 ---
 
