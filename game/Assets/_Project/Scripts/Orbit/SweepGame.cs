@@ -837,6 +837,12 @@ namespace SalvageRun.Orbit
             var sr = TPiece(square, col, order); sr.transform.position = c; sr.transform.rotation = Quaternion.Euler(0, 0, ang * Mathf.Rad2Deg);
             sr.transform.localScale = new Vector3(w * TK / square.bounds.size.x, h * TK / square.bounds.size.y, 1);
         }
+        static Sprite hullSpr, turClawSpr;
+        void TSprite(Sprite s, Vector3 c, float wMock, float ang, int order)            // 그림 조각 — 가로 wMock(시안 px), ang 라디안
+        {
+            var sr = TPiece(s, Color.white, order); sr.transform.position = c; sr.transform.rotation = Quaternion.Euler(0, 0, ang * Mathf.Rad2Deg);
+            sr.transform.localScale = Vector3.one * wMock * TK / s.bounds.size.x;
+        }
         void TDisc(Vector3 c, float r, Color col, int order = 0, Sprite s = null, float sy = 1)
         {
             s = s ?? disc; var sr = TPiece(s, col, order); sr.transform.position = c; sr.transform.rotation = Quaternion.identity;
@@ -873,13 +879,17 @@ namespace SalvageRun.Orbit
                 // 조종실 계기판 — 화면 아래 (가운데가 살짝 솟은 곡선)
                 var panel = new Color(0.047f, 0.063f, 0.086f);
                 const float q = 1f / (float)SweepSim.TurS;                                   // 계기판은 포구 배율과 상관없이 같은 크기
-                TDisc(TW(640, 720 - 88 * q), 902 * q, new Color(0.17f, 0.2f, 0.26f), -8, null, 34f / 902f); TDisc(TW(640, 720 - 87 * q), 900 * q, panel, -7, null, 32f / 900f);
-                TBox(TW(640, 720 - 30 * q), 1800 * q, 116 * q, 0, panel, -6);
+                // 🚀 창밖 — 청소선 선체 (픽셀랩 그림). 포대 받침이 포구 자리에 오게
+                if (hullSpr == null) hullSpr = Resources.Load<Sprite>("ship/hull");
+                if (hullSpr != null) TSprite(hullSpr, TW(640, 654), 220, 0, -10);
+                // 방 안 — 창턱 (화면 맨 아래 가는 띠, 선체보다 앞)
+                TBox(TW(640, 720 - 7 * q), 1800 * q, 14 * q, 0, panel, 30); TBox(TW(640, 720 - 14 * q), 1800 * q, 2 * q, 0, edge, 31);
                 switch (w)
                 {
-                    case 0: { var b = B(0); TBox(TW(640, 668), 92, 36, 0, edge, -2); TBox(TW(640, 668), 88, 32, 0, plateC, -1); TDisc(b, 28, new Color(0.106f, 0.133f, 0.176f), 0);
-                        float a = A(0); TBarrel(b, a, 52, 16, c, recoil[0]); float L = 52 - recoil[0] * 7;
-                        for (int s = -1; s <= 1; s += 2) { TBox(TAlong(b, a, L + 6, s * 11), 14, 3, a + s * 0.5f, c, 4); TBox(TAlong(b, a, L + 15, s * 10), 9, 3, a - s * 0.9f, c, 4); } break; }
+                    case 0: { var b = B(0); float a = A(0);
+                        if (turClawSpr == null) turClawSpr = Resources.Load<Sprite>("ship/turret_claw");
+                        if (turClawSpr != null) { TSprite(turClawSpr, TAlong(b, a, -recoil[0] * 6), 44, a - Mathf.PI / 2, 2); break; }   // 🔫 픽셀랩 포대 — 위를 보는 그림이라 -90°
+                        TDisc(b, 28, new Color(0.106f, 0.133f, 0.176f), 0); TBarrel(b, a, 52, 16, c, recoil[0]); break; }
                     case 1: for (int i = 0; i < n; i++) { var b = B(i); TBox(TW((float)M[i * 3], 666), 56, 32, 0, edge, -2); TBox(TW((float)M[i * 3], 666), 52, 28, 0, plateC, -1); TDisc(b, 16, new Color(0.106f, 0.133f, 0.176f), 0);
                             float a = A(i); TBarrel(b, a, 74, 5, c, 0); TDisc(TAlong(b, a, 74), 9, new Color(c.r, c.g, c.b, 0.55f), 5, glow); } break;
                     case 2: { var b = B(0); TBox(TW(640, 668), 82, 28, 0, edge, -2); TBox(TW(640, 668), 78, 24, 0, plateC, -1); TBox(TW(640, 624), 18, 76, 0, Metal, 0);
