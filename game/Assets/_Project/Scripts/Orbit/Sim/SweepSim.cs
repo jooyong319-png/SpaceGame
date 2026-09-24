@@ -1483,8 +1483,33 @@ namespace SalvageRun.Orbit.Sim
             r.next2 = Gap * 2 * Rate(w2);                                       // 보조 무기 — 절반 빠르기
             Fire(w2);
         }
-        public double ShipX => EX + Math.Cos(R.shipA) * (Bo + 34);
-        public double ShipY => EY + Math.Sin(R.shipA) * (Bo + 34) * Tilt;
+        // 🔫 조종실 포구 — 무기마다 모양 · 개수가 다르다 (09-24 사장님 「조종선에서 쏜다」 · 시안 DbsvFEEy1K5ddbZsM61B2y)
+        // 시안 화면(1280×720) 좌표로 (x, y, 포신 길이) 셋씩. 화면 아래 가운데 = (640, 720)
+        public static readonly double[][] Mounts = {
+            new double[] { 640, 654, 52 },                                                   // 집게 빔 — 큰 집게 포 하나
+            new double[] { 548, 654, 74, 732, 654, 74 },                                     // 레이저 — 가는 장포신 둘
+            new double[] { 640, 586, 0 },                                                    // 번개 — 테슬라 코일 탑
+            new double[] { 640, 660, 50 },                                                   // 청소기 — 넓은 흡입구
+            new double[] { 622, 640, 24, 658, 640, 24, 622, 664, 24, 658, 664, 24 },         // 기뢰 — 박격포 넷
+            new double[] { 640, 654, 58 },                                                   // 냉동 빔 — 냉각 노즐
+            PodMounts(),                                                                     // 분열탄 — 로켓 포드 열
+            new double[] { 640, 656, 60 },                                                   // 자석 — 말굽
+            new double[] { 640, 660, 108 },                                                  // 레일건 — 긴 레일
+        };
+        static double[] PodMounts() { var m = new List<double>(); for (int r = 0; r < 2; r++) for (int c = 0; c < 5; c++) { m.Add(596 + c * 22); m.Add(630 + r * 22); m.Add(9); } return m.ToArray(); }
+        public double ViewHalf => Math.Min(7, Math.Max(3.8, Bo * 0.0145)) * 1.1;   // SweepGame 카메라 크기와 같은 식 (월드 단위, 화면 절반 높이) — 계기판 몫 10% 물림
+        public const double TurS = 1.4;                                        // 포구 크기 (시안보다 1.4배 — 09-24 작아 보였다)
+        public double MountK => 100 * ViewHalf / 720 * TurS;                   // 시안 1px → 시뮬 px
+        public int MountCount(int w) => Mounts[Math.Min(w, Mounts.Length - 1)].Length / 3;
+        public void MountPx(int w, int i, out double bx, out double by, out double tx, out double ty)
+        {
+            var m = Mounts[Math.Min(w, Mounts.Length - 1)]; i %= m.Length / 3; double k = MountK;
+            bx = EX + (m[i * 3] - 640) * k; by = EY + ViewHalf * 1.1 * 50 - (720 - m[i * 3 + 1]) * k;   // 화면 아래 가운데 기준으로 TurS배   // 카메라가 0.1 내려가 있다
+            double L = m[i * 3 + 2] * k, dx = (R != null ? R.ax : EX) - bx, dy = (R != null ? R.ay : EY) - by, d = Math.Sqrt(dx * dx + dy * dy) + 1e-6;
+            tx = bx + dx / d * L; ty = by + dy / d * L;
+        }
+        public double ShipX { get { MountPx(Weapon, 0, out _, out _, out var x, out _); return x; } }
+        public double ShipY { get { MountPx(Weapon, 0, out _, out _, out _, out var y); return y; } }
         void Fire(int w) { switch (w) { case 1: Laser(); break; case 2: Chain(); break; case 3: Vac(); break; case 4: MineLay(); break; case 5: Freeze(); break; case 6: Cluster(); break; case 7: MagPulse(); break; case 8: Rail(); break; default: Strike(); break; } }
         double Rate(int w) => FireRate[Math.Min(w, FireRate.Length - 1)] * (w == 8 && Lv("w_rail_u") >= 1 ? 0.75 : 1);
         bool pierce;                                                       // 레이저 각성 — 장갑판 한도 무시

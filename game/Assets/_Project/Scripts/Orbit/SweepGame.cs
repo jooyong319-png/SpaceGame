@@ -192,9 +192,9 @@ namespace SalvageRun.Orbit
             // 조종실에선 카메라가 물러나 지구가 창 가운데 오게 (창 = SweepHud.Win)
             bool cockpit = hud != null && hud.CockpitView;
             // 출동 중엔 궤도 띠가 화면에 차도록 당긴다 (사장님 「좀 더 확대」) — 띠가 넓어지면 그만큼 물러난다
-            float wantSize = cockpit ? 9.6f : Mathf.Clamp((float)sim.Bo * 0.0145f, 3.8f, 7f);   // 09-24 「화면에 작게 보인다」 — 더 당긴다 (띠는 30% 넓어짐)
+            float wantSize = cockpit ? 9.6f : Mathf.Clamp((float)sim.Bo * 0.0145f, 3.8f, 7f) * 1.1f;   // 아래 계기판 몫만큼 물린다 (sim.ViewHalf 와 같은 식)   // 09-24 「화면에 작게 보인다」 — 더 당긴다 (띠는 30% 넓어짐)
             cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, wantSize, 1 - Mathf.Exp(-dt * 5f));
-            float camY = cockpit ? -0.3f * cam.orthographicSize : 0f;
+            float camY = cockpit ? -0.3f * cam.orthographicSize : -0.1f * cam.orthographicSize;   // 출동 중엔 궤도가 계기판 위로
             camBase = Mathf.Lerp(camBase, camY, 1 - Mathf.Exp(-dt * 5f));
             float camX = hud != null ? -hud.CockpitDx * 2f * cam.orthographicSize / 600f : 0f;   // 옆 방으로 밀리면 창밖도 같이
             cam.transform.position = new Vector3(camX, camBase, -10) + (Vector3)(Random.insideUnitCircle * shake);
@@ -284,6 +284,12 @@ namespace SalvageRun.Orbit
             while (sim.Events.Count > 0)
             {
                 var e = sim.Events.Dequeue();
+                if ((e.kind == SwEv.Laser || e.kind == SwEv.Vac || e.kind == SwEv.Shell || e.kind == SwEv.Rail || e.kind == SwEv.Bolt) && sim.R != null && !sim.R.over
+                    && System.Math.Abs(e.x - sim.ShipX) < 2 && System.Math.Abs(e.y - sim.ShipY) < 2)
+                {
+                    var mw = PxToWorld(e.x, e.y); var nt = ShotFrom(); e.x = 480 + nt.x * PxPerUnit; e.y = 310 - nt.y * PxPerUnit;
+                    if (e.kind == SwEv.Laser || e.kind == SwEv.Rail) { e.x2 += e.x - (480 + mw.x * PxPerUnit); e.y2 += e.y - (310 - mw.y * PxPerUnit); }
+                }
                 var at = PxToWorld(e.x, e.y);
                 switch (e.kind)
                 {
@@ -451,7 +457,7 @@ namespace SalvageRun.Orbit
         /// <summary>🔴 빔 — 화면 아래 선체(포구)에서 조준점까지 (사장님 09-23: "집게보단 우주선에서 빔 쏘는 느낌")</summary>
         void Beam(Vector3 at, bool hit)
         {
-            var muzzle = sim.R != null && !sim.R.over ? PxToWorld(sim.ShipX, sim.ShipY) : new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);   // 청소선에서 나간다 (09-24)
+            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);   // 청소선에서 나간다 (09-24)
             var core = Add(pixel, at, 0.05f, hit ? new Color(1f, 0.95f, 0.78f, 1f) : new Color(0.6f, 0.65f, 0.75f, 0.5f), 8, 0.22f);
             core.a = muzzle; core.b = at; core.size = hit ? 0.1f : 0.05f;
             var halo = Add(pixel, at, 0.05f, new Color(1f, 0.76f, 0.3f, hit ? 0.55f : 0.22f), 8, 0.3f);
@@ -696,7 +702,7 @@ namespace SalvageRun.Orbit
             bool show = aimOn && !R.over;
             bool holding = R.holding && !R.over;
             claw.enabled = show; clawRing.enabled = show && sim.Weapon == 0;       // 원 = 집게 빔의 범위 (다른 무기엔 없다)
-            shipView.enabled = shipFlame.enabled = !R.over;
+            shipView.enabled = shipFlame.enabled = false;                 // 작은 배 없앰 — 조종실 포구에서 쏜다 (09-24)
             for (int i = 0; i < mineViews.Count || i < R.mines.Count; i++)
             {
                 if (i >= mineViews.Count) mineViews.Add(Make(disc, Vector3.zero, 0.22f, Red, 64));
@@ -705,15 +711,7 @@ namespace SalvageRun.Orbit
                 float bl = m.t > 0 ? 0.35f : 0.6f + 0.4f * Mathf.Sin(Time.time * 10 + i);
                 mv.color = new Color(1f, 0.3f, 0.25f, bl); mv.transform.localScale = Vector3.one * 0.22f / disc.bounds.size.x;
             }
-            if (!R.over)
-            {
-                var sp = PxToWorld(sim.ShipX, sim.ShipY); var ap = PxToWorld(R.ax, R.ay); var dd = ap - sp;
-                float shipAng = Mathf.Atan2(dd.y, dd.x) * Mathf.Rad2Deg;
-                shipView.transform.position = sp; shipView.transform.rotation = Quaternion.Euler(0, 0, shipAng - 90);
-                shipFlame.transform.position = sp - (Vector3)(new Vector2(dd.x, dd.y).normalized * 0.28f);
-                shipFlame.transform.localScale = Vector3.one * (0.35f + 0.08f * Mathf.Sin(Time.time * 30)) / glow.bounds.size.x;
-                shipView.color = sim.Weapon == 1 ? new Color(1f, 0.75f, 0.7f) : sim.Weapon == 2 ? new Color(0.75f, 0.88f, 1f) : new Color(1f, 0.9f, 0.7f);
-            }
+            DrawTurret(!R.over);
             clawWind.enabled = show && R.fuel > 0;
             holeCore.enabled = holeGlow.enabled = holeRing.enabled = holding;
             Cursor.visible = true;                                         // 마우스는 늘 보인다 — 판 중 · AUTO 여도 (사장님 09-24)
@@ -770,6 +768,94 @@ namespace SalvageRun.Orbit
             if (ringsAlive >= 6) return;
             ringsAlive++; c.a *= 0.55f;
             Add(ring, at, 0.1f, c, 5, life * 0.7f, grow);
+        }
+
+        // ───────────────────────────────── 🔫 조종실 포구 (시안 좌표 1280×720 → 월드)
+        readonly List<SpriteRenderer> turPool = new List<SpriteRenderer>(); int turN, turFire;
+        readonly float[] recoil = new float[12]; Vector3 turAim; int turW = -1;
+        float TK => 2f * cam.orthographicSize / 720f * (float)SweepSim.TurS;          // 시안 1px → 월드 (포구 크기 배율 포함)
+        Vector3 TW(float mx, float my) => new Vector3(cam.transform.position.x + (mx - 640) * TK, camBase - cam.orthographicSize + (720 - my) * TK, 0);
+        SpriteRenderer TPiece(Sprite s, Color c, int order)
+        {
+            if (turN >= turPool.Count) { var go = new GameObject("tur"); go.transform.SetParent(transform); turPool.Add(go.AddComponent<SpriteRenderer>()); }
+            var sr = turPool[turN++]; sr.enabled = true; sr.sprite = s; sr.color = c; sr.sortingOrder = 140 + order; return sr;   // 쓰레기(~110)보다 앞
+        }
+        void TBox(Vector3 c, float w, float h, float ang, Color col, int order = 0)     // w · h = 시안 px
+        {
+            var sr = TPiece(square, col, order); sr.transform.position = c; sr.transform.rotation = Quaternion.Euler(0, 0, ang * Mathf.Rad2Deg);
+            sr.transform.localScale = new Vector3(w * TK / square.bounds.size.x, h * TK / square.bounds.size.y, 1);
+        }
+        void TDisc(Vector3 c, float r, Color col, int order = 0, Sprite s = null, float sy = 1)
+        {
+            s = s ?? disc; var sr = TPiece(s, col, order); sr.transform.position = c; sr.transform.rotation = Quaternion.identity;
+            sr.transform.localScale = new Vector3(r * 2 * TK / s.bounds.size.x, r * 2 * TK * sy / s.bounds.size.y, 1);
+        }
+        // 포신 — 받침(base)에서 조준 쪽으로 len, 굵기 w. along = 받침에서 거리(시안 px)
+        Vector3 TAlong(Vector3 b, float ang, float along, float side = 0) => b + new Vector3(Mathf.Cos(ang), Mathf.Sin(ang)) * along * TK + new Vector3(-Mathf.Sin(ang), Mathf.Cos(ang)) * side * TK;
+        void TBarrel(Vector3 b, float ang, float len, float w, Color tip, float rc, int order = 1)
+        {
+            float L = len - rc * 7;
+            TBox(TAlong(b, ang, L / 2), L, w, ang, Metal, order); TBox(TAlong(b, ang, L / 2), L, 1.5f, ang, Metal2, order + 1);
+            TBox(TAlong(b, ang, L - 2), 4, w, ang, tip, order + 2);
+        }
+        static readonly Color Metal = new Color(0.165f, 0.2f, 0.25f), Metal2 = new Color(0.23f, 0.27f, 0.34f), Dark = new Color(0.086f, 0.11f, 0.145f);
+        Vector3 ShotFrom()                                                             // 다음 포구 끝 (월드) · 반동
+        {
+            int w = sim.Weapon, n = sim.MountCount(w); turFire = (turFire + 1) % n; recoil[turFire] = 1;
+            sim.MountPx(w, turFire, out _, out _, out var tx, out var ty);
+            var p = PxToWorld(tx, ty); Add(glow, p, 0.9f * cam.orthographicSize / 6f, WeaponCol(w), 7, 0.1f).sr.sortingOrder = 150; return p;
+        }
+        static Color WeaponCol(int w) => w switch { 1 => new Color(1f, 0.3f, 0.37f), 2 => new Color(0.62f, 0.85f, 1f), 3 => new Color(0.37f, 0.9f, 0.78f), 4 => new Color(1f, 0.6f, 0.24f), 5 => new Color(0.75f, 0.94f, 1f), 6 => new Color(1f, 0.82f, 0.4f), 7 => new Color(0.77f, 0.61f, 1f), 8 => Color.white, _ => new Color(1f, 0.76f, 0.35f) };
+        void DrawTurret(bool on)
+        {
+            turN = 0;
+            if (on)
+            {
+                int w = sim.Weapon; if (w != turW) { turW = w; turFire = 0; }
+                float dt = Time.deltaTime; for (int i = 0; i < recoil.Length; i++) recoil[i] = Mathf.Max(0, recoil[i] - dt * 6);
+                var aimW = PxToWorld(sim.R.ax, sim.R.ay); turAim = Vector3.Lerp(turAim, aimW, 1 - Mathf.Exp(-dt * 10));
+                var M = SweepSim.Mounts[w]; int n = M.Length / 3; Color c = WeaponCol(w); float t = Time.time, pul = 0.5f + 0.5f * Mathf.Sin(t * 6);
+                Vector3 B(int i) => TW((float)M[i * 3], (float)M[i * 3 + 1]);
+                float A(int i) { var d = turAim - B(i); return Mathf.Atan2(d.y, d.x); }
+                var plateC = Dark; var edge = new Color(0.17f, 0.2f, 0.26f);
+                // 조종실 계기판 — 화면 아래 (가운데가 살짝 솟은 곡선)
+                var panel = new Color(0.047f, 0.063f, 0.086f);
+                const float q = 1f / (float)SweepSim.TurS;                                   // 계기판은 포구 배율과 상관없이 같은 크기
+                TDisc(TW(640, 720 - 88 * q), 902 * q, new Color(0.17f, 0.2f, 0.26f), -8, null, 34f / 902f); TDisc(TW(640, 720 - 87 * q), 900 * q, panel, -7, null, 32f / 900f);
+                TBox(TW(640, 720 - 30 * q), 1800 * q, 116 * q, 0, panel, -6);
+                switch (w)
+                {
+                    case 0: { var b = B(0); TBox(TW(640, 668), 92, 36, 0, edge, -2); TBox(TW(640, 668), 88, 32, 0, plateC, -1); TDisc(b, 28, new Color(0.106f, 0.133f, 0.176f), 0);
+                        float a = A(0); TBarrel(b, a, 52, 16, c, recoil[0]); float L = 52 - recoil[0] * 7;
+                        for (int s = -1; s <= 1; s += 2) { TBox(TAlong(b, a, L + 6, s * 11), 14, 3, a + s * 0.5f, c, 4); TBox(TAlong(b, a, L + 15, s * 10), 9, 3, a - s * 0.9f, c, 4); } break; }
+                    case 1: for (int i = 0; i < n; i++) { var b = B(i); TBox(TW((float)M[i * 3], 666), 56, 32, 0, edge, -2); TBox(TW((float)M[i * 3], 666), 52, 28, 0, plateC, -1); TDisc(b, 16, new Color(0.106f, 0.133f, 0.176f), 0);
+                            float a = A(i); TBarrel(b, a, 74, 5, c, 0); TDisc(TAlong(b, a, 74), 9, new Color(c.r, c.g, c.b, 0.55f), 5, glow); } break;
+                    case 2: { var b = B(0); TBox(TW(640, 668), 82, 28, 0, edge, -2); TBox(TW(640, 668), 78, 24, 0, plateC, -1); TBox(TW(640, 624), 18, 76, 0, Metal, 0);
+                        for (int k = 0; k < 3; k++) { bool lit = (k + t * 3) % 3 < 1; TDisc(TW(640, 604 + k * 18), 22 - k * 2, new Color(c.r, c.g, c.b, lit ? 0.85f : 0.35f), 1, ring, 0.28f); }
+                        TDisc(b, 11, new Color(0.81f, 0.91f, 1f), 3); TDisc(b, 28 + 6 * pul, new Color(c.r, c.g, c.b, 0.6f), 4, glow); break; }
+                    case 3: { var b = B(0); TBox(TW(640, 670), 112, 32, 0, edge, -2); TBox(TW(640, 670), 108, 28, 0, plateC, -1); float a = A(0);
+                        for (int k = 0; k < 5; k++) { float u = (k + 0.5f) / 5f; TBox(TAlong(b, a, 50 * u), 10.5f, 24 + 36 * u, a, k % 2 == 0 ? Metal : Metal2, 1); }
+                        TBox(TAlong(b, a, 50), 3, 60, a, new Color(c.r, c.g, c.b, 0.6f + 0.4f * pul), 3); break; }
+                    case 4: { TBox(TW(640, 652), 98, 58, 0, edge, -2); TBox(TW(640, 652), 94, 54, 0, plateC, -1);
+                        for (int i = 0; i < n; i++) { var b = B(i); TBarrel(b, A(i), 24, 13, c, recoil[i]); TDisc(b, 8, new Color(0.106f, 0.133f, 0.176f), 3); } break; }
+                    case 5: { var b = B(0); TBox(TW(640, 666), 152, 36, 0, edge, -2); TBox(TW(640, 666), 148, 32, 0, plateC, -1);
+                        foreach (float dx in new[] { -52f, 52f }) { TBox(TW(640 + dx, 658), 28, 40, 0, new Color(0.114f, 0.165f, 0.2f), 0); TBox(TW(640 + dx, 648), 20, 4, 0, new Color(c.r, c.g, c.b, 0.35f + 0.3f * pul), 1); TBox(TW(640 + dx, 658), 20, 4, 0, new Color(c.r, c.g, c.b, 0.35f + 0.3f * pul), 1); }
+                        TDisc(b, 24, new Color(0.106f, 0.133f, 0.176f), 0); float a = A(0); TBarrel(b, a, 58, 20, c, 0);
+                        foreach (float f in new[] { 0.35f, 0.55f, 0.75f }) TBox(TAlong(b, a, 58 * f), 2, 28, a, new Color(c.r, c.g, c.b, 0.8f), 4); break; }
+                    case 6: { TBox(TW(651, 645), 140, 64, 0, edge, -2); TBox(TW(651, 645), 136, 60, 0, plateC, -1); TBox(TW(651, 645), 126, 50, 0, Metal, 0);
+                        for (int i = 0; i < n; i++) { var b = B(i); TDisc(b, 8, new Color(0.35f, 0.29f, 0.16f), 1); TDisc(b, 6, new Color(0.05f, 0.067f, 0.09f), 2); if (recoil[i] > 0) TDisc(b, 16, new Color(c.r, c.g, c.b, recoil[i]), 3, glow); } break; }
+                    case 7: { var b = B(0); TBox(TW(640, 668), 102, 34, 0, edge, -2); TBox(TW(640, 668), 98, 30, 0, plateC, -1); float a = A(0);
+                        TDisc(TAlong(b, a, 12), 20, Metal, 0); TDisc(TAlong(b, a, 12), 8, plateC, 1);
+                        for (int s = -1; s <= 1; s += 2) { TBox(TAlong(b, a, 36, s * 14), 48, 12, a, Metal, 1); TBox(TAlong(b, a, 56, s * 14), 8, 12, a, s < 0 ? new Color(0.44f, 0.66f, 1f) : new Color(1f, 0.42f, 0.48f), 2); }
+                        TDisc(TAlong(b, a, 60), 14 + 8 * pul, new Color(c.r, c.g, c.b, 0.5f), 3, glow); break; }
+                    case 8: { var b = B(0); TBox(TW(640, 668), 122, 32, 0, edge, -2); TBox(TW(640, 668), 118, 28, 0, plateC, -1); float a = A(0), L = 108 - recoil[0] * 10;
+                        TBox(TAlong(b, a, L / 2, -9.5f), L, 5, a, Metal, 1); TBox(TAlong(b, a, L / 2, 9.5f), L, 5, a, Metal, 1); TBox(TAlong(b, a, 3), 26, 28, a, Metal2, 2);
+                        float ch = Mathf.Clamp01(1f - (float)sim.R.next / 1.2f);
+                        for (int k = 0; k < 6; k++) TBox(TAlong(b, a, 22 + k * 14), 6, 12, a, new Color(0.62f, 0.82f, 1f, 0.2f + 0.8f * (k < ch * 6 ? ch : 0.15f)), 3);
+                        if (ch > 0.5f) TDisc(TAlong(b, a, L), 10 + 24 * ch, new Color(0.75f, 0.9f, 1f, ch * 0.8f), 4, glow); break; }
+                }
+            }
+            for (int i = turN; i < turPool.Count; i++) turPool[i].enabled = false;
         }
 
         void Burst(Vector3 at, Color c, int n, float speed)
