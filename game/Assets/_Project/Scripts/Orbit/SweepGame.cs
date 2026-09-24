@@ -81,8 +81,7 @@ namespace SalvageRun.Orbit
             cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.012f, 0.02f, 0.04f);
             cam.transform.position = new Vector3(0, 0, -10);
             // 🟦 640×360 도트 격자 — 게임 화면은 작은 그림에 그려 도트 그대로 키운다 (09-24 사장님 「픽셀 개수를 안 정해서 지저분」). 글자(HUD)는 화면 해상도 그대로
-            pixRT = new RenderTexture(PixW, PixH, 24, RenderTextureFormat.ARGBHalf) { filterMode = FilterMode.Point, name = "PixelGrid" };
-            cam.targetTexture = pixRT;
+            EnsurePixRT();
             var pc = new GameObject("Present Camera").AddComponent<Camera>();
             pc.clearFlags = CameraClearFlags.SolidColor; pc.backgroundColor = Color.black; pc.cullingMask = 0; pc.depth = cam.depth + 1; pc.orthographic = true;
             if (FindFirstObjectByType<Light2D>() == null) { var l = new GameObject("Global Light 2D").AddComponent<Light2D>(); l.lightType = Light2D.LightType.Global; }
@@ -304,9 +303,20 @@ namespace SalvageRun.Orbit
             return n / (1f + dist / 160f);
         }
 
-        public const int PixW = 640, PixH = 360;
+        // 🟦 도트 격자 — 모니터 높이를 정수로 나눠 약 540줄 (1080p = 960×540 ×2 · 1600 = 853×533 ×3). 띠 없이 도트가 고르다 (09-24 사장님 「픽셀 수를 좀 늘리자」)
+        public int PixW = 960, PixH = 540, PixS = 2;
         RenderTexture pixRT;
-        public Rect ViewRect { get { float s = Mathf.Min(Screen.width / (float)PixW, Screen.height / (float)PixH); if (s >= 2) s = Mathf.Floor(s); float w = PixW * s, h = PixH * s; return new Rect((Screen.width - w) / 2, (Screen.height - h) / 2, w, h); } }   // 정수배일 때 도트가 가장 고르다
+        void EnsurePixRT()
+        {
+            int sw = Mathf.Max(1, Screen.width), sh = Mathf.Max(1, Screen.height);
+            int s = Mathf.Max(1, Mathf.RoundToInt(sh / 540f)), w = Mathf.Max(1, sw / s), h = Mathf.Max(1, sh / s);
+            if (pixRT != null && w == PixW && h == PixH && s == PixS) return;
+            PixW = w; PixH = h; PixS = s;
+            if (pixRT != null) { cam.targetTexture = null; pixRT.Release(); Destroy(pixRT); }
+            pixRT = new RenderTexture(PixW, PixH, 24, RenderTextureFormat.ARGBHalf) { filterMode = FilterMode.Point, name = "PixelGrid" };
+            cam.targetTexture = pixRT;
+        }
+        public Rect ViewRect { get { float w = PixW * PixS, h = PixH * PixS; return new Rect((Screen.width - w) / 2, (Screen.height - h) / 2, w, h); } }
         public Vector3 ScreenToWorld(Vector2 sp)                                           // 화면 좌표(아래가 0) → 월드 (도트 격자를 거쳐)
         {
             var v = ViewRect; return cam.ScreenToWorldPoint(new Vector3((sp.x - v.x) / v.width * PixW, (sp.y - v.y) / v.height * PixH, 10));
@@ -318,6 +328,7 @@ namespace SalvageRun.Orbit
         void OnGUI()                                                                       // 도트 격자 그림을 화면에 — HUD(SweepHud.OnGUI) 보다 뒤에
         {
             GUI.depth = 100;
+            if (Event.current.type == EventType.Layout) EnsurePixRT();                     // 창 크기가 바뀌면 격자도 다시
             if (Event.current.type == EventType.Repaint && pixRT != null) GUI.DrawTexture(ViewRect, pixRT, ScaleMode.StretchToFill, false);
         }
 
