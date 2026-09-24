@@ -482,7 +482,7 @@ namespace SalvageRun.Orbit
             if (stuck)
             {
                 Panel2(RB, "<color=#ff9b8f>대출 한도로도 못 갚는다</color>");
-                GUI.Label(new Rect(RB.x + 16, RB.y + 30, RB.width - 32, 20), "<size=13>파산하면 빚이 사라지고 <color=#ffdf95>신용 +" + S.creditPending + "</color></size>", label);
+                GUI.Label(new Rect(RB.x + 16, RB.y + 30, RB.width - 32, 20), "<size=13>파산하면 빚이 사라지고 <color=#ffdf95>신용 +" + S.creditPending + "</color> · <color=#d8ccff>열쇠 +" + sim.BankruptKeys + "</color></size>", label);
                 GUI.Label(new Rect(RB.x + 16, RB.y + 50, RB.width - 32, 20), "<size=13>신용으로 경력을 사면 다음 회사는 처음부터 더 세다</size>", label);
                 var bb = new Rect(RB.x + 16, RB.y + 76, RB.width - 32, 34);
                 if (GUI.Button(bb, bankruptArmed ? "<color=#ffb3a8>정말? 한 번 더 누르면 파산</color>" : "<color=#ffb3a8>파산하고 새 회사로 ▸</color>", btn))
@@ -688,6 +688,8 @@ namespace SalvageRun.Orbit
                 if (GUI.Button(hit, GUIContent.none, GUIStyle.none) && paidT < 2.4f) Go();
             }
 
+            // 🧯 파산 단추 — 출동 단추 왼쪽 위, 유리 덮개 속 (09-24 사장님)
+            BankruptGlass(new Rect(ox + 480 - 75 - 96, 404, 70, 78));
             // 🎟 복권 — 분홍 홀로그램 (출동 버튼 오른쪽)
             LottoHolo();
             // 아래 한 줄

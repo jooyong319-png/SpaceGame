@@ -221,6 +221,7 @@ namespace SalvageRun.Orbit
             return s;
         }
 
+        int holdScroll;
         void StockRoom()
         {
             if (rR == null) rR = new GUIStyle(label) { alignment = TextAnchor.UpperRight };
@@ -459,10 +460,15 @@ namespace SalvageRun.Orbit
             float[] cx2 = { 10, 230, 305, 380, 470, 550, 624 };
             string[] hd = { "내 잔고", "보유", "평균가", "현재가", "평가금액", "손익", "수익률" };
             for (int k = 0; k < hd.Length; k++) { if (k == 0) L(bb.x + cx2[0], bb.y + 4, 120, "<size=10><color=#5f6878>" + hd[0] + "</color></size>"); else Rt(bb.x, bb.y + 4, cx2[k], "<size=10><color=#5f6878>" + hd[k] + "</color></size>"); }
-            int rows = 0, more = 0;
+            int rows = 0, more = 0, held = 0, skip;
+            for (int i = 0; i < MS.st.Count; i++) if (MS.st[i].shares > 0) held++;
+            // 📜 5개 넘으면 휠 · ▲▼ 로 넘긴다 (09-24 사장님 「5개까지만 보이고 더 안 보여」)
+            if (Event.current.type == EventType.ScrollWheel && bb.Contains(Event.current.mousePosition)) { holdScroll += Event.current.delta.y > 0 ? 1 : -1; Event.current.Use(); }
+            holdScroll = Mathf.Clamp(holdScroll, 0, Mathf.Max(0, held - 5)); skip = holdScroll;
             for (int i = 0; i < MS.st.Count; i++)
             {
                 var st = MS.st[i]; if (st.shares <= 0) continue;
+                if (skip > 0) { skip--; continue; }
                 if (rows >= 5) { more++; continue; }
                 float ry = bb.y + 22 + rows * 20; rows++;
                 double val = st.shares * st.price, pl = val - st.cost, avg = st.cost / st.shares;
@@ -479,7 +485,12 @@ namespace SalvageRun.Orbit
                 if (GUI.Button(new Rect(bb.xMax - 90, ry, 82, 18), "<size=10><color=#8ab4ff>전부 팔기</color></size>", btnOff)) TradeSell(i, 1, new Vector2(bb.xMax - 49, ry + 9));
             }
             if (rows == 0) L(bb.x + 10, bb.y + 30, 500, "<size=12><color=#5f6878>보유 종목 없음 — 왼쪽에서 종목을 고르고 오른쪽에서 매수</color></size>");
-            if (more > 0) L(bb.x + 10, bb.y + 22 + 5 * 20, 200, "<size=10><color=#5f6878>외 " + more + "종목</color></size>");
+            if (held > 5)
+            {
+                L(bb.x + 10, bb.y + 22 + 5 * 20, 260, "<size=10><color=#8a9bb3>" + (holdScroll + 1) + "–" + (holdScroll + rows) + " / " + held + "종목 · 휠로 넘기기</color></size>");
+                if (holdScroll > 0 && GUI.Button(new Rect(bb.x + 200, bb.y + 20 + 5 * 20, 26, 18), "<size=10>▲</size>", btnOff)) holdScroll--;
+                if (more > 0 && GUI.Button(new Rect(bb.x + 230, bb.y + 20 + 5 * 20, 26, 18), "<size=10>▼</size>", btnOff)) holdScroll++;
+            }
             // 🙏 개미의 기도 · 🍀 행운의 부적 (칸을 사야)
             Rt(bb.x, bb.yMax - 24, bb.width - 10, "<size=11>" + LuckLine() + "</size>");
 
@@ -686,6 +697,8 @@ namespace SalvageRun.Orbit
             GUI.color = Color.white;
             GUI.Label(new Rect(r.x + 14, r.y + 6, r.width - 60, 22), "<size=13><b><color=#3b2a08>궤도 청소부 " + M.company + "대</color></b></size>", label);
             GUI.Label(new Rect(r.x + 14, r.y + 26, r.width - 60, 20), "<size=10><color=#4a360c>쌓인 신용 +" + S.creditPending + "</color></size>", label);
+            GUI.color = Color.white; return;                                   // 파산은 출동 단추 왼쪽 위 유리 덮개 단추로 옮겼다 (09-24)
+#pragma warning disable CS0162
             var cv = new Rect(r.xMax - 48, r.y + 7, 36, r.height - 14);
             bool can = sim.CanBankrupt, ov = can && cv.Contains(Event.current.mousePosition);
             if (!can)
@@ -713,6 +726,55 @@ namespace SalvageRun.Orbit
                 if (GUI.Button(cv, GUIContent.none, GUIStyle.none)) { sim.Bankrupt(); bankruptArmed = false; showResult = false; flow = 2; }
             }
             GUI.color = Color.white;
+        }
+
+        // 🧯 유리 덮개 파산 단추 — 유리를 누르면 젖혀 열리고, 빨간 단추를 누르면 파산 (09-24 사장님). 5초 안 누르면 다시 닫힌다
+        float glassK, glassT; bool glassOpen;
+        void BankruptGlass(Rect r)
+        {
+            bool can = sim.CanBankrupt;
+            float dt = Time.unscaledDeltaTime;
+            if (glassOpen) { glassT -= dt; if (glassT <= 0 || !can) glassOpen = false; }
+            glassK = Mathf.MoveTowards(glassK, glassOpen ? 1 : 0, dt / 0.25f);
+            var box = new Rect(r.x, r.y, r.width, r.width);                   // 정사각 받침
+            // 받침 — 경고 줄무늬 테
+            GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(box.x + 3, box.y + 5, box.width, box.height), white);
+            GUI.color = new Color(0.95f, 0.75f, 0.1f); GUI.DrawTexture(box, white);
+            GUI.color = new Color(0.08f, 0.08f, 0.08f);
+            for (int k = -8; k < 16; k++) { float x0 = box.x + k * 8; GUI.DrawTexture(new Rect(Mathf.Max(box.x, x0), box.y, 4, 4), white); GUI.DrawTexture(new Rect(Mathf.Max(box.x, x0 + 4), box.yMax - 4, 4, 4), white); }
+            var inner = new Rect(box.x + 5, box.y + 5, box.width - 10, box.height - 10);
+            GUI.color = new Color(0.12f, 0.13f, 0.16f); GUI.DrawTexture(inner, white);
+            // 빨간 단추
+            var btn = new Rect(inner.center.x - 20, inner.center.y - 20, 40, 40);
+            bool ovBtn = glassK > 0.95f && btn.Contains(Event.current.mousePosition);
+            bool press = ovBtn && Mouse.current != null && Mouse.current.leftButton.isPressed;
+            GUI.color = new Color(0.35f, 0.04f, 0.03f); GUI.DrawTexture(new Rect(btn.x, btn.y + 5, btn.width, btn.height), texDisc);
+            float pulse = glassK > 0.95f ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 8) : 0;
+            GUI.color = can ? Color.Lerp(new Color(0.85f, 0.1f, 0.08f), new Color(1f, 0.3f, 0.22f), ovBtn ? 1 : pulse * 0.5f) : new Color(0.4f, 0.18f, 0.16f);
+            GUI.DrawTexture(new Rect(btn.x, btn.y + (press ? 4 : 0), btn.width, btn.height), texDisc);
+            GUI.color = new Color(1, 1, 1, 0.3f); GUI.DrawTexture(new Rect(btn.x + 9, btn.y + 6 + (press ? 4 : 0), 14, 8), texDisc);
+            GUI.color = Color.white;
+            if (glassK > 0.95f && GUI.Button(btn, GUIContent.none, GUIStyle.none) && can)
+            { sim.Bankrupt(); glassOpen = false; glassK = 0; bankruptArmed = false; showResult = false; flow = 2; OrbitSfx.Play("break", 1f); return; }
+            // 유리 덮개 — 위 경첩으로 젖혀진다 (열릴수록 위로 납작해짐)
+            float gh = inner.height * (1 - glassK * 0.86f);
+            var glass = new Rect(inner.x - 2, inner.y - 2 - glassK * 10, inner.width + 4, gh + 4);
+            bool ovGlass = glassK < 0.05f && glass.Contains(Event.current.mousePosition);
+            GUI.color = new Color(0.6f, 0.85f, 1f, 0.22f + (ovGlass ? 0.08f : 0)); GUI.DrawTexture(glass, white);
+            GUI.color = new Color(1, 1, 1, 0.5f); GUI.DrawTexture(new Rect(glass.x + 4, glass.y + 3, glass.width * 0.35f, 2), white); GUI.DrawTexture(new Rect(glass.x + 4, glass.y + 3, 2, glass.height * 0.4f), white);
+            Frame(glass, new Color(0.8f, 0.92f, 1f, 0.7f), 1);
+            GUI.color = new Color(0.55f, 0.58f, 0.62f); GUI.DrawTexture(new Rect(glass.x + glass.width / 2 - 8, glass.y - 3, 16, 4), white);   // 경첩
+            GUI.color = Color.white;
+            if (!can && glassK < 0.05f) GUI.Label(new Rect(glass.x, glass.center.y - 9, glass.width, 18), "<size=10><color=#c8d0dc>잠김</color></size>", center);
+            if (ovGlass && GUI.Button(glass, GUIContent.none, GUIStyle.none))
+            {
+                if (can) { glassOpen = true; glassT = 5f; OrbitSfx.Play("clank", 0.8f); } else OrbitSfx.Play("tick", 0.5f, 0.1f, 0.02f);
+            }
+            // 명판
+            var plate = new Rect(r.x - 6, box.yMax + 3, r.width + 12, 18);
+            GUI.color = new Color(0.12f, 0.04f, 0.04f, 0.9f); GUI.DrawTexture(plate, white); Frame(plate, new Color(0.7f, 0.18f, 0.12f), 1); GUI.color = Color.white;
+            string pl = !can ? "파산 (청구서 3장부터)" : glassK > 0.95f ? "누르면 파산 · 열쇠 +" + sim.BankruptKeys : "파산";
+            GUI.Label(plate, "<size=10><b><color=#ffb3a8>" + pl + "</color></b></size>", center);
         }
 
         // ───────────────────────────────── 💸 빚 갚기 연출 (09-24 사장님 시안 확정)

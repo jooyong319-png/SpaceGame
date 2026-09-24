@@ -709,6 +709,7 @@ namespace SalvageRun.Orbit.Sim
         public double Widen => 1 + 0.1 * Lv("o_wide");      // 🔴 정비소에서 산다 (사장님 09-23: "맵 크기도 여기서 늘리게")
         public double Bo => Orbits[S.orbit].bi + (Orbits[S.orbit].bo - Orbits[S.orbit].bi) * Widen;
         public double BillAmount => S.bill < Bills.Length ? (S.billAmount >= 0 ? S.billAmount : Bills[S.bill].m) * (Lv("k_eco") > 0 ? 1.1 : 1) : 0;
+        public int BankruptKeys => 2 + S.bill / 2;                                // 청구서 7장째 = 열쇠 5
         public bool CanBankrupt => !M.cleanReady && S.bill < Bills.Length && (S.bill >= 3 || S.overdue && S.bill >= 1);
         public int CareerCost(int i) => M.career[i] < Careers[i].cost.Length ? Careers[i].cost[M.career[i]] : -1;
         public int Unread { get { int n = 0; foreach (var it in M.news) if (!it.read) n++; return n; } }
@@ -806,15 +807,17 @@ namespace SalvageRun.Orbit.Sim
             AddNews(M.bankrupt == 1 ? "bankrupt1" : M.bankrupt == 2 ? "bankrupt2" : null, "궤도 청소부 (" + M.company + "대), 출동 " + S.runs + "번 만에 파산", "청구서 " + S.bill + "장을 갚고 문을 닫았다. 빚은 날아갔고, 조종사의 경력은 남았다.");
             M.company++;
             double carry = Lv("x_bh_eco") > 0 ? Math.Floor(S.cash * 0.1) : 0; int keepPart = -1;
+            int bk = BankruptKeys;                                                    // 🔑 파산하면 열쇠 (09-24 사장님 「파산의 가치를 늘리려고」)
             if (Lv("x_bh_eco") > 0 && S.parts != null) foreach (var pid in S.parts) if (pid >= 0 && (keepPart < 0 || Parts.Defs[pid].rar > Parts.Defs[keepPart].rar)) keepPart = pid;
             S = new SweepState { startedAt = M.playSeconds };
             if (carry > 0) S.cash += carry;
+            S.keys += bk;
             if (keepPart >= 0) S.parts[Parts.Defs[keepPart].slot] = keepPart;   // ◆ 파산 보험 — 돈 10% · 제일 좋은 부품 하나
             MakeMarket();
             M.careerOpen = true;
             Preview();
             if (M.company == 2) AddNews("company2");
-            Emit(SwEv.Bankrupt, 0, 0, M.company, 0, "주식회사 궤도 청소부 (" + (M.company - 1) + "대) — 파산");
+            Emit(SwEv.Bankrupt, 0, 0, M.company, 0, "주식회사 궤도 청소부 (" + (M.company - 1) + "대) — 파산 · 열쇠 +" + bk);
             return true;
         }
 
