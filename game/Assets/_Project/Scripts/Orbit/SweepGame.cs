@@ -69,6 +69,10 @@ namespace SalvageRun.Orbit
             SweepHud.CastReq = false;
             autoMode = PlayerPrefs.GetInt("orbit.auto", 0) == 1;
             Application.targetFrameRate = 60;
+            if (!Application.isEditor)                                                  // 🖥 빌드는 늘 모니터 전체 화면으로 시작 (09-24 사장님 「전체 화면으로」) — Alt+Enter 로 창 모드
+            {
+                var d = Screen.currentResolution; Screen.SetResolution(d.width, d.height, FullScreenMode.FullScreenWindow);
+            }
             Load();
             cam = Camera.main;
             if (cam == null) { var go = new GameObject("Main Camera"); go.tag = "MainCamera"; cam = go.AddComponent<Camera>(); }
