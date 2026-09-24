@@ -598,7 +598,7 @@ namespace SalvageRun.Orbit
         {
             int pi = sim.S.orbit;
             var o = SweepSim.Orbits[pi];
-            if (pi != shownPlanet) { shownPlanet = pi; var pp = Resources.Load<Sprite>("planet/planet_" + pi); earth.sprite = pp != null ? pp : PlanetArt.Get(pi); }   // 🪐 픽셀랩 행성
+            if (pi != shownPlanet) { shownPlanet = pi; earth.sprite = PlanetArt.Get(pi); }   // 픽셀랩 행성은 09-24 사장님 「아쉽다」 → 되돌림 (그림은 Assets/_Project/ArtUnused)
             earthR = Mathf.Lerp(earthR, PlanetR[pi], 1 - Mathf.Exp(-Time.deltaTime * 2.5f));
             float d = earthR * 2 / PxPerUnit;
             earth.transform.localScale = Vector3.one * d / earth.sprite.bounds.size.x;
@@ -1040,7 +1040,7 @@ namespace SalvageRun.Orbit
         SpriteRenderer bgView;                                                          // 🌌 픽셀랩 성운 배경 — 카메라를 따라다니며 화면을 채운다
         void Stars()
         {
-            var nb = Resources.Load<Sprite>("bg/nebula");
+            Sprite nb = null;                                                          // 픽셀랩 성운 배경은 09-24 사장님 「아쉽다」 → 되돌림 (ArtUnused/bg)
             if (nb != null) bgView = Make(nb, Vector3.zero, 1f, new Color(0.42f, 0.42f, 0.5f), -50);   // 어둡게 — 쓰레기보다 뒤로
             var r = new System.Random(5);
             var star = Ring(8, 0f);
