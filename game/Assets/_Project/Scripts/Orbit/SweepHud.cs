@@ -306,7 +306,7 @@ namespace SalvageRun.Orbit
             if (game.kessT > 0)
             {
                 chainSt.fontSize = game.kessText == "케슬러!" ? 30 : 44; chainSt.normal.textColor = new Color(1f, 0.6f, 0.3f, Mathf.Min(1, game.kessT * 1.5f));
-                GUI.Label(new Rect(vw / 2 - 300, 142, 600, 60), game.kessText, chainSt);
+                GUI.Label(new Rect(vw / 2 - 300, 156, 600, 60), game.kessText, chainSt);   // 큰 연쇄 글자(70~150) 아래로
             }
             if (bannerT > 0 && banner != null && !sim.R.over)
             {
