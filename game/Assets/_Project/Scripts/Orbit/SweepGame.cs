@@ -76,6 +76,13 @@ namespace SalvageRun.Orbit
             cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.012f, 0.02f, 0.04f);
             cam.transform.position = new Vector3(0, 0, -10);
             if (FindFirstObjectByType<Light2D>() == null) { var l = new GameObject("Global Light 2D").AddComponent<Light2D>(); l.lightType = Light2D.LightType.Global; }
+            // ✨ 블룸 — 빔 · 맞는 자리 · 블랙홀이 번져 빛난다 (09-24 사장님 참고 그림)
+            {
+                var cd = cam.GetUniversalAdditionalCameraData(); cd.renderPostProcessing = true;
+                var prof = ScriptableObject.CreateInstance<UnityEngine.Rendering.VolumeProfile>();
+                var bl = prof.Add<Bloom>(true); bl.threshold.Override(0.82f); bl.intensity.Override(1.1f); bl.scatter.Override(0.72f); bl.clamp.Override(8f);
+                var vol = new GameObject("Bloom Volume").AddComponent<UnityEngine.Rendering.Volume>(); vol.isGlobal = true; vol.priority = 10; vol.sharedProfile = prof;
+            }
 
             disc = Ring(128, 0f); ring = Ring(128, 0.9f); pixel = Ring(8, 0f); glow = Glow(128); square = Square();
             junkArt = OrbitArt.Debris(); deadSat = OrbitArt.DeadSat(); wreck = OrbitArt.BigWreck(); droneArt = OrbitArt.Drone();

@@ -3,6 +3,7 @@
     "rootNamespace": "SalvageRun",
     "references": [
         "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.2D.Runtime",
         "Unity.InputSystem"
     ],
