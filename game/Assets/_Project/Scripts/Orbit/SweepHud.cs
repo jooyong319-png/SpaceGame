@@ -150,6 +150,7 @@ namespace SalvageRun.Orbit
             VolumeButton();
         }
 
+        SweepRun cardRun; bool cardOk; float cardFlash;
         // 🚀 전탄 게이지 — 화면 아래 가운데 (무기 둘부터). 차오르면 빨개지고, 퍼붓는 동안은 빛난다
         void VolleyGauge()
         {
@@ -227,11 +228,16 @@ namespace SalvageRun.Orbit
             float ph = (float)(sim.R.t % 22.0);
             float a = ph < 14 ? 0 : ph < 15.5f ? (ph - 14) / 1.5f : ph < 19.5f ? 1 : ph < 21 ? 1 - (ph - 19.5f) / 1.5f : 0;
             if (a <= 0) return;
-            GUI.color = new Color(0.72f, 0.36f, 0.2f, 0.42f * a); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white);
-            GUI.color = new Color(0.9f, 0.55f, 0.35f, 0.18f * a);
-            for (int i = 0; i < 6; i++) { float x = Mathf.Repeat(Time.time * (60 + i * 25) + i * 170, vw + 400) - 200; GUI.DrawTexture(new Rect(x, 80 + i * 80, 380, 60), texDisc); }
+            // 옅은 붉은 먼지 + 가장자리 짙게 + 빠르게 스치는 모래 줄기 (도트 줄) — 전체 덮기(0.42)는 너무 탁했다
+            GUI.color = new Color(0.72f, 0.36f, 0.2f, 0.14f * a); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white);
+            GUI.color = new Color(0.75f, 0.35f, 0.15f, 0.55f * a); GUI.DrawTexture(new Rect(0, 0, vw, RefH), texVignette);
+            for (int i = 0; i < 70; i++)
+            {
+                float sp = 500 + (i * 53 % 7) * 90, y = (i * 97 % 540) + 30, x = Mathf.Repeat(Time.time * sp + i * 211, vw + 300) - 150, len = 30 + (i * 31 % 5) * 22;
+                GUI.color = new Color(1f, 0.72f - (i % 3) * 0.08f, 0.45f, (0.25f + (i % 4) * 0.1f) * a); GUI.DrawTexture(new Rect(x, y, len, i % 5 == 0 ? 3 : 2), white);
+            }
             GUI.color = Color.white;
-            if (ph > 14 && ph < 15.2f) GUI.Label(new Rect(0, 90, vw, 26), "<size=18><color=#ffb080>모래 폭풍!</color></size>", center);
+            if (ph > 14 && ph < 19.5f) GUI.Label(new Rect(0, 90, vw, 26), "<size=18><color=#ffb080><b>모래 폭풍</b></color></size>  <size=13><color=#ffd0b0>값 ×1.5 · 잔해가 몰려온다</color></size>", center);
         }
 
         // 🚀 출발 1.3초 — 조종실 선체가 커지며 밖으로 날아가고, 별 줄기가 쏟아지고, 행성 이름이 뜬다 (사장님 「출발 후가 2% 빠진 느낌」)
@@ -353,9 +359,23 @@ namespace SalvageRun.Orbit
             if (sim.StockOpen) StockSwitch();
             var c = sim.CurContract;
             if (c != null && !R.clean)
-            {
+            {   // 📋 의뢰 카드 — 왼쪽 위 돈 아래, 막대 · 성공하면 초록 번쩍 (09-24 사장님 8번 「있는 줄도 몰랐다」)
                 int pr = sim.ContractProgress(R); bool ok = pr >= c.Value.target;
-                GUI.Label(new Rect(14, RefH - 46, 400, 18), "의뢰: " + c.Value.text + "  " + (ok ? "<color=#6fcf97>성공!</color>" : Mathf.Min(pr, c.Value.target) + " / " + c.Value.target), dim);
+                if (R != cardRun) { cardRun = R; cardOk = false; }
+                if (ok && !cardOk) { cardOk = true; cardFlash = 1.6f; OrbitSfx.Play("buy", 0.9f); OrbitSfx.Play("coin", 0.6f); }
+                cardFlash = Mathf.Max(0, cardFlash - Time.deltaTime);
+                float big2 = Mathf.Clamp01(1 - ((float)R.t - 3f) / 0.6f);                     // 출발 3초는 크게
+                var cr = new Rect(12, 44, 262 + 60 * big2, 44 + 6 * big2);
+                GUI.color = ok ? new Color(0.06f, 0.16f, 0.1f, 0.92f) : new Color(0.05f, 0.06f, 0.09f, 0.88f); GUI.DrawTexture(cr, white);
+                Frame(cr, ok ? new Color(0.44f, 0.81f, 0.59f, 0.6f + 0.4f * cardFlash) : new Color(0.95f, 0.76f, 0.31f, 0.35f + 0.5f * big2), 1 + cardFlash * 2);
+                GUI.color = Color.white;
+                int pct = 25 + 10 * sim.Lv("e_quest");
+                GUI.Label(new Rect(cr.x + 8, cr.y + 3, cr.width - 16, 18), "<size=" + (12 + Mathf.RoundToInt(3 * big2)) + "><color=#ffdf95><b>의뢰</b></color>  " + c.Value.text + "</size>", label);
+                GUI.Label(new Rect(cr.x + 8, cr.y + 3, cr.width - 16, 18), "<size=11>" + (ok ? "<color=#6fcf97><b>성공! 판 수입 +" + pct + "%</b></color>" : "<color=#8a93a3>성공하면 +" + pct + "%</color>") + "</size>", cost);
+                var pb = new Rect(cr.x + 62, cr.yMax - 14, cr.width - 70, 6);
+                GUI.DrawTexture(pb, texBar); GUI.color = ok ? new Color(0.44f, 0.81f, 0.59f) : SweepGame.Amber;
+                GUI.DrawTexture(new Rect(pb.x, pb.y, pb.width * Mathf.Clamp01((float)pr / Mathf.Max(1, c.Value.target)), pb.height), white); GUI.color = Color.white;
+                GUI.Label(new Rect(cr.x + 8, pb.y - 9, 52, 16), "<size=10><color=#c8d0dc>" + Mathf.Min(pr, c.Value.target) + " / " + c.Value.target + "</color></size>", label);
             }
             // 첫 5분 — 새 장난감마다 한 줄씩만 (§10)
             string hint = null;

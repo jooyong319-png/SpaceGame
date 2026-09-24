@@ -549,24 +549,27 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(1, 1, 1, fl);
             GUI.Label(new Rect(p.x + 10, p.y + 5, p.width - 20, 20), "<size=12><b><color=#bff4ff>NAV // 항로</color></b></size>", label);
             GUI.Label(new Rect(p.x + 10, p.y + 5, p.width - 20, 20), "<size=11><color=#7fcfe0>지금 " + SweepSim.Orbits[S.orbit].name + "</color></size>", cost);
-            int hoverP = -1; float cw = (p.width - 12) / SweepSim.Orbits.Length;
+            // 🪐 열린 행성 + 바로 다음 하나만 (09-24 사장님 35 · 16번) — 칸이 줄면 아이콘이 커진다
+            var vis = new List<int>(); foreach (int oi2 in SweepSim.OrbitOrder) { vis.Add(oi2); if (!sim.Open(oi2)) break; }
+            int hoverP = -1; float cw = (p.width - 12) / Mathf.Max(4, vis.Count);
             if (!M.cleanReady)
-                for (int oi = 0; oi < SweepSim.OrbitOrder.Length; oi++)          // 가까운 → 먼 순서 (소행성대는 번호 5지만 셋째 자리)
+                for (int oi = 0; oi < vis.Count; oi++)                              // 가까운 → 먼 순서 (소행성대는 번호 5지만 셋째 자리)
                 {
-                    int i = SweepSim.OrbitOrder[oi];
+                    int i = vis[oi];
                     var o = SweepSim.Orbits[i];
                     var cell = new Rect(p.x + 6 + oi * cw, p.y + 26, cw, 50);
                     bool open = sim.Open(i), sale = sim.OnSale(i);
                     if (cell.Contains(Event.current.mousePosition)) hoverP = i;
                     if (i == S.orbit) { GUI.color = new Color(1f, 0.87f, 0.58f, 0.14f * fl); GUI.DrawTexture(cell, white); Frame(cell, new Color(1f, 0.87f, 0.58f, fl), 1.5f); }
-                    var ic = new Rect(cell.center.x - 13, cell.y + 3, 26, 26);
+                    float isz = Mathf.Min(34, cw - 8); var ic = new Rect(cell.center.x - isz / 2, cell.y + 3, isz, isz);
                     GUI.color = new Color(Holo.r, Holo.g, Holo.b, (hoverP == i ? 0.5f : 0.25f) * fl); GUI.DrawTexture(new Rect(ic.x - 5, ic.y - 5, ic.width + 10, ic.height + 10), texDisc);
                     GUI.color = open ? new Color(1, 1, 1, 0.9f * fl) : sale ? new Color(0.6f, 0.65f, 0.7f, 0.8f * fl) : new Color(0.2f, 0.24f, 0.28f, 0.8f * fl);
                     GUI.DrawTexture(ic, PlanetArt.Get(i).texture);
+                    if (!open) { GUI.color = new Color(1, 1, 1, 0.8f * fl); GUI.Label(ic, "<size=14><b>?</b></size>", center); }
                     if (i == 4) GUI.DrawTexture(new Rect(ic.x - 4, ic.center.y - 1, ic.width + 8, 2), white);
                     GUI.color = new Color(1, 1, 1, fl);
-                    string sub = open ? "<color=#dff8ff>" + o.name + "</color>" : sale ? "<color=#ffdf95>" + KNum.Fmt(o.permit) + "</color>" : "<color=#4f7380>잠김</color>";
-                    if (i == S.orbit || hoverP == i || sale) GUI.Label(new Rect(cell.x - 16, cell.y + 30, cell.width + 32, 18), "<size=9>" + sub + "</size>", center);   // 9개라 좁다 — 지금 · 가리킨 · 살 수 있는 것만 이름
+                    string sub = open ? "<color=#dff8ff>" + o.name + "</color>" : "<color=#ffdf95>다음</color>";
+                    if (i == S.orbit || hoverP == i || !open) GUI.Label(new Rect(cell.x - 16, cell.y + 36, cell.width + 32, 16), "<size=9>" + sub + "</size>", center);
                     GUI.color = Color.white;
                     if (GUI.Button(cell, GUIContent.none, GUIStyle.none))
                     {
@@ -578,7 +581,8 @@ namespace SalvageRun.Orbit
             float x = p.x + 10, w = p.width - 20;
             int show = hoverP >= 0 ? hoverP : S.orbit;
             var so = SweepSim.Orbits[show];
-            string st = sim.Open(show) ? "<color=#9ff0bf>열림</color>" : "<color=#ffdf95>정비고 항로 " + KNum.Fmt(so.permit) + " ›</color>";
+            int zl = sim.ZoneLeft(sim.ZoneOpen);
+            string st = sim.Open(show) ? "<color=#9ff0bf>열림</color>" : zl > 0 ? "<color=#ff9b8f>" + SweepSim.ZoneName[sim.ZoneOpen] + " 칸 " + zl + "개 더</color>" : "<color=#ffdf95>정비고 항로 " + KNum.Fmt(so.permit) + " ›</color>";
             if (M.cleanReady) GUI.Label(new Rect(x, p.y + 34, w, 40), "<size=12><color=#bff4ff>청산 출동 — 항로 고정</color></size>", center);
             else
             {
@@ -966,6 +970,12 @@ namespace SalvageRun.Orbit
         void FrontPick()
         {
             var S = sim.S;
+            if (S.frontPick >= 0 && S.frontPick < Market.NewsBook.Length && S.front1 < 0)
+            {   // 📰 내일 1면 확정 — 조종실 창 위 띠 (다음 출동과 함께 발행)
+                var fr = new Rect(ox + 250, 50, 460, 24);
+                GUI.color = new Color(0.08f, 0.07f, 0.06f, 0.92f); GUI.DrawTexture(fr, white); Frame(fr, new Color(1f, 0.36f, 0.81f, 0.7f), 1); GUI.color = Color.white;
+                GUI.Label(fr, "<size=12><color=#ffb3ea>★ 내일 1면</color>  " + Clip(Market.NewsBook[S.frontPick].head.Replace("[소문] ", ""), 24) + "  <color=#8a93a3>· 출동하면 발행</color></size>", center);
+            }
             if (S.front1 < 0 || S.front2 < 0 || sim.Mk == null) return;
             var w = new Rect(ox + 250, 52, 460, 170);
             GUI.color = new Color(0, 0, 0, 0.6f); GUI.DrawTexture(new Rect(w.x + 4, w.y + 6, w.width, w.height), white);

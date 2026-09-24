@@ -35,7 +35,7 @@ namespace SalvageRun.Orbit.Sim
     public class SweepState
     {
         public int version = 22;
-        public int weapon, weapon2 = -1, keys, front1 = -1, front2 = -1;       // ★ 1면 조작 — 고를 기사 둘                               // ⚔ 무기 · 보조 무기 · 🔑 열쇠
+        public int weapon, weapon2 = -1, keys, front1 = -1, front2 = -1, frontPick = -1;       // ★ 1면 조작 — 고를 기사 둘                               // ⚔ 무기 · 보조 무기 · 🔑 열쇠
         public int[] parts = { -1, -1, -1, -1, -1 };                           // 🔩 부품 칸 다섯
         public List<int> shop = new List<int>();                             // 가게 진열 (Parts.Key = 열쇠)                                                   // ⚔ 장착한 무기 (0 집게 빔 · 1 레이저 · 2 번개)
         public double cash, billAmount = -1, creditPending, startedAt, debt;   // debt = 갚아야 할 빚 (대출 × 배수)
@@ -653,7 +653,9 @@ namespace SalvageRun.Orbit.Sim
         public double PackK => 0.02 + 0.012 * Lv("b_pack");
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
         public int ChainMax => R.clean ? 5000 : 40 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 15 * Lv("b_chain");
-        public double ValMult => Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (Orbits[S.orbit].mult + (Lv("k_route") > 0 && S.orbit > 0 ? 0.5 : 0) + (S.orbit > 0 ? 0.05 * Lv("i_route") : 0)) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1) * (1 + 0.04 * Lv("i_eco")) * PlanetStockBonus * Math.Pow(1.5, Lv("m_val")) * Math.Pow(1.25, Lv("m_route"));
+        // 🌪 모래 폭풍 (화성 · 해왕성) — 22초마다 4.5초. 값 ×1.5 · 왼쪽에서 고철이 몰려온다 (09-24 사장님 36번 「무의미함」)
+        public bool StormOn => R != null && !R.over && !R.clean && Orbits[S.orbit].storm && R.t % 22.0 >= 15 && R.t % 22.0 < 19.5;
+        public double ValMult => (StormOn ? 1.5 : 1) * Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (Orbits[S.orbit].mult + (Lv("k_route") > 0 && S.orbit > 0 ? 0.5 : 0) + (S.orbit > 0 ? 0.05 * Lv("i_route") : 0)) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1) * (1 + 0.04 * Lv("i_eco")) * PlanetStockBonus * Math.Pow(1.5, Lv("m_val")) * Math.Pow(1.25, Lv("m_route"));
         public double PlanetStockBonus { get { if (Lv("x_eco_route") <= 0 || Mk == null || S.orbit == 0) return 1; string[] ids = { "", "moon", "mars", "jup", "sat", "", "", "", "" }; if (ids[S.orbit] == "") return 1; for (int i = 0; i < Market.Defs.Length && i < Mk.M.st.Count; i++) if (Market.Defs[i].id == ids[S.orbit] && Mk.M.st[i].shares > 0) return 1.2; return 1; } }   // 새 행성은 종목이 없다
         public double Cut => S.debt > 0 ? Math.Max(0.1, (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) - Part("cut")) : 0;   // 빚이 있으면 판 수입에서 떼어 상환
         // ── 대출 (연체 대신) — 언제든 받을 수 있다. 받은 돈 × 배수를 판 수입에서 조금씩 갚는다
@@ -780,9 +782,15 @@ namespace SalvageRun.Orbit.Sim
         {
             int id = k == 0 ? S.front1 : S.front2; S.front1 = S.front2 = -1;
             if (id < 0 || Mk == null) return;
-            var nd = Market.NewsBook[id];
-            Mk.Publish(nd.head.Replace("[소문] ", ""), nd.body, nd.up, nd.down, nd.size, false);
-            AddNews(null, nd.head.Replace("[소문] ", ""), "궤도일보 1면. (편집장은 청소선에서 온 제보라고만 했다)");
+            S.frontPick = id;                                                 // 📰 내일 1면 확정 — 다음 출동을 시작할 때 발행 (시장은 출동 중에만 흐른다)
+        }
+        void PublishFront()
+        {
+            int id = S.frontPick; S.frontPick = -1;
+            if (id < 0 || id >= Market.NewsBook.Length || Mk == null) return;
+            var nd = Market.NewsBook[id]; string h = nd.head.Replace("[소문] ", "");
+            Mk.Publish("오늘 1면 — " + h, nd.body, nd.up, nd.down, nd.size * 1.5f, false);   // 조작한 1면은 세게 (09-24 사장님 7번 「안 되는 것 같다」)
+            AddNews(null, "오늘 1면 — " + h, "궤도일보 1면. (편집장은 청소선에서 온 제보라고만 했다)");
         }
         public double ShopBase => Math.Max(120, Math.Round(BillAmount * 0.3 / 10) * 10);
         public double PartPrice(int id) => id == Parts.Key ? ShopBase * 2.5 : ShopBase * Parts.RarPrice[Parts.Defs[id].rar];
@@ -1102,6 +1110,7 @@ namespace SalvageRun.Orbit.Sim
             }
             if (clean) r.cleanGoal = 8000;
             if (S.runs == 6) AddNews("run6");
+            PublishFront();                                                  // 📰 조작한 1면 — 출동과 함께 발행
         }
 
         int Alive() { int n = 0; foreach (var d in R.junk) if (!d.dead) n++; return n; }
@@ -1287,6 +1296,7 @@ namespace SalvageRun.Orbit.Sim
             Check(ref r.ev1T, ref r.ev1Warn, r.ev1);
             Check(ref r.ev2T, ref r.ev2Warn, r.ev2);
             if (r.collector && r.t > 6) { r.collector = false; Collector(); }
+            if (StormOn && r.stormLeft <= 0) { r.stormLeft = 1; r.stormT = 0.15; }       // 폭풍 동안 고철 줄기
             if (r.stormLeft > 0)
             {
                 r.stormT -= dt;
