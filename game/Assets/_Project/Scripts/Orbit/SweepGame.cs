@@ -302,7 +302,7 @@ namespace SalvageRun.Orbit
                     {
                         bool spot = e.v <= SweepSim.PickR + 0.1;      // 아직 좁은 빔 — 한 점
                         Beam(at, e.k == 1);
-                        Add(ring, at, 0.1f, e.k == 1 ? Amber2 : new Color(0.35f, 0.38f, 0.44f), 5, spot ? 0.26f : 0.22f, (float)e.v * 2 / PxPerUnit);
+                        if (e.k == 1) RingFx(at, Amber2, spot ? 0.26f : 0.22f, (float)e.v * 2 / PxPerUnit);
                         if (e.k == 1)
                         {
                             OrbitSfx.Play(spot ? "clank" : "tick", spot ? 0.5f : 0.45f, 0.05f);
@@ -314,8 +314,8 @@ namespace SalvageRun.Orbit
                     case SwEv.Broke:
                     {
                         int k = e.k / 100; var att = (Att)(e.k % 100);
-                        Burst(at, JunkColor(k), k == SweepSim.Big ? 40 : k == SweepSim.Vault ? 18 : k == SweepSim.Chip ? 3 : 7, k == SweepSim.Big ? 6f : 3f);
-                        if (att != Att.None && att != Att.Cable) Burst(at, AttColor(att), 8, 3.5f);
+                        Burst(at, JunkColor(k), k == SweepSim.Big ? 30 : k == SweepSim.Vault ? 10 : k == SweepSim.Chip ? 1 : 3, k == SweepSim.Big ? 6f : 3f);
+                        if (att != Att.None && att != Att.Cable) Burst(at, AttColor(att), 3, 3.5f);
                         OrbitSfx.Play(k == SweepSim.Big ? "break" : k == SweepSim.Vault ? "unit" : k == SweepSim.Chip ? "pick" : "clank", k == SweepSim.Chip ? 0.3f : 0.7f, 0.03f);
                         if (k == SweepSim.Big) shake = Mathf.Max(shake, 0.2f);
                         break;
@@ -324,8 +324,8 @@ namespace SalvageRun.Orbit
                     {
                         int src = e.k % 10; bool cut = e.k >= 10;
                         Color c = src == 3 ? Red : cut ? new Color(0.9f, 0.65f, 0.6f) : Amber2;
-                        if (e.v >= 1 && (src == 3 || e.v > sim.ValMult * 20)) CoinPop(e.x, e.y - 8, src == 3 ? "빚 -" : "+", e.v, c);
-                        if (Random.value < 0.6f) Add(disc, at, 0.11f, src == 3 ? Red : Amber, 2, 1.6f).v = (Vector3)(Random.insideUnitCircle * 3f);
+                        if (e.v >= 1 && (src == 3 || e.v > sim.ValMult * 60)) CoinPop(e.x, e.y - 8, src == 3 ? "빚 -" : "+", e.v, c);
+                        if (Random.value < 0.25f) Add(disc, at, 0.11f, src == 3 ? Red : Amber, 2, 1.6f).v = (Vector3)(Random.insideUnitCircle * 3f);
                         break;
                     }
                     case SwEv.Pop: PopAt(e.x, e.y, e.text, e.k == 1 ? Green : e.k == 3 ? Orange : e.k == 4 ? new Color(1f, 0.5f, 0.85f) : e.k == 5 ? Violet : Amber2, e.k >= 4 ? 19 : 16); if (e.k == 3) OrbitSfx.Play("unit", 0.8f); if (e.k >= 4) OrbitSfx.Play("buy", 0.6f); break;
@@ -403,10 +403,10 @@ namespace SalvageRun.Orbit
                         break;
                     }
                     case SwEv.Beam: { var p = Add(pixel, at, 0.05f, Cyan, 3, 0.16f); p.a = at; p.b = PxToWorld(e.x2, e.y2); break; }
-                    case SwEv.Ring: Add(ring, at, 0.1f, e.k == 1 ? Red : e.k == 2 ? Mag : Orange, 5, 0.45f, (float)e.v * 2 / PxPerUnit); break;
+                    case SwEv.Ring: RingFx(at, e.k == 1 ? Red : e.k == 2 ? Mag : Orange, 0.45f, (float)e.v * 2 / PxPerUnit); break;
                     case SwEv.Blast:
-                        Add(ring, at, 0.1f, Orange, 5, 0.4f, (float)e.v * 2 / PxPerUnit);
-                        Add(glow, at, (float)e.v * 2.4f / PxPerUnit, new Color(1f, 0.6f, 0.3f, 0.5f), 7, 0.25f);
+                        RingFx(at, Orange, 0.4f, (float)e.v * 2 / PxPerUnit);
+                        Add(glow, at, (float)e.v * 2.4f / PxPerUnit, new Color(1f, 0.6f, 0.3f, 0.22f), 7, 0.2f);
                         OrbitSfx.Play("blast", 0.5f, 0.025f, 0.12f);
                         shake = Mathf.Max(shake, 0.05f);
                         break;
@@ -421,7 +421,7 @@ namespace SalvageRun.Orbit
                         if (e.text != null) PopAt(e.x, e.y - 40, e.text, Violet, 18 + Mathf.Min(14, (float)e.v / 3));
                         OrbitSfx.Play("break", 1f, 0.05f);
                         break;
-                    case SwEv.Shatter: Add(ring, at, 0.1f, Ice, 5, 0.3f, 0.6f); OrbitSfx.Play("pick", 0.7f); break;
+                    case SwEv.Shatter: RingFx(at, Ice, 0.3f, 0.6f); OrbitSfx.Play("pick", 0.7f); break;
                     case SwEv.Warn: hud.Banner(e.text, e.k, 2.2f); OrbitSfx.Play("warn", 0.8f); break;
                     case SwEv.EventGo: hud.Banner(e.text, -1, 1.6f); break;
                     case SwEv.Collector: hud.Banner(e.text, -2, 3f); CollectorShip(); OrbitSfx.Play("warn", 1f); break;
@@ -621,9 +621,9 @@ namespace SalvageRun.Orbit
                 if (d.att == Att.Ice || d.att == Att.Armor)
                 {
                     av.sprite = ring;
-                    float rs = size * (d.att == Att.Ice ? 1.9f : 1.6f);
+                    float rs = size * (d.att == Att.Ice ? 1.3f : 1.2f);
                     av.transform.position = pos; av.transform.localScale = Vector3.one * rs / ring.bounds.size.x;
-                    if (d.att == Att.Armor) ac = new Color(0.62f, 0.66f, 0.72f, (float)d.fade);
+                    if (d.att == Att.Armor) ac = new Color(0.62f, 0.66f, 0.72f, (float)d.fade * 0.25f); else ac.a *= 0.35f;
                 }
                 else
                 {
@@ -763,6 +763,15 @@ namespace SalvageRun.Orbit
             return p;
         }
 
+        // 🧹 고리 예산 — 화면에 6개까지, 옅게 · 짧게 (09-24 사장님: 「무기들이 너무 다 지저분해」)
+        int ringsAlive;
+        void RingFx(Vector3 at, Color c, float life, float grow)
+        {
+            if (ringsAlive >= 6) return;
+            ringsAlive++; c.a *= 0.55f;
+            Add(ring, at, 0.1f, c, 5, life * 0.7f, grow);
+        }
+
         void Burst(Vector3 at, Color c, int n, float speed)
         {
             for (int i = 0; i < n && fx.Count < 900; i++)
@@ -773,6 +782,7 @@ namespace SalvageRun.Orbit
         {
             Vector3 anchor = hud != null ? cam.ScreenToWorldPoint(new Vector3(hud.CreditScreen.x, hud.CreditScreen.y, 10)) : Vector3.zero;
             anchor.z = 0;
+            ringsAlive = 0; foreach (var q in fx) if (q.kind == 5) ringsAlive++;
             for (int i = fx.Count - 1; i >= 0; i--)
             {
                 var p = fx[i];
