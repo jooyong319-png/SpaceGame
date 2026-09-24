@@ -1,101 +1,71 @@
-# architecture — 코드 어디에 뭐가 있나
+# architecture — 코드 어디에 뭐가 있나 (궤도 청소부)
 
-> **2026-09-02에 다시 썼다.** 옛 문서는 rev.4(뱀서라이크) 시절 설명이 섞여 있어
-> 통째로 갈았다. 게임 규칙은 여기 안 적는다 — 그건 [[game]]이 정본이다.
-> **문서와 코드가 다르면 코드가 맞다.**
-
----
+> **2026-09-24 새로 썼다.** 게임 규칙은 [[game]]이 정본이고, 여기는 코드 지도 · 도구 · 함정만.
+> 옛 살비지런 코드 지도는 [[archive/salvagerun-0902/architecture]]. **문서와 코드가 다르면 코드가 맞다.**
 
 ## 폴더
 
 ```
-SalvageRun/
-├── README.md          셋업 · 빌드 · 읽는 순서
-├── wiki/              문서는 전부 여기 하나로 모았다 (2026-09-02)
-│   └── archive/       ⛔ 폐기된 설계와 옛 측정. docs-rev5/가 옛 docs/ 통째로
-├── tools/             unity-check.ps1 · unity-test.ps1 · unity-webgl*.ps1 · logs/
-├── build/             SalvageRun-webgl.zip · webgl/
-└── game/Assets/_Project/
-    ├── Data/          GameContent.asset · RunConfig.asset   ← 🔴 밸런스 정본
-    ├── Editor/        GreyboxMenu · WebGLBuild
-    ├── Resources/     폰트(Galmuri) 등
-    ├── Scenes/        Greybox
-    ├── Tests/         SmokeTest.cs · BalanceSim.cs
-    └── Scripts/
-        ├── Core/      InputReader                 입력 한 곳 (Input System + 레거시 폴백)
-        ├── Data/      GameData · RunConfig · ContentDefaults · TechTree(Defaults)
-        │              WeaponData(Defaults) · ShipData · ComboData
-        ├── Meta/      MetaSave(저장·해금) · TechSystem(RunStats 조립)
-        ├── Run/       RunDirector(한 판의 지휘자) · StageField(쓰레기 밭)
-        │              ShipController · WeaponRig · BossBehaviour · Fragment · Fx …
-        └── UI/        GameHud · TechTreeScreen    ← 전부 OnGUI (임시)
+game/Assets/_Project/
+  Scripts/Orbit/
+    Sim/SweepSim.cs      🔴 규칙 전부 (순수 C#, 유니티 없음) — 트리 · 행성 · 청구서 · 무기 · 연쇄 · 파산 · 가게 · 복권 · 무한 궤도
+    Sim/Market.cs        증권 — 종목 8 · 봉 · 뉴스가 주가를 민다
+    Sim/Parts.cs         부품 22종
+    SweepGame.cs         화면 — 카메라 · 도트 격자 · 스프라이트 · 연출(사건 → 효과) · 포대 · 입력
+    SweepHud.cs          OnGUI 본체 — 출동 HUD · 결산 · 정비고 트리 · 설정 · 엔딩 · 크레딧 (partial)
+    SweepHudRooms.cs     조종실 소품 · 방 넘기기(Strip) · 증권 방 · 홀로그램 · 파산 단추 · 막 카드
+    SweepHudParts.cs     부품 가게 방
+    SweepHudStockFx.cs   증권 연출 · 속보 앵커 · 내 주식 칩
+    SweepHudLobby.cs     로비
+    OrbitSfx.cs          소리 합성 (파일 없음)
+    PlanetArt.cs · OrbitArt.cs · KNum.cs
+  Resources/             ship · junk · att · anim · planet_anim · bgparts · news (픽셀랩 그림) · ArtUnused/
+  Editor/PaceBotTmp.cs   ⚠️ 봇 돌릴 때만 잠깐 — 커밋 금지, 끝나면 지운다
+tools/pacing/Program.cs  페이스 봇 (dotnet · 또는 에디터 안에서)
 ```
-
-## 규칙이 어디에 있나
-
-| 알고 싶은 것 | 파일 |
-|---|---|
-| 화면 전환 · 한 판의 진행 · 정산 | `Run/RunDirector.cs` — **여기가 지휘자다** |
-| 웨이브 · 보스 등장 시각 | `RunDirector.UpdateWave` |
-| 쓰레기 생성 · 재화 드롭 | `Run/StageField.cs` (`RollMaterials`) |
-| 조준 · 발사 · 연쇄 · 폭발 | `Run/WeaponRig.cs` |
-| 구역·무기·보스 수치 | `Data/ContentDefaults.cs` · `Data/WeaponDefaults.cs` |
-| 테크트리 113노드 | `Data/TechTreeDefaults.cs` |
-| 저장 · 해금 · 구역 구매 | `Meta/MetaSave.cs` |
-| 노드 효과가 스탯이 되는 곳 | `Meta/TechSystem.cs` → `RunStats` |
-| 보스 부위 HP | `RunDirector.BossPartHp` 🔴 **정본은 여기 하나뿐.** 검사가 식을 복사하면 안 된다 |
 
 ## 데이터 흐름
 
-```
-MetaSave(저장) ─┐
-                ├─> TechSystem ─> RunStats ─> RunDirector ─> ShipController/WeaponRig/StageField
-GameContent ────┘                                  │
-                                                   └─> 정산 ─> MetaSave.AddMaterial
-```
+`SweepSim.Tick()` → `Events` 큐(`SwEv`) → `SweepGame.Consume()`이 연출 · 소리로 바꾼다. 화면은 sim을 **읽기만** 한다.
+저장은 PlayerPrefs `sweep.state` · `sweep.meta` (JSON). 새 필드는 기본값으로 채워진다.
+방 번호 `hud.flow`: 0 출동 · 1 결산 · 2 조종실 · 3 정비고 · 4 증권 · 5 부품 가게. `hud.lobby`가 켜져 있으면 로비.
 
-**한 판이 시작할 때 `RunStats`를 새로 조립한다.** 판 도중에는 안 바뀐다
-(레벨업·카드가 없으므로 — [[game]]).
+## 도구
 
----
+### 유니티 MCP (`unity-orbit` · Unity_RunCommand)
 
-## 도구 (`tools/`)
+- 🔴 **먼저 `EditorApplication.isPlaying` 확인** — 사장님이 플레이 중이면 멈추고 말씀드린다. 유니티 끄지 않기.
+- **컴파일**: `AssetDatabase.Refresh(ForceSynchronousImport); UnityEditor.Compilation.CompilationPipeline.RequestScriptCompilation();` → `%LOCALAPPDATA%/Unity/Editor/Editor.log`의 「Domain Reload Profiling」 줄 수가 늘 때까지 기다림 → 그다음 명령은 따로.
+- **플레이 캡처**: `sweep.state/meta`를 `sweep.backup.*`에 복사 → Play → `EditorApplication.update`로 단계 진행 → `ScreenCapture.CaptureScreenshot` → 끝나면 되돌림. 🔴 **찍는 틱과 화면을 바꾸는 틱을 나눌 것** (같은 틱이면 바뀐 첫 프레임이 찍힌다).
+- 시험용 훅: `hud.TestLotto` · `TestEnd` · `testTip/testTipId` · `game.TestAim`.
+- RunCommand 안에서 `System.Reflection` 네임스페이스는 막혀 있다 (`Type.GetMethod`는 된다).
 
-| 명령 | 무엇 | 걸리는 시간 |
-|---|---|---|
-| `unity-check.ps1` | 컴파일만 | 1~2분 |
-| `unity-test.ps1 -Only SmokeTest` | 스모크 | 수 분 |
-| `unity-test.ps1` | **밸런스 시뮬 포함** (CPU를 꽉 쓴다) | ~12분 |
-| `unity-webgl-bg.ps1` | WebGL 빌드 | 오래 |
+### 페이스 봇
 
-🔴 **유니티 에디터가 켜져 있으면 셋 다 못 돈다.** `Get-Process Unity`로 확인할 것.
-🔴 **에디터를 닫지 말 것** — 사장님이 켜 두신 것이다.
-🔴 **컴파일은 사장님이 주무실 때 맡기신 일에만 돌린다.** 그 외엔 고치고 알려드리고 끝낸다.
+- `tools/pacing/Program.cs`를 `sed`로 `public static class PaceBotTmp` · `public static void Main`으로 바꿔 `Assets/_Project/Editor/PaceBotTmp.cs`에 복사 → 컴파일 → 스레드에서 `Type.GetType("PaceBotTmp, SalvageRun.Editor").GetMethod("Main")` 실행, `Console.SetOut`으로 파일에.
+- 🔴 끝나면 `Console.SetOut(new StreamWriter(Console.OpenStandardOutput()){AutoFlush=true})`로 되돌린다 — 안 하면 다음 컴파일이 `ObjectDisposedException`.
+- 재는 것: 끝나는 분 · 파산 수 · 행성 허가 시각. 재미 · 난이도는 안 잰다.
 
----
+### 픽셀랩 (PixelLab MCP)
 
-## 🔴 재사용할 수 있는 지식 — 시뮬 결정론 6조건
+- 사장님 구독 Tier 1 (월 2000 생성). 키는 `C:/Make_Game/.mcp.json` — **커밋 금지**.
+- `create_image_pro_flash` (5~9 생성, 품질 좋음) · `create_image_pixen/pixflux` (1) · `animate_image` (64² 8장 = 1). 받기: `https://api.pixellab.ai/mcp/images/{job}/download?index=N`.
+- 가져오기: Sprite · Point · 무압축 · 밉맵 없음. 두 장이 조금씩 다르게 나오면(입 벌린 앵커) **바뀐 부분만 오려 붙인다** — 통째로 바꾸면 깜빡인다.
+- 애니메이션을 뽑을 땐 사장님께 먼저 여쭌다 (자리 비우실 때 「마음대로」 허락은 그때만).
 
-봇 시뮬로 밸런스를 재려면 **같은 입력이 같은 결과를 내야 한다.**
-여기서 흔들림 44.6% → 0%까지 가는 데 조건을 여섯 개 찾았다.
-**어느 프로젝트에서든 그대로 쓸 수 있다** (→ [[unified-wiki-inbox]]):
+## 도트 격자
 
-1. `Time.captureDeltaTime` 고정
-2. 절대 시각(`Time.time`) 금지
-3. 워밍업 프레임 버리기
-4. `fixedDeltaTime`을 프레임에 맞추기
-5. **물리를 수동으로 돌린다** — `Physics2D.Simulate`를 프레임당 한 번
-6. **배를 제자리로 돌린 *다음에* 밭을 짓는다** ← 순서가 틀리면 44.6% 흔들린다
+카메라가 `pixRT`(모니터 높이 ÷ 정수 ≈ 540줄)에 그리고 OnGUI가 `ViewRect`에 키워 그린다. 마우스 ↔ 월드는 `ScreenToWorld` · `WorldToScreen`을 거친다. 시안 좌표는 1280×720(`TW(mx,my)`), HUD는 높이 600 기준(`RefH`).
 
-⚠️ 넷까지 맞춰 놓고도 흔들려서 네 번을 헛짚었다.
-**결과가 이상하면 게임이 아니라 계측기를 먼저 의심할 것.**
+## 🔴 반복해서 밟은 함정
 
-## 반복해서 밟은 함정
+1. **python 패치로 줄 가운데에 `//` 주석을 넣지 말 것** — 뒤 코드를 삼켜 컴파일이 깨지고, 봇이 옛 코드를 돌렸다 (두 번).
+2. **python 문자열 안의 `\n`** — C# 문자열에 실제 줄바꿈으로 들어가 깨진다. `chr(92)+'n'`로.
+3. **모달 뒤 버튼** — OnGUI는 먼저 그린 버튼이 클릭을 가져간다. 모달이 뜨면 뒤를 `GUI.enabled=false`로 (뉴스 닫기가 뒤 전광판에 먹혀 다시 열렸다).
+4. **시뮬이 조준점을 잠깐 바꾸면**(FireAt) 포구 위치 비교가 빗나간다 — 연출 쪽은 「지금 쏘는 무기」(`curW`)로 판단.
+5. **구역 「다 찍기」 조건에 봇이 안 사는 칸이 들어가면** 봇이 끝나지 않는다 (906분).
+6. PlayerPrefs 되돌리기를 빼먹으면 사장님 저장이 망가진다.
 
-| | |
-|---|---|
-| **객체 풀** | `FreePiece`/`FreeFragment`/`FreeShot` — 순서 버그의 단골. 반납 전에 상태를 지울 것 |
-| **재귀** | `Explode → HitAround → Hit → ProcExplode → Explode` 무한재귀로 StackOverflow. `procDepth`로 막았다. **확률을 낮춰서는 못 고친다** |
-| **enum 개수** | 손으로 센 상수는 enum이 늘 때 조용히 어긋난다. `Enum.GetValues`로 뽑을 것 |
-| **저장 호환** | `MatKind` 정수값이 세이브에 물려 있다. **순서를 바꾸지 말고 뒤에 붙일 것** |
-| **인덱스 편집** | 코드 수정은 **문자열 매칭으로만.** 인덱스 기반 편집으로 파일을 여러 번 깨뜨렸다 |
+## 태그
+
+#orbitsweeper #architecture #unity #tools

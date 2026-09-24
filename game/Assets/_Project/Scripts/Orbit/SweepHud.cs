@@ -160,10 +160,27 @@ namespace SalvageRun.Orbit
             BuyFxDraw();                                               // ✨ 칸 · 부품 · 1면 연출 (어느 화면이든)   // 📈 증권 연출 · 🎙 속보 앵커                                            // 💸 빚 갚기 연출
             if (!sim.M.won && sim.R.over && !(flow == 2 || flow == 4)) Ticker();          // 출동 중엔 계기판 위라 안 그림 — 속보는 앵커가 읽는다          // 조종실엔 궤도일보 모니터가 있다 — 아래 한 줄과 겹친다
             ActCard();
+            GuideBar();
             VolumeButton();
         }
 
         SweepRun cardRun; bool cardOk; float cardFlash;
+        // 🧭 안내 띠 — 새 방이 생기거나 처음 들어갈 때 한 번 (09-24 사장님 32번 「사면 자연스럽게 이용하게」)
+        string guideMsg; float guideT;
+        public void Guide(string msg) { guideMsg = msg; guideT = 6f; OrbitSfx.Play("supply", 0.6f); }
+        void GuideOnce(string flag, string msg) { if (sim.M.flags.Contains("g:" + flag)) return; sim.M.flags.Add("g:" + flag); Guide(msg); }
+        void GuideBar()
+        {
+            if (guideT <= 0 || guideMsg == null) return;
+            guideT -= Time.unscaledDeltaTime;
+            float a = Mathf.Clamp01(guideT / 0.5f) * Mathf.Clamp01((6f - guideT) / 0.25f);
+            var r = new Rect(vw / 2 - 300, 64, 600, 36);
+            GUI.color = new Color(0.06f, 0.08f, 0.05f, 0.94f * a); GUI.DrawTexture(r, white);
+            Frame(r, new Color(0.44f, 0.81f, 0.59f, a * (0.6f + 0.4f * Mathf.Sin(Time.unscaledTime * 6))), 2);
+            GUI.color = new Color(1, 1, 1, a); GUI.Label(r, "<size=14><color=#bff4d0>" + guideMsg + "</color></size>", center);
+            GUI.color = Color.white;
+        }
+
         // 🚀 전탄 게이지 — 화면 아래 가운데 (무기 둘부터). 차오르면 빨개지고, 퍼붓는 동안은 빛난다
         void VolleyGauge()
         {
@@ -876,7 +893,7 @@ namespace SalvageRun.Orbit
         void Scratch(Rect r, Event ev)
         {
             var S = sim.S;
-            GUI.Label(new Rect(r.x + 20, r.y + 56, r.width - 40, 22), "<size=13>한 장 <color=#ffdf95>" + KNum.Fmt(sim.ScratchPrice) + "</color> · 출동마다 3장 (남은 장 " + sim.ScratchLeft + ") · 같은 그림 셋이면 당첨</size>", label);
+            GUI.Label(new Rect(r.x + 20, r.y + 56, r.width - 40, 22), "<size=13>한 장 <color=#ffdf95>" + KNum.Fmt(sim.ScratchPrice) + "</color> · 출동마다 " + sim.ScratchMax + "장 (남은 장 " + sim.ScratchLeft + ") · 같은 그림 셋이면 당첨</size>", label);
             GUI.Label(new Rect(r.x + 20, r.y + 78, r.width - 40, 20), "<size=11><color=#8a9bb3>고철 ×1 · 위성 ×2 · 금고 ×5 · 행성 ×20 · 황금 ×100</color></size>", label);
             var card = new Rect(r.center.x - 200, r.y + 108, 400, 260);
             GUI.color = new Color(0.93f, 0.9f, 0.84f); GUI.DrawTexture(card, white); GUI.color = Color.white;
@@ -884,8 +901,8 @@ namespace SalvageRun.Orbit
             if (scGrid == null)
             {
                 GUI.Label(card, "<size=18><color=#6a5a40>한 장 사서 긁어 보세요</color></size>", center);
-                bool can = sim.ScratchLeft > 0 && S.cash >= sim.ScratchPrice;
-                if (GUI.Button(new Rect(r.center.x - 110, r.yMax - 92, 220, 48), can ? "<size=17>한 장 사기 · " + KNum.Fmt(sim.ScratchPrice) + "</size>" : "<size=13>" + (sim.ScratchLeft <= 0 ? "오늘은 다 긁었다 — 출동하고 오자" : "돈이 모자라다") + "</size>", can ? btn : btnOff) && can)
+                bool can = sim.ScratchLeft > 0 && S.cash >= sim.ScratchCost;
+                if (GUI.Button(new Rect(r.center.x - 110, r.yMax - 92, 220, 48), can ? "<size=17>한 장 사기 · " + (sim.ScratchCost <= 0 ? "공짜" : KNum.Fmt(sim.ScratchCost)) + "</size>" : "<size=13>" + (sim.ScratchLeft <= 0 ? "오늘은 다 긁었다 — 출동하고 오자" : "돈이 모자라다") + "</size>", can ? btn : btnOff) && can)
                 {
                     scGrid = sim.ScratchBuy(out scWin); scCoat = new bool[9, ScCols * ScRows]; scDone = false; scGot = 0; OrbitSfx.Play("buy", 0.5f);
                 }
@@ -933,8 +950,8 @@ namespace SalvageRun.Orbit
             {
                 float k = Mathf.Clamp01((Time.unscaledTime - scDoneT) / 0.25f);
                 GUI.Label(new Rect(r.x, r.yMax - 100, r.width, 40), scGot > 0 ? "<size=" + Mathf.RoundToInt(Mathf.Lerp(40, 26, k)) + "><b><color=#ffdf95>당첨! " + SweepSim.ScratchSym[scWin] + " ×" + SweepSim.ScratchMult[scWin] + "  +" + KNum.Fmt(scGot) + "</color></b></size>" : "<size=22><color=#b89ac6>꽝 — 다음 장에</color></size>", center);
-                bool can = sim.ScratchLeft > 0 && S.cash >= sim.ScratchPrice;
-                if (GUI.Button(new Rect(r.center.x - 110, r.yMax - 56, 220, 40), can ? "<size=15>한 장 더 · " + KNum.Fmt(sim.ScratchPrice) + "</size>" : "<size=12>오늘은 끝</size>", can ? btn : btnOff) && can)
+                bool can = sim.ScratchLeft > 0 && S.cash >= sim.ScratchCost;
+                if (GUI.Button(new Rect(r.center.x - 110, r.yMax - 56, 220, 40), can ? "<size=15>한 장 더 · " + (sim.ScratchCost <= 0 ? "공짜" : KNum.Fmt(sim.ScratchCost)) + "</size>" : "<size=12>오늘은 끝</size>", can ? btn : btnOff) && can)
                 { scGrid = sim.ScratchBuy(out scWin); scCoat = new bool[9, ScCols * ScRows]; scDone = false; scGot = 0; OrbitSfx.Play("buy", 0.5f); }
             }
         }
@@ -1529,6 +1546,8 @@ namespace SalvageRun.Orbit
                 {
                     int times = shift ? 5 : 1;
                     while (times-- > 0 && sim.State(t.stat) == NodeSt.Can) sim.BuyTile(t.stat);
+                    if (n.id == "e_shop") Guide("부품 가게가 생겼다 — 오른쪽 탭 「부품 가게」 ▸");                       // 🧭 새 방 안내 (09-24 사장님 32번)
+                    else if (n.id == "a_open") Guide("증권이 열렸다 — 조종실 오른쪽 「증권 하러 가기」 ▸ · 출동 중엔 S");
                     nodePulse[t.stat] = 1; OrbitSfx.Play("buy", 0.7f, 0.01f, 0.15f); lastBuyBranch = n.branch; BuyFx(pc, SweepSim.KeyNodes.Contains(n.id) ? new Color(0.71f, 0.61f, 1f) : bcol, n.max == 1, SweepSim.KeyNodes.Contains(n.id) ? "핵심 해금!" : "해금!");
                 }
             }
@@ -1634,6 +1653,7 @@ namespace SalvageRun.Orbit
                 case "a_open": return l > 0 ? "열림" : "잠김";
                 case "w_hub": return l > 0 ? "무기 효과 열림" : "잠김";
                 case "w_laser": case "w_chain": return l > 0 ? "발동 " + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : "잠김";
+                case "w_laser_e": case "w_chain_e": case "w_vac_e": case "w_mine_e": case "w_frz_e": case "w_clus_e": case "w_mag_e": case "w_rail_e": return l > 0 ? "특화 " + l + "단계" : "없음";   // ◇ 무기 특화
                 case "w_laser_u": return new[] { "없음", "굵기 +50%", "굵기 +50% · 열 축적" }[Mathf.Min(2, l)];
                 case "w_chain_u": return new[] { "없음", "7번 튄다", "7번 · 튈수록 ×1.2" }[Mathf.Min(2, l)];
                 case "w_laser_a": case "w_chain_a": return l > 0 ? "각성!" : "잠김";

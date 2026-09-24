@@ -262,6 +262,20 @@ namespace SalvageRun.Orbit.Sim
             N("w_mag_a", "arm", "자석 펄스 각성", "모인 자리에 블랙홀이 열린다", new[] { "w_mag_u" }, 1, 8000000, 1, 1, 0, 0),
             N("w_rail", "arm", "레일건", "공격 때 4% — 한 줄로 관통, 엄청 세고 장갑도 뚫는다", new[] { "w_mag" }, 1, 3000000, 1, 1, 0, 0),
             N("w_rail_u", "arm", "레일건 강화", "1단계 확률 ×1.5 · 2단계 뚫을수록 +15%", new[] { "w_rail" }, 1, 6000000, 4, 2, 0, 0),
+            // ◇ 무기 특화 — 단계마다 효과가 커진다 (09-24 사장님 38번 「강화가 너무 적다 · 효과가 추가」)
+            N("w_laser_e", "arm", "레이저 특화", "태우는 점 +20% · 위력 +15% — 3단계: 태운 자리가 가끔 터진다", new[] { "w_laser_u" }, 1, 18000, 4, 3, 0, 0),
+            N("w_chain_e", "arm", "번개 특화", "튀는 수 +2", new[] { "w_chain_u" }, 1, 27000, 4, 3, 0, 0),
+            N("w_vac_e", "arm", "진공 청소기 특화", "흡입 원 +20% · 삼킨 것 값 +20%", new[] { "w_vac_u" }, 1, 72000, 4, 3, 0, 0),
+            N("w_mine_e", "arm", "기뢰 특화", "기뢰 +1개 · 폭발 +15%", new[] { "w_mine_u" }, 1, 180000, 4, 3, 0, 0),
+            N("w_frz_e", "arm", "냉동 빔 특화", "서리 원 +20% · 어는 시간 +0.5초", new[] { "w_frz_u" }, 1, 480000, 4, 3, 0, 0),
+            N("w_clus_e", "arm", "분열탄 특화", "파편 +2", new[] { "w_clus_u" }, 1, 1500000, 4, 3, 0, 0),
+            N("w_mag_e", "arm", "자석 펄스 특화", "끄는 범위 +20%", new[] { "w_mag_u" }, 1, 4800000, 4, 3, 0, 0),
+            N("w_rail_e", "arm", "레일건 특화", "사거리 +120 — 3단계: 한 줄 더", new[] { "w_rail_u" }, 1, 18000000, 4, 3, 0, 0),
+            // 🎟 복권 — 스킬로 (09-24 사장님 33번)
+            N("l_more", "eco", "복권 단골", "판마다 즉석 복권 +1장", new[] { "e_val" }, 1, 300, 3, 3, 0, 0),
+            N("l_luck", "eco", "행운의 긁개", "즉석 복권 당첨 확률 +25%", new[] { "l_more" }, 1, 2000, 3, 3, 0, 0),
+            N("l_free", "eco", "첫 장은 공짜", "판마다 즉석 복권 첫 장이 공짜", new[] { "l_more" }, 1, 1500, 1, 1, 0, 0),
+            N("l_jack", "eco", "잭팟", "즉석 복권 당첨금 ×2", new[] { "l_luck" }, 1, 30000, 1, 1, 0, 0),
             N("w_rail_a", "arm", "레일건 각성", "띠 끝에서 튕겨 한 번 더 쏜다", new[] { "w_rail_u" }, 1, 30000000, 1, 1, 0, 0),
             // ◆ 교차 핵심 (두 방향을 다 키워야 닿는다 · 열쇠) · ∞ 무한 칸 (3막의 돈이 계속 쓸 곳)
             N("x_claw_arm", "claw", "◆ 교차: 사격 통제", "모든 무기 치명 +10% · 치명타는 ×4 (청소선 × 무기고)", new[] { "c_magnet", "w_hub" }, 1, 400000, 1, 1, 0, 0),
@@ -276,13 +290,13 @@ namespace SalvageRun.Orbit.Sim
             N("i_eco", "eco", "∞ 무한 시세", "살 때마다 모든 값 +4%", new[] { "k_eco" }, 1, 2000000, 1.35, 999, 0, 0),
             N("i_route", "route", "∞ 무한 궤도", "살 때마다 행성 값 배수 +0.05", new[] { "k_route" }, 1, 2000000, 1.35, 999, 0, 0),
         };
-        public const int NodeCount = 118;
+        public const int NodeCount = 130;
         /// <summary>◆ 핵심 칸 — 돈 + 열쇠 하나 (부품 가게에서 산다). 각성도 여기</summary>
         public static readonly HashSet<string> KeyNodes = new HashSet<string> { "w_laser_a", "w_chain_a", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2", "w_vac_a", "w_mine_a", "w_frz_a", "w_clus_a", "w_mag_a", "w_rail_a", "x_claw_arm", "x_arm_drone", "x_drone_bh", "x_bh_eco", "x_eco_route", "x_route_claw" };
         public static readonly string[] WeaponName = { "집게 빔", "레이저", "번개", "청소기", "기뢰", "냉동 빔", "분열탄", "자석", "레일건" };
         public static readonly string[] WeaponNode = { null, "w_laser", "w_chain", "w_vac", "w_mine", "w_frz", "w_clus", "w_mag", "w_rail" };
         public static readonly string[] PlanetNode = { null, "p_moon", "p_mars", "p_jup", "p_sat", "p_belt", "p_ura", "p_nep", "p_kui" };
-        public static readonly Dictionary<string, string> IconAlias = new Dictionary<string, string> { { "m_claw", "c_pow" }, { "m_crit", "c_crit" }, { "m_fuel", "c_fuel" }, { "m_drone", "d_fact" }, { "m_dcount", "d_n" }, { "m_bh", "b_n" }, { "m_val", "e_val" }, { "m_route", "o_wide" }, { "w_laser_x", "w_laser_u" }, { "w_chain_x", "w_chain_u" }, { "w_vac_x", "w_vac_u" }, { "w_mine_x", "w_mine_u" }, { "w_frz_x", "w_frz_u" }, { "w_clus_x", "w_clus_u" }, { "w_mag_x", "w_mag_u" }, { "w_rail_x", "w_rail_u" } };
+        public static readonly Dictionary<string, string> IconAlias = new Dictionary<string, string> { { "l_more", "e_val" }, { "l_luck", "e_val" }, { "l_free", "e_val" }, { "l_jack", "e_val" }, { "w_laser_e", "w_laser_u" }, { "w_chain_e", "w_chain_u" }, { "w_vac_e", "w_vac_u" }, { "w_mine_e", "w_mine_u" }, { "w_frz_e", "w_frz_u" }, { "w_clus_e", "w_clus_u" }, { "w_mag_e", "w_mag_u" }, { "w_rail_e", "w_rail_u" }, { "m_claw", "c_pow" }, { "m_crit", "c_crit" }, { "m_fuel", "c_fuel" }, { "m_drone", "d_fact" }, { "m_dcount", "d_n" }, { "m_bh", "b_n" }, { "m_val", "e_val" }, { "m_route", "o_wide" }, { "w_laser_x", "w_laser_u" }, { "w_chain_x", "w_chain_u" }, { "w_vac_x", "w_vac_u" }, { "w_mine_x", "w_mine_u" }, { "w_frz_x", "w_frz_u" }, { "w_clus_x", "w_clus_u" }, { "w_mag_x", "w_mag_u" }, { "w_rail_x", "w_rail_u" } };
         public static bool Ring4(string id) => id.StartsWith("m_") || (id.StartsWith("w_") && id.EndsWith("_x"));
         public static readonly int[] OrbitOrder = { 0, 1, 2, 5, 3, 4, 6, 7, 8 };          // 가까운 → 먼 (소행성대는 번호 5지만 화성과 목성 사이)
         // ───────────────────────── 정비소 트리 자리 (손으로 격자에 놓았다 · 시안 https://claude.ai/artifact/NLZseBQWXKMGfuAmFDFJcR)
@@ -397,6 +411,18 @@ namespace SalvageRun.Orbit.Sim
             { "w_mag_a", new TreeSpot { par = "w_mag_u", tile = 2, x = 7, y = -8, dx = 0, dy = 0 } },
             { "w_rail", new TreeSpot { par = "w_mag", tile = 1, x = 4, y = -9, dx = 0, dy = 0 } },
             { "w_rail_u", new TreeSpot { par = "w_rail", tile = 1, x = 5, y = -9, dx = 1, dy = 0 } },
+            { "w_laser_e", new TreeSpot { par = "w_laser_u", tile = 1, x = 6, y = -1, dx = 0, dy = 0 } },
+            { "w_chain_e", new TreeSpot { par = "w_chain_u", tile = 1, x = 7, y = -1, dx = 0, dy = 0 } },
+            { "w_vac_e", new TreeSpot { par = "w_vac_u", tile = 1, x = 3, y = -5, dx = 0, dy = 0 } },
+            { "w_mine_e", new TreeSpot { par = "w_mine_u", tile = 1, x = 3, y = -6, dx = 0, dy = 0 } },
+            { "w_frz_e", new TreeSpot { par = "w_frz_u", tile = 1, x = 3, y = -7, dx = 0, dy = 0 } },
+            { "w_clus_e", new TreeSpot { par = "w_clus_u", tile = 1, x = 6, y = -9, dx = 0, dy = 0 } },
+            { "w_mag_e", new TreeSpot { par = "w_mag_u", tile = 1, x = 6, y = -10, dx = 0, dy = 0 } },
+            { "w_rail_e", new TreeSpot { par = "w_rail_u", tile = 1, x = 4, y = -10, dx = 0, dy = 0 } },
+            { "l_more", new TreeSpot { par = "e_val", tile = 1, x = -2, y = 1, dx = 0, dy = 0 } },
+            { "l_luck", new TreeSpot { par = "l_more", tile = 1, x = -3, y = 1, dx = 0, dy = 0 } },
+            { "l_free", new TreeSpot { par = "l_more", tile = 1, x = -3, y = 2, dx = 0, dy = 0 } },
+            { "l_jack", new TreeSpot { par = "l_luck", tile = 1, x = -4, y = 1, dx = 0, dy = 0 } },
             { "w_rail_a", new TreeSpot { par = "w_rail_u", tile = 2, x = 7, y = -9, dx = 0, dy = 0 } },
             { "x_claw_arm", new TreeSpot { par = "c_magnet", tile = 3, x = 2, y = -10, dx = 0, dy = 0 } },
             { "x_arm_drone", new TreeSpot { par = "d_grade", tile = 3, x = 13, y = -2, dx = 0, dy = 0 } },
@@ -410,7 +436,7 @@ namespace SalvageRun.Orbit.Sim
             { "i_eco", new TreeSpot { par = "k_eco", tile = 1, x = -6, y = 8, dx = 0, dy = 0 } },
             { "i_route", new TreeSpot { par = "k_route", tile = 1, x = -10, y = -3, dx = 0, dy = 0 } },
         };
-        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R", "a_open", "a_auto", "a_read", "a_ins", "a_big", "p_moon", "p_mars", "p_jup", "p_sat", "w_hub", "w_laser", "w_laser_u", "w_laser_a", "w_chain", "w_chain_u", "w_chain_a", "e_shop", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2", "q_insider", "q_rage", "q_front", "q_debt", "q_meteor", "q_sling", "q_tour", "q_rock", "q_gold", "q_lazy", "w_vac", "w_vac_u", "w_vac_a", "w_mine", "w_mine_u", "w_mine_a", "w_frz", "w_frz_u", "w_frz_a", "w_clus", "w_clus_u", "w_clus_a", "w_mag", "w_mag_u", "w_mag_a", "w_rail", "w_rail_u", "w_rail_a", "x_claw_arm", "x_arm_drone", "x_drone_bh", "x_bh_eco", "x_eco_route", "x_route_claw", "i_claw", "i_drone", "i_bh", "i_eco", "i_route", "p_belt", "p_ura", "p_nep", "p_kui", "m_claw", "m_crit", "m_fuel", "m_drone", "m_dcount", "m_bh", "m_val", "m_route", "w_laser_x", "w_chain_x", "w_vac_x", "w_mine_x", "w_frz_x", "w_clus_x", "w_mag_x", "w_rail_x" };
+        public static readonly string[] IconOrder = { "c_pow", "c_rad", "c_spd", "c_fuel", "c_crit", "c_double", "c_magnet", "c_over", "o_wide", "c_find", "d_n", "d_spd", "d_reach", "d_mag", "d_sig", "d_grade", "d_fix", "d_pair", "d_fact", "b_n", "s_speed", "b_pr", "b_cap", "b_pf", "b_br", "b_chain", "b_pack", "e_val", "e_vault", "e_att", "e_quest", "e_talk", "e_tip", "e_save", "e_guard", "e_used", "R", "a_open", "a_auto", "a_read", "a_ins", "a_big", "p_moon", "p_mars", "p_jup", "p_sat", "w_hub", "w_laser", "w_laser_u", "w_laser_a", "w_chain", "w_chain_u", "w_chain_a", "e_shop", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2", "q_insider", "q_rage", "q_front", "q_debt", "q_meteor", "q_sling", "q_tour", "q_rock", "q_gold", "q_lazy", "w_vac", "w_vac_u", "w_vac_a", "w_mine", "w_mine_u", "w_mine_a", "w_frz", "w_frz_u", "w_frz_a", "w_clus", "w_clus_u", "w_clus_a", "w_mag", "w_mag_u", "w_mag_a", "w_rail", "w_rail_u", "w_rail_a", "x_claw_arm", "x_arm_drone", "x_drone_bh", "x_bh_eco", "x_eco_route", "x_route_claw", "i_claw", "i_drone", "i_bh", "i_eco", "i_route", "p_belt", "p_ura", "p_nep", "p_kui", "w_laser_e", "w_chain_e", "w_vac_e", "w_mine_e", "w_frz_e", "w_clus_e", "w_mag_e", "w_rail_e", "l_more", "l_luck", "l_free", "l_jack", "m_claw", "m_crit", "m_fuel", "m_drone", "m_dcount", "m_bh", "m_val", "m_route", "w_laser_x", "w_chain_x", "w_vac_x", "w_mine_x", "w_frz_x", "w_clus_x", "w_mag_x", "w_rail_x" };
         public static string VisBranch(string id) => id.StartsWith("w_") ? "arm" : id.StartsWith("x_") ? "cross" : id == "c_fuel" || id == "o_wide" || id == "c_find" ? "hull" : id == "s_speed" ? "bh" : Nodes[NodeIx[id]].branch;
 
         static Node N(string id, string br, string name, string desc, string[] par, int seg, double first, double mult, int max, int depth, int lane)
@@ -632,7 +658,7 @@ namespace SalvageRun.Orbit.Sim
         double RawDmgMul => 1 + Part("dmg") + (Lv("k_claw") > 0 ? 0.4 : 0) + Rage + Grit + 0.05 * Lv("i_claw") + (Lv("x_route_claw") > 0 ? new[] { 0, 0.05, 0.1, 0.2, 0.35 }[Math.Min(4, S.orbit)] : 0);
         public double Rage { get { if (Lv("q_rage") <= 0 || Mk == null) return 0; double v = 0, c = 0; foreach (var s in Mk.M.st) if (s.shares > 0) { v += s.shares * s.price; c += s.cost; } return c > 0 ? Math.Min(0.5, Math.Max(0, 1 - v / c)) : 0; } }   // ★ 물린 개미의 분노
         public double Grit => Lv("q_debt") > 0 && S.debt > 0 ? Math.Min(0.15, S.debt / Math.Max(1, BillAmount) * 0.1) : 0;   // ★ 빚쟁이의 근성
-        public double Pow => ClawDmg * DmgMul;                                  // 무기 화력 (소수는 확률로)
+        public double Pow => ClawDmg * DmgMul * clickMul;                                  // 무기 화력 (소수는 확률로)
         int RoundP(double v) => (int)v + (Rnd() < v - (int)v ? 1 : 0);
         public double HpMul => ((1 + 0.45 * Math.Max(0, S.bill - 2)) * Orbits[S.orbit].hp) * (Lv("k_route") > 0 ? 1.2 : 1) * (M.endless ? Math.Pow(1.25, M.depth) : 1);   // 잔해 체력 배율 — 청구서 3장째부터 한 장마다 +45% (초반은 가볍게)
         public int BlastDmg => 2 + 2 * ClawDmg;                    // 폭발은 즉사가 아니라 피해
@@ -709,16 +735,19 @@ namespace SalvageRun.Orbit.Sim
         public static readonly string[] ScratchSym = { "고철", "위성", "금고", "행성", "황금" };
         public static readonly int[] ScratchMult = { 1, 2, 5, 20, 100 };
         public double ScratchPrice => Math.Max(10, Math.Round(BillAmount * 0.02));
-        public int ScratchLeft => S.scratchRun == S.runs ? Math.Max(0, 3 - S.scratchN) : 3;
+        public int ScratchMax => 3 + Lv("l_more");                                  // 🎟 복권 단골
+        public int ScratchLeft => S.scratchRun == S.runs ? Math.Max(0, ScratchMax - S.scratchN) : ScratchMax;
+        public double ScratchCost => Lv("l_free") > 0 && (S.scratchRun != S.runs || S.scratchN <= 0) ? 0 : ScratchPrice;   // 첫 장은 공짜
         public double ScratchPending;                                     // 긁어서 다 보이면 받는다
         /// <summary>한 장 산다 — 돌려주는 값 = 칸 아홉의 그림 (null = 못 삼). win = 당첨 그림 (-1 꽝)</summary>
         public int[] ScratchBuy(out int win)
         {
             win = -1;
-            if (ScratchLeft <= 0 || S.cash < ScratchPrice) return null;
+            if (ScratchLeft <= 0 || S.cash < ScratchCost) return null;
+            double cost = ScratchCost;
             if (S.scratchRun != S.runs) { S.scratchRun = S.runs; S.scratchN = 0; }
-            S.scratchN++; S.cash -= ScratchPrice;
-            double u = luck.NextDouble();
+            S.scratchN++; S.cash -= cost;
+            double u = luck.NextDouble() / (1 + 0.25 * Lv("l_luck"));         // 행운의 긁개
             win = u < 0.001 ? 4 : u < 0.009 ? 3 : u < 0.044 ? 2 : u < 0.114 ? 1 : u < 0.234 ? 0 : -1;
             var g = new int[9]; var cnt = new int[5];
             var slots = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
@@ -728,7 +757,7 @@ namespace SalvageRun.Orbit.Sim
                 int sym; do sym = luck.Next(5); while (sym == win || cnt[sym] >= 2);   // 꽝 칸은 같은 그림이 둘까지만
                 g[j] = sym; cnt[sym]++;
             }
-            ScratchPending = win >= 0 ? ScratchPrice * ScratchMult[win] : 0;
+            ScratchPending = win >= 0 ? ScratchPrice * ScratchMult[win] * (Lv("l_jack") > 0 ? 2 : 1) : 0;   // 잭팟 ×2
             return g;
         }
         public double ScratchClaim() { double w = ScratchPending; S.cash += w; ScratchPending = 0; return w; }
@@ -1524,13 +1553,14 @@ namespace SalvageRun.Orbit.Sim
 
         // 🌀 진공 청소기 — 청소선에서 부채꼴로 빨아들인다 (작은 것 떼에 강함 · 큰 것은 못 삼킨다)
         // 🌀 청소기 — 조준점에 소용돌이 원. 원 안의 것이 가운데로 빨려 들며 부서진다, 가운데 닿으면 흡수 (09-24 사장님 「원 영역 그리고 그 부분이 흡수되게」)
-        public double VacR => (46 + 0.8 * ClawR) * (Lv("w_vac_u") >= 1 ? 1.3 : 1);
+        int We(string w) => Lv("w_" + w + "_e");                            // ◇ 무기 특화 단계
+        public double VacR => (46 + 0.8 * ClawR) * (Lv("w_vac_u") >= 1 ? 1.3 : 1) * (1 + 0.2 * We("vac"));
         void Vac()
         {
             var r = R; int u = Lv("w_vac_u"); bool awk = Lv("w_vac_a") > 0;
             double cx = r.ax, cy = r.ay, rad = VacR, per = Pow * 0.45;
             bool any = false;
-            vacMul = u >= 2 ? 1.6 : 1.3;
+            vacMul = (u >= 2 ? 1.6 : 1.3) + 0.2 * We("vac");
             for (int ji = 0, jn = r.junk.Count; ji < jn && ji < r.junk.Count; ji++)
             {
                 var d = r.junk[ji]; if (d.dead || Types[d.k].big) continue;
@@ -1551,9 +1581,9 @@ namespace SalvageRun.Orbit.Sim
         void MineLay()
         {
             var r = R; int u = Lv("w_mine_u");
-            int cap = 3 + (u >= 1 ? 2 : 0);
+            int cap = 3 + (u >= 1 ? 2 : 0) + We("mine");
             if (r.mines.Count >= cap) r.mines.RemoveAt(0);
-            r.mines.Add(new Blast { x = r.ax, y = r.ay, t = 0.4, R = (45 + 0.25 * ClawR) * (u >= 2 ? 1.4 : 1) });
+            r.mines.Add(new Blast { x = r.ax, y = r.ay, t = 0.4, R = (45 + 0.25 * ClawR) * (u >= 2 ? 1.4 : 1) * (1 + 0.15 * We("mine")) });
             Emit(SwEv.Ring, r.ax, r.ay, 18, 3);
         }
         void Mines(double dt)
@@ -1593,7 +1623,7 @@ namespace SalvageRun.Orbit.Sim
 
         // ❄ 냉동 빔 — 맞은 것이 얼어 멈춘다. 언 것은 무엇에 맞든 두 배로 아프다. 부서지면 산산조각
         // ❄ 냉동 빔 — 빔은 조준점까지, 거기서 서리 원이 퍼진다. 원 안이 언다 (09-24 「얼음은 좀 이상해」 — 한 줄 전체가 얼던 것을 원으로)
-        public double FrzR => (34 + 0.5 * ClawR) * (Lv("w_frz_u") >= 1 ? 1.3 : 1);
+        public double FrzR => (34 + 0.5 * ClawR) * (Lv("w_frz_u") >= 1 ? 1.3 : 1) * (1 + 0.2 * We("frz"));
         void Freeze()
         {
             var r = R; int u = Lv("w_frz_u");
@@ -1604,7 +1634,7 @@ namespace SalvageRun.Orbit.Sim
                 var d = r.junk[ji]; if (d.dead) continue;
                 double dx = d.x - cx, dy = d.y - cy; if (dx * dx + dy * dy > (rad + Types[d.k].r) * (rad + Types[d.k].r)) continue;
                 bool fresh = d.frz <= 0;
-                d.frz = u >= 1 ? 4 : 2.5; any = true;
+                d.frz = (u >= 1 ? 4 : 2.5) + 0.5 * We("frz"); any = true;
                 if (fresh) Emit(SwEv.Shatter, d.x, d.y, 0, 1);
                 int dmg = RoundP(Pow * 0.12); if (dmg > 0) Hit(d, dmg, 0, true);
             }
@@ -1632,7 +1662,7 @@ namespace SalvageRun.Orbit.Sim
             double ax = r.ax, ay = r.ay;
             Emit(SwEv.Shell, ShipX, ShipY, 0, 0, null, ax, ay);
             r.pend.Add(new Blast { x = ax, y = ay, t = 0.35, R = 42 + 0.2 * ClawR, w = true });
-            int n = 6 + (u >= 1 ? 3 : 0);
+            int n = 6 + (u >= 1 ? 3 : 0) + 2 * We("clus");
             var targets = new List<Junk>();
             if (u >= 2) { foreach (var d in r.junk) if (!d.dead) { double dx = d.x - ax, dy = d.y - ay; if (dx * dx + dy * dy < 150 * 150) targets.Add(d); } }
             for (int k = 0; k < n; k++)
@@ -1651,7 +1681,7 @@ namespace SalvageRun.Orbit.Sim
         void MagPulse()
         {
             var r = R; int u = Lv("w_mag_u"); bool awk = Lv("w_mag_a") > 0;
-            double cx = r.ax, cy = r.ay, Rr = (110 + 0.4 * ClawR) * (u >= 1 ? 1.4 : 1);
+            double cx = r.ax, cy = r.ay, Rr = (110 + 0.4 * ClawR) * (u >= 1 ? 1.4 : 1) * (1 + 0.2 * We("mag"));
             int n = 0;
             foreach (var d in r.junk)
             {
@@ -1672,9 +1702,9 @@ namespace SalvageRun.Orbit.Sim
             var r = R; int u = Lv("w_rail_u"); bool awk = Lv("w_rail_a") > 0;
             double sx = ShipX, sy = ShipY, dx0 = r.ax - sx, dy0 = r.ay - sy, L0 = Math.Sqrt(dx0 * dx0 + dy0 * dy0);
             if (L0 < 1) return;
-            double ux = dx0 / L0, uy = dy0 / L0, len = L0 + 420;
+            double ux = dx0 / L0, uy = dy0 / L0, len = L0 + 420 + 120 * We("rail");
             RailLine(sx, sy, ux, uy, len, u >= 2);
-            if (awk) { double ex = sx + ux * (L0 + 40), ey = sy + uy * (L0 + 40), a = Math.Atan2(uy, ux) + Math.PI + Rnd(-0.6, 0.6); RailLine(ex, ey, Math.Cos(a), Math.Sin(a), 360, u >= 2); }
+            if (awk || We("rail") >= 3) { double ex = sx + ux * (L0 + 40), ey = sy + uy * (L0 + 40), a = Math.Atan2(uy, ux) + Math.PI + Rnd(-0.6, 0.6); RailLine(ex, ey, Math.Cos(a), Math.Sin(a), 360, u >= 2); }
             OnHit(1);
         }
         void RailLine(double sx, double sy, double ux, double uy, double len, bool grow)
@@ -1715,6 +1745,7 @@ namespace SalvageRun.Orbit.Sim
                 while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
                 r.shipA += da * Math.Min(1, dt * 3);
             }
+            if (r.clickCd > 0) r.clickCd -= dt;
             for (int cw = 1; cw <= 5; cw += 2)                                  // 이어서 쏘는 확률 효과 (레이저 1 · 청소기 3 · 냉동 5)
                 if (r.chan[cw] > 0) { r.chan[cw] -= dt; r.chanNext[cw] -= dt; if (r.chanNext[cw] <= 0) { r.chanNext[cw] = Gap * 0.25; Emit(SwEv.Proc, r.chanX[cw], r.chanY[cw], cw, 2); FireAt(cw, r.chanX[cw], r.chanY[cw]); } }   // kk 2 = 이어 쏘기 (포대만)
             VolleyTick(dt);
@@ -1724,6 +1755,16 @@ namespace SalvageRun.Orbit.Sim
             Fire(0); Procs();
             if (Rnd() < 0.1 * Lv("c_double") + Part("dbl")) { Fire(0); Procs(); }
         }
+        // 👆 수동 사격 — 누를 때마다 조준점에 한 방 더 (위력 ×1.5 · 0.2초 간격). 무기 발동 · 전탄 게이지도 굴러간다 (09-24 사장님 37번 「클릭에 요소」)
+        public bool ClickShot(double x, double y)
+        {
+            var r = R; if (r == null || r.over || r.clickCd > 0 || r.fuel <= 0) return false;
+            r.clickCd = 0.2; double ox = r.ax, oy = r.ay; r.ax = x; r.ay = y;
+            clickMul = 1.5; Fire(0); clickMul = 1; Procs();
+            r.ax = ox; r.ay = oy;
+            return true;
+        }
+        double clickMul = 1;
         void Fire2(double dt)
         {
             var r = R; int w2 = S.weapon2;
@@ -1765,14 +1806,14 @@ namespace SalvageRun.Orbit.Sim
 
         // 🔴 레이저 — 청소선에서 조준점 너머까지. 네 배 자주 · 한 번은 화력의 0.3 (소수는 확률로)
         // 🔴 레이저 — 빔은 조준점에서 멈추고 끝의 작은 원만 태운다 (09-24 사장님: 화면 끝까지 한 줄로 쓸던 것이 말이 안 됐다)
-        public double LaserR => (12 + 0.25 * Math.Max(ClawR, PickR * 0.6)) * (Lv("w_laser_u") >= 1 ? 1.4 : 1) * (Lv("w_laser_a") > 0 ? 1.5 : 1);
+        public double LaserR => (12 + 0.25 * Math.Max(ClawR, PickR * 0.6)) * (Lv("w_laser_u") >= 1 ? 1.4 : 1) * (Lv("w_laser_a") > 0 ? 1.5 : 1) * (1 + 0.2 * We("laser"));
         void Laser()
         {
             var r = R;
             int u = Lv("w_laser_u"); bool awk = Lv("w_laser_a") > 0;
             double sx = ShipX, sy = ShipY, cx = r.ax, cy = r.ay, rad = LaserR;
             bool crit = Rnd() < Crit, any = false;
-            double per = Pow * 0.36 * (u >= 2 ? r.heat : 1) * (crit ? CritX : 1);
+            double per = Pow * 0.36 * (u >= 2 ? r.heat : 1) * (crit ? CritX : 1) * (1 + 0.15 * We("laser"));
             for (int ji = 0, jn = r.junk.Count; ji < jn && ji < r.junk.Count; ji++)   // 부서지며 조각이 새로 붙어도 괜찮게 (번호로 돈다)
             {
                 var d = r.junk[ji];
@@ -1785,6 +1826,7 @@ namespace SalvageRun.Orbit.Sim
             }
             Emit(SwEv.Laser, sx, sy, rad, (crit ? 1 : 0) + (awk ? 2 : 0) + 64, null, cx, cy);
             r.heat = any ? Math.Min(1.8, r.heat + 0.04) : 1;
+            if (any && We("laser") >= 3 && Rnd() < 0.25) r.pend.Add(new Blast { x = cx, y = cy, t = 0.05, R = rad * 1.4, w = true });   // ◇ 3단계 — 태운 자리가 터진다
             if (any) OnHit(0.25);
         }
 
@@ -1798,7 +1840,7 @@ namespace SalvageRun.Orbit.Sim
             foreach (var d in r.junk) { if (d.dead) continue; double dx = d.x - r.ax, dy = d.y - r.ay, dd = dx * dx + dy * dy; if (dd < bd) { bd = dd; cur = d; } }
             if (cur == null) { Emit(SwEv.Strike, r.ax, r.ay, PickR, 0); return; }
             bool crit = Rnd() < Crit;
-            int jumps = 5 + (u >= 1 ? 2 : 0);
+            int jumps = 5 + (u >= 1 ? 2 : 0) + 2 * We("chain");
             double dmg = Pow * 1.3 * (crit ? CritX : 1);
             double px = ShipX, py = ShipY;
             var hit = new List<Junk>();

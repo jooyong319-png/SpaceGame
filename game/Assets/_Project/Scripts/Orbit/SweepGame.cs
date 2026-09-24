@@ -254,6 +254,7 @@ namespace SalvageRun.Orbit
             aimPx = new Vector2(480 + (w.x - cam.transform.position.x) * PxPerUnit, 310 - (w.y - cam.transform.position.y) * PxPerUnit);
             aimOn = true;
             if (hud.overSkill || hud.overAuto || hud.overStock) aimOn = false;          // 스킬 칸 위 — 빔 자리는 그대로 둔다
+            else if (mouse.leftButton.wasPressedThisFrame && !sim.R.over && sim.ClickShot(aimPx.x, aimPx.y)) { retKick = Mathf.Max(retKick, 1f); shake = Mathf.Max(shake, 0.04f); OrbitSfx.Play("clank", 0.5f, 0.02f, 0.1f); }   // 👆 수동 사격
         }
 
         Vector2 lastMouse, autoTarget; float idleT, autoRetarget, autoDwell, autoBanT; int autoHp; Junk autoJunk, autoBan, prevAuto;
