@@ -40,6 +40,7 @@ namespace SalvageRun.Orbit
         }
         public void TradeSell(int i, double frac, Vector2 from)
         {
+            if (sim.R != null && !sim.R.over) return;                     // 🔒 출동 중엔 못 판다 (09-24)
             var st = sim.Mk.M.st[i];
             double c0 = st.cost, before = sim.S.cash;
             sim.StockSell(i, frac);
