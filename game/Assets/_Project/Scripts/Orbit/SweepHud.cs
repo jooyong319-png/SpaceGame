@@ -16,7 +16,7 @@ namespace SalvageRun.Orbit
 
         const float RefH = 600f;
         float scale = 1f, vw = 960f, ox;
-        public Vector2 CreditScreen = new Vector2(120, 580);
+        public Vector2 CreditScreen = new Vector2(120, 580), TallyScreen = new Vector2(600, 60);
         public bool reduceMotion;
         public bool Blocking => sim != null && (sim.R.over || sim.M.careerOpen || sim.M.won || newsOpen || bayOpen);
 
@@ -287,6 +287,16 @@ namespace SalvageRun.Orbit
             }
             else if (S.bill < SweepSim.Bills.Length)
                 Item("청구서", KNum.Fmt(sim.BillAmount) + " · " + S.billDue + "판" + (S.debt > 0 ? " <color=#ee7766>빚 상환 " + Mathf.RoundToInt((float)sim.Cut * 100) + "%</color>" : ""), label);
+            // 💰 이번 판 계산대 — 계기판 위, 포구 오른쪽. 금화가 여기로 날아와 한 숫자로 (시안 DbsvFEEy1K5ddbZsM61B2y)
+            {
+                var tr = new Rect(vw / 2 + 108, RefH - 60, 150, 40);
+                TallyScreen = new Vector2(tr.center.x * scale, Screen.height - tr.center.y * scale);
+                float pu = game.tallyPulse;
+                GUI.color = new Color(0.063f, 0.082f, 0.114f, 0.95f); GUI.DrawTexture(tr, white);
+                Frame(tr, Color.Lerp(new Color(0.17f, 0.2f, 0.26f), new Color(1f, 0.76f, 0.35f), pu), 1); GUI.color = Color.white;
+                GUI.Label(new Rect(tr.x, tr.y + 2, tr.width, 16), "<size=11><color=#7f8b9c>이번 판</color></size>", center);
+                GUI.Label(new Rect(tr.x, tr.y + 15, tr.width, 24), "<size=" + (17 + Mathf.RoundToInt(pu * 4)) + "><b><color=#ffc35a>" + (game.runTally > 0 ? "+" + KNum.Fmt(game.runTally) : "—") + "</color></b></size>", center);
+            }
             GUI.Label(new Rect(x, 14, 40, 20), "연료", dim);
             GUI.DrawTexture(new Rect(x + 34, 19, 160, 9), texBar);
             float fk = Mathf.Clamp01((float)(R.fuel / R.max));

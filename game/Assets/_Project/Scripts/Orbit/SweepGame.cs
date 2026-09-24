@@ -40,7 +40,8 @@ namespace SalvageRun.Orbit
         public static Vector2 TestPx;
 
         // 도파민 사다리 (§5)
-        public float hitStop, slowMo, flash, edgeGlow, bandLit, rimLit, shake, creditPulse, kessT;
+        public float hitStop, slowMo, flash, edgeGlow, bandLit, rimLit, shake, creditPulse, kessT, tallyPulse;
+        public double runTally; SweepRun tallyRun;                         // 💰 「이번 판」 계산대 (시안 DbsvFEEy1K5ddbZsM61B2y)
         public string kessText;
 
         class P { public SpriteRenderer sr; public Vector3 v, a, b; public float age, life, size; public Color c; public int kind; }
@@ -182,7 +183,7 @@ namespace SalvageRun.Orbit
             DrawJunk();
             DrawTools();
             UpdateFx(dt);
-            creditPulse = Mathf.MoveTowards(creditPulse, 0, dt * 3f);
+            creditPulse = Mathf.MoveTowards(creditPulse, 0, dt * 3f); tallyPulse = Mathf.MoveTowards(tallyPulse, 0, dt * 3f);
             shake = Mathf.MoveTowards(shake, 0, dt * 0.9f);
             flash = Mathf.MoveTowards(flash, 0, dt * 1.5f);
             edgeGlow = Mathf.MoveTowards(edgeGlow, 0, dt * 0.5f);
@@ -330,7 +331,9 @@ namespace SalvageRun.Orbit
                     {
                         int src = e.k % 10; bool cut = e.k >= 10;
                         Color c = src == 3 ? Red : cut ? new Color(0.9f, 0.65f, 0.6f) : Amber2;
-                        if (e.v >= 1 && (src == 3 || e.v > sim.ValMult * 60)) CoinPop(e.x, e.y - 8, src == 3 ? "빚 -" : "+", e.v, c);
+                        if (sim.R != tallyRun) { tallyRun = sim.R; runTally = 0; }
+                        if (src != 3 && e.v > 0) runTally += e.v;                                   // 값은 계산대에 모은다 — 쓰레기 위 숫자는 아주 큰 것만
+                        if (e.v >= 1 && (src == 3 || e.v > sim.ValMult * 400)) CoinPop(e.x, e.y - 8, src == 3 ? "빚 -" : "+", e.v, c);
                         if (Random.value < 0.25f) Add(disc, at, 0.11f, src == 3 ? Red : Amber, 2, 1.6f).v = (Vector3)(Random.insideUnitCircle * 3f);
                         break;
                     }
@@ -866,7 +869,8 @@ namespace SalvageRun.Orbit
 
         void UpdateFx(float dt)
         {
-            Vector3 anchor = hud != null ? cam.ScreenToWorldPoint(new Vector3(hud.CreditScreen.x, hud.CreditScreen.y, 10)) : Vector3.zero;
+            var aS = hud == null ? Vector2.zero : sim.R != null && !sim.R.over ? hud.TallyScreen : hud.CreditScreen;   // 출동 중엔 금화가 계산대로
+            Vector3 anchor = hud != null ? cam.ScreenToWorldPoint(new Vector3(aS.x, aS.y, 10)) : Vector3.zero;
             anchor.z = 0;
             ringsAlive = 0; foreach (var q in fx) if (q.kind == 5) ringsAlive++;
             for (int i = fx.Count - 1; i >= 0; i--)
@@ -880,7 +884,7 @@ namespace SalvageRun.Orbit
                 {
                     case 0: p.v *= Mathf.Exp(-3f * dt); tr.position += p.v * dt; p.sr.color = new Color(p.c.r, p.c.g, p.c.b, 1 - k); break;
                     case 2:   // 금화 — 돈 숫자까지 실제로 날아간다
-                        if (p.age > 0.25f) { var to = anchor - tr.position; p.v = Vector3.Lerp(p.v, to.normalized * 18f, 1 - Mathf.Exp(-dt * 7f)); if (to.magnitude < 0.35f) { dead = true; creditPulse = 1f; OrbitSfx.Play("coin", 0.3f, 0.05f, 0.1f); } }
+                        if (p.age > 0.25f) { var to = anchor - tr.position; p.v = Vector3.Lerp(p.v, to.normalized * 18f, 1 - Mathf.Exp(-dt * 7f)); if (to.magnitude < 0.35f) { dead = true; creditPulse = 1f; tallyPulse = 1f; OrbitSfx.Play("coin", 0.3f, 0.05f, 0.1f); } }
                         else p.v *= Mathf.Exp(-3f * dt);
                         tr.position += p.v * dt;
                         break;
