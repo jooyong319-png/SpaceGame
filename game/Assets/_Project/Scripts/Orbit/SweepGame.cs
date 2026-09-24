@@ -343,7 +343,7 @@ namespace SalvageRun.Orbit
             {
                 var e = sim.Events.Dequeue();
                 if ((e.kind == SwEv.Laser || e.kind == SwEv.Vac || e.kind == SwEv.Shell || e.kind == SwEv.Rail || e.kind == SwEv.Bolt) && sim.R != null && !sim.R.over
-                    && System.Math.Abs(e.x - sim.ShipX) < 2 && System.Math.Abs(e.y - sim.ShipY) < 2)
+                    && (curW > 0 || System.Math.Abs(e.x - sim.ShipX) < 2 && System.Math.Abs(e.y - sim.ShipY) < 2))   // 무기 포대가 쏘는 중이면 늘 그 포구에서
                 {
                     var mw = PxToWorld(e.x, e.y); var nt = ShotFrom(); e.x = 480 + nt.x * PxPerUnit; e.y = 310 - nt.y * PxPerUnit;
                     if ((e.kind == SwEv.Laser && (e.k & 64) == 0) || e.kind == SwEv.Rail) { e.x2 += e.x - (480 + mw.x * PxPerUnit); e.y2 += e.y - (310 - mw.y * PxPerUnit); }   // 64 = 조준점에서 멈추는 빔
@@ -363,6 +363,7 @@ namespace SalvageRun.Orbit
                         break;
                     case SwEv.Strike:
                     {
+                        curW = 0;
                         bool spot = e.v <= SweepSim.PickR + 0.1;      // 아직 좁은 빔 — 한 점
                         Beam(at, e.k == 1);
                         if (e.k == 1) RingFx(at, Amber2, spot ? 0.26f : 0.22f, (float)e.v * 2 / PxPerUnit);
@@ -455,8 +456,15 @@ namespace SalvageRun.Orbit
                     case SwEv.Proc:
                     {   // 🔫 확률 효과 발동 — 무기 이름이 조준점 위에 잠깐 · 포대가 그 색으로 번쩍
                         int pw = (int)e.v; var pc = WeaponCol(pw);
-                        PopAt(e.x, e.y, SweepSim.WeaponName[pw] + "!", pc, 15);
-                        Add(glow, ShotFrom(), 1.1f * cam.orthographicSize / 6f, pc, 7, 0.18f).sr.sortingOrder = 150;
+                        curW = pw; if (pw > 0 && pw < 9) { wTgt[pw] = PxToWorld(e.x, e.y + (e.k == 0 ? 26 : 20)); wRec[pw] = 1; }
+                        if (e.k == 0) { PopAt(e.x, e.y, SweepSim.WeaponName[pw] + "!", pc, 15); Add(glow, ShotFrom(), 1.1f * cam.orthographicSize / 6f, pc, 7, 0.18f).sr.sortingOrder = 150; }
+                        break;
+                    }
+                    case SwEv.Volley:
+                    {   // 🚀 전탄 발사 — 멈칫 · 번쩍 · 흔들림 · 큰 글자
+                        hitStop = Mathf.Max(hitStop, 0.22f); flash = Mathf.Max(flash, 0.55f); shake = Mathf.Max(shake, 0.35f);
+                        PopAt(e.x, e.y - 60, "전탄 발사!", new Color(1f, 0.87f, 0.58f), 30);
+                        OrbitSfx.Play("launch", 1f); OrbitSfx.Play("blast", 0.8f, 0.1f);
                         break;
                     }
                     case SwEv.Vac:
@@ -1069,6 +1077,11 @@ namespace SalvageRun.Orbit
         static readonly Color Metal = new Color(0.165f, 0.2f, 0.25f), Metal2 = new Color(0.23f, 0.27f, 0.34f), Dark = new Color(0.086f, 0.11f, 0.145f);
         Vector3 ShotFrom()                                                             // 다음 포구 끝 (월드) · 반동
         {
+            if (curW > 0 && sim.WeaponOwned(curW))
+            {   // 무기 포대 포구
+                var wb = WTurretPos(curW); float wa = WTurretAng(curW, wb); wRec[curW] = 1;
+                var wp = TAlong(wb, wa, TurW[curW] * 0.8f); Add(glow, wp, 0.9f * cam.orthographicSize / 6f, WeaponCol(curW), 7, 0.1f).sr.sortingOrder = 150; return wp;
+            }
             int w = sim.Weapon, n = sim.MountCount(w); turFire = (turFire + 1) % n; recoil[turFire] = 1;
             sim.MountPx(w, turFire, out _, out _, out var tx, out var ty);
             var p = PxToWorld(tx, ty); Add(glow, p, 0.9f * cam.orthographicSize / 6f, WeaponCol(w), 7, 0.1f).sr.sortingOrder = 150; return p;
@@ -1137,8 +1150,35 @@ namespace SalvageRun.Orbit
                         for (int k = 0; k < 6; k++) TBox(TAlong(b, a, 22 + k * 14), 6, 12, a, new Color(0.62f, 0.82f, 1f, 0.2f + 0.8f * (k < ch * 6 ? ch : 0.15f)), 3);
                         if (ch > 0.5f) TDisc(TAlong(b, a, L), 10 + 24 * ch, new Color(0.75f, 0.9f, 1f, ch * 0.8f), 4, glow); break; }
                 }
+                WeaponTurrets(dt);
             }
             for (int i = turN; i < turPool.Count; i++) turPool[i].enabled = false;
+        }
+
+        // 🔫 산 무기마다 창턱에 포대 하나 — 가운데 기본 빔 둘레로 좌우 번갈아 (09-24 사장님 전탄 B안 「여러 곳에서 쏘는 느낌」)
+        int curW;                                                                     // 지금 쏘는 무기 — 발동 신호가 먼저 와서 효과가 그 포대에서 나간다
+        readonly Vector3[] wTgt = new Vector3[9]; readonly float[] wRec = new float[9];
+        Vector3 WTurretPos(int w)
+        {
+            int k = 0; for (int i = 1; i < w; i++) if (sim.WeaponOwned(i)) k++;
+            float side = k % 2 == 0 ? -1 : 1, dist = (k / 2 + 1) * 112;
+            return TW(640 + side * dist, 668);
+        }
+        float WTurretAng(int w, Vector3 b) { var t = wTgt[w] == Vector3.zero ? turAim : wTgt[w]; var d = t - b; return Mathf.Atan2(d.y, d.x); }
+        void WeaponTurrets(float dt)
+        {
+            const float up = Mathf.PI / 2;
+            var edge = new Color(0.17f, 0.2f, 0.26f);
+            for (int w = 1; w < 9; w++)
+            {
+                wRec[w] = Mathf.Max(0, wRec[w] - dt * 6);
+                if (!sim.WeaponOwned(w)) continue;
+                var b = WTurretPos(w); float a = WTurretAng(w, b); var ts = TurSprite(w);
+                TBox(b + new Vector3(0, -10 * TK, 0), 58, 14, 0, edge, -2); TBox(b + new Vector3(0, -10 * TK, 0), 54, 10, 0, Dark, -1);   // 받침
+                if (ts != null) TSprite(ts, TAlong(b, a, -wRec[w] * 7), TurW[w] * 0.85f, a - up, 2);
+                else { TDisc(b, 14, Dark, 0); TBarrel(b, a, 50, 10, WeaponCol(w), wRec[w]); }
+                if (wRec[w] > 0) TDisc(TAlong(b, a, TurW[w] * 0.8f), 10 + 14 * wRec[w], new Color(WeaponCol(w).r, WeaponCol(w).g, WeaponCol(w).b, wRec[w] * 0.8f), 4, glow);
+            }
         }
 
         void Burst(Vector3 at, Color c, int n, float speed)

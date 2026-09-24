@@ -128,7 +128,7 @@ namespace SalvageRun.Orbit
             scale = Screen.height / RefH; vw = Screen.width / scale; ox = Mathf.Max(0, (vw - 960) / 2);
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1));
             Effects();
-            if (!sim.R.over) { Storm(); WindowEdge(); Pops(); RunHud(); MyStockChips(); if (launchT > 0) Launch(); }
+            if (!sim.R.over) { Storm(); WindowEdge(); Pops(); RunHud(); VolleyGauge(); MyStockChips(); if (launchT > 0) Launch(); }
             if (sim.M.won) Ending();
             else if (sim.M.careerOpen) Career();
             else if (sim.R.over)
@@ -148,6 +148,19 @@ namespace SalvageRun.Orbit
             if (!sim.M.won && !(sim.R.over && (flow == 2 || flow == 4))) Ticker();          // 조종실엔 궤도일보 모니터가 있다 — 아래 한 줄과 겹친다
             ActCard();
             VolumeButton();
+        }
+
+        // 🚀 전탄 게이지 — 화면 아래 가운데 (무기 둘부터). 차오르면 빨개지고, 퍼붓는 동안은 빛난다
+        void VolleyGauge()
+        {
+            if (!sim.VolleyOn) return;
+            var R = sim.R; float k = R.volleyT > 0 ? 1 : Mathf.Clamp01((float)R.volley);
+            var r = new Rect(vw / 2 - 110, RefH - 16, 220, 7);
+            GUI.color = new Color(0.05f, 0.06f, 0.09f, 0.9f); GUI.DrawTexture(new Rect(r.x - 2, r.y - 2, r.width + 4, r.height + 4), white);
+            Color c = R.volleyT > 0 ? Color.Lerp(new Color(1f, 0.9f, 0.6f), Color.white, 0.5f + 0.5f * Mathf.Sin(Time.time * 30)) : k > 0.8f ? new Color(1f, 0.36f, 0.3f) : SweepGame.Amber;
+            GUI.color = c; GUI.DrawTexture(new Rect(r.x, r.y, r.width * k, r.height), white);
+            GUI.color = new Color(1, 1, 1, 0.8f); GUI.Label(new Rect(r.x - 60, r.y - 6, 56, 18), "<size=10><color=#8a93a3>전탄</color></size>", cost);
+            GUI.color = Color.white;
         }
 
         // 🔊 소리 크기 — 오른쪽 위 구석, 누를 때마다 100 → 70 → 40 → 15 → 끔 (09-24 친구들 「소리 줄이는 것」). M = 음소거는 그대로
@@ -1076,7 +1089,7 @@ namespace SalvageRun.Orbit
         {
             bool on = game.autoMode;
             // 가운데 — 은은하게, 점이 늘었다 줄었다
-            if (on && !sim.R.over)
+            if (false && on && !sim.R.over)                                  // 가운데 「AUTO...」 뺌 — 시험 단추만 (09-24 17번)
             {
                 int dots = (int)(Time.unscaledTime * 2.2f) % 4;
                 float a = 0.22f + 0.1f * Mathf.Sin(Time.unscaledTime * 3f);
@@ -1427,6 +1440,14 @@ namespace SalvageRun.Orbit
                 GUI.Label(zr, "<size=11><color=#8a93a3>" + Mathf.RoundToInt(userZ * 100) + "%</color></size>", center);
             }
             PartsButton(new Rect(zb.x, zb.yMax + 8, 230, 30));             // 무기 효과판 뺌 (09-24 23번)
+            {   // 🪐 구역 진행 — 지금 구역 칸을 다 찍으면 다음 항로 (09-24 6·21번)
+                int zo = sim.ZoneOpen, zl = sim.ZoneLeft(zo), zt = 0; for (int i = 0; i < SweepSim.Nodes.Length; i++) if (SweepSim.Zone[i] == zo && SweepSim.ZoneNeed(i)) zt++;
+                bool last = zo + 1 >= SweepSim.OrbitOrder.Length;
+                var zr = new Rect(zb.x, zb.yMax + 44, 300, 24);
+                GUI.color = new Color(0.04f, 0.05f, 0.07f, 0.9f); GUI.DrawTexture(zr, white); GUI.color = Color.white;
+                string nx = last ? "" : SweepSim.Orbits[SweepSim.OrbitOrder[zo + 1]].name;
+                GUI.Label(new Rect(zr.x + 8, zr.y + 3, zr.width - 16, 18), "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> 구역 " + (zt - zl) + "/" + zt + (last ? "" : zl > 0 ? " <color=#8a93a3>— 다 찍으면 " + nx + " 항로</color>" : " <color=#6fcf97>— " + nx + " 항로를 살 수 있다</color>") + "</size>", label);
+            }
             if (testTip >= 0) { for (int k = 0; k < nT; k++) if (gtiles[k].stat >= 0 && SweepSim.Nodes[gtiles[k].stat].id == testTipId) hover = k; }   // 에디터 시험용
             if (hover >= 0) Tip(hover, ToScr(gtiles[hover].cell), st[hover], tile);
             else GUI.Label(new Rect(ox, area.yMax + 2, 750, 16), "<size=11>칸에 마우스를 올리면 무엇인지 보인다 · 빛나는 칸을 누르면 산다 · 휠 = 확대 · 끌기 = 이동</size>", center);
@@ -1476,6 +1497,8 @@ namespace SalvageRun.Orbit
             string foot;
             if (vis == 3 && SweepSim.Infinite(t.stat)) foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>  <color=#ffdf95>∞ " + sim.S.lv[t.stat] + "번 삼 · 계속 살 수 있다</color>";   // 누적 칸 — 다음 가격 (09-24 친구들 「가격이 안 보인다」)
             else if (vis == 3) foot = "<color=#6fcf97>샀다</color>";
+            else if (ns == NodeSt.Locked && n.id.StartsWith("p_") && sim.ZoneLeft(SweepSim.Zone[t.stat]) > 0) foot = "<color=#ff9b8f>" + SweepSim.ZoneName[SweepSim.Zone[t.stat]] + " 칸 " + sim.ZoneLeft(SweepSim.Zone[t.stat]) + "개 더 찍으면 열린다</color>";   // 🪐 구역
+            else if (ns == NodeSt.Locked && SweepSim.Zone[t.stat] > sim.ZoneOpen) foot = "<color=#ff9b8f>" + SweepSim.ZoneName[SweepSim.Zone[t.stat]] + " 항로를 열면 열린다</color>";
             else if (ns == NodeSt.Locked) foot = SweepSim.Ring4(n.id) ? "<color=#ff9b8f>목성 항로를 열면 — 외행성 면허</color>" : "<color=#ff9b8f>청구서 " + SweepSim.BranchNeed[b] + "을 갚으면 열린다</color>";
             else if (ns == NodeSt.Hidden && vis != 2) foot = "<color=#ff9b8f>앞 칸을 먼저 사야 한다</color>";
             else if (ns == NodeSt.Hidden) foot = "<color=#ff9b8f>이어진 다른 칸도 사야 한다</color>";

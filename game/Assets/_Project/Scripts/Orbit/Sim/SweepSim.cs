@@ -73,7 +73,8 @@ namespace SalvageRun.Orbit.Sim
 
     public class SweepRun
     {
-        public readonly double[] chan = new double[9], chanNext = new double[9];   // 이어서 쏘는 확률 효과
+        public readonly double[] chan = new double[9], chanNext = new double[9], chanX = new double[9], chanY = new double[9];   // 이어서 쏘는 확률 효과 · 그 무기의 목표
+        public double volley, volleyT, volleyNext;                          // 🚀 전탄 발사 게이지 · 퍼붓는 중
         public double shipA = -1.57, heat = 1, next2, idleT, rockT = -1, fenceT, magHole, magX, magY; public int vacAmmo; public readonly List<Blast> mines = new List<Blast>(); public bool twin, lazyDone, tourDone; public int insiderN, meteorAt = 80, meteors, weaponKills, goldN;                            // 청소선 — 궤도 바깥에서 조준 방향으로 따라온다 · 레이저 열
         public double hx, hy, holeCd, clickCd, fuelGot, refill, fuel, max, t, next = 0.3, endT, formT = 9, rushT, rushX, rushY, chainT, holdT, ax = 480, ay = 310, refillT;
         public double ev1T = -1, ev2T = -1, stormT; public int ev1 = -1, ev2 = -1, stormLeft; public bool ev1Warn, ev2Warn, collector;
@@ -91,7 +92,7 @@ namespace SalvageRun.Orbit.Sim
         public double Earned => earnClaw + earnDrone + earnBlast;
     }
 
-    public enum SwEv { Supply, SupplyGet, Strike, Broke, Coin, Pop, Beam, Ring, Blast, Tier, Crit, Collapse, Warn, EventGo, Collector, Shatter, Release, RunEnd, BillPaid, Overdue, Bankrupt, News, Won, SkillReady, NodeBought, Laser, Bolt, Meteor, Tourist, Vac, Shell, Rail , Proc, Act }
+    public enum SwEv { Supply, SupplyGet, Strike, Broke, Coin, Pop, Beam, Ring, Blast, Tier, Crit, Collapse, Warn, EventGo, Collector, Shatter, Release, RunEnd, BillPaid, Overdue, Bankrupt, News, Won, SkillReady, NodeBought, Laser, Bolt, Meteor, Tourist, Vac, Shell, Rail , Proc, Act, Volley }
 
     public struct SwEvent
     {
@@ -544,15 +545,55 @@ namespace SalvageRun.Orbit.Sim
         static readonly string[] ProcUp = { null, "w_laser_u", "w_chain_u", "w_vac_u", "w_mine_u", "w_frz_u", "w_clus_u", "w_mag_u", "w_rail_u" };
         public double ProcChance(int w) => w <= 0 || w >= ProcBase.Length || !WeaponOwned(w) ? 0 : ProcBase[w] * (Lv(ProcUp[w]) >= 1 ? 1.5 : 1) * (Lv("w_slot2") > 0 ? 1.5 : 1) * (Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1);
         void FireW(int w) { wMul = w > 0 && Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1; Fire(w); wMul = 1; }
+        public int OwnedWeapons { get { int n = 0; for (int w = 1; w < ProcBase.Length; w++) if (WeaponOwned(w)) n++; return n; } }
+        public bool VolleyOn => OwnedWeapons >= 2;                            // 🚀 전탄 발사 — 무기 둘부터
+        public double VolleyGain => 0.012 + 0.006 * OwnedWeapons * (Lv("w_slot2") > 0 ? 1.3 : 1);
+        bool PickNear(double cx, double cy, double rad, out double x, out double y)
+        {
+            x = cx; y = cy; Junk best = null; int seen = 0;
+            foreach (var j in R.junk)
+            {
+                if (j.dead || j.hp <= 0) continue;
+                double dx = j.x - cx, dy = j.y - cy, d2 = dx * dx + dy * dy;
+                if (d2 > rad * rad || d2 < 28 * 28) continue;
+                if (Rnd() * ++seen < 1) best = j;                                  // 고르게 하나
+            }
+            if (best == null) return false;
+            x = best.x; y = best.y; return true;
+        }
+        void FireAt(int w, double x, double y) { var r = R; double ox = r.ax, oy = r.ay; r.ax = x; r.ay = y; FireW(w); r.ax = ox; r.ay = oy; }
+        void VolleyTick(double dt)
+        {
+            var r = R;
+            if (r.volleyT <= 0) return;
+            r.volleyT -= dt; r.volleyNext -= dt;
+            if (r.volleyNext > 0) return;
+            r.volleyNext = 0.09;
+            for (int w = 0; w < ProcBase.Length; w++)
+            {
+                if (w > 0 && !WeaponOwned(w)) continue;
+                if (!PickNear(EX, EY, 420, out double tx, out double ty)) continue;
+                Emit(SwEv.Proc, tx, ty - 20, w, 1);                                  // kk 1 = 전탄 (글자 없이 포대만 번쩍)
+                FireAt(w, tx, ty);
+            }
+        }
+
         void Procs()                                                           // 기본 공격 한 번마다 산 무기들이 각자 굴린다
         {
             var r = R;
+            if (VolleyOn && r.volleyT <= 0)
+            {
+                r.volley += VolleyGain;
+                if (r.volley >= 1) { r.volley = 0; r.volleyT = 1.1; r.volleyNext = 0.3; Emit(SwEv.Volley, r.ax, r.ay, OwnedWeapons, 0, "전탄 발사!"); }
+            }
             for (int w = 1; w < ProcBase.Length; w++)
             {
                 double p = ProcChance(w); if (p <= 0 || Rnd() >= p) continue;
-                if (w == 1 || w == 3 || w == 5) { r.chan[w] = 0.7; r.chanNext[w] = 0; }   // 레이저 · 청소기 · 냉동 = 0.7초 동안 이어서
-                else FireW(w);
-                Emit(SwEv.Proc, r.ax, r.ay - 26, w, 0);
+                // 🎯 포대마다 다른 목표 (09-24 사장님 전탄 B안) — 조준점 둘레의 다른 쓰레기를 골라 친다
+                if (!PickNear(r.ax, r.ay, 170, out double tx, out double ty)) { tx = r.ax; ty = r.ay; }
+                Emit(SwEv.Proc, tx, ty - 26, w, 0);                                   // 먼저 알린다 — 화면이 그 무기 포대에서 쏘게
+                if (w == 1 || w == 3 || w == 5) { r.chan[w] = 0.7; r.chanNext[w] = 0; r.chanX[w] = tx; r.chanY[w] = ty; }   // 레이저 · 청소기 · 냉동 = 0.7초 동안 이어서
+                else FireAt(w, tx, ty);
             }
         }
         public bool Equip(int w) { if (!WeaponOwned(w) || R != null && !R.over) return false; S.weapon = w; if (S.weapon2 == w) S.weapon2 = -1; return true; }
@@ -835,12 +876,47 @@ namespace SalvageRun.Orbit.Sim
             return true;
         }
         public bool BranchOpen(string br) => true;                        // 가지는 처음부터 다 보인다 — 값으로만 막는다 (09-24)
+        // 🪐 행성 구역 (09-24 사장님 6·21번 「지구에선 여기까지 · 다 찍어야 다음 행성」) — 칸마다 구역(= 항로 순위).
+        //    구역은 첫 가격으로 나누고 부모보다 앞설 수 없다. 항로 칸은 앞 행성 구역. 핵심 · 무한 · 네 번째 고리는 「다 찍기」에서 뺀다
+        public static readonly double[] ZoneCost = { 200, 2000, 20000, 200000, 2500000 };   // 구역 칸 합 ≈ 다음 항로 값 (봇으로 맞춤)   // 지구 · 달 · 화성 · 소행성대 · 목성 · (그 위 토성)
+        public static readonly string[] ZoneName = { "지구", "달", "화성", "소행성대", "목성", "토성", "천왕성", "해왕성", "카이퍼 벨트" };
+        static int[] zone;
+        public static int[] Zone
+        {
+            get
+            {
+                if (zone != null) return zone;
+                var z = new int[Nodes.Length];
+                int Calc(int i)
+                {
+                    if (z[i] > 0) return z[i] - 1;
+                    var n = Nodes[i]; int v;
+                    int pi = Array.IndexOf(PlanetNode, n.id);
+                    if (pi > 0) v = Math.Max(0, Array.IndexOf(OrbitOrder, pi) - 1);
+                    else
+                    {
+                        v = 0; while (v < ZoneCost.Length && n.first >= ZoneCost[v]) v++;
+                        foreach (var p in n.par) if (!Nodes[NodeIx[p]].id.StartsWith("p_")) v = Math.Max(v, Calc(NodeIx[p]));
+                    }
+                    z[i] = v + 1; return v;
+                }
+                for (int i = 0; i < Nodes.Length; i++) Calc(i);
+                for (int i = 0; i < z.Length; i++) z[i]--;
+                return zone = z;
+            }
+        }
+        public int ZoneOpen { get { int oi = 0; while (oi + 1 < OrbitOrder.Length && (S.planets & (1 << OrbitOrder[oi + 1])) != 0) oi++; return oi; } }
+        public static bool ZoneNeed(int i) { var id = Nodes[i].id; return !id.StartsWith("p_") && id != "e_shop" && !KeyNodes.Contains(id) && !Infinite(i) && !Ring4(id); }
+        public int ZoneLeft(int z) { int c = 0; for (int i = 0; i < Nodes.Length; i++) if (Zone[i] == z && ZoneNeed(i) && S.lv[i] <= 0) c++; return c; }
+
         public NodeSt State(int i)
         {
             var n = Nodes[i];
             if (!BranchOpen(n.branch)) return NodeSt.Locked;
             if (S.lv[i] >= n.max) return NodeSt.Max;
             if (Ring4(n.id) && Lv("p_jup") <= 0) return NodeSt.Locked;           // ✦ 외행성 면허 = 목성 항로
+            if (Zone[i] > ZoneOpen) return NodeSt.Locked;                          // 🪐 그 행성 항로를 사야 열린다
+            if (n.id.StartsWith("p_") && ZoneLeft(Zone[i]) > 0) return NodeSt.Locked; // 🪐 지금 구역 칸을 다 찍어야 다음 항로
             foreach (var p in n.par) if (S.lv[NodeIx[p]] <= 0) return NodeSt.Hidden;
             var pl = Layout[n.id];
             if (pl.par != "R" && S.lv[NodeIx[pl.par]] < TileLv(NodeIx[pl.par], pl.tile)) return NodeSt.Hidden;
@@ -1595,7 +1671,8 @@ namespace SalvageRun.Orbit.Sim
                 r.shipA += da * Math.Min(1, dt * 3);
             }
             for (int cw = 1; cw <= 5; cw += 2)                                  // 이어서 쏘는 확률 효과 (레이저 1 · 청소기 3 · 냉동 5)
-                if (r.chan[cw] > 0) { r.chan[cw] -= dt; r.chanNext[cw] -= dt; if (r.chanNext[cw] <= 0) { r.chanNext[cw] = Gap * 0.25; FireW(cw); } }
+                if (r.chan[cw] > 0) { r.chan[cw] -= dt; r.chanNext[cw] -= dt; if (r.chanNext[cw] <= 0) { r.chanNext[cw] = Gap * 0.25; Emit(SwEv.Proc, r.chanX[cw], r.chanY[cw], cw, 2); FireAt(cw, r.chanX[cw], r.chanY[cw]); } }   // kk 2 = 이어 쏘기 (포대만)
+            VolleyTick(dt);
             if (r.next > 0) return;
             double over = Lv("c_over") > 0 && r.fuel < 5 ? 0.5 : 1;
             r.next = Gap * over * Rate(0);                                    // 기본 공격 간격
