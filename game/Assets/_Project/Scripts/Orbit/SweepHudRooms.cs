@@ -58,7 +58,7 @@ namespace SalvageRun.Orbit
                 {
                     GUI.color = new Color(0.02f, 0.027f, 0.04f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
                     bool en0 = GUI.enabled; GUI.enabled = en0 && !partsOpen;
-                    Bay(); FlowBottom();
+                    Bay();                                                   // 큰 「조종실로」 버튼 뺌 — 옆 탭 하나로 (09-24 25번)
                     if (NavTab(true, "조종실로", "", SweepGame.Amber)) GoFlow(2);
                     GUI.enabled = en0;
                     if (partsOpen) PartsWin();
@@ -376,7 +376,7 @@ namespace SalvageRun.Orbit
                 float ay = Yp((float)(ss.cost / ss.shares));
                 if (ay > g.y && ay < g.yMax) { GUI.color = new Color(1f, 0.87f, 0.58f, 0.7f); for (float xx = g.x; xx < g.xMax; xx += 8) GUI.DrawTexture(new Rect(xx, ay, 4, 1), white); GUI.color = Color.white; }
             }
-            float py = Yp((float)ss.price);
+            float py = Mathf.Clamp(Yp((float)ss.price), g.y + 2, g.yMax - 2);          // 차트 밖(목록 위)으로 선이 나가지 않게 (09-24 사장님 11번)
             GUI.color = sch >= 0 ? UpCol : DnCol; GUI.DrawTexture(new Rect(g.xMax + 2, py - 8, 54, 16), white);
             GUI.color = new Color(1, 1, 1, 0.25f); for (float xx = g.x; xx < g.xMax; xx += 6) GUI.DrawTexture(new Rect(xx, py, 3, 1), white);
             GUI.color = Color.white;

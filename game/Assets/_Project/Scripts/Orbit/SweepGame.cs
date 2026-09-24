@@ -922,7 +922,7 @@ namespace SalvageRun.Orbit
             claw.transform.localScale = Vector3.one * (0.12f + 0.05f * wind) / Mathf.Max(0.01f, droneArt.bounds.size.x);
             clawRing.enabled = false; clawWind.enabled = false;                       // ⭕ 조준 원 → 🎯 도트 조준경 (09-24 사장님 「조준한다는 느낌 · 범위 표시도 어울리게」)
             if (retSpr == null) retSpr = Resources.Load<Sprite>("ship/reticle");
-            if (reticleView == null && retSpr != null) reticleView = Make(retSpr, at, 1f, Color.white, 69);
+            if (reticleView == null && retSpr != null) reticleView = Make(retSpr, at, 1f, Color.white, 130);
             if (reticleView != null)
             {
                 reticleView.enabled = claw.enabled;

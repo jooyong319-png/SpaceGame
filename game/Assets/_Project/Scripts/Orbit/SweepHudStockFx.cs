@@ -29,6 +29,7 @@ namespace SalvageRun.Orbit
 
         public void TradeBuy(int i, float frac, Vector2 from)
         {
+            if (sim.R != null && !sim.R.over) return;                     // 🔒 출동 중엔 못 산다
             double before = sim.S.cash;
             sim.StockBuy(i, frac);
             double spent = before - sim.S.cash; if (spent <= 0) return;
