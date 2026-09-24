@@ -436,6 +436,12 @@ namespace SalvageRun.Orbit
                     case SwEv.Vac:
                     {   // 🌀 소용돌이 — 조준점 원 테두리 · 안으로 휘어 드는 알갱이 · 포구로 흘러가는 줄기 (09-24)
                         float R = (float)e.v / PxPerUnit; var mz = ShotFrom();
+                        LoadAnims();
+                        if (animVortex != null)
+                        {
+                            if (vacView == null) vacView = Make(animVortex[0], at, 1f, Color.white, 57);
+                            vacView.transform.position = at; vacView.transform.localScale = Vector3.one * R * 2.3f / animVortex[0].bounds.size.x; vacT = 0.3f;
+                        }
                         Add(ring, at, R * 2f, new Color(0.45f, 0.95f, 0.85f, 0.35f), 7, 0.12f);
                         Add(glow, at, R * 1.2f, new Color(0.3f, 0.8f, 0.75f, 0.18f), 7, 0.12f);
                         for (int q = 0; q < 3; q++)
@@ -545,9 +551,18 @@ namespace SalvageRun.Orbit
         {
             if (fireballsThisFrame >= 3 || fx.Count > 760) { Add(glow, at, R * 1.6f, new Color(1f, 0.6f, 0.3f, 0.22f), 7, 0.2f); return; }
             fireballsThisFrame++;
-            Add(glow, at, R * 2.6f, new Color(1f, 0.42f, 0.12f, 0.55f), 7, 0.42f);
-            Add(glow, at, R * 1.5f, new Color(1f, 0.78f, 0.35f, 0.85f), 7, 0.28f);
-            Add(glow, at, R * 0.7f, new Color(1f, 1f, 0.95f, 1f), 7, 0.16f);
+            LoadAnims();
+            if (animExplode != null)
+            {   // 💥 픽셀랩 폭발 9장 — 한 번 재생
+                var sr = Make(animExplode[0], at, R * 2.3f, Color.white, 58); sr.transform.rotation = Quaternion.Euler(0, 0, Random.Range(0, 4) * 90);
+                frameFx.Add(new FrameFx { sr = sr, f = animExplode, fps = 20 });
+            }
+            else
+            {
+                Add(glow, at, R * 2.6f, new Color(1f, 0.42f, 0.12f, 0.55f), 7, 0.42f);
+                Add(glow, at, R * 1.5f, new Color(1f, 0.78f, 0.35f, 0.85f), 7, 0.28f);
+                Add(glow, at, R * 0.7f, new Color(1f, 1f, 0.95f, 1f), 7, 0.16f);
+            }
             Star(at, new Color(1f, 0.8f, 0.4f), R * 1.4f, 9, 0.24f);
             for (int i = 0; i < 6; i++) Add(pixel, at, Random.Range(0.08f, 0.14f), new Color(1f, Random.Range(0.5f, 0.85f), 0.25f), 0, Random.Range(0.4f, 0.7f)).v = (Vector3)(Random.insideUnitCircle.normalized * Random.Range(2f, 5f) * R);
         }
@@ -847,6 +862,18 @@ namespace SalvageRun.Orbit
             DrawTurret(!R.over);
             clawWind.enabled = show && R.fuel > 0;
             holeCore.enabled = holeGlow.enabled = holeRing.enabled = holding;
+            LoadAnims();
+            if (animHole != null)
+            {   // 🕳 픽셀랩 블랙홀 — 열려 있는 동안 돈다
+                if (holeAnim == null) holeAnim = Make(animHole[0], Vector3.zero, 1f, Color.white, 66);
+                holeAnim.enabled = holding;
+                if (holding)
+                {
+                    holeAnim.sprite = animHole[(int)(Time.time * 10) % animHole.Length];
+                    holeAnim.transform.position = holeCore.transform.position;
+                    holeAnim.transform.localScale = Vector3.one * holeCore.transform.lossyScale.x * disc.bounds.size.x * 3.4f / animHole[0].bounds.size.x;
+                }
+            }
             Cursor.visible = true;                                         // 마우스는 늘 보인다 — 판 중 · AUTO 여도 (사장님 09-24)
             if (holding)
             {
@@ -919,6 +946,19 @@ namespace SalvageRun.Orbit
             sr.transform.localScale = new Vector3(w * TK / square.bounds.size.x, h * TK / square.bounds.size.y, 1);
         }
         static Sprite hullSpr, turClawSpr, dronePx;
+        // 🎞 픽셀랩 애니메이션 (09-24) — 폭발 9장 · 소용돌이 9장 · 블랙홀 6장(튀는 3장 뺌)
+        static Sprite[] animExplode, animVortex, animHole;
+        static Sprite[] LoadAnim(string n, int[] idx) { var a = new Sprite[idx.Length]; for (int i = 0; i < idx.Length; i++) a[i] = Resources.Load<Sprite>("anim/" + n + "_" + idx[i]); return a[0] != null ? a : null; }
+        void LoadAnims()
+        {
+            if (animExplode != null && animExplode[0] != null) return;
+            animExplode = LoadAnim("explode", new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
+            animVortex = LoadAnim("vortex", new[] { 0, 1, 2, 3, 4, 5, 6, 7 });
+            animHole = LoadAnim("blackhole", new[] { 0, 1, 2, 6, 7, 8 });
+        }
+        class FrameFx { public SpriteRenderer sr; public Sprite[] f; public float t, fps; }
+        readonly List<FrameFx> frameFx = new List<FrameFx>();
+        SpriteRenderer vacView, holeAnim; float vacT;
         static readonly Sprite[] attPx = new Sprite[13]; static bool attTried;
         static Sprite AttPx(Att a)
         {
@@ -1051,6 +1091,17 @@ namespace SalvageRun.Orbit
             Vector3 anchor = hud != null ? ScreenToWorld(aS) : Vector3.zero;
             anchor.z = 0;
             ringsAlive = 0; fireballsThisFrame = 0; foreach (var q in fx) if (q.kind == 5) ringsAlive++;
+            for (int i = frameFx.Count - 1; i >= 0; i--)
+            {
+                var ff = frameFx[i]; ff.t += dt; int fi = (int)(ff.t * ff.fps);
+                if (fi >= ff.f.Length) { Destroy(ff.sr.gameObject); frameFx.RemoveAt(i); continue; }
+                ff.sr.sprite = ff.f[fi];
+            }
+            if (vacView != null)
+            {
+                vacT -= dt; vacView.enabled = vacT > 0 && sim.R != null && !sim.R.over;
+                if (vacView.enabled) { vacView.sprite = animVortex[(int)(Time.time * 14) % animVortex.Length]; vacView.color = new Color(1, 1, 1, Mathf.Clamp01(vacT / 0.12f)); }
+            }
             for (int i = fx.Count - 1; i >= 0; i--)
             {
                 var p = fx[i];
