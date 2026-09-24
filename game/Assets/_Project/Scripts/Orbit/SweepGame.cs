@@ -206,6 +206,12 @@ namespace SalvageRun.Orbit
             camBase = Mathf.Lerp(camBase, camY, 1 - Mathf.Exp(-dt * 5f));
             float camX = hud != null ? -hud.CockpitDx * 2f * cam.orthographicSize / 600f : 0f;   // 옆 방으로 밀리면 창밖도 같이
             cam.transform.position = new Vector3(camX, camBase, -10) + (Vector3)(Random.insideUnitCircle * shake);
+            if (bgView != null)
+            {
+                float bh = cam.orthographicSize * 2f, bw = bh * cam.aspect; var bs = bgView.sprite.bounds.size;
+                bgView.transform.position = new Vector3(camX * 0.9f, camBase * 0.9f, 0);        // 살짝 느리게 — 멀리 있는 느낌
+                bgView.transform.localScale = Vector3.one * Mathf.Max(bw / bs.x, bh / bs.y) * 1.12f;
+            }
             saveTimer += dt;
             if (saveTimer > 5f) { saveTimer = 0; Save(); }
         }
@@ -1017,8 +1023,11 @@ namespace SalvageRun.Orbit
             return sr;
         }
 
+        SpriteRenderer bgView;                                                          // 🌌 픽셀랩 성운 배경 — 카메라를 따라다니며 화면을 채운다
         void Stars()
         {
+            var nb = Resources.Load<Sprite>("bg/nebula");
+            if (nb != null) bgView = Make(nb, Vector3.zero, 1f, new Color(0.42f, 0.42f, 0.5f), -50);   // 어둡게 — 쓰레기보다 뒤로
             var r = new System.Random(5);
             var star = Ring(8, 0f);
             for (int i = 0; i < 220; i++)
