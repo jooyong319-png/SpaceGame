@@ -739,37 +739,41 @@ namespace SalvageRun.Orbit
             float dt = Time.unscaledDeltaTime;
             if (glassOpen) { glassT -= dt; if (glassT <= 0 || !can) glassOpen = false; }
             glassK = Mathf.MoveTowards(glassK, glassOpen ? 1 : 0, dt / 0.25f);
-            var box = new Rect(r.x, r.y, r.width, r.width);                   // 정사각 받침
-            // 받침 — 경고 줄무늬 테
-            GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(box.x + 3, box.y + 5, box.width, box.height), white);
-            GUI.color = new Color(0.95f, 0.75f, 0.1f); GUI.DrawTexture(box, white);
+            // 🧯 누운 단추 — 출동 단추처럼 비스듬히 내려다본 모양 (09-24 사장님 14번)
+            float cx = r.center.x, by = r.y + 30;
+            var box = new Rect(r.x, r.y, r.width, 70);
+            // 받침 — 노란 경고 테 · 검은 줄 · 어두운 속
+            GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(cx - 46, by + 6, 92, 38), texDisc);
+            GUI.color = new Color(0.95f, 0.75f, 0.1f); GUI.DrawTexture(new Rect(cx - 45, by, 90, 36), texDisc);
             GUI.color = new Color(0.08f, 0.08f, 0.08f);
-            for (int k = -8; k < 16; k++) { float x0 = box.x + k * 8; GUI.DrawTexture(new Rect(Mathf.Max(box.x, x0), box.y, 4, 4), white); GUI.DrawTexture(new Rect(Mathf.Max(box.x, x0 + 4), box.yMax - 4, 4, 4), white); }
-            var inner = new Rect(box.x + 5, box.y + 5, box.width - 10, box.height - 10);
-            GUI.color = new Color(0.12f, 0.13f, 0.16f); GUI.DrawTexture(inner, white);
-            // 빨간 단추
-            var btn = new Rect(inner.center.x - 20, inner.center.y - 20, 40, 40);
+            for (int k = 0; k < 12; k++) { float a = k * Mathf.PI / 6 + 0.2f; GUI.DrawTexture(new Rect(cx + Mathf.Cos(a) * 40 - 3, by + 18 + Mathf.Sin(a) * 15 - 2, 6, 4), white); }
+            GUI.color = new Color(0.12f, 0.13f, 0.16f); GUI.DrawTexture(new Rect(cx - 36, by + 4, 72, 28), texDisc);
+            // 빨간 단추 — 옆면 + 윗면 (누르면 가라앉음)
+            float fw = 44, fh = 18, side = 8;
+            var btn = new Rect(cx - fw / 2, by + 2, fw, fh + side);
             bool ovBtn = glassK > 0.95f && btn.Contains(Event.current.mousePosition);
             bool press = ovBtn && Mouse.current != null && Mouse.current.leftButton.isPressed;
-            GUI.color = new Color(0.35f, 0.04f, 0.03f); GUI.DrawTexture(new Rect(btn.x, btn.y + 5, btn.width, btn.height), texDisc);
+            float dip = press ? 5 : 0, fy = by + 2 + dip, sh = side - dip;
             float pulse = glassK > 0.95f ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 8) : 0;
-            GUI.color = can ? Color.Lerp(new Color(0.85f, 0.1f, 0.08f), new Color(1f, 0.3f, 0.22f), ovBtn ? 1 : pulse * 0.5f) : new Color(0.4f, 0.18f, 0.16f);
-            GUI.DrawTexture(new Rect(btn.x, btn.y + (press ? 4 : 0), btn.width, btn.height), texDisc);
-            GUI.color = new Color(1, 1, 1, 0.3f); GUI.DrawTexture(new Rect(btn.x + 9, btn.y + 6 + (press ? 4 : 0), 14, 8), texDisc);
+            Color face = can ? Color.Lerp(new Color(0.85f, 0.1f, 0.08f), new Color(1f, 0.3f, 0.22f), ovBtn ? 1 : pulse * 0.5f) : new Color(0.4f, 0.18f, 0.16f);
+            GUI.color = new Color(0.35f, 0.04f, 0.03f); GUI.DrawTexture(new Rect(cx - fw / 2, fy + sh, fw, fh), texDisc); GUI.DrawTexture(new Rect(cx - fw / 2, fy + fh / 2, fw, sh), white);
+            GUI.color = face; GUI.DrawTexture(new Rect(cx - fw / 2, fy, fw, fh), texDisc);
+            GUI.color = new Color(1, 1, 1, 0.3f); GUI.DrawTexture(new Rect(cx - fw * 0.3f, fy + 3, fw * 0.4f, 5), texDisc);
+            if (can && glassK > 0.95f) { GUI.color = new Color(1f, 0.3f, 0.2f, 0.18f + 0.18f * pulse); GUI.DrawTexture(new Rect(cx - 50, by - 12, 100, 56), texDisc); }
             GUI.color = Color.white;
             if (glassK > 0.95f && GUI.Button(btn, GUIContent.none, GUIStyle.none) && can)
             { sim.Bankrupt(); glassOpen = false; glassK = 0; bankruptArmed = false; showResult = false; flow = 2; OrbitSfx.Play("break", 1f); return; }
-            // 유리 덮개 — 위 경첩으로 젖혀진다 (열릴수록 위로 납작해짐)
-            float gh = inner.height * (1 - glassK * 0.86f);
-            var glass = new Rect(inner.x - 2, inner.y - 2 - glassK * 10, inner.width + 4, gh + 4);
-            bool ovGlass = glassK < 0.05f && glass.Contains(Event.current.mousePosition);
-            GUI.color = new Color(0.6f, 0.85f, 1f, 0.22f + (ovGlass ? 0.08f : 0)); GUI.DrawTexture(glass, white);
-            GUI.color = new Color(1, 1, 1, 0.5f); GUI.DrawTexture(new Rect(glass.x + 4, glass.y + 3, glass.width * 0.35f, 2), white); GUI.DrawTexture(new Rect(glass.x + 4, glass.y + 3, 2, glass.height * 0.4f), white);
-            Frame(glass, new Color(0.8f, 0.92f, 1f, 0.7f), 1);
-            GUI.color = new Color(0.55f, 0.58f, 0.62f); GUI.DrawTexture(new Rect(glass.x + glass.width / 2 - 8, glass.y - 3, 16, 4), white);   // 경첩
+            // 유리 돔 — 뒤 경첩으로 젖혀 선다 (열릴수록 위로 올라가며 납작한 테만 보임)
+            float gy = by - 16 - glassK * 26, gh2 = Mathf.Lerp(40, 10, glassK);
+            var glass = new Rect(cx - 33, gy, 66, gh2);
+            bool ovGlass = glassK < 0.05f && new Rect(cx - 36, by - 18, 72, 50).Contains(Event.current.mousePosition);
+            GUI.color = new Color(0.6f, 0.85f, 1f, 0.2f + (ovGlass ? 0.1f : 0)); GUI.DrawTexture(glass, texDisc);
+            GUI.color = new Color(0.8f, 0.92f, 1f, 0.55f); GUI.DrawTexture(glass, texRing);
+            GUI.color = new Color(1, 1, 1, 0.55f); GUI.DrawTexture(new Rect(glass.x + 12, glass.y + gh2 * 0.18f, 16, Mathf.Max(2, gh2 * 0.14f)), texDisc);
+            GUI.color = new Color(0.55f, 0.58f, 0.62f); GUI.DrawTexture(new Rect(cx - 8, by + 1 - glassK * 2, 16, 3), white);   // 경첩
             GUI.color = Color.white;
-            if (!can && glassK < 0.05f) GUI.Label(new Rect(glass.x, glass.center.y - 9, glass.width, 18), "<size=10><color=#c8d0dc>잠김</color></size>", center);
-            if (ovGlass && GUI.Button(glass, GUIContent.none, GUIStyle.none))
+            if (!can && glassK < 0.05f) GUI.Label(new Rect(cx - 30, by - 10, 60, 18), "<size=10><color=#c8d0dc>잠김</color></size>", center);
+            if (ovGlass && GUI.Button(new Rect(cx - 36, by - 18, 72, 50), GUIContent.none, GUIStyle.none))
             {
                 if (can) { glassOpen = true; glassT = 5f; OrbitSfx.Play("clank", 0.8f); } else OrbitSfx.Play("tick", 0.5f, 0.1f, 0.02f);
             }

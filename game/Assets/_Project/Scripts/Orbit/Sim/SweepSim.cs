@@ -607,7 +607,7 @@ namespace SalvageRun.Orbit.Sim
         public double BlastK => 1 + 0.15 * Lv("b_br");
         public double ChainP => Math.Min(0.85, 0.3 + 0.07 * Lv("b_chain"));    // 무기 폭발이 또 번질 확률
         public double HoleCd => 16 - 1.5 * Lv("s_speed");     // (옛 시간 충전 — 이제 안 쓴다)
-        public double HoleChance => R.clean ? 0.05 : (0.012 + 0.002 * Lv("b_n") + 0.0025 * Lv("s_speed") + Part("hole") + 0.001 * Lv("i_bh")) * (Lv("k_bh") > 0 ? 0.7 : 1) * (1 + 0.3 * Lv("m_bh"));   // 🌀 블랙홀 — 집게가 맞힐 때 이 확률로 그 자리에 저절로 열린다 (09-24 사장님 「자동으로 바닥에 깔리는 걸로」 · Q 스킬 없앰)
+        public double HoleChance => R.clean ? 0.05 : Lv("b_n") <= 0 ? 0 : (0.012 + 0.002 * Lv("b_n") + 0.0025 * Lv("s_speed") + Part("hole") + 0.001 * Lv("i_bh")) * (Lv("k_bh") > 0 ? 0.7 : 1) * (1 + 0.3 * Lv("m_bh"));   // 🌀 블랙홀 — 집게가 맞힐 때 이 확률로 그 자리에 저절로 열린다 (09-24 사장님 「자동으로 바닥에 깔리는 걸로」 · Q 스킬 없앰)
         public const double HoleDur = 3;                           // 열려 있는 시간 — 끝나면 저절로 터진다
         public double PackK => 0.02 + 0.012 * Lv("b_pack");
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게

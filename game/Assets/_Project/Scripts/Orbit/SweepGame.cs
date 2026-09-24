@@ -256,6 +256,7 @@ namespace SalvageRun.Orbit
 
         Vector2 lastMouse, autoTarget; float idleT, autoRetarget, autoDwell, autoBanT; int autoHp; Junk autoJunk, autoBan, prevAuto;
         public bool autoAiming, autoMode;
+        float brokeWinT; int brokeWinN;                                   // 💥 최근 0.25초 부서진 수 — 적을 때만 굵은 연출
         public void ToggleAuto() { autoMode = !autoMode; PlayerPrefs.SetInt("orbit.auto", autoMode ? 1 : 0); PlayerPrefs.Save(); OrbitSfx.Play("tick", 0.7f); }
         void AutoAim(int al)
         {
@@ -376,6 +377,15 @@ namespace SalvageRun.Orbit
                     case SwEv.Broke:
                     {
                         int k = e.k / 100; var att = (Att)(e.k % 100);
+                        // 💥 드물게 부서질 때(초반)만 굵게 — 번쩍 · 파편 · 경직 · 흔들림 (09-24 사장님 15번 「극 초반 타격감」). 후반 수백 개/초엔 가벼운 그대로
+                        if (Time.time - brokeWinT > 0.25f) { brokeWinT = Time.time; brokeWinN = 0; }
+                        if (++brokeWinN <= 4)
+                        {
+                            Add(glow, at, 1.1f * cam.orthographicSize / 6f, new Color(1f, 0.93f, 0.75f, 0.9f), 7, 0.09f).sr.sortingOrder = 120;
+                            Burst(at, Color.Lerp(JunkColor(k), Color.white, 0.3f), 6, 4f);
+                            hitStop = Mathf.Max(hitStop, 0.03f); shake = Mathf.Max(shake, 0.07f);
+                            OrbitSfx.Play("clank", 0.55f, 0.08f, 0.02f);
+                        }
                         Burst(at, JunkColor(k), k == SweepSim.Big ? 30 : k == SweepSim.Vault ? 10 : k == SweepSim.Chip ? 1 : 3, k == SweepSim.Big ? 6f : 3f);
                         if (att != Att.None && att != Att.Cable) Burst(at, AttColor(att), 3, 3.5f);
                         OrbitSfx.Play(k == SweepSim.Big ? "break" : k == SweepSim.Vault ? "unit" : k == SweepSim.Chip ? "pick" : "clank", k == SweepSim.Chip ? 0.3f : 0.7f, 0.03f);
@@ -388,7 +398,7 @@ namespace SalvageRun.Orbit
                         Color c = src == 3 ? Red : cut ? new Color(0.9f, 0.65f, 0.6f) : Amber2;
                         if (sim.R != tallyRun) { tallyRun = sim.R; runTally = 0; }
                         if (src != 3 && e.v > 0) runTally += e.v;                                   // 값은 계산대에 모은다 — 쓰레기 위 숫자는 아주 큰 것만
-                        if (e.v >= 1 && (src == 3 || e.v > sim.ValMult * 400)) CoinPop(e.x, e.y - 8, src == 3 ? "빚 -" : "+", e.v, c);
+                        if (e.v >= 1 && (src == 3 || e.v > sim.ValMult * 400 || brokeWinN <= 2)) CoinPop(e.x, e.y - 8, src == 3 ? "빚 -" : "+", e.v, c);
                         if (Random.value < 0.25f) Add(disc, at, 0.11f, src == 3 ? Red : Amber, 2, 1.6f).v = (Vector3)(Random.insideUnitCircle * 3f);
                         break;
                     }

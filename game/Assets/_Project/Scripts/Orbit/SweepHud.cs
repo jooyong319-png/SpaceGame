@@ -324,7 +324,7 @@ namespace SalvageRun.Orbit
             float fk = Mathf.Clamp01((float)(R.fuel / R.max));
             GUI.DrawTexture(new Rect(x + 34, 19, 160 * fk, 9), R.fuel < 6 ? texRed : texAmber);
             x += 210;
-            if (R.maxShots > 0)
+            if (R.maxShots > 0 && sim.HoleChance > 0)
             {
                 GUI.Label(new Rect(x, 14, 200, 20), "블랙홀 <color=#b69cff>자동 " + (sim.HoleChance * 100).ToString("0.#") + "%</color>" + (R.holding ? "  <color=#b69cff>● 열림</color>" : ""), dim);
             }
@@ -1066,7 +1066,6 @@ namespace SalvageRun.Orbit
             bool parOwned = t.lpar < 0 || GTileState(t.lpar) == 3;
             foreach (var x in t.xpar) if (GTileState(x) != 3) parOwned = false;
             if (parOwned) return 2;
-            if (SweepSim.Nodes[t.stat].id.StartsWith("p_")) return 2;                 // 🪐 행성 항로는 처음부터 보인다 — 목표가 되게 (09-24 사장님). 사는 건 앞 행성을 산 뒤
             if (t.lpar >= 0 && GTileState(t.lpar) == 2) return 1;
             return 0;
         }
@@ -1085,14 +1084,11 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(vw / 2 - 150, 250, 300, 60), "<size=44><b>AUTO" + new string('.', dots) + "</b></size>", center);
                 GUI.color = Color.white;
             }
-            // 오른쪽 아래 단추
-            var r = new Rect(vw - 142, RefH - 70, 124, 46);
+            // 🧪 시험용 작은 단추 — 오른쪽 아래 구석 (09-24 사장님 「오토 제거, 테스트할 겸 버튼만」) · 키보드 A 그대로
+            var r = new Rect(vw - 76, RefH - 22, 68, 16);
             overAuto = r.Contains(Event.current.mousePosition);
-            if (on) { GUI.color = new Color(0.95f, 0.76f, 0.31f, 0.18f + 0.08f * Mathf.Sin(Time.unscaledTime * 3f)); GUI.DrawTexture(new Rect(r.x - 10, r.y - 10, r.width + 20, r.height + 20), texDisc); }
-            GUI.color = on ? new Color(0.3f, 0.21f, 0.06f, 0.95f) : new Color(0.05f, 0.05f, 0.08f, 0.9f); GUI.DrawTexture(r, white); GUI.color = Color.white;
-            Frame(r, on ? SweepGame.Amber : new Color(0.3f, 0.3f, 0.36f), overAuto ? 3 : 2);
-            GUI.Label(new Rect(r.x, r.y + 2, r.width, 28), on ? "<size=20><b><color=#ffdf95>AUTO</color></b></size>" : "<size=20><b><color=#5f6878>AUTO</color></b></size>", center);
-            GUI.Label(new Rect(r.x, r.y + 26, r.width, 18), "<size=10><color=" + (on ? "#e8c77e" : "#5f6878") + ">" + (on ? "켜짐" : "꺼짐") + " · A</color></size>", center);
+            GUI.color = on ? new Color(0.3f, 0.21f, 0.06f, 0.85f) : new Color(0.05f, 0.05f, 0.08f, 0.6f); GUI.DrawTexture(r, white); GUI.color = Color.white;
+            GUI.Label(r, "<size=9><color=" + (on ? "#ffdf95" : "#4a5260") + ">시험 · 자동 " + (on ? "켬" : "끔") + "</color></size>", center);
             if (GUI.Button(r, GUIContent.none, GUIStyle.none)) game.ToggleAuto();
         }
 
