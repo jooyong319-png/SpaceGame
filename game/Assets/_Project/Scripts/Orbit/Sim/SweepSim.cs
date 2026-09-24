@@ -60,6 +60,7 @@ namespace SalvageRun.Orbit.Sim
         public int[] career = new int[SweepSim.CareerCount];
         public int company = 1, bankrupt, loans, bestChain, bestPack, totalRuns, scoops;
         public double bestAuc;                                           // 고철 경매 최고 배수
+        public List<string> perm = new List<string>();                    // 🔑 ◆ 핵심 칸 — 파산해도 남는다 (09-24 사장님 「열쇠가 떡벽」 → 파산하면 강해진다)
         public bool won, careerOpen, cleanReady;
         public List<NewsItem> news = new List<NewsItem>();
         public List<string> flags = new List<string>();
@@ -474,9 +475,12 @@ namespace SalvageRun.Orbit.Sim
             if (s == null || s.version != 22) { S = new SweepState(); S.startedAt = M.playSeconds; }
             else S = s;
             MakeMarket();
+            if (M.perm == null) M.perm = new List<string>();
             if (S.lv == null) S.lv = new int[NodeCount];
             else if (S.lv.Length < NodeCount) { var lv = S.lv; Array.Resize(ref lv, NodeCount); S.lv = lv; }   // 칸이 늘면 산 것은 그대로 두고 뒤에 붙인다 (경매 줄기 · 09-23)
             else if (S.lv.Length > NodeCount) { var lv = S.lv; Array.Resize(ref lv, NodeCount); S.lv = lv; }
+            foreach (var kid in KeyNodes) if (NodeIx.TryGetValue(kid, out int ki) && S.lv[ki] > 0 && !M.perm.Contains(kid)) M.perm.Add(kid);
+            ApplyPerm();
             for (int pi = 1; pi < PlanetNode.Length; pi++) if ((S.planets & (1 << pi)) != 0 && S.lv[NodeIx[PlanetNode[pi]]] == 0) S.lv[NodeIx[PlanetNode[pi]]] = 1;
             if (S.bill >= 1 && S.lv[NodeIx["d_n"]] == 0) S.lv[NodeIx["d_n"]] = 1;        // 옛 저장 — 청구서로 받은 것들은 칸으로 옮겨 준다
             if (S.bill >= 2 && S.lv[NodeIx["b_n"]] == 0) S.lv[NodeIx["b_n"]] = 1;
@@ -735,6 +739,7 @@ namespace SalvageRun.Orbit.Sim
         public double Widen => 1 + 0.1 * Lv("o_wide");      // 🔴 정비소에서 산다 (사장님 09-23: "맵 크기도 여기서 늘리게")
         public double Bo => Orbits[S.orbit].bi + (Orbits[S.orbit].bo - Orbits[S.orbit].bi) * Widen;
         public double BillAmount => S.bill < Bills.Length ? (S.billAmount >= 0 ? S.billAmount : Bills[S.bill].m) * (Lv("k_eco") > 0 ? 1.1 : 1) : 0;
+        void ApplyPerm() { foreach (var kid in M.perm) if (NodeIx.TryGetValue(kid, out int ki) && S.lv[ki] < Nodes[ki].max) S.lv[ki] = Nodes[ki].max; }
         public int BankruptKeys => 2 + S.bill / 2;                                // 청구서 7장째 = 열쇠 5
         public bool CanBankrupt => !M.cleanReady && S.bill < Bills.Length && (S.bill >= 3 || S.overdue && S.bill >= 1);
         public int CareerCost(int i) => M.career[i] < Careers[i].cost.Length ? Careers[i].cost[M.career[i]] : -1;
@@ -781,7 +786,7 @@ namespace SalvageRun.Orbit.Sim
             if (!R.over || State(i) != NodeSt.Can) return false;
             S.cash -= TileCost(i); S.lv[i] = Infinite(i) ? S.lv[i] + 1 : TileLv(i, NextTile(i));
             var id = Nodes[i].id;
-            if (KeyNodes.Contains(id)) S.keys--;
+            if (KeyNodes.Contains(id)) { S.keys--; if (!M.perm.Contains(id)) M.perm.Add(id); }   // 🔑 파산해도 남는다
             if (id == "e_shop") RollShop();
             int pi = Array.IndexOf(PlanetNode, id); if (pi > 0) PlanetBought(pi);
             if (id == "e_quest" && S.lv[i] == 1 && S.contract < 0) RollContract();
@@ -815,12 +820,12 @@ namespace SalvageRun.Orbit.Sim
         {
             var b = Bills[S.bill];
             S.creditPending += b.credit;
-            S.bill++;
+            S.bill++; S.keys++;                                              // 🔑 청구서마다 열쇠 1 (파산 없이도 조금씩 열린다)
             S.overdue = false; S.overRuns = 0; S.billAmount = -1;
             S.billDue = S.bill < Bills.Length ? Bills[S.bill].due + Lv("e_talk") : 0;
             string nid = "bill" + S.bill;
             AddNews(nid);
-            Emit(SwEv.BillPaid, 0, 0, S.bill, 0, b.t + " 납부 완료 — " + b.perk);
+            Emit(SwEv.BillPaid, 0, 0, S.bill, 0, b.t + " 납부 완료 — " + b.perk + " · 열쇠 +1");
             CheckClean();
         }
 
@@ -833,11 +838,11 @@ namespace SalvageRun.Orbit.Sim
             AddNews(M.bankrupt == 1 ? "bankrupt1" : M.bankrupt == 2 ? "bankrupt2" : null, "궤도 청소부 (" + M.company + "대), 출동 " + S.runs + "번 만에 파산", "청구서 " + S.bill + "장을 갚고 문을 닫았다. 빚은 날아갔고, 조종사의 경력은 남았다.");
             M.company++;
             double carry = Lv("x_bh_eco") > 0 ? Math.Floor(S.cash * 0.1) : 0; int keepPart = -1;
-            int bk = BankruptKeys;                                                    // 🔑 파산하면 열쇠 (09-24 사장님 「파산의 가치를 늘리려고」)
+            int bk = BankruptKeys, keptKeys = S.keys;                                                    // 🔑 파산하면 열쇠 (09-24 사장님 「파산의 가치를 늘리려고」)
             if (Lv("x_bh_eco") > 0 && S.parts != null) foreach (var pid in S.parts) if (pid >= 0 && (keepPart < 0 || Parts.Defs[pid].rar > Parts.Defs[keepPart].rar)) keepPart = pid;
             S = new SweepState { startedAt = M.playSeconds };
             if (carry > 0) S.cash += carry;
-            S.keys += bk;
+            S.keys += bk + keptKeys; ApplyPerm();                         // 남은 열쇠도 넘어간다 · ◆ 핵심 칸은 켜진 채로
             if (keepPart >= 0) S.parts[Parts.Defs[keepPart].slot] = keepPart;   // ◆ 파산 보험 — 돈 10% · 제일 좋은 부품 하나
             MakeMarket();
             M.careerOpen = true;

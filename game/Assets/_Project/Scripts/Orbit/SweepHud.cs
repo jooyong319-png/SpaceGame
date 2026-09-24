@@ -1444,7 +1444,7 @@ namespace SalvageRun.Orbit
             else if (ns == NodeSt.Locked) foot = "<color=#ff9b8f>청구서 " + SweepSim.BranchNeed[b] + "을 갚으면 열린다</color>";
             else if (ns == NodeSt.Hidden && vis != 2) foot = "<color=#ff9b8f>앞 칸을 먼저 사야 한다</color>";
             else if (ns == NodeSt.Hidden) foot = "<color=#ff9b8f>이어진 다른 칸도 사야 한다</color>";
-            else foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>" + (SweepSim.KeyNodes.Contains(n.id) ? "  <color=#d8ccff>+ 열쇠 1 (가진 것 " + sim.S.keys + ")</color>" : "");
+            else foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>" + (SweepSim.KeyNodes.Contains(n.id) ? "  <color=#d8ccff>+ 열쇠 1 (가진 것 " + sim.S.keys + ") · 파산해도 남는다</color>" : "");
             center.fontSize = 20; GUI.Label(new Rect(r.x, r.y + 106, r.width, 32), foot, center); center.fontSize = 13;
         }
 
