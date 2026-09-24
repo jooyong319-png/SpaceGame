@@ -648,7 +648,9 @@ namespace SalvageRun.Orbit
                 var pos = PxToWorld(d.x, d.y);
                 v.transform.position = pos;
                 Sprite s; Color c = Color.white;
-                switch (d.k)
+                var px = JunkPx(d.k, d.id);                                                // 🛰 픽셀랩 쓰레기 그림이 있으면 그걸로
+                if (px != null) { s = px; if (d.k == SweepSim.Vault) c = Color.Lerp(Color.white, new Color(1f, 0.95f, 0.75f), 0.5f + 0.5f * Mathf.Sin(t * 6)); }
+                else switch (d.k)
                 {
                     case SweepSim.Sat: s = deadSat; break;
                     case SweepSim.Rocket: s = junkArt[2 % junkArt.Length]; break;
@@ -666,8 +668,8 @@ namespace SalvageRun.Orbit
                 c.a = (float)d.fade;
                 v.color = c;
                 float r = (float)SweepSim.Types[d.k].r;
-                float size = r * 2.6f / PxPerUnit * (d.hit > 0 ? 1.25f : 1f) * (d.k == SweepSim.Fuel ? 0.6f : 1f);
-                v.transform.localScale = new Vector3(size / Mathf.Max(0.01f, s.bounds.size.x), size / Mathf.Max(0.01f, s.bounds.size.x) * (d.k == SweepSim.Fuel ? 1.6f : 1f), 1);
+                float size = r * 2.6f / PxPerUnit * (d.hit > 0 ? 1.25f : 1f) * (px != null ? 1.3f : d.k == SweepSim.Fuel ? 0.6f : 1f);   // 그림은 둘레가 비어 있어 1.3배
+                v.transform.localScale = new Vector3(size / Mathf.Max(0.01f, s.bounds.size.x), size / Mathf.Max(0.01f, s.bounds.size.x) * (px == null && d.k == SweepSim.Fuel ? 1.6f : 1f), 1);
                 v.transform.rotation = Quaternion.Euler(0, 0, (float)d.rot * Mathf.Rad2Deg);
                 int order = 10 + Mathf.Clamp((int)(d.y / 6), 0, 99);
                 bool behind = d.y < SweepSim.EY && (d.x - SweepSim.EX) * (d.x - SweepSim.EX) + (d.y - SweepSim.EY) * (d.y - SweepSim.EY) < earthR * earthR;
@@ -838,6 +840,18 @@ namespace SalvageRun.Orbit
             sr.transform.localScale = new Vector3(w * TK / square.bounds.size.x, h * TK / square.bounds.size.y, 1);
         }
         static Sprite hullSpr, turClawSpr;
+        static Sprite[] junkPx; static Sprite[] chipPx;
+        static Sprite JunkPx(int k, int id)
+        {
+            if (junkPx == null)
+            {
+                string[] n = { null, "sat", "rocket", "vault", "fuel", "tank", "big" };
+                junkPx = new Sprite[n.Length]; for (int i = 1; i < n.Length; i++) junkPx[i] = Resources.Load<Sprite>("junk/junk_" + n[i]);
+                chipPx = new[] { Resources.Load<Sprite>("junk/junk_chip_a"), Resources.Load<Sprite>("junk/junk_chip_b"), Resources.Load<Sprite>("junk/junk_chip_c") };
+            }
+            if (k == SweepSim.Chip) { var c = chipPx[(id & 0x7fffffff) % 3]; return c; }
+            return k > 0 && k < junkPx.Length ? junkPx[k] : null;
+        }
         static readonly string[] TurName = { "claw", "laser", "bolt", "vac", "mine", "frz", "clus", "mag", "rail" };
         static readonly float[] TurW = { 44, 56, 56, 40, 22, 48, 90, 50, 60 };     // 시안 px 가로 — 포신 끝이 sim 포구 길이에 오도록
         static readonly Sprite[] turSpr = new Sprite[9]; static readonly bool[] turTried = new bool[9];
