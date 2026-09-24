@@ -370,6 +370,7 @@ namespace SalvageRun.Orbit
                         Color cc = ice ? new Color(0.9f, 0.98f, 1f, 1f) : fence ? new Color(1f, 0.75f, 0.75f, 1f) : cr ? new Color(1f, 1f, 0.8f, 1f) : new Color(1f, 0.85f, 0.8f, 0.95f);
                         var halo = Add(pixel, s0, 0.05f, hc, 8, 0.13f); halo.a = s0; halo.b = s1; halo.size = w;
                         var core = Add(pixel, s0, 0.05f, cc, 8, 0.1f); core.a = s0; core.b = s1; core.size = Mathf.Max(0.04f, w * 0.22f);
+                        if (cr && !fence) Star(s1, hc, 0.5f, 7, 0.16f);                             // 치명타 — 끝점에서 빛살
                         if (!fence && Random.value < 0.25f) OrbitSfx.PlayPitch("tick", 0.12f, ice ? 2.8f : 2.2f + Random.value * 0.3f);
                         break;
                     }
@@ -400,6 +401,7 @@ namespace SalvageRun.Orbit
                         var h = Add(pixel, s0, 0.05f, new Color(0.7f, 0.85f, 1f, 0.55f), 8, 0.35f); h.a = s0; h.b = s1; h.size = 0.7f;
                         var c = Add(pixel, s0, 0.05f, Color.white, 8, 0.28f); c.a = s0; c.b = s1; c.size = 0.16f;
                         Add(glow, s0, 1.2f, new Color(0.8f, 0.9f, 1f, 0.8f), 7, 0.3f);
+                        Zap(s0, s1, new Color(0.6f, 0.8f, 1f), 0.22f, 0.35f, 12); Zap(s0, s1, new Color(0.6f, 0.8f, 1f), 0.18f, 0.25f, 12);
                         shake = Mathf.Max(shake, 0.2f); flash = Mathf.Max(flash, 0.12f);
                         OrbitSfx.PlayPitch("launch", 0.55f, 1.6f);
                         if (e.v >= 5) PopAt(e.x2 * 0.3 + e.x * 0.7, e.y2 * 0.3 + e.y * 0.7 - 20, (int)e.v + "개 관통!", Cyan, 18);
@@ -422,7 +424,7 @@ namespace SalvageRun.Orbit
                     case SwEv.Ring: RingFx(at, e.k == 1 ? Red : e.k == 2 ? Mag : Orange, 0.45f, (float)e.v * 2 / PxPerUnit); break;
                     case SwEv.Blast:
                         RingFx(at, Orange, 0.4f, (float)e.v * 2 / PxPerUnit);
-                        Add(glow, at, (float)e.v * 2.4f / PxPerUnit, new Color(1f, 0.6f, 0.3f, 0.22f), 7, 0.2f);
+                        Fireball(at, Mathf.Clamp((float)e.v / PxPerUnit * 0.6f, 0.25f, 1.1f));
                         OrbitSfx.Play("blast", 0.5f, 0.025f, 0.12f);
                         shake = Mathf.Max(shake, 0.05f);
                         break;
@@ -451,6 +453,46 @@ namespace SalvageRun.Orbit
             }
         }
 
+        // ⚡ 지그재그 번개 — a→b 를 여러 마디로 (빔 둘레를 감거나 튄다). 하얀 심지 + 색 테두리
+        void Zap(Vector3 a, Vector3 b, Color c, float life, float jit, int seg = 7)
+        {
+            if (fx.Count > 820) return;
+            var prev = a; var d = b - a; var nrm = new Vector3(-d.y, d.x).normalized;
+            for (int i = 1; i <= seg; i++)
+            {
+                float u = (float)i / seg;
+                var q = i == seg ? b : a + d * u + nrm * Random.Range(-jit, jit);
+                var h = Add(pixel, prev, 0.05f, new Color(c.r, c.g, c.b, 0.45f), 8, life); h.a = prev; h.b = q; h.size = 0.12f;
+                var k = Add(pixel, prev, 0.05f, new Color(1f, 1f, 1f, 0.95f), 8, life * 0.8f); k.a = prev; k.b = q; k.size = 0.035f;
+                prev = q;
+            }
+        }
+        // ✦ 별빛살 — 맞는 자리에서 사방으로 가는 선
+        void Star(Vector3 at, Color c, float r, int n, float life = 0.18f)
+        {
+            if (fx.Count > 820) return;
+            float a0 = Random.value * 6.283f;
+            for (int i = 0; i < n; i++)
+            {
+                float a = a0 + i * 6.283f / n + Random.Range(-0.15f, 0.15f), L = r * Random.Range(0.55f, 1f);
+                var e = at + new Vector3(Mathf.Cos(a), Mathf.Sin(a)) * L;
+                var ln = Add(pixel, at, 0.05f, new Color(c.r, c.g, c.b, 0.9f), 8, life); ln.a = at; ln.b = e; ln.size = 0.05f;
+            }
+            Add(glow, at, r * 0.9f, new Color(1f, 0.97f, 0.9f, 0.85f), 7, life * 0.8f);
+        }
+        // 💥 불덩이 — 한 프레임 3개까지 (연쇄 폭발이 쏟아져도 화면이 안 덮이게)
+        int fireballsThisFrame;
+        void Fireball(Vector3 at, float R)
+        {
+            if (fireballsThisFrame >= 3 || fx.Count > 760) { Add(glow, at, R * 1.6f, new Color(1f, 0.6f, 0.3f, 0.22f), 7, 0.2f); return; }
+            fireballsThisFrame++;
+            Add(glow, at, R * 2.6f, new Color(1f, 0.42f, 0.12f, 0.55f), 7, 0.42f);
+            Add(glow, at, R * 1.5f, new Color(1f, 0.78f, 0.35f, 0.85f), 7, 0.28f);
+            Add(glow, at, R * 0.7f, new Color(1f, 1f, 0.95f, 1f), 7, 0.16f);
+            Star(at, new Color(1f, 0.8f, 0.4f), R * 1.4f, 9, 0.24f);
+            for (int i = 0; i < 6; i++) Add(pixel, at, Random.Range(0.08f, 0.14f), new Color(1f, Random.Range(0.5f, 0.85f), 0.25f), 0, Random.Range(0.4f, 0.7f)).v = (Vector3)(Random.insideUnitCircle.normalized * Random.Range(2f, 5f) * R);
+        }
+
         void OnTier(int tier)
         {
             // 🔴 도파민 사다리 — 연쇄 10 · 30 · 80 · 200
@@ -472,7 +514,7 @@ namespace SalvageRun.Orbit
             core.a = muzzle; core.b = at; core.size = hit ? 0.1f : 0.05f;
             var halo = Add(pixel, at, 0.05f, new Color(1f, 0.76f, 0.3f, hit ? 0.55f : 0.22f), 8, 0.3f);
             halo.a = muzzle; halo.b = at; halo.size = hit ? 0.3f : 0.14f;
-            if (hit) Add(glow, at, 0.5f, new Color(1f, 0.87f, 0.58f, 0.6f), 7, 0.18f);
+            if (hit) { Add(glow, at, 0.5f, new Color(1f, 0.87f, 0.58f, 0.6f), 7, 0.18f); Zap(muzzle, at, new Color(1f, 0.8f, 0.4f), 0.14f, 0.16f, 9); Star(at, new Color(1f, 0.85f, 0.5f), 0.45f, 6, 0.14f); }   // ⚡ 빔 둘레 번개 · ✦ 맞는 자리 빛살
         }
 
         void CollectorShip()
@@ -879,7 +921,7 @@ namespace SalvageRun.Orbit
             var aS = hud == null ? Vector2.zero : sim.R != null && !sim.R.over ? hud.TallyScreen : hud.CreditScreen;   // 출동 중엔 금화가 계산대로
             Vector3 anchor = hud != null ? cam.ScreenToWorldPoint(new Vector3(aS.x, aS.y, 10)) : Vector3.zero;
             anchor.z = 0;
-            ringsAlive = 0; foreach (var q in fx) if (q.kind == 5) ringsAlive++;
+            ringsAlive = 0; fireballsThisFrame = 0; foreach (var q in fx) if (q.kind == 5) ringsAlive++;
             for (int i = fx.Count - 1; i >= 0; i--)
             {
                 var p = fx[i];
