@@ -1047,6 +1047,7 @@ namespace SalvageRun.Orbit
             bool parOwned = t.lpar < 0 || GTileState(t.lpar) == 3;
             foreach (var x in t.xpar) if (GTileState(x) != 3) parOwned = false;
             if (parOwned) return 2;
+            if (SweepSim.Nodes[t.stat].id.StartsWith("p_")) return 2;                 // 🪐 행성 항로는 처음부터 보인다 — 목표가 되게 (09-24 사장님). 사는 건 앞 행성을 산 뒤
             if (t.lpar >= 0 && GTileState(t.lpar) == 2) return 1;
             return 0;
         }
@@ -1438,7 +1439,8 @@ namespace SalvageRun.Orbit
             int from = t.j == 1 ? 0 : SweepSim.TileLv(t.stat, t.j - 1), to = SweepSim.TileLv(t.stat, t.j);
             GUI.Label(new Rect(r.x + 10, r.y + 74, r.width - 20, 20), Val(n.id, from) + "  <color=#d9b98a>▸</color>  <color=#ffdf95>" + Val(n.id, to) + "</color>", center);
             string foot;
-            if (vis == 3) foot = "<color=#6fcf97>샀다</color>";
+            if (vis == 3 && SweepSim.Infinite(t.stat)) foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>  <color=#ffdf95>∞ " + sim.S.lv[t.stat] + "번 삼 · 계속 살 수 있다</color>";   // 누적 칸 — 다음 가격 (09-24 친구들 「가격이 안 보인다」)
+            else if (vis == 3) foot = "<color=#6fcf97>샀다</color>";
             else if (ns == NodeSt.Locked) foot = "<color=#ff9b8f>청구서 " + SweepSim.BranchNeed[b] + "을 갚으면 열린다</color>";
             else if (ns == NodeSt.Hidden && vis != 2) foot = "<color=#ff9b8f>앞 칸을 먼저 사야 한다</color>";
             else if (ns == NodeSt.Hidden) foot = "<color=#ff9b8f>이어진 다른 칸도 사야 한다</color>";

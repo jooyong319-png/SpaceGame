@@ -300,7 +300,7 @@ namespace SalvageRun.Orbit.Sim
             { "a_read", new TreeSpot { par = "a_auto", tile = 1, x = -4, y = 3, dx = -1, dy = 0 } },
             { "a_ins", new TreeSpot { par = "a_read", tile = 3, x = -7, y = 3, dx = -1, dy = 0 } },
             { "a_big", new TreeSpot { par = "a_ins", tile = 3, x = -10, y = 3, dx = -1, dy = 0 } },
-            { "p_moon", new TreeSpot { par = "o_wide", tile = 1, x = -2, y = -2, dx = 0, dy = 0 } },
+            { "p_moon", new TreeSpot { par = "R", tile = 1, x = -2, y = -2, dx = 0, dy = 0 } },
             { "p_mars", new TreeSpot { par = "p_moon", tile = 1, x = -4, y = -3, dx = 0, dy = 0 } },
             { "p_jup", new TreeSpot { par = "p_mars", tile = 1, x = -6, y = -4, dx = 0, dy = 0 } },
             { "p_sat", new TreeSpot { par = "p_jup", tile = 1, x = -8, y = -5, dx = 0, dy = 0 } },
