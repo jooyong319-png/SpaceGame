@@ -33,6 +33,7 @@ namespace SalvageRun.Orbit
         readonly List<SpriteRenderer> mineViews = new List<SpriteRenderer>();
         SpriteRenderer earth, ringB, ringF, atmo, rim, band, bandGlow, claw, clawRing, clawWind, holeCore, holeGlow, holeRing, moon, sun, sunCore;
         float t, saveTimer, bandInner = -1, earthR = 120, camBase;
+        Sprite thinRing; readonly SpriteRenderer[] tracks = new SpriteRenderer[5]; readonly SpriteRenderer[] trackDots = new SpriteRenderer[30]; readonly float[] dotPhase = new float[30];
         public bool aimOn, holdOn;
         bool castPending;
         public Vector2 aimPx;
@@ -102,6 +103,10 @@ namespace SalvageRun.Orbit
             rim = Make(ring, Vector3.zero, 2.5f, new Color(1f, 0.87f, 0.58f, 0), 6);
             band = Make(disc, Vector3.zero, 7f, new Color(1, 1, 1, 0.05f), 1);
             bandGlow = Make(ring, Vector3.zero, 7f, new Color(1f, 0.76f, 0.3f, 0), 2);
+            // 🛰 궤도선 — 가는 타원 다섯 줄 + 선을 따라 도는 빛점 (09-24 사장님 「좀 더 궤도 같은 느낌」)
+            thinRing = Ring(1024, 0.993f); bandGlow.sprite = thinRing;
+            for (int k = 0; k < 5; k++) tracks[k] = Make(thinRing, Vector3.zero, 7f, new Color(1, 1, 1, 0), 2);
+            for (int i = 0; i < trackDots.Length; i++) { trackDots[i] = Make(glow, Vector3.zero, 0.16f, new Color(1, 1, 1, 0), 3); dotPhase[i] = Random.value * 6.283f; }
             claw = Make(droneArt, Vector3.zero, 0.5f, Color.white, 70);
             shipView = Make(droneArt, Vector3.zero, 0.62f, new Color(1f, 0.9f, 0.7f), 72);            // 🚀 청소선 — 궤도 바깥에서 조준 쪽으로 (09-24)
             shipFlame = Make(glow, Vector3.zero, 0.5f, new Color(1f, 0.6f, 0.25f, 0.6f), 71);
@@ -210,6 +215,7 @@ namespace SalvageRun.Orbit
             camBase = Mathf.Lerp(camBase, camY, 1 - Mathf.Exp(-dt * 5f));
             float camX = hud != null ? -hud.CockpitDx * 2f * cam.orthographicSize / 600f : 0f;   // 옆 방으로 밀리면 창밖도 같이
             cam.transform.position = new Vector3(camX, camBase, -10) + (Vector3)(Random.insideUnitCircle * shake);
+            foreach (var bp in bgParts) bp.sr.transform.position = new Vector3(bp.at.x + camX * bp.par, bp.at.y + camBase * bp.par, 0);   // 멀리 있는 것은 카메라를 거의 따라온다
             if (bgView != null)
             {
                 float bh = cam.orthographicSize * 2f, bw = bh * cam.aspect; var bs = bgView.sprite.bounds.size;
@@ -638,9 +644,26 @@ namespace SalvageRun.Orbit
             float outer = (float)sim.Bo * 2 / PxPerUnit;
             band.transform.localScale = new Vector3(outer / bandSprite.bounds.size.x, outer * (float)SweepSim.Tilt / bandSprite.bounds.size.y, 1);
             Color bc = BandCol[pi];
-            bc.a = 0.035f + bandLit * 0.025f; band.color = bc;
-            bandGlow.transform.localScale = new Vector3(outer / ring.bounds.size.x, outer * (float)SweepSim.Tilt / ring.bounds.size.y, 1);
-            bandGlow.color = new Color(1f, 0.8f, 0.4f, bandLit * 0.4f + edgeGlow * 0.12f);
+            bc.a = 0.018f + bandLit * 0.02f; band.color = bc;                               // 띠 채움은 아주 옅게 — 궤도선이 주인공
+            bandGlow.transform.localScale = new Vector3(outer * 1.004f / thinRing.bounds.size.x, outer * 1.004f * (float)SweepSim.Tilt / thinRing.bounds.size.y, 1);
+            bandGlow.color = new Color(1f, 0.85f, 0.5f, bandLit * 0.8f + edgeGlow * 0.3f);   // 케슬러 — 바깥 궤도선이 빛난다
+            float tilt = (float)SweepSim.Tilt;
+            for (int k = 0; k < 5; k++)
+            {
+                float rk = Mathf.Lerp(inner, 1f, k / 4f), w = outer * rk; bool edgeK = k == 0 || k == 4;
+                tracks[k].transform.localScale = new Vector3(w / thinRing.bounds.size.x, w * tilt / thinRing.bounds.size.y, 1);
+                var tc = Color.Lerp(bc, Color.white, 0.45f); tc.a = (edgeK ? 0.34f : 0.12f) + bandLit * 0.15f; tracks[k].color = tc;
+            }
+            // 빛점 — 안쪽 궤도일수록 빨리 돈다 (케플러 느낌). 뒤쪽 반은 행성 뒤로
+            for (int i = 0; i < trackDots.Length; i++)
+            {
+                int k = i % 5; float rk = Mathf.Lerp(inner, 1f, k / 4f), R = outer * 0.5f * rk;
+                float a = dotPhase[i] + t * 0.22f / Mathf.Pow(rk, 1.5f) * (float)o.spin;
+                var dv = trackDots[i]; dv.transform.position = new Vector3(Mathf.Cos(a) * R, Mathf.Sin(a) * R * tilt, 0);
+                dv.sortingOrder = Mathf.Sin(a) < 0 ? 3 : 6;
+                var dc = Color.Lerp(bc, Color.white, 0.7f); dc.a = 0.55f + 0.25f * Mathf.Sin(t * 3 + i); dv.color = dc;
+                dv.transform.localScale = Vector3.one * (k == 0 || k == 4 ? 0.2f : 0.14f) / glow.bounds.size.x;
+            }
         }
 
         void DrawJunk()
@@ -922,10 +945,8 @@ namespace SalvageRun.Orbit
                 var panel = new Color(0.047f, 0.063f, 0.086f);
                 const float q = 1f / (float)SweepSim.TurS;                                   // 계기판은 포구 배율과 상관없이 같은 크기
                 // 🚀 창밖 — 청소선 선체 (픽셀랩 그림). 포대 받침이 포구 자리에 오게
-                if (hullSpr == null) hullSpr = Resources.Load<Sprite>("ship/hull");
-                if (hullSpr != null) TSprite(hullSpr, TW(640, 654), 220, 0, -10);
-                // 방 안 — 창턱 (화면 맨 아래 가는 띠, 선체보다 앞)
-                TBox(TW(640, 720 - 7 * q), 1800 * q, 14 * q, 0, panel, 30); TBox(TW(640, 720 - 14 * q), 1800 * q, 2 * q, 0, edge, 31);
+                // 선체는 뺐다 (09-24 사장님 「화면에서 쏘는 걸 보는 거지 우주선이 있을 필요가 없다」) — 포대는 창턱 위에
+                TBox(TW(640, 720 - 34 * q), 1800 * q, 68 * q, 0, panel, -12); TBox(TW(640, 720 - 68 * q), 1800 * q, 2 * q, 0, edge, -11);
                 var ts = TurSprite(w);
                 if (ts != null)                                                            // 🔫 픽셀랩 포대 그림 (위를 보는 그림 → -90°)
                 {
@@ -1041,10 +1062,17 @@ namespace SalvageRun.Orbit
             return sr;
         }
 
-        SpriteRenderer bgView;                                                          // 🌌 픽셀랩 성운 배경 — 카메라를 따라다니며 화면을 채운다
+        SpriteRenderer bgView;                                                          // 🌌 (옛) 통 배경 — 지금은 안 쓴다
+        readonly List<(SpriteRenderer sr, Vector2 at, float par)> bgParts = new List<(SpriteRenderer, Vector2, float)>();   // 🌌 배경 조각 (성운 그림에서 잘라 낸 은하 · 구름)
         void Stars()
         {
             Sprite nb = null;                                                          // 픽셀랩 성운 배경은 09-24 사장님 「아쉽다」 → 되돌림 (ArtUnused/bg)
+            // 조각만 골라 붙인다 (09-24 사장님 「필요한 부분만 뽑아서」) — (이름, 자리, 가로 크기, 밝기, 따라오는 정도)
+            foreach (var (n, at, w, a, par) in new[] { ("galaxy_a", new Vector2(9.5f, 4.6f), 3.2f, 0.75f, 0.85f), ("galaxy_b", new Vector2(-10.5f, -3.8f), 3.8f, 0.6f, 0.85f), ("wisp_a", new Vector2(-5.5f, 3.2f), 7.5f, 0.32f, 0.9f), ("wisp_b", new Vector2(6.5f, -4.4f), 6.5f, 0.28f, 0.9f) })
+            {
+                var sp = Resources.Load<Sprite>("bgparts/" + n); if (sp == null) continue;
+                var sr = Make(sp, at, w, new Color(1, 1, 1, a), -40); bgParts.Add((sr, at, par));
+            }
             if (nb != null) bgView = Make(nb, Vector3.zero, 1f, new Color(0.42f, 0.42f, 0.5f), -50);   // 어둡게 — 쓰레기보다 뒤로
             var r = new System.Random(5);
             var star = Ring(8, 0f);

@@ -152,7 +152,7 @@ namespace SalvageRun.Orbit
         void Effects()
         {
             if (game.edgeGlow > 0.01f && !reduceMotion) { GUI.color = new Color(1f, 0.76f, 0.3f, game.edgeGlow * 0.22f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), texVignette); }
-            if (game.flash > 0.01f) { GUI.color = new Color(1f, 0.97f, 0.9f, game.flash * 0.7f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); }
+            if (game.flash > 0.01f) { GUI.color = new Color(1f, 0.97f, 0.9f, game.flash * 0.3f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); }   // 흰 번쩍임 0.7 → 0.3 (블룸이 있어 화면이 하얗게 날아갔다)
             GUI.color = Color.white;
             var R = sim.R;
             if (!R.over && R.chain >= 10 && R.chainT > 0)
