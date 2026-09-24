@@ -15,8 +15,8 @@ namespace SalvageRun.Orbit
         // ───────────────────────────────── 좌우로 밀리는 세 방
         int slideFrom = -1; float slideAt = -9;
         const float SlideLen = 0.45f;
-        static readonly int[] Rooms = { 3, 2, 4 };
-        static float RoomX(int f) => f == 3 ? -1 : f == 4 ? 1 : 0;
+        static readonly int[] Rooms = { 3, 5, 2, 4 };                         // 정비고 · 🏪 가게 · 조종실 · 증권 (가게는 사야 생긴다)
+        float RoomX(int f) => f == 3 ? (sim.ShopOpen ? -2 : -1) : f == 5 ? -1 : f == 4 ? 1 : 0;
         float ViewX
         {
             get
@@ -34,7 +34,7 @@ namespace SalvageRun.Orbit
         {
             lobby = false;
             if (to == flow) return;
-            bool strip = (flow == 2 || flow == 3 || flow == 4) && (to == 2 || to == 3 || to == 4);
+            bool strip = (flow >= 2 && flow <= 5) && (to >= 2 && to <= 5);
             slideFrom = strip ? flow : -1; slideAt = Time.unscaledTime; flow = to;
             if (strip) OrbitSfx.Play("tick", 0.5f, 0.3f, 0.02f);
         }
@@ -42,8 +42,8 @@ namespace SalvageRun.Orbit
         void NavKeys(Keyboard kb)
         {
             if (kb == null || !sim.R.over || sim.M.careerOpen || sim.M.won || loanOpen || lottoOpen || newsOpen) return;
-            if (kb.leftArrowKey.wasPressedThisFrame) { if (flow == 2) GoFlow(3); else if (flow == 4) GoFlow(2); }
-            if (kb.rightArrowKey.wasPressedThisFrame) { if (flow == 2) GoFlow(4); else if (flow == 3) GoFlow(2); }
+            if (kb.leftArrowKey.wasPressedThisFrame) { if (flow == 2) GoFlow(sim.ShopOpen ? 5 : 3); else if (flow == 5) GoFlow(3); else if (flow == 4) GoFlow(2); }
+            if (kb.rightArrowKey.wasPressedThisFrame) { if (flow == 2) GoFlow(4); else if (flow == 3) GoFlow(sim.ShopOpen ? 5 : 2); else if (flow == 5) GoFlow(2); }
         }
 
         void Strip()
@@ -58,11 +58,16 @@ namespace SalvageRun.Orbit
                 else if (f == 3)
                 {
                     GUI.color = new Color(0.02f, 0.027f, 0.04f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
-                    bool en0 = GUI.enabled; GUI.enabled = en0 && !partsOpen;
                     Bay();                                                   // 큰 「조종실로」 버튼 뺌 — 옆 탭 하나로 (09-24 25번)
+                    if (sim.ShopOpen) { if (NavTab(true, "부품 가게", "", SweepGame.Amber)) GoFlow(5); }
+                    else if (NavTab(true, "조종실로", "", SweepGame.Amber)) GoFlow(2);
+                }
+                else if (f == 5)
+                {
+                    if (!sim.ShopOpen) continue;
+                    ShopRoom();
+                    if (NavTab(false, "정비고", "", SweepGame.Amber)) GoFlow(3);
                     if (NavTab(true, "조종실로", "", SweepGame.Amber)) GoFlow(2);
-                    GUI.enabled = en0;
-                    if (partsOpen) PartsWin();
                 }
                 else StockRoom();
             }

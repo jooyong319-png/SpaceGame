@@ -37,7 +37,8 @@ namespace SalvageRun.Orbit.Sim
         public int version = 22;
         public int weapon, weapon2 = -1, keys, front1 = -1, front2 = -1, frontPick = -1;       // ★ 1면 조작 — 고를 기사 둘                               // ⚔ 무기 · 보조 무기 · 🔑 열쇠
         public int[] parts = { -1, -1, -1, -1, -1 };                           // 🔩 부품 칸 다섯
-        public List<int> shop = new List<int>();                             // 가게 진열 (Parts.Key = 열쇠)                                                   // ⚔ 장착한 무기 (0 집게 빔 · 1 레이저 · 2 번개)
+        public List<int> shop = new List<int>();
+        public int shopSale = -1, nFuel, nDmg, nVal; public bool freeRoll = true;   // 🔩 가게 v2 — 오늘의 반값 칸 · 판마다 공짜 새로고침 · 🧃 소모품(다음 판)                             // 가게 진열 (Parts.Key = 열쇠)                                                   // ⚔ 장착한 무기 (0 집게 빔 · 1 레이저 · 2 번개)
         public double cash, billAmount = -1, creditPending, startedAt, debt;   // debt = 갚아야 할 빚 (대출 × 배수)
         public int runs, orbit, bill, billDue = 5, overRuns, contract = -1;
         public bool overdue, rerolled;
@@ -74,7 +75,7 @@ namespace SalvageRun.Orbit.Sim
     public class SweepRun
     {
         public readonly double[] chan = new double[9], chanNext = new double[9], chanX = new double[9], chanY = new double[9];   // 이어서 쏘는 확률 효과 · 그 무기의 목표
-        public double volley, volleyT, volleyNext;                          // 🚀 전탄 발사 게이지 · 퍼붓는 중
+        public double volley, volleyT, volleyNext; public int consDmg, consVal;   // 🧃 이번 판 소모품                          // 🚀 전탄 발사 게이지 · 퍼붓는 중
         public double shipA = -1.57, heat = 1, next2, idleT, rockT = -1, fenceT, magHole, magX, magY; public int vacAmmo; public readonly List<Blast> mines = new List<Blast>(); public bool twin, lazyDone, tourDone; public int insiderN, meteorAt = 80, meteors, weaponKills, goldN;                            // 청소선 — 궤도 바깥에서 조준 방향으로 따라온다 · 레이저 열
         public double hx, hy, holeCd, clickCd, fuelGot, refill, fuel, max, t, next = 0.3, endT, formT = 9, rushT, rushX, rushY, chainT, holdT, ax = 480, ay = 310, refillT;
         public double ev1T = -1, ev2T = -1, stormT; public int ev1 = -1, ev2 = -1, stormLeft; public bool ev1Warn, ev2Warn, collector;
@@ -625,7 +626,7 @@ namespace SalvageRun.Orbit.Sim
         public const double PickR = 30;      // 범위 강화 전 — 커서 밑 하나를 잡는 거리
         public int ClawDmg => 1 + Lv("c_pow");
         public double Part(string k) => Parts.Sum(S.parts, k);
-        public double DmgMul => Math.Pow(1.5, Lv("m_claw")) * wMul * RawDmgMul;   // ✦ 과충전 포신 · 무기 3단계 위력
+        public double DmgMul => Math.Pow(1.5, Lv("m_claw")) * wMul * RawDmgMul * (R != null ? 1 + R.consDmg / 100.0 : 1);   // ✦ 과충전 포신 · 무기 3단계 위력
         double wMul = 1;
         double RawDmgMul => 1 + Part("dmg") + (Lv("k_claw") > 0 ? 0.4 : 0) + Rage + Grit + 0.05 * Lv("i_claw") + (Lv("x_route_claw") > 0 ? new[] { 0, 0.05, 0.1, 0.2, 0.35 }[Math.Min(4, S.orbit)] : 0);
         public double Rage { get { if (Lv("q_rage") <= 0 || Mk == null) return 0; double v = 0, c = 0; foreach (var s in Mk.M.st) if (s.shares > 0) { v += s.shares * s.price; c += s.cost; } return c > 0 ? Math.Min(0.5, Math.Max(0, 1 - v / c)) : 0; } }   // ★ 물린 개미의 분노
@@ -655,7 +656,7 @@ namespace SalvageRun.Orbit.Sim
         public int ChainMax => R.clean ? 5000 : 40 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 15 * Lv("b_chain");
         // 🌪 모래 폭풍 (화성 · 해왕성) — 22초마다 4.5초. 값 ×1.5 · 왼쪽에서 고철이 몰려온다 (09-24 사장님 36번 「무의미함」)
         public bool StormOn => R != null && !R.over && !R.clean && Orbits[S.orbit].storm && R.t % 22.0 >= 15 && R.t % 22.0 < 19.5;
-        public double ValMult => (StormOn ? 1.5 : 1) * Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (Orbits[S.orbit].mult + (Lv("k_route") > 0 && S.orbit > 0 ? 0.5 : 0) + (S.orbit > 0 ? 0.05 * Lv("i_route") : 0)) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1) * (1 + 0.04 * Lv("i_eco")) * PlanetStockBonus * Math.Pow(1.5, Lv("m_val")) * Math.Pow(1.25, Lv("m_route"));
+        public double ValMult => (StormOn ? 1.5 : 1) * (R != null ? 1 + R.consVal / 100.0 : 1) * Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (Orbits[S.orbit].mult + (Lv("k_route") > 0 && S.orbit > 0 ? 0.5 : 0) + (S.orbit > 0 ? 0.05 * Lv("i_route") : 0)) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1) * (1 + 0.04 * Lv("i_eco")) * PlanetStockBonus * Math.Pow(1.5, Lv("m_val")) * Math.Pow(1.25, Lv("m_route"));
         public double PlanetStockBonus { get { if (Lv("x_eco_route") <= 0 || Mk == null || S.orbit == 0) return 1; string[] ids = { "", "moon", "mars", "jup", "sat", "", "", "", "" }; if (ids[S.orbit] == "") return 1; for (int i = 0; i < Market.Defs.Length && i < Mk.M.st.Count; i++) if (Market.Defs[i].id == ids[S.orbit] && Mk.M.st[i].shares > 0) return 1.2; return 1; } }   // 새 행성은 종목이 없다
         public double Cut => S.debt > 0 ? Math.Max(0.1, (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) - Part("cut")) : 0;   // 빚이 있으면 판 수입에서 떼어 상환
         // ── 대출 (연체 대신) — 언제든 받을 수 있다. 받은 돈 × 배수를 판 수입에서 조금씩 갚는다
@@ -792,16 +793,29 @@ namespace SalvageRun.Orbit.Sim
             Mk.Publish("오늘 1면 — " + h, nd.body, nd.up, nd.down, nd.size * 1.5f, false);   // 조작한 1면은 세게 (09-24 사장님 7번 「안 되는 것 같다」)
             AddNews(null, "오늘 1면 — " + h, "궤도일보 1면. (편집장은 청소선에서 온 제보라고만 했다)");
         }
-        public double ShopBase => Math.Max(120, Math.Round(BillAmount * 0.3 / 10) * 10);
-        public double PartPrice(int id) => id == Parts.Key ? ShopBase * 2.5 : ShopBase * Parts.RarPrice[Parts.Defs[id].rar];
-        public double RerollPrice => Math.Round(ShopBase * 0.25);
+        // 🔩 가게 v2 (09-24 사장님 24번 「너무 비싸기만 하다 · 판마다 바뀌고 · 돈으로 바꾸고 · 가격 다양하게」)
+        public double ShopBase => Math.Max(80, Math.Round(BillAmount * 0.15 / 10) * 10);
+        public const int Cons0 = 200;
+        public static readonly string[] ConsName = { "연료 캔", "복권 묶음", "과부하 탄창", "감정 할인권" };
+        public static readonly string[] ConsDesc = { "다음 판 연료 +10초", "즉석 복권 +3장", "다음 판 화력 +20%", "다음 판 모든 값 +15%" };
+        static readonly double[] ConsPrice = { 0.25, 0.2, 0.45, 0.5 };
+        public static bool IsCons(int id) => id >= Cons0 && id < Cons0 + ConsName.Length;
+        public double PartPrice(int id)
+        {
+            double b = ShopBase, p = id == Parts.Key ? b * 2.5 : IsCons(id) ? b * ConsPrice[id - Cons0] : b * Parts.RarPrice[Parts.Defs[id].rar];
+            double jit = 1 + 0.15 * Math.Sin(id * 12.9898 + S.runs * 78.233);          // 판마다 조금씩 다른 값
+            return Math.Max(10, Math.Round(p * jit / 10) * 10);
+        }
+        public double ShelfPrice(int k) => S.shop == null || k < 0 || k >= S.shop.Count ? 0 : Math.Max(10, Math.Round(PartPrice(S.shop[k]) * (k == S.shopSale ? 0.5 : 1) / 10) * 10);
+        public double RerollPrice => S.freeRoll ? 0 : Math.Round(ShopBase * 0.25);
         public void RollShop()
         {
             if (S.shop == null) S.shop = new List<int>();
             S.shop.Clear();
             var used = new HashSet<int>(S.parts ?? new int[0]);
             bool key = false;
-            for (int n = 0; n < 3; n++)
+            for (int c = 0; c < 2; c++) { int ci; do ci = Cons0 + rng.Next(ConsName.Length); while (S.shop.Contains(ci)); S.shop.Add(ci); }   // 🧃 소모품 둘 (싸다)
+            for (int n = 0; n < 4; n++)
             {
                 if (!key && Rnd() < 0.18) { S.shop.Add(Parts.Key); key = true; continue; }
                 for (int t = 0; t < 30; t++)
@@ -812,19 +826,32 @@ namespace SalvageRun.Orbit.Sim
                     S.shop.Add(id); break;
                 }
             }
+            S.shopSale = S.shop.Count > 0 ? rng.Next(S.shop.Count) : -1;         // 오늘의 반값 한 칸
         }
         public bool BuyPart(int k)
         {
             if (!R.over || !ShopOpen || S.shop == null || k < 0 || k >= S.shop.Count) return false;
-            int id = S.shop[k]; double p = PartPrice(id);
+            int id = S.shop[k]; double p = ShelfPrice(k);
             if (S.cash < p) return false;
             S.cash -= p; S.shop.RemoveAt(k);
+            if (k == S.shopSale) S.shopSale = -1; else if (k < S.shopSale) S.shopSale--;
             if (id == Parts.Key) { S.keys++; return true; }
+            if (IsCons(id))
+            {
+                switch (id - Cons0)
+                {
+                    case 0: S.nFuel += 10; break;
+                    case 1: if (S.scratchRun != S.runs) { S.scratchRun = S.runs; S.scratchN = 0; } S.scratchN -= 3; break;
+                    case 2: S.nDmg += 20; break;
+                    case 3: S.nVal += 15; break;
+                }
+                return true;
+            }
             if (S.parts == null || S.parts.Length != 5) S.parts = new[] { -1, -1, -1, -1, -1 };
             S.parts[Parts.Defs[id].slot] = id;
             return true;
         }
-        public bool RerollShop() { if (!R.over || !ShopOpen || S.cash < RerollPrice) return false; S.cash -= RerollPrice; RollShop(); return true; }
+        public bool RerollShop() { if (!R.over || !ShopOpen || S.cash < RerollPrice) return false; S.cash -= RerollPrice; S.freeRoll = false; RollShop(); return true; }
         public int TotalLv { get { int n = 0; foreach (var l in S.lv) n += l; return n; } }
         public double Widen => 1 + 0.1 * Lv("o_wide");      // 🔴 정비소에서 산다 (사장님 09-23: "맵 크기도 여기서 늘리게")
         public double Bo => Orbits[S.orbit].bi + (Orbits[S.orbit].bo - Orbits[S.orbit].bi) * Widen;
@@ -1079,7 +1106,8 @@ namespace SalvageRun.Orbit.Sim
             if (clean) S.orbit = MaxOrbit;
             S.runs++; S.rerolled = false;
             var r = new SweepRun { clean = clean };
-            r.max = r.fuel = clean ? 45 : FuelMax;
+            r.max = r.fuel = clean ? 45 : FuelMax + S.nFuel;
+            r.consDmg = S.nDmg; r.consVal = S.nVal; S.nFuel = S.nDmg = S.nVal = 0;   // 🧃 가게 소모품 — 이번 판
             r.maxShots = clean ? 6 : Bombs; r.shots = 0;   // 블랙홀은 스킬 — 한 칸 들고 나가서 시간 따라 찬다
             int nfuel = clean ? 0 : Lv("c_find");
             for (int i = 0; i < nfuel; i++) r.pods.Add(new Pod { kind = 0, t = 9 + i * 7 });
@@ -2008,7 +2036,7 @@ namespace SalvageRun.Orbit.Sim
             S.lastClaw = r.earnClaw; S.lastDrone = r.earnDrone; S.lastBlast = r.earnBlast; S.runEarn.Add(r.earnClaw + r.earnDrone + r.earnBlast); if (S.runEarn.Count > 6) S.runEarn.RemoveAt(0); S.lastBroke = r.broke; S.lastChain = r.chainBest;
             S.lastContract = r.contractText == null ? 0 : r.contractOk ? 1 : 2;
             LottoDraw();                                                // 🎱 추첨 날이면
-            if (ShopOpen) RollShop();                                   // 🔩 가게 진열이 바뀐다
+            if (ShopOpen) { RollShop(); S.freeRoll = true; }                  // 🔩 가게 진열이 바뀐다 · 공짜 새로고침 한 번
             if (Lv("q_front") > 0 && Mk != null && StockOpen) { S.front1 = rng.Next(Market.NewsBook.Length); do S.front2 = rng.Next(Market.NewsBook.Length); while (S.front2 == S.front1); }
             CheckClean();                                               // 판 수입에서 떼어 빚을 다 갚았을 수도
             RollContract();

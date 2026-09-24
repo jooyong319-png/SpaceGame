@@ -121,10 +121,10 @@ namespace SalvageRun.Orbit
             }
             if (kb != null && kb.spaceKey.wasPressedThisFrame && sim.R.over && !sim.M.careerOpen && !sim.M.won && !newsOpen && paidT < 2.4f)
             {
-                if (loanOpen || lottoOpen) { } else if (flow == 2) Go(); else if (flow == 3 || flow == 4) GoFlow(2); else flow = 2;   // Space — 결과 · 정비소 → 조종실, 조종실 → 출동
+                if (loanOpen || lottoOpen) { } else if (flow == 2) Go(); else if (flow >= 3 && flow <= 5) GoFlow(2); else flow = 2;   // Space — 결과 · 정비소 → 조종실, 조종실 → 출동
             }
             if (sim.R.over && paidT < 2.4f) NavKeys(kb);                 // ← → 조종실 양옆 방
-            if (kb != null && kb.escapeKey.wasPressedThisFrame) { if (settingsOpen) settingsOpen = false; else if (partsOpen) partsOpen = false; else if (lottoOpen) lottoOpen = false; else if (loanOpen) { loanOpen = false; pendLoan = 0; } else if (newsOpen) newsOpen = false; else bayOpen = false; }
+            if (kb != null && kb.escapeKey.wasPressedThisFrame) { if (settingsOpen) settingsOpen = false; else if (lottoOpen) lottoOpen = false; else if (loanOpen) { loanOpen = false; pendLoan = 0; } else if (newsOpen) newsOpen = false; else bayOpen = false; }
         }
 
         void OnGUI()
@@ -473,8 +473,8 @@ namespace SalvageRun.Orbit
         // 가운데 창 = 지금 내 궤도 (사면 바로 창밖에 보인다) · 계기판마다 할 일 하나 · 강화는 정비고(네 칸 · 36칸)
 
         public bool bayOpen; int bayTab;
-        public bool CockpitView => (flow == 2 || flow == 3 || flow == 4) && sim != null && sim.R.over && !sim.M.careerOpen && !sim.M.won;   // 조종실 — 카메라가 물러나 지구가 창 가운데 (09-23 부활)
-        public int flow;                         // 0 출동 중 · 1 결산 · 2 조종실 · 3 정비고(왼쪽 방) · 4 증권(오른쪽 방)
+        public bool CockpitView => (flow >= 2 && flow <= 5) && sim != null && sim.R.over && !sim.M.careerOpen && !sim.M.won;   // 조종실 — 카메라가 물러나 지구가 창 가운데 (09-23 부활)
+        public int flow;                         // 0 출동 중 · 1 결산 · 2 조종실 · 3 정비고(왼쪽 끝) · 5 부품 가게(정비고 오른쪽) · 4 증권(오른쪽 방)
         static readonly Color[] BranchCol = { SweepGame.Amber, SweepGame.Cyan, SweepGame.Violet, SweepGame.Green };
         static readonly string[] BayDesc = { "조준점 하나 → 넓은 착탄 → 한 번에 여럿", "알아서 줍는다 — 한 방에 부서지는 것만", "블랙홀 스킬 · 지구에서 연료 보급", "돈 · 청구서 · 대출 · 기사" };
         public static readonly Rect Win = new Rect(200, 44, 560, 344);
@@ -784,7 +784,7 @@ namespace SalvageRun.Orbit
 
             // ⑤ ‹ 정비고로 · 증권 하러 가기 › — 화면 양옆 탭 (누르면 옆 방으로 슥)
             int canN = 0; for (int b = 0; b < 4; b++) canN += CanCount(b);
-            if (NavTab(false, "정비고로", canN > 0 ? "<color=#f2c14e>살 칸 " + canN + "</color>" : "", SweepGame.Amber)) GoFlow(3);
+            if (NavTab(false, "정비고로", canN > 0 ? "<color=#f2c14e>살 칸 " + canN + "</color>" : "", SweepGame.Amber)) GoFlow(3);   // 가게를 지나 정비고로 곧장 (← 키는 한 칸씩)
             if (NavTab(true, "증권 하러 가기", sim.StockOpen ? "" : "<color=#5f6878>잠김</color>", new Color(0.62f, 0.94f, 0.75f))) GoFlow(4);
 
             // ⑥ 항로 — 조종대 오른쪽 홀로그램 (행성 다섯 · 의뢰)
