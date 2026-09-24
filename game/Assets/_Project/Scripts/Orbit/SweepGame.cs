@@ -353,7 +353,6 @@ namespace SalvageRun.Orbit
                     case SwEv.SkillReady: OrbitSfx.Play("tick", 0.5f, 1.4f, 0.05f); break;
                     case SwEv.Supply:
                         PopAt(e.x, e.y - 10, e.text, e.k == 1 ? Violet : Green, 15);
-                        Add(ring, at, 0.1f, e.k == 1 ? Violet : Green, 5, 0.5f, 0.9f);
                         OrbitSfx.Play("supply", 0.7f, 0.1f);
                         break;
                     case SwEv.SupplyGet:
@@ -459,7 +458,6 @@ namespace SalvageRun.Orbit
                             if (vacView == null) vacView = Make(animVortex[0], at, 1f, Color.white, 57);
                             vacView.transform.position = at; vacView.transform.localScale = Vector3.one * R * 2.3f / animVortex[0].bounds.size.x; vacT = 0.3f;
                         }
-                        Add(ring, at, R * 2f, new Color(0.45f, 0.95f, 0.85f, 0.35f), 7, 0.12f);
                         Add(glow, at, R * 1.2f, new Color(0.3f, 0.8f, 0.75f, 0.18f), 7, 0.12f);
                         for (int q = 0; q < 3; q++)
                         {
@@ -698,7 +696,7 @@ namespace SalvageRun.Orbit
             atmo.color = AtmoCol[pi];
             atmo.transform.localScale = Vector3.one * d * 1.45f * (1f + 0.02f * Mathf.Sin(t)) / glow.bounds.size.x;
             rim.transform.localScale = Vector3.one * (d + 0.12f) / ring.bounds.size.x;
-            rim.color = new Color(1f, 0.87f, 0.58f, rimLit);
+            rim.color = new Color(1f, 0.87f, 0.58f, 0);                                  // 행성 둘레 노란 고리 — 없앰 (09-24)
             // 토성 — 고리가 행성을 감싼다 (띠 안쪽까지만)
             bool saturn = pi == 4;
             ringB.enabled = ringF.enabled = saturn;
@@ -794,11 +792,10 @@ namespace SalvageRun.Orbit
                 av.enabled = true;
                 Color ac = AttColor(d.att); ac.a = (float)d.fade;
                 if (d.att == Att.Ice || d.att == Att.Armor)
-                {
-                    av.sprite = ring;
-                    float rs = size * (d.att == Att.Ice ? 1.3f : 1.2f);
-                    av.transform.position = pos; av.transform.localScale = Vector3.one * rs / ring.bounds.size.x;
-                    if (d.att == Att.Armor) ac = new Color(0.62f, 0.66f, 0.72f, (float)d.fade * 0.25f); else ac.a *= 0.35f;
+                {   // 원 대신 쓰레기 색 — 얼음 = 하늘빛 · 장갑 = 쇳빛 (09-24)
+                    av.enabled = false;
+                    var vc = v.color; v.color = Color.Lerp(vc, d.att == Att.Ice ? new Color(0.62f, 0.88f, 1f, vc.a) : new Color(0.55f, 0.6f, 0.7f, vc.a), 0.55f);
+                    continue;
                 }
                 else
                 {
@@ -885,7 +882,7 @@ namespace SalvageRun.Orbit
             }
             DrawTurret(!R.over);
             clawWind.enabled = show && R.fuel > 0;
-            holeCore.enabled = holeGlow.enabled = holeRing.enabled = holding;
+            holeCore.enabled = holeGlow.enabled = holding; holeRing.enabled = false;         // 범위 고리 없앰 — 도트 블랙홀이 보여 준다
             LoadAnims();
             if (animHole != null)
             {   // 🕳 픽셀랩 블랙홀 — 열려 있는 동안 돈다
@@ -923,9 +920,20 @@ namespace SalvageRun.Orbit
             claw.transform.position = at;
             claw.transform.rotation = Quaternion.Euler(0, 0, t * 40f);        // 조준점이 천천히 돈다
             claw.transform.localScale = Vector3.one * (0.12f + 0.05f * wind) / Mathf.Max(0.01f, droneArt.bounds.size.x);
-            clawRing.transform.position = at;
-            clawRing.transform.localScale = Vector3.one * r / ring.bounds.size.x;
-            clawRing.color = fuel ? new Color(1f, 0.76f, 0.3f, auto ? 0.3f + 0.5f * wind : 0.9f) : new Color(0.5f, 0.54f, 0.6f, 0.4f);
+            clawRing.enabled = false; clawWind.enabled = false;                       // ⭕ 조준 원 → 🎯 도트 조준경 (09-24 사장님 「조준한다는 느낌 · 범위 표시도 어울리게」)
+            if (retSpr == null) retSpr = Resources.Load<Sprite>("ship/reticle");
+            if (reticleView == null && retSpr != null) reticleView = Make(retSpr, at, 1f, Color.white, 69);
+            if (reticleView != null)
+            {
+                reticleView.enabled = claw.enabled;
+                if (wind < lastWind - 0.3f) retKick = 1f;                                  // 방금 쐈다 — 꺾쇠가 튕겨 나간다
+                lastWind = wind; retKick = Mathf.MoveTowards(retKick, 0, Time.deltaTime * 6f);
+                float sc = r * 1.2f * (1f - 0.16f * wind + 0.14f * retKick);                   // 장전될수록 조여들고 · 쏘면 벌어진다
+                reticleView.transform.position = at; reticleView.transform.rotation = Quaternion.identity;
+                reticleView.transform.localScale = Vector3.one * sc / retSpr.bounds.size.x;
+                reticleView.color = fuel ? new Color(1f, 1f, 1f, auto ? 0.55f + 0.45f * wind : 1f) : new Color(0.45f, 0.48f, 0.55f, 0.6f);
+                claw.enabled = false;                                                      // 가운데 도는 표시는 조준경 가운데 점이 대신한다
+            }
             float ang = wind * Mathf.PI * 2 + Mathf.PI / 2;
             clawWind.transform.position = at + new Vector3(Mathf.Cos(ang), Mathf.Sin(ang), 0) * r / 2;
         }
@@ -949,6 +957,8 @@ namespace SalvageRun.Orbit
         int ringsAlive;
         void RingFx(Vector3 at, Color c, float life, float grow)
         {
+            return;                                                                    // ⭕ 고리 연출 없앰 (09-24) — 폭발 · 서리 · 자석은 도트 애니가 맡는다
+#pragma warning disable CS0162
             if (ringsAlive >= 6) return;
             ringsAlive++; c.a *= 0.55f;
             Add(ring, at, 0.1f, c, 5, life * 0.7f, grow);
@@ -992,6 +1002,7 @@ namespace SalvageRun.Orbit
         }
         class FrameFx { public SpriteRenderer sr; public Sprite[] f; public float t, fps; }
         readonly List<FrameFx> frameFx = new List<FrameFx>();
+        SpriteRenderer reticleView; static Sprite retSpr; float lastWind, retKick;
         SpriteRenderer vacView, holeAnim, burnView; float vacT, burnT, lastFrost;
         static readonly Sprite[] attPx = new Sprite[13]; static bool attTried;
         static Sprite AttPx(Att a)
