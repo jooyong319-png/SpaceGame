@@ -143,7 +143,7 @@ namespace SalvageRun.Orbit
             RepayOverlay();
             if (sim.Mk != null) { StockFxOverlay(); if (sim.StockOpen) AnchorBox(); }
             BuyFxDraw();                                               // ✨ 칸 · 부품 · 1면 연출 (어느 화면이든)   // 📈 증권 연출 · 🎙 속보 앵커                                            // 💸 빚 갚기 연출
-            if (!sim.M.won && !(CockpitView && flow != 3)) Ticker();          // 조종실엔 궤도일보 모니터가 있다 — 아래 한 줄과 겹친다
+            if (!sim.M.won && !(sim.R.over && (flow == 2 || flow == 4))) Ticker();          // 조종실엔 궤도일보 모니터가 있다 — 아래 한 줄과 겹친다
             ActCard();
             VolumeButton();
         }
@@ -326,7 +326,7 @@ namespace SalvageRun.Orbit
             {
                 GUI.Label(new Rect(x, 14, 200, 20), "블랙홀 <color=#b69cff>자동 " + (sim.HoleChance * 100).ToString("0.#") + "%</color>" + (R.holding ? "  <color=#b69cff>● 열림</color>" : ""), dim);
             }
-            GUI.Label(new Rect(vw - 390, 14, 316, 20), "주식회사 궤도 청소부 (" + sim.M.company + "대) · " + SweepSim.Orbits[S.orbit].name, cost);
+            GUI.Label(new Rect(vw - 404, 14, 316, 20), "주식회사 궤도 청소부 (" + sim.M.company + "대) · " + SweepSim.Orbits[S.orbit].name, cost);
             if (R.holding)
             {
                 float k = Mathf.Clamp01((float)R.packed.Count / Mathf.Max(1, sim.Cap));
@@ -408,7 +408,7 @@ namespace SalvageRun.Orbit
             float cx = vw / 2;
 
             // 돈 칸 — 오른쪽 위. 합계가 여기로 날아와 더해진다
-            var money = new Rect(vw - 230, 14, 210, 44);
+            var money = new Rect(vw - 300, 14, 210, 44);                        // 오른쪽 끝은 소리 버튼 자리
             GUI.color = new Color(0.14f, 0.12f, 0.08f, 0.95f); GUI.DrawTexture(money, white); GUI.color = Color.white;
             Frame(money, SweepGame.Amber * new Color(1, 1, 1, 0.6f), 1.5f);
             big.fontSize = 26 + Mathf.RoundToInt(game.creditPulse * 6);
@@ -1271,6 +1271,8 @@ namespace SalvageRun.Orbit
             if (gtiles == null) BuildGraph();
             var S = sim.S;
             GUI.DrawTexture(new Rect(0, 0, vw, RefH), texDim);
+            void BayHead()
+            {
             // 머리 — 돈 · 청구서 · 궤도일보
             big.fontSize = 24 + Mathf.RoundToInt(game.creditPulse * 6);
             GUI.Label(new Rect(ox + 16, 12, 40, 20), "돈", dim);
@@ -1286,8 +1288,10 @@ namespace SalvageRun.Orbit
             }
             int unreadN = sim.Unread;
             if (GUI.Button(new Rect(ox + 780, 8, 166, 30), "궤도일보" + (unreadN > 0 ? "  <color=#ff8a7a>● " + unreadN + "</color>" : ""), btn)) { newsOpen = true; newsSel = -1; }
+            }
 
             var area = new Rect(0, 46, vw, 456);
+            bool inArea = area.Contains(Event.current.mousePosition);
             int nT = gtiles.Count;
             int[] st = new int[nT];
             Vector2 lo = new Vector2(1e9f, 1e9f), hi = new Vector2(-1e9f, -1e9f);
@@ -1384,29 +1388,38 @@ namespace SalvageRun.Orbit
                 if (k == recK) { float rp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 4); GUI.color = new Color(1f, 0.87f, 0.4f, 0.55f + 0.45f * rp); Frame(new Rect(r.x - 5 * zz, r.y - 5 * zz, r.width + 10 * zz, r.height + 10 * zz), GUI.color, 2.5f); GUI.color = Color.white; GUI.Label(new Rect(pc.x - 40, r.yMax + 2 * zz, 80, 16), "<size=10><b><color=#ffdf95>추천</color></b></size>", center); }
                 if (lockedTile && next) { GUI.color = new Color(1f, 0.6f, 0.55f); GUI.Label(new Rect(r.xMax - 14, r.y - 4, 18, 18), "<size=11>잠</size>", center); }
                 GUI.color = Color.white;
-                if (r.Contains(ev.mousePosition)) hover = k;
+                if (inArea && r.Contains(ev.mousePosition)) hover = k;
                 if (inf && owned) GUI.Label(new Rect(r.x - 10, r.yMax, r.width + 20, 16), "<size=10><color=#ffdf95>∞ " + sim.S.lv[t.stat] + "</color></size>", center);
-                if (!isRoot && (next || inf && owned) && GUI.Button(r, GUIContent.none, GUIStyle.none) && ns == NodeSt.Can)
+                if (!isRoot && (next || inf && owned) && inArea && GUI.Button(r, GUIContent.none, GUIStyle.none) && ns == NodeSt.Can)
                 {
                     int times = shift ? 5 : 1;
                     while (times-- > 0 && sim.State(t.stat) == NodeSt.Can) sim.BuyTile(t.stat);
                     nodePulse[t.stat] = 1; OrbitSfx.Play("buy", 0.7f, 0.01f, 0.15f); lastBuyBranch = n.branch; BuyFx(pc, SweepSim.KeyNodes.Contains(n.id) ? new Color(0.71f, 0.61f, 1f) : bcol, n.max == 1, SweepSim.KeyNodes.Contains(n.id) ? "핵심 해금!" : "해금!");
                 }
             }
+            // 영역 밖 띠 — 넘어간 칸을 덮고 머리 · 안내를 다시 그린다
+            GUI.color = new Color(0.02f, 0.027f, 0.04f); GUI.DrawTexture(new Rect(0, 0, vw, area.y), white); GUI.DrawTexture(new Rect(0, area.yMax, vw, RefH - area.yMax), white);
+            GUI.color = new Color(1f, 0.78f, 0.3f, 0.18f); GUI.DrawTexture(new Rect(0, area.y - 1, vw, 1), white); GUI.DrawTexture(new Rect(0, area.yMax, vw, 1), white);
             GUI.color = Color.white;
+            BayHead();
             {
                 float bw3 = 36;
                 if (GUI.Button(new Rect(zb.x, zb.y, bw3, zb.height), "<size=16>−</size>", btnOff)) ZoomAt(area.center, userZ / 1.25f);
                 if (GUI.Button(new Rect(zb.x + bw3 + 3, zb.y, bw3, zb.height), "<size=16>+</size>", btnOff)) ZoomAt(area.center, userZ * 1.25f);
                 if (GUI.Button(new Rect(zb.x + (bw3 + 3) * 2, zb.y, 40, zb.height), "<size=11>맞춤</size>", btnOff)) { userZ = 1; pan = Vector2.zero; }
-                GUI.Label(new Rect(zb.xMax + 8, zb.y + 6, 260, 20), "<size=11><color=#5f6878>" + Mathf.RoundToInt(userZ * 100) + "%</color></size>", label);
+                var zr = new Rect(zb.xMax + 4, zb.y + 5, 44, 20);
+                GUI.color = new Color(0.04f, 0.05f, 0.07f, 0.9f); GUI.DrawTexture(zr, white); GUI.color = Color.white;
+                GUI.Label(zr, "<size=11><color=#8a93a3>" + Mathf.RoundToInt(userZ * 100) + "%</color></size>", center);
             }
             WeaponBar(new Rect(zb.x, zb.yMax + 8, 300, 30));
             PartsButton(new Rect(zb.x + (sim.Lv("w_hub") > 0 ? 198 : 0), zb.yMax + 8, 230, 30));
+            if (testTip >= 0) { for (int k = 0; k < nT; k++) if (gtiles[k].stat >= 0 && SweepSim.Nodes[gtiles[k].stat].id == testTipId) hover = k; }   // 에디터 시험용
             if (hover >= 0) Tip(hover, ToScr(gtiles[hover].cell), st[hover], tile);
-            else GUI.Label(new Rect(0, area.yMax - 18, vw, 16), "<size=11>칸에 마우스를 올리면 무엇인지 보인다 · 빛나는 칸을 누르면 산다 · 휠 = 확대 · 끌기 = 이동</size>", center);
+            else GUI.Label(new Rect(ox, area.yMax + 2, 750, 16), "<size=11>칸에 마우스를 올리면 무엇인지 보인다 · 빛나는 칸을 누르면 산다 · 휠 = 확대 · 끌기 = 이동</size>", center);
         }
 
+        GUIStyle tipWrap;
+        public int testTip = -1; public string testTipId;                  // 에디터 시험용 — 툴팁 강제로 띄우기
         void Tip(int k, Vector2 at, int vis, float tile)
         {
             var t = gtiles[k];
@@ -1420,8 +1433,14 @@ namespace SalvageRun.Orbit
             }
             var n = SweepSim.Nodes[t.stat]; var ns = sim.State(t.stat); int lv = sim.S.lv[t.stat];
             int b = System.Array.IndexOf(SweepSim.BranchIds, n.branch);
-            var r = new Rect(at.x + tile / 2 + 14, at.y - 70, 300, 150);
+            // 설명 길이에 맞춰 키가 자란다 (09-24 글자 잘림 점검 — 긴 설명이 한 줄 칸에서 잘렸다)
+            if (tipWrap == null) tipWrap = new GUIStyle(center) { wordWrap = true, fontSize = 13 };
+            const float TipW = 340;
+            float dh = vis == 1 ? 22 : Mathf.Max(22, tipWrap.CalcHeight(new GUIContent(n.desc), TipW - 24));
+            bool keyNote = vis != 3 && vis != 1 && SweepSim.KeyNodes.Contains(n.id) && sim.State(t.stat) != NodeSt.Locked && sim.State(t.stat) != NodeSt.Hidden;
+            var r = new Rect(at.x + tile / 2 + 14, at.y - 70, TipW, vis == 1 ? 96 : 138 + dh + (keyNote ? 18 : 0));
             if (r.xMax > vw - 8) r.x = at.x - tile / 2 - 14 - r.width;
+            r.x = Mathf.Max(8, r.x);
             r.y = Mathf.Clamp(r.y, 50, 500 - r.height);
             GUI.color = new Color(0.05f, 0.05f, 0.06f, 0.97f); GUI.DrawTexture(r, white); GUI.color = Color.white;
             Frame(r, new Color(0.6f, 0.5f, 0.35f), 2);
@@ -1430,23 +1449,26 @@ namespace SalvageRun.Orbit
             if (vis == 1)
             {
                 GUI.Label(new Rect(r.x, r.y + 4, r.width, 28), "<color=#b89a6a>?</color>", title);
-                GUI.Label(new Rect(r.x, r.y + 58, r.width, 20), "앞 칸을 사면 무엇인지 보인다", center);
+                GUI.Label(new Rect(r.x, r.y + 52, r.width, 20), "앞 칸을 사면 무엇인지 보인다", center);
                 return;
             }
             string nm = n.name + (SweepSim.Tiles(t.stat) > 1 ? " " + Roman[t.j] : "");
             GUI.Label(new Rect(r.x, r.y + 4, r.width, 28), "<color=#d9b98a>" + nm + "</color>", title);
-            GUI.Label(new Rect(r.x + 10, r.y + 42, r.width - 20, 22), n.desc, center);
-            GUI.color = new Color(0.3f, 0.28f, 0.24f); GUI.DrawTexture(new Rect(r.x + 24, r.y + 70, r.width - 48, 1), white); GUI.DrawTexture(new Rect(r.x + 24, r.y + 98, r.width - 48, 1), white); GUI.color = Color.white;
+            GUI.Label(new Rect(r.x + 12, r.y + 42, r.width - 24, dh), n.desc, tipWrap);
+            float oy = dh - 22;                                          // 설명이 길어진 만큼 아래 줄을 내린다
+            GUI.color = new Color(0.3f, 0.28f, 0.24f); GUI.DrawTexture(new Rect(r.x + 24, r.y + 70 + oy, r.width - 48, 1), white); GUI.DrawTexture(new Rect(r.x + 24, r.y + 98 + oy, r.width - 48, 1), white); GUI.color = Color.white;
             int from = t.j == 1 ? 0 : SweepSim.TileLv(t.stat, t.j - 1), to = SweepSim.TileLv(t.stat, t.j);
-            GUI.Label(new Rect(r.x + 10, r.y + 74, r.width - 20, 20), Val(n.id, from) + "  <color=#d9b98a>▸</color>  <color=#ffdf95>" + Val(n.id, to) + "</color>", center);
+            GUI.Label(new Rect(r.x + 10, r.y + 74 + oy, r.width - 20, 20), Val(n.id, from) + "  <color=#d9b98a>▸</color>  <color=#ffdf95>" + Val(n.id, to) + "</color>", center);
             string foot;
             if (vis == 3 && SweepSim.Infinite(t.stat)) foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>  <color=#ffdf95>∞ " + sim.S.lv[t.stat] + "번 삼 · 계속 살 수 있다</color>";   // 누적 칸 — 다음 가격 (09-24 친구들 「가격이 안 보인다」)
             else if (vis == 3) foot = "<color=#6fcf97>샀다</color>";
             else if (ns == NodeSt.Locked) foot = SweepSim.Ring4(n.id) ? "<color=#ff9b8f>목성 항로를 열면 — 외행성 면허</color>" : "<color=#ff9b8f>청구서 " + SweepSim.BranchNeed[b] + "을 갚으면 열린다</color>";
             else if (ns == NodeSt.Hidden && vis != 2) foot = "<color=#ff9b8f>앞 칸을 먼저 사야 한다</color>";
             else if (ns == NodeSt.Hidden) foot = "<color=#ff9b8f>이어진 다른 칸도 사야 한다</color>";
-            else foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>" + (SweepSim.KeyNodes.Contains(n.id) ? "  <color=#d8ccff>+ 열쇠 1 (가진 것 " + sim.S.keys + ") · 파산해도 남는다</color>" : "");
-            center.fontSize = 20; GUI.Label(new Rect(r.x, r.y + 106, r.width, 32), foot, center); center.fontSize = 13;
+            else foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>" + (SweepSim.KeyNodes.Contains(n.id) ? "  <color=#d8ccff>+ 열쇠 1</color>" : "");
+            if (keyNote) GUI.Label(new Rect(r.x, r.y + 136 + oy, r.width, 16), "<size=11><color=#b9a9ee>가진 열쇠 " + sim.S.keys + " · ◆ 핵심 칸은 파산해도 남는다</color></size>", center);
+            center.fontSize = 20; if (center.CalcSize(new GUIContent(foot)).x > r.width - 16) center.fontSize = 14;   // 핵심 칸 · 누적 칸은 줄이 길다
+            GUI.Label(new Rect(r.x, r.y + 106 + oy, r.width, 32), foot, center); center.fontSize = 13;
         }
 
         void Line(Vector2 a, Vector2 b, Color col, float w)

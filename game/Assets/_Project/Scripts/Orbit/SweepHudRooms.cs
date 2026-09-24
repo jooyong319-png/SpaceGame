@@ -82,7 +82,7 @@ namespace SalvageRun.Orbit
             var sb = new System.Text.StringBuilder();
             foreach (char ch in word) sb.Append(ch == ' ' ? "\n" : ch + "\n");
             GUI.Label(new Rect(r.x, r.y + 48, w, 180), "<size=14><b><color=#" + hex + ">" + sb.ToString().TrimEnd('\n') + "</color></b></size>", center);
-            if (!string.IsNullOrEmpty(sub)) GUI.Label(new Rect(r.x - 14, r.yMax - 26, w + 28, 22), "<size=10>" + sub + "</size>", center);
+            if (!string.IsNullOrEmpty(sub)) GUI.Label(new Rect(Mathf.Clamp(r.x - 14, 0, vw - w - 28), r.yMax - 26, w + 28, 22), "<size=10>" + sub + "</size>", center);
             return GUI.Button(r, GUIContent.none, GUIStyle.none);
         }
 
@@ -125,6 +125,7 @@ namespace SalvageRun.Orbit
             }
 
             // 판 — 반투명 · 주사선 · 위아래로 훑는 빛 띠
+            GUI.color = new Color(0.02f, 0.035f, 0.05f, 0.6f * fl); GUI.DrawTexture(p, white);          // 어두운 바탕 (09-24 글자 점검)
             GUI.color = new Color(0.1f, 0.45f, 0.58f, 0.2f * fl); GUI.DrawTexture(p, white);
             GUI.color = new Color(Holo.r, Holo.g, Holo.b, 0.06f * fl);
             for (float y = p.y + 2; y < p.yMax; y += 4) GUI.DrawTexture(new Rect(p.x, y, p.width, 1), white);
@@ -527,6 +528,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(hc.r * 0.25f, hc.g * 0.25f, hc.b * 0.3f); GUI.DrawTexture(new Rect(ex - 54 * e, ey - 6, 108 * e, 20 * e), texDisc);
             GUI.color = new Color(hc.r, hc.g, hc.b, 0.8f * fl); GUI.DrawTexture(new Rect(ex - 36 * e, ey - 3, 72 * e, 12 * e), texDisc);
             GUI.color = new Color(hc.r, hc.g, hc.b, 0.22f * fl); GUI.DrawTexture(new Rect(ex - 90 * e, ey - 26 * e, 180 * e, 56 * e), texDisc);
+            GUI.color = new Color(0.02f, 0.035f, 0.05f, 0.6f * fl); GUI.DrawTexture(p, white);          // 어두운 바탕 — 뒤가 비쳐 글자와 겹치지 않게 (09-24 글자 점검)
             GUI.color = new Color(hc.r * 0.3f, hc.g * 0.4f, hc.b * 0.5f, (hover ? 0.34f : 0.22f) * fl); GUI.DrawTexture(p, white);
             GUI.color = new Color(hc.r, hc.g, hc.b, 0.06f * fl);
             for (float y = p.y + 2; y < p.yMax; y += 4) GUI.DrawTexture(new Rect(p.x, y, p.width, 1), white);

@@ -150,8 +150,9 @@ namespace SalvageRun.Orbit
         }
 
         // 🎙 속보 앵커 — 속보가 뜨면 왼쪽 아래에 작은 창, 입을 뻐끔거리며 제목을 읽는다
-        float anchorAt = -9; string anchorHead;
-        public void Anchor(string head) { anchorAt = Time.unscaledTime; anchorHead = head; }
+        float anchorAt = -9; string anchorHead; int anchorWho;
+        static Texture2D[] anchorTex;                                   // 픽셀랩 앵커 둘 — a 남 · b 여, 0 입 닫음 · 1 입 벌림 (09-24 사장님 「기자도 도트로」)
+        public void Anchor(string head) { anchorAt = Time.unscaledTime; anchorHead = head; anchorWho = 1 - anchorWho; }   // 속보마다 번갈아
         void AnchorBox()
         {
             float t = Time.unscaledTime - anchorAt;
@@ -164,14 +165,25 @@ namespace SalvageRun.Orbit
             var face = new Rect(r.x + 2, r.y + 2, 74, r.height - 4);
             GUI.color = new Color(0.06f, 0.09f, 0.14f, a); GUI.DrawTexture(face, white);
             float cx = face.center.x, hy = r.y + 44;
+            bool open = t < 2.9f && Mathf.Repeat(t, 0.28f) < 0.14f;
+            if (anchorTex == null) { anchorTex = new Texture2D[4]; for (int i = 0; i < 4; i++) anchorTex[i] = Resources.Load<Texture2D>("news/anchor_" + (i < 2 ? "a" : "b") + (i % 2)); }
+            var atx = anchorTex[anchorWho * 2 + (open ? 1 : 0)] ?? anchorTex[anchorWho * 2];
+            if (atx != null)
+            {   // 🎙 도트 앵커 — 스튜디오 뒤판 위에 가슴까지
+                GUI.color = new Color(0.1f, 0.16f, 0.26f, a); GUI.DrawTexture(new Rect(face.x, face.y, face.width, face.height * 0.55f), white);
+                GUI.color = new Color(0.7f, 0.09f, 0.06f, 0.5f * a); GUI.DrawTexture(new Rect(face.x, face.y + face.height * 0.55f, face.width, 2), white);
+                GUI.color = new Color(1, 1, 1, a); GUI.DrawTexture(new Rect(cx - 36, face.yMax - 72, 72, 72), atx);
+            }
+            else
+            {
             GUI.color = new Color(0.16f, 0.23f, 0.35f, a); GUI.DrawTexture(new Rect(cx - 26, r.y + 70, 52, 42), white);        // 양복
             GUI.color = new Color(0.9f, 0.9f, 0.92f, a); GUI.DrawTexture(new Rect(cx - 6, r.y + 70, 12, 22), white);             // 셔츠
             GUI.color = new Color(0.75f, 0.12f, 0.1f, a); GUI.DrawTexture(new Rect(cx - 2.5f, r.y + 72, 5, 18), white);          // 넥타이
             GUI.color = new Color(0.89f, 0.71f, 0.56f, a); GUI.DrawTexture(new Rect(cx - 19, hy - 22, 38, 42), texDisc);         // 얼굴
             GUI.color = new Color(0.17f, 0.1f, 0.06f, a); GUI.DrawTexture(new Rect(cx - 20, hy - 25, 40, 16), texDisc);          // 머리
             GUI.color = new Color(0, 0, 0, a); GUI.DrawTexture(new Rect(cx - 9, hy - 3, 4, 4), texDisc); GUI.DrawTexture(new Rect(cx + 5, hy - 3, 4, 4), texDisc);
-            bool open = t < 2.9f && Mathf.Repeat(t, 0.28f) < 0.14f;
             GUI.color = new Color(0.48f, 0.16f, 0.12f, a); GUI.DrawTexture(new Rect(cx - 5, hy + 8, 10, open ? 8 : 2.5f), texDisc);  // 입 뻐끔
+            }
             GUI.color = new Color(1, 1, 1, a);
             GUI.Label(new Rect(r.x + 84, r.y + 8, r.width - 92, 20), "<size=12><b><color=#ff5c5c>● 속보입니다</color></b></size>", label);
             GUI.Label(new Rect(r.x + 84, r.y + 30, r.width - 92, 76), "<size=12><color=#e8edf3>" + anchorHead + "</color></size>", small);
@@ -198,7 +210,7 @@ namespace SalvageRun.Orbit
             if (!sim.StockOpen || sim.Mk == null) return;
             MyStocks();
             int n = Mathf.Min(3, myIdx.Count);
-            var r = new Rect(ox + 598, 50, 156, 30 + Mathf.Max(1, n) * 17 + 16);
+            var r = new Rect(ox + 598, 50, 156, 30 + Mathf.Max(1, n) * 17 + 22);
             bool ov = r.Contains(Event.current.mousePosition);
             GUI.color = new Color(0, 0, 0, 0.45f); GUI.DrawTexture(new Rect(r.x + 3, r.y + 4, r.width, r.height), white);
             GUI.color = new Color(0.045f, 0.035f, 0.028f, 0.96f); GUI.DrawTexture(r, white);
@@ -213,8 +225,8 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(r.x + 9, y - 1, r.width - 18, 18), "<size=11><b>" + PctTxt(MyPct(i)) + "</b></size>", ledR ?? cost);
             }
             if (n == 0) GUI.Label(new Rect(r.x + 9, r.y + 26, r.width - 18, 18), "<size=11><color=#7a6a55>보유 종목 없음</color></size>", label);
-            if (myIdx.Count > 3) GUI.Label(new Rect(r.x + 9, r.yMax - 17, r.width - 18, 16), "<size=9><color=#7a6a55>외 " + (myIdx.Count - 3) + "</color></size>", label);
-            GUI.Label(new Rect(r.x + 9, r.yMax - 17, r.width - 18, 16), "<size=9><color=" + (ov ? "#ffdf95" : "#7a6a55") + ">증권 ›</color></size>", ledR ?? cost);
+            if (myIdx.Count > 3) GUI.Label(new Rect(r.x + 9, r.yMax - 21, r.width - 18, 16), "<size=9><color=#7a6a55>외 " + (myIdx.Count - 3) + "</color></size>", label);
+            GUI.Label(new Rect(r.x + 9, r.yMax - 21, r.width - 18, 16), "<size=9><color=" + (ov ? "#ffdf95" : "#7a6a55") + ">증권 ›</color></size>", ledR ?? cost);
             if (GUI.Button(r, GUIContent.none, GUIStyle.none)) GoFlow(4);
         }
 
