@@ -144,6 +144,25 @@ namespace SalvageRun.Orbit
             if (sim.Mk != null) { StockFxOverlay(); if (sim.StockOpen) AnchorBox(); }
             BuyFxDraw();                                               // ✨ 칸 · 부품 · 1면 연출 (어느 화면이든)   // 📈 증권 연출 · 🎙 속보 앵커                                            // 💸 빚 갚기 연출
             if (!sim.M.won && !(CockpitView && flow != 3)) Ticker();          // 조종실엔 궤도일보 모니터가 있다 — 아래 한 줄과 겹친다
+            VolumeButton();
+        }
+
+        // 🔊 소리 크기 — 오른쪽 위 구석, 누를 때마다 100 → 70 → 40 → 15 → 끔 (09-24 친구들 「소리 줄이는 것」). M = 음소거는 그대로
+        static readonly float[] VolSteps = { 1f, 0.7f, 0.4f, 0.15f, 0f };
+        float vol = -1;
+        void VolumeButton()
+        {
+            if (vol < 0) { vol = PlayerPrefs.GetFloat("orbit.vol", 0.7f); AudioListener.volume = vol; }
+            var r = new Rect(vw - 70, 8, 62, 22);
+            bool ov = r.Contains(Event.current.mousePosition);
+            GUI.color = ov ? new Color(0.16f, 0.19f, 0.25f, 0.95f) : new Color(0.08f, 0.1f, 0.13f, 0.85f); GUI.DrawTexture(r, white); Frame(r, new Color(0.3f, 0.34f, 0.42f), 1); GUI.color = Color.white;
+            GUI.Label(r, "<size=12><color=#c8d0dc>" + (vol <= 0 ? "소리 끔" : "소리 " + Mathf.RoundToInt(vol * 100) + "%") + "</color></size>", center);
+            if (GUI.Button(r, GUIContent.none, GUIStyle.none))
+            {
+                int i = 0; for (int k = 0; k < VolSteps.Length; k++) if (Mathf.Abs(VolSteps[k] - vol) < 0.01f) i = k;
+                vol = VolSteps[(i + 1) % VolSteps.Length]; AudioListener.volume = vol;
+                PlayerPrefs.SetFloat("orbit.vol", vol); PlayerPrefs.Save(); OrbitSfx.Play("tick", 0.8f);
+            }
         }
 
         // ───────────────────────────────── 연출 (도파민 사다리 §5)
@@ -257,7 +276,7 @@ namespace SalvageRun.Orbit
         {
             foreach (var p in game.pops)
             {
-                Vector3 sp = game.cam.WorldToScreenPoint(game.PxToWorld(p.px.x, p.px.y));
+                Vector3 sp = game.WorldToScreen(game.PxToWorld(p.px.x, p.px.y));
                 var c = p.c; c.a = 1 - p.age * p.age;
                 pop.normal.textColor = c; pop.fontSize = Mathf.RoundToInt(p.size);
                 GUI.Label(new Rect(sp.x / scale - 120, (Screen.height - sp.y) / scale - 12, 240, 24), p.text, pop);
@@ -306,7 +325,7 @@ namespace SalvageRun.Orbit
             {
                 GUI.Label(new Rect(x, 14, 200, 20), "블랙홀 <color=#b69cff>자동 " + (sim.HoleChance * 100).ToString("0.#") + "%</color>" + (R.holding ? "  <color=#b69cff>● 열림</color>" : ""), dim);
             }
-            GUI.Label(new Rect(vw - 330, 14, 316, 20), "주식회사 궤도 청소부 (" + sim.M.company + "대) · " + SweepSim.Orbits[S.orbit].name, cost);
+            GUI.Label(new Rect(vw - 390, 14, 316, 20), "주식회사 궤도 청소부 (" + sim.M.company + "대) · " + SweepSim.Orbits[S.orbit].name, cost);
             if (R.holding)
             {
                 float k = Mathf.Clamp01((float)R.packed.Count / Mathf.Max(1, sim.Cap));

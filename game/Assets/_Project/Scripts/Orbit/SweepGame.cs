@@ -80,6 +80,11 @@ namespace SalvageRun.Orbit
             cam.orthographic = true; cam.orthographicSize = 6f;
             cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.012f, 0.02f, 0.04f);
             cam.transform.position = new Vector3(0, 0, -10);
+            // 🟦 640×360 도트 격자 — 게임 화면은 작은 그림에 그려 도트 그대로 키운다 (09-24 사장님 「픽셀 개수를 안 정해서 지저분」). 글자(HUD)는 화면 해상도 그대로
+            pixRT = new RenderTexture(PixW, PixH, 24, RenderTextureFormat.ARGBHalf) { filterMode = FilterMode.Point, name = "PixelGrid" };
+            cam.targetTexture = pixRT;
+            var pc = new GameObject("Present Camera").AddComponent<Camera>();
+            pc.clearFlags = CameraClearFlags.SolidColor; pc.backgroundColor = Color.black; pc.cullingMask = 0; pc.depth = cam.depth + 1; pc.orthographic = true;
             if (FindFirstObjectByType<Light2D>() == null) { var l = new GameObject("Global Light 2D").AddComponent<Light2D>(); l.lightType = Light2D.LightType.Global; }
             // ✨ 블룸 — 빔 · 맞는 자리 · 블랙홀이 번져 빛난다 (09-24 사장님 참고 그림)
             {
@@ -244,7 +249,7 @@ namespace SalvageRun.Orbit
             autoAiming = autoMode && !sim.R.over && !manual;
             if (autoAiming) { AutoAim(3); return; }
             if (!inside) return;
-            Vector3 w = cam.ScreenToWorldPoint(new Vector3(sp.x, sp.y, 10));
+            Vector3 w = ScreenToWorld(sp);
             aimPx = new Vector2(480 + (w.x - cam.transform.position.x) * PxPerUnit, 310 - (w.y - cam.transform.position.y) * PxPerUnit);
             aimOn = true;
             if (hud.overSkill || hud.overAuto || hud.overStock) aimOn = false;          // 스킬 칸 위 — 빔 자리는 그대로 둔다
@@ -297,6 +302,23 @@ namespace SalvageRun.Orbit
             int n = 0; foreach (var d in sim.R.junk) if (!d.dead && (d.x - c.x) * (d.x - c.x) + (d.y - c.y) * (d.y - c.y) < 3600) n++;
             float dist = Vector2.Distance(aimPx, new Vector2((float)c.x, (float)c.y));
             return n / (1f + dist / 160f);
+        }
+
+        public const int PixW = 640, PixH = 360;
+        RenderTexture pixRT;
+        public Rect ViewRect { get { float s = Mathf.Min(Screen.width / (float)PixW, Screen.height / (float)PixH); if (s >= 2) s = Mathf.Floor(s); float w = PixW * s, h = PixH * s; return new Rect((Screen.width - w) / 2, (Screen.height - h) / 2, w, h); } }   // 정수배일 때 도트가 가장 고르다
+        public Vector3 ScreenToWorld(Vector2 sp)                                           // 화면 좌표(아래가 0) → 월드 (도트 격자를 거쳐)
+        {
+            var v = ViewRect; return cam.ScreenToWorldPoint(new Vector3((sp.x - v.x) / v.width * PixW, (sp.y - v.y) / v.height * PixH, 10));
+        }
+        public Vector3 WorldToScreen(Vector3 w)                                            // 월드 → 화면 좌표(아래가 0)
+        {
+            var v = ViewRect; var p = cam.WorldToScreenPoint(w); return new Vector3(v.x + p.x / PixW * v.width, v.y + p.y / PixH * v.height, p.z);
+        }
+        void OnGUI()                                                                       // 도트 격자 그림을 화면에 — HUD(SweepHud.OnGUI) 보다 뒤에
+        {
+            GUI.depth = 100;
+            if (Event.current.type == EventType.Repaint && pixRT != null) GUI.DrawTexture(ViewRect, pixRT, ScaleMode.StretchToFill, false);
         }
 
         public Vector3 PxToWorld(double x, double y) => new Vector3((float)(x - 480) / PxPerUnit, (float)(310 - y) / PxPerUnit, 0);
@@ -1026,7 +1048,7 @@ namespace SalvageRun.Orbit
         void UpdateFx(float dt)
         {
             var aS = hud == null ? Vector2.zero : sim.R != null && !sim.R.over ? hud.TallyScreen : hud.CreditScreen;   // 출동 중엔 금화가 계산대로
-            Vector3 anchor = hud != null ? cam.ScreenToWorldPoint(new Vector3(aS.x, aS.y, 10)) : Vector3.zero;
+            Vector3 anchor = hud != null ? ScreenToWorld(aS) : Vector3.zero;
             anchor.z = 0;
             ringsAlive = 0; fireballsThisFrame = 0; foreach (var q in fx) if (q.kind == 5) ringsAlive++;
             for (int i = fx.Count - 1; i >= 0; i--)
