@@ -38,7 +38,8 @@ namespace SalvageRun.Orbit.Sim
         public int weapon, weapon2 = -1, keys, front1 = -1, front2 = -1, frontPick = -1;       // ★ 1면 조작 — 고를 기사 둘                               // ⚔ 무기 · 보조 무기 · 🔑 열쇠
         public int[] parts = { -1, -1, -1, -1, -1 };                           // 🔩 부품 칸 다섯
         public List<int> shop = new List<int>();
-        public int shopSale = -1, nFuel, nDmg, nVal; public bool freeRoll = true;   // 🔩 가게 v2 — 오늘의 반값 칸 · 판마다 공짜 새로고침 · 🧃 소모품(다음 판)                             // 가게 진열 (Parts.Key = 열쇠)                                                   // ⚔ 장착한 무기 (0 집게 빔 · 1 레이저 · 2 번개)
+        public int shopSale = -1, nFuel, nDmg, nVal; public bool freeRoll = true;
+        public int layout;                                               // 칸 배치 판 — 2 = 새 칸 12개가 맨 뒤 (09-25). 0 이면 옮겨 준다   // 🔩 가게 v2 — 오늘의 반값 칸 · 판마다 공짜 새로고침 · 🧃 소모품(다음 판)                             // 가게 진열 (Parts.Key = 열쇠)                                                   // ⚔ 장착한 무기 (0 집게 빔 · 1 레이저 · 2 번개)
         public double cash, billAmount = -1, creditPending, startedAt, debt;   // debt = 갚아야 할 빚 (대출 × 배수)
         public int runs, orbit, bill, billDue = 5, overRuns, contract = -1;
         public bool overdue, rerolled;
@@ -262,6 +263,20 @@ namespace SalvageRun.Orbit.Sim
             N("w_mag_a", "arm", "자석 펄스 각성", "모인 자리에 블랙홀이 열린다", new[] { "w_mag_u" }, 1, 8000000, 1, 1, 0, 0),
             N("w_rail", "arm", "레일건", "공격 때 4% — 한 줄로 관통, 엄청 세고 장갑도 뚫는다", new[] { "w_mag" }, 1, 3000000, 1, 1, 0, 0),
             N("w_rail_u", "arm", "레일건 강화", "1단계 확률 ×1.5 · 2단계 뚫을수록 +15%", new[] { "w_rail" }, 1, 6000000, 4, 2, 0, 0),
+            N("w_rail_a", "arm", "레일건 각성", "띠 끝에서 튕겨 한 번 더 쏜다", new[] { "w_rail_u" }, 1, 30000000, 1, 1, 0, 0),
+            // ◆ 교차 핵심 (두 방향을 다 키워야 닿는다 · 열쇠) · ∞ 무한 칸 (3막의 돈이 계속 쓸 곳)
+            N("x_claw_arm", "claw", "◆ 교차: 사격 통제", "모든 무기 치명 +10% · 치명타는 ×4 (청소선 × 무기고)", new[] { "c_magnet", "w_hub" }, 1, 400000, 1, 1, 0, 0),
+            N("x_arm_drone", "drone", "◆ 교차: 드론 사수", "드론 공격에서도 블랙홀 · 내부자 거래가 굴러간다 · 드론 피해 ×2 (무기고 × 드론)", new[] { "d_grade", "w_hub" }, 1, 600000, 1, 1, 0, 0),
+            N("x_drone_bh", "drone", "◆ 교차: 블랙홀 견인", "블랙홀이 열려 있는 동안 드론이 두 배 빠르다 (드론 × 블랙홀)", new[] { "d_fix", "b_n" }, 1, 500000, 1, 1, 0, 0),
+            N("x_bh_eco", "bh", "◆ 교차: 파산 보험", "파산하면 돈의 10% 와 제일 좋은 부품 하나를 다음 대로 가져간다 (블랙홀 × 경영)", new[] { "k_bh", "e_save" }, 1, 800000, 1, 1, 0, 0),
+            N("x_eco_route", "eco", "◆ 교차: 행성 투자", "지금 궤도 행성의 종목(달 · 화성 · 목성 · 토성)을 들고 있으면 그 판 값 +20% (경영 × 항로)", new[] { "e_tip", "p_mars" }, 1, 700000, 1, 1, 0, 0),
+            N("x_route_claw", "claw", "◆ 교차: 궤도 폭격", "행성이 멀수록 화력이 오른다 (달 +5% · 화성 +10% · 목성 +20% · 토성 +35%) (항로 × 청소선)", new[] { "c_double", "p_moon" }, 1, 900000, 1, 1, 0, 0),
+            N("i_claw", "claw", "∞ 무한 화력", "살 때마다 모든 무기 화력 +5% — 끝이 없다", new[] { "k_claw" }, 1, 2000000, 1.35, 999, 0, 0),
+            N("i_drone", "drone", "∞ 무한 드론", "살 때마다 드론 몫 +5%", new[] { "k_drone" }, 1, 2000000, 1.35, 999, 0, 0),
+            N("i_bh", "bh", "∞ 무한 블랙홀", "살 때마다 블랙홀 확률 +0.1%p", new[] { "k_bh" }, 1, 2000000, 1.35, 999, 0, 0),
+            N("i_eco", "eco", "∞ 무한 시세", "살 때마다 모든 값 +4%", new[] { "k_eco" }, 1, 2000000, 1.35, 999, 0, 0),
+            N("i_route", "route", "∞ 무한 궤도", "살 때마다 행성 값 배수 +0.05", new[] { "k_route" }, 1, 2000000, 1.35, 999, 0, 0),
+            // ⚠️ 새 칸은 늘 맨 뒤에 — 저장은 칸 번호로 레벨을 들고 있다 (09-25 중간에 끼웠다가 옛 저장이 밀린 일)
             // ◇ 무기 특화 — 단계마다 효과가 커진다 (09-24 사장님 38번 「강화가 너무 적다 · 효과가 추가」)
             N("w_laser_e", "arm", "레이저 특화", "태우는 점 +20% · 위력 +15% — 3단계: 태운 자리가 가끔 터진다", new[] { "w_laser_u" }, 1, 18000, 4, 3, 0, 0),
             N("w_chain_e", "arm", "번개 특화", "튀는 수 +2", new[] { "w_chain_u" }, 1, 27000, 4, 3, 0, 0),
@@ -276,19 +291,6 @@ namespace SalvageRun.Orbit.Sim
             N("l_luck", "eco", "행운의 긁개", "즉석 복권 당첨 확률 +25%", new[] { "l_more" }, 1, 2000, 3, 3, 0, 0),
             N("l_free", "eco", "첫 장은 공짜", "판마다 즉석 복권 첫 장이 공짜", new[] { "l_more" }, 1, 1500, 1, 1, 0, 0),
             N("l_jack", "eco", "잭팟", "즉석 복권 당첨금 ×2", new[] { "l_luck" }, 1, 30000, 1, 1, 0, 0),
-            N("w_rail_a", "arm", "레일건 각성", "띠 끝에서 튕겨 한 번 더 쏜다", new[] { "w_rail_u" }, 1, 30000000, 1, 1, 0, 0),
-            // ◆ 교차 핵심 (두 방향을 다 키워야 닿는다 · 열쇠) · ∞ 무한 칸 (3막의 돈이 계속 쓸 곳)
-            N("x_claw_arm", "claw", "◆ 교차: 사격 통제", "모든 무기 치명 +10% · 치명타는 ×4 (청소선 × 무기고)", new[] { "c_magnet", "w_hub" }, 1, 400000, 1, 1, 0, 0),
-            N("x_arm_drone", "drone", "◆ 교차: 드론 사수", "드론 공격에서도 블랙홀 · 내부자 거래가 굴러간다 · 드론 피해 ×2 (무기고 × 드론)", new[] { "d_grade", "w_hub" }, 1, 600000, 1, 1, 0, 0),
-            N("x_drone_bh", "drone", "◆ 교차: 블랙홀 견인", "블랙홀이 열려 있는 동안 드론이 두 배 빠르다 (드론 × 블랙홀)", new[] { "d_fix", "b_n" }, 1, 500000, 1, 1, 0, 0),
-            N("x_bh_eco", "bh", "◆ 교차: 파산 보험", "파산하면 돈의 10% 와 제일 좋은 부품 하나를 다음 대로 가져간다 (블랙홀 × 경영)", new[] { "k_bh", "e_save" }, 1, 800000, 1, 1, 0, 0),
-            N("x_eco_route", "eco", "◆ 교차: 행성 투자", "지금 궤도 행성의 종목(달 · 화성 · 목성 · 토성)을 들고 있으면 그 판 값 +20% (경영 × 항로)", new[] { "e_tip", "p_mars" }, 1, 700000, 1, 1, 0, 0),
-            N("x_route_claw", "claw", "◆ 교차: 궤도 폭격", "행성이 멀수록 화력이 오른다 (달 +5% · 화성 +10% · 목성 +20% · 토성 +35%) (항로 × 청소선)", new[] { "c_double", "p_moon" }, 1, 900000, 1, 1, 0, 0),
-            N("i_claw", "claw", "∞ 무한 화력", "살 때마다 모든 무기 화력 +5% — 끝이 없다", new[] { "k_claw" }, 1, 2000000, 1.35, 999, 0, 0),
-            N("i_drone", "drone", "∞ 무한 드론", "살 때마다 드론 몫 +5%", new[] { "k_drone" }, 1, 2000000, 1.35, 999, 0, 0),
-            N("i_bh", "bh", "∞ 무한 블랙홀", "살 때마다 블랙홀 확률 +0.1%p", new[] { "k_bh" }, 1, 2000000, 1.35, 999, 0, 0),
-            N("i_eco", "eco", "∞ 무한 시세", "살 때마다 모든 값 +4%", new[] { "k_eco" }, 1, 2000000, 1.35, 999, 0, 0),
-            N("i_route", "route", "∞ 무한 궤도", "살 때마다 행성 값 배수 +0.05", new[] { "k_route" }, 1, 2000000, 1.35, 999, 0, 0),
         };
         public const int NodeCount = 130;
         /// <summary>◆ 핵심 칸 — 돈 + 열쇠 하나 (부품 가게에서 산다). 각성도 여기</summary>
@@ -540,6 +542,18 @@ namespace SalvageRun.Orbit.Sim
             else S = s;
             MakeMarket();
             if (M.perm == null) M.perm = new List<string>();
+            if (S.layout < 2 && S.lv != null && (S.lv.Length == 126 || S.lv.Length == 130))
+            {   // 🩹 09-24 밤 배치(새 칸이 106번에 끼어 있던 판)로 저장된 것 — 그 판에서 보이던 그대로, 칸 이름 기준으로 자리만 옮긴다 (09-25)
+                //    밀린 배치: 0~105 같음 · 106~113 무기 특화 8 · (130이면) 114~117 복권 4 · 그 뒤 원래 106~117
+                int ins = S.lv.Length - 118;
+                var nl = new int[NodeCount];
+                for (int k = 0; k < 106; k++) nl[k] = S.lv[k];
+                for (int j = 0; j < 12; j++) nl[106 + j] = S.lv[106 + ins + j];      // 레일건 각성 · 교차 핵심 · 무한
+                for (int j = 0; j < 8; j++) nl[118 + j] = S.lv[106 + j];             // 무기 특화
+                if (ins == 12) for (int j = 0; j < 4; j++) nl[126 + j] = S.lv[114 + j];   // 복권
+                S.lv = nl;
+            }
+            S.layout = 2;
             if (S.lv == null) S.lv = new int[NodeCount];
             else if (S.lv.Length < NodeCount) { var lv = S.lv; Array.Resize(ref lv, NodeCount); S.lv = lv; }   // 칸이 늘면 산 것은 그대로 두고 뒤에 붙인다 (경매 줄기 · 09-23)
             else if (S.lv.Length > NodeCount) { var lv = S.lv; Array.Resize(ref lv, NodeCount); S.lv = lv; }
