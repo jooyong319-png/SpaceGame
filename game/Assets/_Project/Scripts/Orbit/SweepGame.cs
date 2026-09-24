@@ -598,7 +598,7 @@ namespace SalvageRun.Orbit
         {
             int pi = sim.S.orbit;
             var o = SweepSim.Orbits[pi];
-            if (pi != shownPlanet) { shownPlanet = pi; earth.sprite = PlanetArt.Get(pi); }
+            if (pi != shownPlanet) { shownPlanet = pi; var pp = Resources.Load<Sprite>("planet/planet_" + pi); earth.sprite = pp != null ? pp : PlanetArt.Get(pi); }   // 🪐 픽셀랩 행성
             earthR = Mathf.Lerp(earthR, PlanetR[pi], 1 - Mathf.Exp(-Time.deltaTime * 2.5f));
             float d = earthR * 2 / PxPerUnit;
             earth.transform.localScale = Vector3.one * d / earth.sprite.bounds.size.x;
@@ -693,11 +693,13 @@ namespace SalvageRun.Orbit
                 }
                 else
                 {
-                    av.sprite = d.att == Att.BBox || d.att == Att.Tag || d.att == Att.Det ? square : disc;
-                    if ((d.att == Att.Det || d.att == Att.Beacon) && Mathf.Sin(t * 8 + d.id) < 0) ac = Color.Lerp(ac, Color.black, 0.6f);
+                    var ap = AttPx(d.att);                                                   // 🧷 픽셀랩 부착물 그림
+                    av.sprite = ap != null ? ap : d.att == Att.BBox || d.att == Att.Tag || d.att == Att.Det ? square : disc;
+                    if (ap != null) ac = new Color(1f, 1f, 1f, (float)d.fade);
+                    if ((d.att == Att.Det || d.att == Att.Beacon) && Mathf.Sin(t * 8 + d.id) < 0) ac = Color.Lerp(ac, new Color(0.35f, 0.35f, 0.4f, ac.a), 0.6f);
                     float ang = (float)d.rot + 0.9f;
                     av.transform.position = pos + new Vector3(Mathf.Cos(ang), Mathf.Sin(ang), 0) * size * 0.62f;
-                    float asz = Mathf.Max(0.09f, size * (d.att == Att.Tag ? 0.55f : 0.42f));
+                    float asz = Mathf.Max(0.09f, size * (ap != null ? 0.62f : d.att == Att.Tag ? 0.55f : 0.42f));
                     av.transform.localScale = Vector3.one * asz / Mathf.Max(0.01f, av.sprite.bounds.size.x);
                 }
                 av.transform.rotation = v.transform.rotation;
@@ -744,7 +746,8 @@ namespace SalvageRun.Orbit
 
             // 드론
             var drs = sim.R.drones;
-            while (droneViews.Count < drs.Count) droneViews.Add(Make(droneArt, Vector3.zero, 0.32f, Cyan, 60));
+            if (dronePx == null) dronePx = Resources.Load<Sprite>("ship/drone");
+            while (droneViews.Count < drs.Count) droneViews.Add(dronePx != null ? Make(dronePx, Vector3.zero, 0.42f, Color.white, 60) : Make(droneArt, Vector3.zero, 0.32f, Cyan, 60));   // 🤖 픽셀랩 드론
             for (int i = 0; i < droneViews.Count; i++)
             {
                 bool on = i < drs.Count;
@@ -845,7 +848,18 @@ namespace SalvageRun.Orbit
             var sr = TPiece(square, col, order); sr.transform.position = c; sr.transform.rotation = Quaternion.Euler(0, 0, ang * Mathf.Rad2Deg);
             sr.transform.localScale = new Vector3(w * TK / square.bounds.size.x, h * TK / square.bounds.size.y, 1);
         }
-        static Sprite hullSpr, turClawSpr;
+        static Sprite hullSpr, turClawSpr, dronePx;
+        static readonly Sprite[] attPx = new Sprite[13]; static bool attTried;
+        static Sprite AttPx(Att a)
+        {
+            if (!attTried)
+            {
+                attTried = true;
+                foreach (var (k, n) in new[] { (Att.FuelPod, "fuelpod"), (Att.Pouch, "pouch"), (Att.Beacon, "beacon"), (Att.Magnet, "magnet"), (Att.Det, "det"), (Att.BBox, "bbox"), (Att.Tag, "tag"), (Att.Gold, "gold"), (Att.Rock, "rock") })
+                    attPx[(int)k] = Resources.Load<Sprite>("att/att_" + n);
+            }
+            int i = (int)a; return i >= 0 && i < attPx.Length ? attPx[i] : null;
+        }
         static Sprite[] junkPx; static Sprite[] chipPx;
         static Sprite JunkPx(int k, int id)
         {
