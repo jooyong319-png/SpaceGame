@@ -752,7 +752,7 @@ namespace SalvageRun.Orbit
                 var pos = PxToWorld(d.x, d.y);
                 v.transform.position = pos;
                 Sprite s; Color c = Color.white;
-                var px = JunkPx(d.k, d.id);                                                // 🛰 픽셀랩 쓰레기 그림이 있으면 그걸로
+                var px = d.sp >= 0 ? SpeciesPx(d.sp) : null; if (px == null) px = JunkPx(d.k, d.id);   // 종 그림 먼저                                                // 🛰 픽셀랩 쓰레기 그림이 있으면 그걸로
                 if (px != null) { s = px; if (d.k == SweepSim.Vault) c = Color.Lerp(Color.white, new Color(1f, 0.95f, 0.75f), 0.5f + 0.5f * Mathf.Sin(t * 6)); }
                 else switch (d.k)
                 {
@@ -991,6 +991,13 @@ namespace SalvageRun.Orbit
             int i = (int)a; return i >= 0 && i < attPx.Length ? attPx[i] : null;
         }
         static Sprite[] junkPx; static Sprite[] chipPx;
+        static readonly Sprite[] spcPx = new Sprite[SweepSim.Spc.Length]; static readonly bool[] spcTried = new bool[SweepSim.Spc.Length];
+        static Sprite SpeciesPx(int sp)
+        {
+            if (sp < 0 || sp >= spcPx.Length) return null;
+            if (!spcTried[sp]) { spcTried[sp] = true; spcPx[sp] = Resources.Load<Sprite>("junk/" + SweepSim.Spc[sp].art); }
+            return spcPx[sp];
+        }
         static Sprite JunkPx(int k, int id)
         {
             if (junkPx == null)

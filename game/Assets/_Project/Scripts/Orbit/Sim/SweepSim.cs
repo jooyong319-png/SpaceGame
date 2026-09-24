@@ -12,7 +12,7 @@ namespace SalvageRun.Orbit.Sim
 
     public class Junk
     {
-        public int id, k, hp, max;
+        public int id, k, hp, max, sp = -1;                                   // sp = 종 (모습 · 등급) — SweepSim.Spc
         public Att att;
         public double a, rr, ws, x, y, vx, vy, capT, fade, hit, rot, vr, tr, frz;   // frz = 얼어 있는 시간 (냉동 빔)
         public bool free, dead, convoy;
@@ -983,6 +983,43 @@ namespace SalvageRun.Orbit.Sim
 
         int Alive() { int n = 0; foreach (var d in R.junk) if (!d.dead) n++; return n; }
 
+        // 🛰 쓰레기 종 — 행동은 종류(k)가 정하고, 모습 · 등급은 종이 정한다 (09-24 사장님 「쓰레기를 더 다양하게 · 하위는 없어지게」)
+        // 등급 = 행성 순위(지구 0 … 카이퍼 8). 지금 순위 ±1 이 주로 나오고, 두 단계 아래는 드물게, 그보다 아래는 안 나온다
+        public struct Species { public string name, art; public int kind, tier; }
+        public static readonly Species[] Spc =
+        {
+            new Species { name = "고철 조각",       art = "junk_chip_a",     kind = Chip,   tier = 0 },
+            new Species { name = "휜 판",           art = "junk_chip_b",     kind = Chip,   tier = 1 },
+            new Species { name = "태양판 조각",     art = "junk_chip_c",     kind = Chip,   tier = 1 },
+            new Species { name = "광석 덩어리",     art = "junk_ore",        kind = Chip,   tier = 3 },
+            new Species { name = "고리 얼음",       art = "junk_ringice",    kind = Chip,   tier = 5 },
+            new Species { name = "결정체",          art = "junk_crystal",    kind = Chip,   tier = 6 },
+            new Species { name = "혜성 조각",       art = "junk_comet",      kind = Chip,   tier = 8 },
+            new Species { name = "죽은 위성",       art = "junk_sat",        kind = Sat,    tier = 1 },
+            new Species { name = "채굴 드론 잔해",  art = "junk_minedrone",  kind = Sat,    tier = 3 },
+            new Species { name = "관광선 잔해",     art = "junk_tourwreck",  kind = Sat,    tier = 5 },
+            new Species { name = "폭풍 탐사선",     art = "junk_stormprobe", kind = Sat,    tier = 7 },
+            new Species { name = "고대 탐사선",     art = "junk_ancient",    kind = Sat,    tier = 8 },
+            new Species { name = "로켓 잔해",       art = "junk_rocket",     kind = Rocket, tier = 2 },
+            new Species { name = "가스 채굴선 잔해", art = "junk_gashulk",   kind = Rocket, tier = 4 },
+        };
+        public int Rank => Math.Max(0, Array.IndexOf(OrbitOrder, S.orbit));      // 가까운 → 먼 순위
+        int PickSpecies(int k)
+        {
+            int rk = R != null && R.clean ? 8 : Rank, best = -1; double sum = 0; var w = new double[Spc.Length];
+            for (int i = 0; i < Spc.Length; i++)
+            {
+                if (Spc[i].kind != k) continue;
+                int dt = Spc[i].tier - rk;
+                w[i] = dt == 0 ? 2 : Math.Abs(dt) == 1 ? 1 : dt == -2 ? 0.25 : 0; sum += w[i];
+                if (Spc[i].tier <= rk + 1 && (best < 0 || Spc[i].tier > Spc[best].tier)) best = i;
+            }
+            if (sum <= 0) return best;                                             // 창 안에 없으면 가장 높은 것
+            double v = Rnd() * sum;
+            for (int i = 0; i < w.Length; i++) { v -= w[i]; if (w[i] > 0 && v <= 0) return i; }
+            return best;
+        }
+
         int PickType()
         {
             var o = Orbits[S.orbit];
@@ -1004,7 +1041,7 @@ namespace SalvageRun.Orbit.Sim
             list.Add(Att.Beacon); list.Add(Att.Magnet);
             if (S.orbit >= 2 || R.clean) { list.Add(Att.Det); list.Add(Att.Det); list.Add(Att.Ice); }
             if (S.orbit == 2) { list.Add(Att.Ice); list.Add(Att.Ice); }             // 화성 — 얼음 껍질
-            if (S.orbit >= 3 || R.clean) { list.Add(Att.Armor); list.Add(Att.Armor); }
+            if (Rank >= 4 || R.clean) { list.Add(Att.Armor); list.Add(Att.Armor); }          // 목성부터 (순위)
             if (S.orbit == 3) list.Add(Att.Armor);                                   // 목성 — 장갑판
             return list[rng.Next(list.Count)];
         }
@@ -1019,7 +1056,7 @@ namespace SalvageRun.Orbit.Sim
             if (att == null && Lv("q_gold") > 0 && IsHost(k) && Rnd() < 0.012) at = Att.Gold;
             if (att == null && at == Att.None && IsHost(k) && Rnd() < (R.clean ? 0.35 : o.att * (1 + 0.4 * Lv("e_att")) * (1 + Part("att")))) at = PickAtt();
             int hp = (int)Math.Round(Types[k].hp * (k == Fuel || k == Tank ? 1 : HpMul)) + (at == Att.Ice ? 2 : 0);   // 청구서를 갚을수록 단단해진다
-            var d = new Junk { id = ++R.idc, k = k, hp = hp, max = hp, att = at, a = a, rr = rr, ws = ws > 0 ? ws : Rnd(0.92, 1.08), rot = Rnd(0, 6), vr = Rnd(-1, 1) };
+            var d = new Junk { id = ++R.idc, k = k, sp = PickSpecies(k), hp = hp, max = hp, att = at, a = a, rr = rr, ws = ws > 0 ? ws : Rnd(0.92, 1.08), rot = Rnd(0, 6), vr = Rnd(-1, 1) };
             Place(d);
             R.junk.Add(d);
             return d;
