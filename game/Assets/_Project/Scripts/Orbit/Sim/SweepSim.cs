@@ -708,7 +708,8 @@ namespace SalvageRun.Orbit.Sim
             S.orbit = MaxOrbit; RollContract(); Preview();
             AddNews(null, "무한 궤도 개장 — 청소선, 끝없는 궤도로", "빚은 끝났다. 이제 누가 더 깊이 내려가는지만 남았다.");
         }
-        void CheckClean() { if (S.bill >= Bills.Length && S.debt <= 0.5) { S.debt = 0; M.cleanReady = true; } }   // 청구서도 빚도 다 갚아야 청산 출동
+        void CheckClean() { if (!M.endless && S.bill >= Bills.Length && S.debt <= 0.5) {   // ∞ 무한 궤도엔 청산이 없다 (09-25 헤드리스 테스트가 잡음 — 다음 판이 청산 출동이 되어 엔딩이 또 떴다)
+            S.debt = 0; M.cleanReady = true; } }   // 청구서도 빚도 다 갚아야 청산 출동
         public double LoanCap => M.cleanReady || S.bill >= Bills.Length - 1 ? 0 :   // 마지막 할부(완납)엔 대출이 안 된다 — 빚으로 빚을 끝내면 끝없이 갚기만 한다
              Math.Max(0, Math.Floor(BillAmount - S.debt / LoanMult));   // 한도 = 지금 청구서 금액 − 남은 원금
         public bool TakeLoan(double amt)

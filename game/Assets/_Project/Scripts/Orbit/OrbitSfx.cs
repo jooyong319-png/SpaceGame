@@ -76,9 +76,10 @@ namespace SalvageRun.Orbit
             var v = I.voices[I.next];
             I.next = (I.next + 1) % I.voices.Count;
             v.pitch = 1f + Random.Range(-pitchJitter, pitchJitter);
-            v.PlayOneShot(clip, volume * 0.8f * SfxVol);
+            v.PlayOneShot(clip, volume * 0.8f * SfxVol * SfxBase);
         }
-        public static float SfxVol = 1f;                                   // ⚙ 설정 — 효과음 크기
+        public static float SfxVol = 1f;
+        const float SfxBase = 0.6f;                                       // 🎚 효과음 전체 — 09-25 측정: 출동 중 평균 0.22 · 최고 1.0(찢어짐)                                   // ⚙ 설정 — 효과음 크기
 
         /// <summary>음높이를 정해서 (경매 띡띡 — 오를수록 높게)</summary>
         public static void PlayPitch(string name, float volume, float pitch)
@@ -87,7 +88,7 @@ namespace SalvageRun.Orbit
             var v = I.voices[I.next];
             I.next = (I.next + 1) % I.voices.Count;
             v.pitch = pitch;
-            v.PlayOneShot(clip, volume * 0.8f * SfxVol);
+            v.PlayOneShot(clip, volume * 0.8f * SfxVol * SfxBase);
         }
 
         public void ToggleMute()

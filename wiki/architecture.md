@@ -46,6 +46,19 @@ tools/pacing/Program.cs  페이스 봇 (dotnet · 또는 에디터 안에서)
 - 🔴 끝나면 `Console.SetOut(new StreamWriter(Console.OpenStandardOutput()){AutoFlush=true})`로 되돌린다 — 안 하면 다음 컴파일이 `ObjectDisposedException`.
 - 재는 것: 끝나는 분 · 파산 수 · 행성 허가 시각. 재미 · 난이도는 안 잰다.
 
+### 🧪 헤드리스 테스트 (유니티 없이 · 09-25)
+
+- `cd tools/pacing && dotnet run -c Release -- test [씨앗 수]` — 기본 12. 유니티가 켜져 있어도 된다 (Sim 폴더를 그대로 컴파일).
+- ① 봇 N판 끝까지(분 분포 · 파산) ② 무작위 손 퍼징(아무 칸 · 대출 · 복권 · 가게 · 파산 · 행성 · 수동 사격 — 걸음마다 돈 · 빚 · 칸 레벨 · 가격 · 구역 검사) ③ 밀린 저장 옮기기 ④ 구역이 끝까지 차례로 열리는가 ⑤ 무한 궤도.
+- 통과하면 끝 줄 「✅ 모두 통과」, 실패하면 씨앗 · 걸음을 찍고 종료 코드 1. 첫 실행에 무한 궤도 → 청산 출동 버그를 잡았다.
+- 🔴 규칙(Sim)을 고치면 커밋 전에 한 번 돌린다.
+
+### 🎚 소리 크기 재기 (유니티 플레이 · 09-25)
+
+- 못 들으니 숫자로 — `AudioListener.GetOutputData`로 매 프레임 출력을 받아 평균(RMS) · 최고치 · 찢어짐(>0.99) 비율.
+- 곡마다 음악만(`OrbitMusic.Force`, 효과음 0) 4초 · 출동 효과음만 6초 · 둘 다 6초. 측정 동안 전체 소리 100%, 끝나면 되돌린다.
+- 지금 기준: 음악 평균 0.044~0.062 · 출동 효과음 0.144 · 최고 0.88 · 찢어짐 0. 곡 목표는 `OrbitMusic.Target`, 효과음 전체는 `OrbitSfx.SfxBase`(0.6).
+
 ### 픽셀랩 (PixelLab MCP)
 
 - 사장님 구독 Tier 1 (월 2000 생성). 키는 `C:/Make_Game/.mcp.json` — **커밋 금지**.

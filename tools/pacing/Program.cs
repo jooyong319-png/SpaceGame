@@ -18,12 +18,17 @@ static class Program
     static void Main(string[] args)
     {
         if (double.TryParse(Environment.GetEnvironmentVariable("LOANMULT"), out double lm)) SweepSim.LoanMult = lm;
+        if (args.Length > 0 && args[0] == "test") { Environment.ExitCode = Tests.RunAll(args.Length > 1 && int.TryParse(args[1], out int tn) ? tn : 12); return; }   // 🧪 헤드리스 테스트
         var seeds = args.Length > 0 && int.TryParse(args[0], out int one) ? new[] { one } : new[] { 3, 7, 11 };
         bool verbose = args.Contains("verbose");
         foreach (var s in seeds) Run(s, verbose);
     }
 
-    static void Run(int seed, bool verbose)
+    public class Result { public bool won; public double minutes; public int bankrupt, bill; }
+    static bool quiet;
+    public static Result RunQuiet(int seed) { quiet = true; try { return Run(seed, false); } finally { quiet = false; } }
+
+    static Result Run(int seed, bool verbose)
     {
         var sim = new SweepSim(null, null, seed);
         var rng = new Random(seed * 31 + 1);
@@ -83,7 +88,7 @@ static class Program
             long ticks = 0;
             while (!R.over)
             {
-                if (++ticks > 20000) { Console.WriteLine($"  ⚠ 판이 안 끝난다: 연료 {R.fuel:0.0} 붙잡음 {R.holding} 연쇄대기 {R.pend.Count} 잔해 {R.junk.Count}"); break; }
+                if (++ticks > 20000) { if (!quiet) Console.WriteLine($"  ⚠ 판이 안 끝난다: 연료 {R.fuel:0.0} 붙잡음 {R.holding} 연쇄대기 {R.pend.Count} 잔해 {R.junk.Count}"); break; }
                 retarget -= Dt;
                 if (!hold && sim.ClawR <= 0)
                 {
@@ -109,6 +114,8 @@ static class Program
             if (verbose) Console.WriteLine($"{Min(),6:0.0}분    출동 {sim.S.runs,2}  구간 {seg}  {SweepSim.Orbits[sim.S.orbit].name}  +{R.Earned,8:0}  연쇄 {R.chainBest,3}  압축 {R.packBest,3}  돈 {sim.S.cash,8:0}  청구서 {sim.BillAmount,7:0}{(sim.S.overdue ? " 연체" : " 기한 " + sim.S.billDue)}");
         }
 
+        var res = new Result { won = sim.M.won, minutes = Min(), bankrupt = sim.M.bankrupt, bill = sim.S.bill };
+        if (quiet) return res;
         Console.WriteLine($"── 씨앗 {seed} ── 끝 {Min():0}분 · 출동 {sim.M.totalRuns} · 파산 {sim.M.bankrupt} · 최대 연쇄 {sim.M.bestChain} · 최대 압축 {sim.M.bestPack} · 특종 {sim.M.scoops}");
         foreach (var l in log) Console.WriteLine(l);
         Console.WriteLine("   구간   판   판당 수입    집게/드론/폭발");
@@ -119,6 +126,7 @@ static class Program
             Console.WriteLine($"   {s}     {segRuns[s],3}  {tot / segRuns[s],10:0}    {Pct(segSplit[s, 0], tot)}/{Pct(segSplit[s, 1], tot)}/{Pct(segSplit[s, 2], tot)}");
         }
         Console.WriteLine();
+        return res;
     }
 
     static string Pct(double a, double t) => t <= 0 ? "-" : Math.Round(a / t * 100).ToString();

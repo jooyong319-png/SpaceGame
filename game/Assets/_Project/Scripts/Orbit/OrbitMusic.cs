@@ -52,6 +52,8 @@ namespace SalvageRun.Orbit
                 P("kick", (s, r) => s % 8 == 0, .2f) } },
         };
         static Part With(Part p, Action<Part> f) { f(p); return p; }
+        // 곡마다 평균 크기 목표 — 재생 볼륨(기본 0.6)을 곱하면 출동 곡 ≈ 효과음의 40%, 방 · 엔딩은 조금 크게
+        static readonly Dictionary<string, float> Target = new Dictionary<string, float> { { "cockpit", .14f }, { "runA", .125f }, { "runB", .125f }, { "runC", .13f }, { "due", .11f }, { "end", .15f } };
 
         // ───────────────────────── 합성 (시안 페이지 WebAudio 와 같은 규칙 · 끝은 앞으로 감아 이음새 없이)
         static float Note(int n) => 440f * Mathf.Pow(2f, (n - 69) / 12f);
@@ -105,7 +107,12 @@ namespace SalvageRun.Orbit
             int dl = (int)(.33 * Rate); var line = new float[dl]; int w = 0; var wet = new float[len];
             for (int pass = 0; pass < 2; pass++)
                 for (int i = 0; i < len; i++) { float d = line[w]; line[w] = buf[i] + d * .28f; w = (w + 1) % dl; if (pass == 1) wet[i] = d * .22f; }
-            for (int i = 0; i < len; i++) buf[i] = Mathf.Clamp((buf[i] + wet[i]) * .8f, -1f, 1f);
+            // 🎚 크기 맞춤 (09-25 측정: 곡마다 평균 0.004~0.010 — 효과음 0.22 보다 30dB 작아 출동 중엔 안 들렸다)
+            //    곡마다 평균(RMS)을 목표로 올리고, 봉우리는 tanh 로 부드럽게 눌러 찢어지지 않게
+            double ss = 0; for (int i = 0; i < len; i++) { buf[i] += wet[i]; ss += buf[i] * buf[i]; }
+            float rms = (float)Math.Sqrt(ss / Math.Max(1, len)), target = Target.TryGetValue(tr.id, out var tg) ? tg : .08f;
+            float gain = rms > 1e-6f ? target / rms : 1f;
+            for (int i = 0; i < len; i++) buf[i] = (float)Math.Tanh(buf[i] * gain * 1.2) / 1.2f;
             return buf;
         }
         // 파형 0 사인 · 1 삼각 · 2 사각 · 3 톱니, cut > 0 이면 한 겹 저역 통과
@@ -180,6 +187,7 @@ namespace SalvageRun.Orbit
             th.Start();
         }
         public static void Want(string id) { if (I != null) I.want = id; }
+        public static string Force;                                          // 에디터 시험용 — 곡 강제 (소리 크기 재기)
         AudioClip Clip(string id)
         {
             if (clips.TryGetValue(id, out var c)) return c;
@@ -189,14 +197,15 @@ namespace SalvageRun.Orbit
         void Update()
         {
             float dt = Time.unscaledDeltaTime;
-            if (want != null && want != playing)
+            string w0 = Force ?? want;
+            if (w0 != null && w0 != playing)
             {
-                var c = Clip(want);
-                if (c != null) { var t = a; a = b; b = t; a.clip = c; a.time = 0; a.Play(); playing = want; fade = 0; }
+                var c = Clip(w0);
+                if (c != null) { var t = a; a = b; b = t; a.clip = c; a.time = 0; a.Play(); playing = w0; fade = 0; }
             }
             fade = Mathf.Min(1, fade + dt / 1.2f);
             bool mute = OrbitSfx.I != null && OrbitSfx.I.Muted;
-            float v = mute ? 0 : Vol * 0.55f;
+            float v = mute ? 0 : Vol;
             a.volume = v * fade; b.volume = v * (1 - fade);
             if (fade >= 1 && b.isPlaying) b.Stop();
         }
