@@ -155,40 +155,25 @@ namespace SalvageRun.Orbit
         float anchorAt = -9; string anchorHead; int anchorWho;
         static Texture2D[] anchorTex;                                   // 픽셀랩 앵커 둘 — a 남 · b 여, 0 입 닫음 · 1 입 벌림 (09-24 사장님 「기자도 도트로」)
         public void Anchor(string head) { anchorAt = Time.unscaledTime; anchorHead = head; anchorWho = 1 - anchorWho; }   // 속보마다 번갈아
+        public bool AnchorOn => anchorHead != null && Time.unscaledTime - anchorAt >= 0 && Time.unscaledTime - anchorAt <= 3.4f;
         void AnchorBox()
-        {
+        {   // 🎙 위 왼쪽 의뢰 카드 아래 — 얇게 (09-26 정돈 7: 아래 왼쪽에서 포대 둘을 덮었다)
             float t = Time.unscaledTime - anchorAt;
             if (t < 0 || t > 3.4f || anchorHead == null) return;
             float a = Mathf.Clamp01(t / 0.2f) * Mathf.Clamp01((3.4f - t) / 0.4f);
-            float slide = (1 - Mathf.Clamp01(t / 0.25f)) * -260;
-            var r = new Rect(12 + slide, RefH - 136, 250, 112);
-            GUI.color = new Color(0.07f, 0.09f, 0.13f, 0.95f * a); GUI.DrawTexture(r, white);
-            Frame(r, new Color(0.7f, 0.09f, 0.06f, a), 2);
-            var face = new Rect(r.x + 2, r.y + 2, 74, r.height - 4);
-            GUI.color = new Color(0.06f, 0.09f, 0.14f, a); GUI.DrawTexture(face, white);
-            float cx = face.center.x, hy = r.y + 44;
+            float slide = (1 - Mathf.Clamp01(t / 0.25f)) * -300;
+            var r = new Rect(12 + slide, 100, 300, 58);
+            GUI.color = new Color(0.07f, 0.09f, 0.13f, 0.92f * a); GUI.DrawTexture(r, white);
+            Frame(r, new Color(0.7f, 0.09f, 0.06f, a), 1);
+            var face = new Rect(r.x + 2, r.y + 2, 54, r.height - 4);
+            GUI.color = new Color(0.1f, 0.16f, 0.26f, a); GUI.DrawTexture(face, white);
             bool open = t < 2.9f && Mathf.Repeat(t, 0.28f) < 0.14f;
             if (anchorTex == null) { anchorTex = new Texture2D[4]; for (int i = 0; i < 4; i++) anchorTex[i] = Resources.Load<Texture2D>("news/anchor_" + (i < 2 ? "a" : "b") + (i % 2)); }
             var atx = anchorTex[anchorWho * 2 + (open ? 1 : 0)] ?? anchorTex[anchorWho * 2];
-            if (atx != null)
-            {   // 🎙 도트 앵커 — 스튜디오 뒤판 위에 가슴까지
-                GUI.color = new Color(0.1f, 0.16f, 0.26f, a); GUI.DrawTexture(new Rect(face.x, face.y, face.width, face.height * 0.55f), white);
-                GUI.color = new Color(0.7f, 0.09f, 0.06f, 0.5f * a); GUI.DrawTexture(new Rect(face.x, face.y + face.height * 0.55f, face.width, 2), white);
-                GUI.color = new Color(1, 1, 1, a); GUI.DrawTexture(new Rect(cx - 36, face.yMax - 72, 72, 72), atx);
-            }
-            else
-            {
-            GUI.color = new Color(0.16f, 0.23f, 0.35f, a); GUI.DrawTexture(new Rect(cx - 26, r.y + 70, 52, 42), white);        // 양복
-            GUI.color = new Color(0.9f, 0.9f, 0.92f, a); GUI.DrawTexture(new Rect(cx - 6, r.y + 70, 12, 22), white);             // 셔츠
-            GUI.color = new Color(0.75f, 0.12f, 0.1f, a); GUI.DrawTexture(new Rect(cx - 2.5f, r.y + 72, 5, 18), white);          // 넥타이
-            GUI.color = new Color(0.89f, 0.71f, 0.56f, a); GUI.DrawTexture(new Rect(cx - 19, hy - 22, 38, 42), texDisc);         // 얼굴
-            GUI.color = new Color(0.17f, 0.1f, 0.06f, a); GUI.DrawTexture(new Rect(cx - 20, hy - 25, 40, 16), texDisc);          // 머리
-            GUI.color = new Color(0, 0, 0, a); GUI.DrawTexture(new Rect(cx - 9, hy - 3, 4, 4), texDisc); GUI.DrawTexture(new Rect(cx + 5, hy - 3, 4, 4), texDisc);
-            GUI.color = new Color(0.48f, 0.16f, 0.12f, a); GUI.DrawTexture(new Rect(cx - 5, hy + 8, 10, open ? 8 : 2.5f), texDisc);  // 입 뻐끔
-            }
+            if (atx != null) { GUI.color = new Color(1, 1, 1, a); GUI.DrawTexture(new Rect(face.x + 1, face.yMax - 52, 52, 52), atx); }
             GUI.color = new Color(1, 1, 1, a);
-            GUI.Label(new Rect(r.x + 84, r.y + 8, r.width - 92, 20), "<size=12><b><color=#ff5c5c>● 속보입니다</color></b></size>", label);
-            GUI.Label(new Rect(r.x + 84, r.y + 30, r.width - 92, 76), "<size=12><color=#e8edf3>" + anchorHead + "</color></size>", small);
+            GUI.Label(new Rect(r.x + 62, r.y + 3, r.width - 68, 18), "<size=11><b><color=#ff5c5c>● 속보</color></b></size>", label);
+            GUI.Label(new Rect(r.x + 62, r.y + 20, r.width - 68, 36), "<size=12><color=#e8edf3>" + anchorHead + "</color></size>", small);
             GUI.color = Color.white;
         }
 

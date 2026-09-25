@@ -141,7 +141,7 @@ namespace SalvageRun.Orbit
                 VolumeButton();
                 return;
             }
-            if (!sim.R.over) { Storm(); WindowEdge(); Pops(); RunHud(); VolleyGauge(); MyStockChips(); if (launchT > 0) Launch(); }
+            if (!sim.R.over) { Storm(); WindowEdge(); Pops(); Notices(); RunHud(); VolleyGauge(); MyStockChips(); if (launchT > 0) Launch(); }
             if (sim.M.won) Ending();
             else if (sim.M.careerOpen) Career();
             else if (sim.R.over)
@@ -275,6 +275,9 @@ namespace SalvageRun.Orbit
         // ───────────────────────────────── 연출 (도파민 사다리 §5)
 
         int chainHund, chainTierSeen; float chainPopT;
+        string cBigTxt; float cBigT; int cBigSize; Color cBigC;
+        /// <summary>가운데 큰 글자 한 줄 — 떠 있는 게 더 크거나 같으면 새 것은 버린다 (막 사라지는 중이면 바꾼다)</summary>
+        public void Big(string t, float dur, int size, Color c) { if (cBigT > 0.35f && size < cBigSize) return; cBigTxt = t; cBigT = dur; cBigSize = size; cBigC = c; }
         void Effects()
         {
             if (game.edgeGlow > 0.01f && !reduceMotion) { GUI.color = new Color(1f, 0.76f, 0.3f, game.edgeGlow * 0.22f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), texVignette); }
@@ -285,16 +288,10 @@ namespace SalvageRun.Orbit
             {
                 int tier = R.chain >= 200 ? 4 : R.chain >= 80 ? 3 : R.chain >= 30 ? 2 : 1;
                 // 200 넘으면 큰 글자는 200 · 500 · 1000 · 2000 · 5000 … 넘을 때만 1.5초 — 그 사이엔 위쪽 작은 계수기 (09-24: 콤보가 판 내내 가운데를 덮었다)
-                int ms = 0; for (long m = 200; m <= R.chain; m = m.ToString()[0] == '2' ? m * 5 / 2 : m * 2) ms++;   // 1-2-5 눈금
-                if (ms > chainHund) { chainHund = ms; chainPopT = 1.5f; }
-                if (tier > chainTierSeen) { chainTierSeen = tier; chainPopT = Mathf.Max(chainPopT, 1.2f); }
+                int ms = 0; for (long m = 100; m <= R.chain; m = m.ToString()[0] == '1' ? m * 5 / 2 : m * 2) ms++;   // 100 · 250 · 500 · 1000 · 2500 …
+                if (ms > chainHund) { chainHund = ms; chainPopT = 1.1f; Big("연쇄 " + R.chain + "!", 1.1f, 38, new Color(1f, 0.87f, 0.58f)); }   // 가운데는 고비를 넘을 때만 — 평소엔 오른쪽 위 계기 (09-26 정돈 1)
+                if (tier > chainTierSeen) { chainTierSeen = tier; chainPopT = Mathf.Max(chainPopT, 0.6f); }
                 chainPopT -= Time.unscaledDeltaTime;
-                if (chainPopT > 0)
-                {   // 가운데 큰 글자 — 단계가 오를 때 · 고비를 넘을 때만 (09-24 사장님 9번 · 시안: 평소엔 오른쪽 위 계기)
-                    chainSt.fontSize = new[] { 0, 28, 40, 54, 72 }[tier];
-                    chainSt.normal.textColor = tier >= 3 ? new Color(1f, 0.96f, 0.84f, Mathf.Min(1, chainPopT * 2)) : new Color(1f, 0.87f, 0.58f, Mathf.Min(1, chainPopT * 2));
-                    GUI.Label(new Rect(vw / 2 - 300, 70, 600, 80), "연쇄 ×" + R.chain, chainSt);
-                }
                 var cg = new Rect(vw - 150, 38, 138, 50);
                 GUI.color = new Color(0.05f, 0.06f, 0.09f, 0.85f * Mathf.Min(1, (float)R.chainT * 3)); GUI.DrawTexture(cg, white);
                 Frame(cg, new Color(1f, 0.76f, 0.35f, (0.25f + 0.5f * Mathf.Clamp01(chainPopT)) * Mathf.Min(1, (float)R.chainT * 3)), 1);
@@ -305,10 +302,12 @@ namespace SalvageRun.Orbit
                 GUI.color = Color.white;
             }
             else { chainHund = 0; chainTierSeen = 0; }
-            if (game.kessT > 0)
-            {
-                chainSt.fontSize = game.kessText == "케슬러!" ? 30 : 44; chainSt.normal.textColor = new Color(1f, 0.6f, 0.3f, Mathf.Min(1, game.kessT * 1.5f));
-                GUI.Label(new Rect(vw / 2 - 300, 156, 600, 60), game.kessText, chainSt);   // 큰 연쇄 글자(70~150) 아래로
+            if (game.kessText != null) { Big(game.kessText + " ×" + R.chain, game.kessT, game.kessText == "케슬러!" ? 30 : 36, new Color(1f, 0.6f, 0.3f)); game.kessText = null; }   // 케슬러 단계도 같은 통로 (정돈 6)
+            if (cBigT > 0 && !R.over)
+            {   // 🔠 가운데 큰 글자 — 한 번에 하나 (09-26 정돈 규칙 ①)
+                cBigT -= Time.unscaledDeltaTime;
+                chainSt.fontSize = cBigSize; chainSt.normal.textColor = new Color(cBigC.r, cBigC.g, cBigC.b, Mathf.Min(1, cBigT * 2.5f));
+                GUI.Label(new Rect(vw / 2 - 300, 74, 600, 56), cBigTxt, chainSt);
             }
             if (bannerT > 0 && banner != null && !sim.R.over)
             {
@@ -395,6 +394,24 @@ namespace SalvageRun.Orbit
             GUI.color = Color.white;
         }
 
+        // 📣 알림줄 — 왼쪽 위 의뢰 카드 아래, 한 줄씩 (정돈 2)
+        void Notices()
+        {
+            float y = AnchorOn ? 164 : 102;                                    // 속보 앵커가 떠 있으면 그 아래
+            foreach (var q in game.notices)
+            {
+                float a = Mathf.Clamp01(q.t / 0.12f) * Mathf.Clamp01((2.8f - q.t) / 0.5f), sx = (1 - Mathf.Clamp01(q.t / 0.15f)) * -30;
+                string t = q.text + (q.n > 1 ? "  ×" + q.n : "");
+                float w = label.CalcSize(new GUIContent("<size=13><b>" + t + "</b></size>")).x + 22;
+                var r = new Rect(12 + sx, y, w, 22);
+                GUI.color = new Color(0.04f, 0.05f, 0.08f, 0.8f * a); GUI.DrawTexture(r, white);
+                GUI.color = new Color(q.c.r, q.c.g, q.c.b, a); GUI.DrawTexture(new Rect(r.x, r.y, 3, r.height), white);
+                GUI.color = new Color(1, 1, 1, a); GUI.Label(new Rect(r.x + 10, r.y + 1, w, 20), "<size=13><b><color=#" + ColorUtility.ToHtmlStringRGB(q.c) + ">" + t + "</color></b></size>", label);
+                y += 25;
+            }
+            GUI.color = Color.white;
+        }
+
         void Pops()
         {
             foreach (var p in game.pops)
@@ -418,10 +435,12 @@ namespace SalvageRun.Orbit
                 var s = st ?? big; float w = s.CalcSize(new GUIContent(v)).x;
                 GUI.Label(new Rect(x + kw + 6, 9, w + 4, 28), v, s); x += kw + w + 24;
             }
-            big.fontSize = 22 + Mathf.RoundToInt(game.creditPulse * 6);
+            GUI.color = new Color(0.02f, 0.03f, 0.05f, 0.55f); GUI.DrawTexture(new Rect(0, 0, vw, 40), white); GUI.color = Color.white;   // 위 줄 뒤 옅은 띠 (09-26 정돈 5)
+            big.fontSize = 22;                                                         // 도트 글꼴은 11의 배수에서만 또렷하다 — 크기 대신 색으로 번쩍 (정돈 5)
+            big.normal.textColor = Color.Lerp(Color.white, new Color(1f, 0.87f, 0.58f), Mathf.Clamp01(game.creditPulse * 2));
             float x0 = x;
             Item("돈", KNum.Fmt(shown));
-            big.fontSize = 20;
+            big.normal.textColor = Color.white; big.fontSize = 20;
             CreditScreen = new Vector2((x0 + 50) * scale, Screen.height - 22 * scale);
             if (R.clean)
             {
@@ -546,7 +565,7 @@ namespace SalvageRun.Orbit
             var money = new Rect(vw - 300, 14, 210, 44);                        // 오른쪽 끝은 소리 버튼 자리
             GUI.color = new Color(0.14f, 0.12f, 0.08f, 0.95f); GUI.DrawTexture(money, white); GUI.color = Color.white;
             Frame(money, SweepGame.Amber * new Color(1, 1, 1, 0.6f), 1.5f);
-            big.fontSize = 26 + Mathf.RoundToInt(game.creditPulse * 6);
+            big.fontSize = 22;   // 도트 글꼴 11의 배수 (정돈 5)
             GUI.Label(new Rect(money.x + 12, money.y + 6, money.width - 24, 34), "<color=#ffdf95>" + KNum.Fmt(endCash - gained * (1 - tally)) + "</color>", big);
             big.fontSize = 20;
 
@@ -778,7 +797,7 @@ namespace SalvageRun.Orbit
             GUI.color = Color.white;
 
             // 위 — 돈 (창 위 가운데)
-            big.fontSize = 22 + Mathf.RoundToInt(game.creditPulse * 6);
+            big.fontSize = 22;   // 도트 글꼴 11의 배수 (정돈 5)
             GUI.Label(new Rect(ox + 330, 2, 300, 28), "<size=13><color=#8a9bb3>돈</color></size>  " + KNum.Fmt(shown), new GUIStyle(big) { alignment = TextAnchor.MiddleCenter });
             big.fontSize = 20;
             CreditScreen = new Vector2((ox + 480) * scale, 16 * scale);
@@ -847,7 +866,7 @@ namespace SalvageRun.Orbit
             LottoHolo();
             // 아래 한 줄
             string tip = due ? "<color=" + (dueNag > 0 ? "#ff9b8f" : "#b8a89a") + ">납부일 — 왼쪽 홀로그램 청구서: 납부 · 대출 · 또는 파산</color>" : "Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 " + Mathf.RoundToInt((float)(sim.Widen - 1) * 100) + "% · 한 판 " + Mathf.RoundToInt((float)sim.FuelMax) + "초";
-            GUI.Label(new Rect(ox + 200, 570 - 3, 560, 26), "<size=12>" + tip + "</size>", center);
+            if (due || sim.S.runs < 3 && sim.M.company <= 1) GUI.Label(new Rect(ox + 200, 570 - 3, 560, 26), "<size=12>" + tip + "</size>", center);   // 안내 줄은 처음 세 판 · 납부일만 (정돈 13)
         }
 
         // ───────────────────────────────── 대출 창구 (모달) — 내역 · 받기 · 갚기
@@ -1186,7 +1205,7 @@ namespace SalvageRun.Orbit
             }
         }
 
-        int[] gmemo;
+        int[] gmemo; int treeHover = -1;
         /// <summary>이 칸을 막고 있는 앞 칸 (아직 안 산 부모 칸) — 없으면 -1</summary>
         int BlockTile(int k)
         {
@@ -1229,6 +1248,7 @@ namespace SalvageRun.Orbit
             }
             // 🧪 시험용 작은 단추 — 오른쪽 아래 구석 (09-24 사장님 「오토 제거, 테스트할 겸 버튼만」) · 키보드 A 그대로
             var r = new Rect(vw - 134, RefH - 68, 92, 14);
+            if (!on) { overAuto = false; return; }                             // 꺼져 있으면 안 그린다 — A 키로 켠다 (09-26 정돈 8)
             overAuto = r.Contains(Event.current.mousePosition);
             GUI.color = on ? new Color(0.3f, 0.21f, 0.06f, 0.85f) : new Color(0.05f, 0.05f, 0.08f, 0.6f); GUI.DrawTexture(r, white); GUI.color = Color.white;
             GUI.Label(r, "<size=9><color=" + (on ? "#ffdf95" : "#4a5260") + ">시험 · 자동 " + (on ? "켬" : "끔") + "</color></size>", center);
@@ -1442,7 +1462,7 @@ namespace SalvageRun.Orbit
             void BayHead()
             {
             // 머리 — 돈 · 청구서 · 궤도일보
-            big.fontSize = 24 + Mathf.RoundToInt(game.creditPulse * 6);
+            big.fontSize = 22;   // 도트 글꼴 11의 배수 (정돈 5)
             GUI.Label(new Rect(ox + 16, 12, 40, 20), "돈", dim);
             GUI.Label(new Rect(ox + 38, 6, 240, 32), "<color=#ffdf95>" + KNum.Fmt(shown) + "</color>", big);
             big.fontSize = 20;
@@ -1510,6 +1530,12 @@ namespace SalvageRun.Orbit
                     if (st[pk] == 0) continue;
                     bool gold = st[k] == 3 && st[pk] == 3;
                     var a = ToScr(gtiles[pk].cell); var b = ToScr(t.cell);
+                    if (!gold && pk != t.lpar)
+                    {   // ✕ 연결 칸의 둘째 선 — 안 샀으면 흐린 점선, 마우스를 올린 칸 것만 밝게 (09-26 정돈 15)
+                        bool hl = treeHover == k || treeHover == pk;
+                        DotLine(a, b, new Color(0.5f, 0.47f, 0.42f, hl ? 0.9f : 0.28f), (hl ? 2f : 1.2f) * zz);
+                        continue;
+                    }
                     if (gold) Line(a, b, new Color(1f, 0.72f, 0.2f, 0.3f), 8 * zz);
                     Line(a, b, gold ? new Color(1f, 0.74f, 0.2f) : new Color(0.32f, 0.3f, 0.28f, st[k] == 1 ? 0.5f : 0.9f), (gold ? 3.2f : 2f) * zz);
                 }
@@ -1551,7 +1577,7 @@ namespace SalvageRun.Orbit
                 int planetI = isRoot ? -1 : System.Array.IndexOf(SweepSim.PlanetNode, n.id);
                 if (planetI > 0) { var pr = new Rect(pc.x - isz * 0.62f, pc.y - isz * 0.62f, isz * 1.24f, isz * 1.24f); GUI.color = owned ? Color.white : next ? new Color(0.6f, 0.62f, 0.66f) : new Color(0.2f, 0.2f, 0.22f); GUI.DrawTexture(pr, PlanetArt.Get(planetI).texture); }
                 else DrawIcon(new Rect(pc.x - isz / 2, pc.y - isz / 2, isz, isz), isRoot ? "R" : n.id);
-                if (!isRoot && SweepSim.KeyNodes.Contains(n.id)) { float kp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3 + k); GUI.color = new Color(0.71f, 0.61f, 1f, owned ? 0.9f : 0.35f + 0.3f * kp); Frame(new Rect(r.x - 3 * zz, r.y - 3 * zz, r.width + 6 * zz, r.height + 6 * zz), GUI.color, 2f); GUI.color = Color.white; if (!owned && next) GUI.Label(new Rect(r.xMax - 6, r.y - 12, 30, 16), "<size=10><color=#d8ccff>열쇠</color></size>", label); }
+                if (!isRoot && SweepSim.KeyNodes.Contains(n.id)) { float kp = sim.S.keys > 0 && next ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3 + k) : 0.3f; GUI.color = new Color(0.71f, 0.61f, 1f, owned ? 0.9f : 0.35f + 0.3f * kp); Frame(new Rect(r.x - 3 * zz, r.y - 3 * zz, r.width + 6 * zz, r.height + 6 * zz), GUI.color, 2f); GUI.color = Color.white; }   // 「열쇠」 글자는 툴팁에서 · 열쇠가 있을 때만 깜빡 (09-26 정돈 14)
                 if (!isRoot && n.max == 1 && System.Array.IndexOf(SweepSim.WeaponNode, n.id) == sim.Weapon && owned) { GUI.color = new Color(1f, 0.55f, 0.5f); GUI.Label(new Rect(pc.x - 40, r.yMax + 2 * zz, 80, 16), "<size=10><b>장착 중</b></size>", center); GUI.color = Color.white; }
                 if (k == recK) { float rp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 4); GUI.color = new Color(1f, 0.87f, 0.4f, 0.55f + 0.45f * rp); Frame(new Rect(r.x - 5 * zz, r.y - 5 * zz, r.width + 10 * zz, r.height + 10 * zz), GUI.color, 2.5f); GUI.color = Color.white; GUI.Label(new Rect(pc.x - 40, r.yMax + 2 * zz, 80, 16), "<size=10><b><color=#ffdf95>추천</color></b></size>", center); }
                 if (lockedTile && next) { GUI.color = new Color(1f, 0.6f, 0.55f); GUI.Label(new Rect(r.xMax - 14, r.y - 4, 18, 18), "<size=11>잠</size>", center); }
@@ -1594,6 +1620,7 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(zr.x + 8, zr.y + 3, zr.width - 16, 18), "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> 구역 " + (zt - zl) + "/" + zt + (last ? "" : zl > 0 ? " <color=#8a93a3>— 다 찍으면 " + nx + " 항로</color>" : " <color=#6fcf97>— " + nx + " 항로를 살 수 있다</color>") + "</size>", label);
             }
             if (testTip >= 0) { for (int k = 0; k < nT; k++) if (gtiles[k].stat >= 0 && SweepSim.Nodes[gtiles[k].stat].id == testTipId) hover = k; }   // 에디터 시험용
+            treeHover = hover;
             if (hover >= 0 && gtiles[hover].stat >= 0 && st[hover] != 3 && (st[hover] == 1 || sim.State(gtiles[hover].stat) == NodeSt.Hidden))
             {   // 🔗 막고 있는 칸을 깜빡 — 「먼저 이것」
                 int bk = BlockTile(hover);

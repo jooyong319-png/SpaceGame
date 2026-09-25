@@ -48,7 +48,16 @@ namespace SalvageRun.Orbit
         class P { public SpriteRenderer sr; public Vector3 v, a, b; public float age, life, size; public Color c; public int kind; }
         readonly List<P> fx = new List<P>();
         readonly Stack<SpriteRenderer> pool = new Stack<SpriteRenderer>();
-        public class Pop { public Vector2 px; public string text; public Color c; public float age, size; public double val; }
+        public class Pop { public Vector2 px; public string text, baseText; public Color c; public float age, size; public double val; public int n = 1; }
+        // 📣 알림줄 — 특별한 일(황금 · 열쇠 · 운석 · 붕괴 …)은 맞은 자리가 아니라 왼쪽 가장자리에 한 줄 (09-26 정돈 2)
+        public class Notice { public string text; public Color c; public float t; public int n = 1; }
+        public readonly List<Notice> notices = new List<Notice>();
+        public void Note(string text, Color c)
+        {
+            foreach (var q in notices) if (q.text == text && q.t < 2f) { q.n++; q.t = 0; return; }
+            notices.Add(new Notice { text = text, c = c });
+            if (notices.Count > 4) notices.RemoveAt(0);
+        }
         public readonly List<Pop> pops = new List<Pop>();
 
         public static readonly Color Amber = new Color(0.95f, 0.76f, 0.31f), Amber2 = new Color(1f, 0.87f, 0.58f), Cyan = new Color(0.44f, 0.83f, 0.91f),
@@ -417,7 +426,7 @@ namespace SalvageRun.Orbit
                         if (Random.value < 0.25f) Add(disc, at, 0.11f, src == 3 ? Red : Amber, 2, 1.6f).v = (Vector3)(Random.insideUnitCircle * 3f);
                         break;
                     }
-                    case SwEv.Pop: PopAt(e.x, e.y, e.text, e.k == 1 ? Green : e.k == 3 ? Orange : e.k == 4 ? new Color(1f, 0.5f, 0.85f) : e.k == 5 ? Violet : Amber2, e.k >= 4 ? 19 : 16); if (e.k == 3) OrbitSfx.Play("unit", 0.8f); if (e.k >= 4) OrbitSfx.Play("buy", 0.6f); break;
+                    case SwEv.Pop: if (e.k >= 3) Note(e.text, e.k == 3 ? Orange : e.k == 4 ? new Color(1f, 0.5f, 0.85f) : Violet); else PopAt(e.x, e.y, e.text, e.k == 1 ? Green : Amber2, 15); if (e.k == 3) OrbitSfx.Play("unit", 0.8f); if (e.k >= 4) OrbitSfx.Play("buy", 0.6f); break;
                     case SwEv.Meteor:
                     {
                         var to = at; var from = to + new Vector3(-6f, 7f, 0);
@@ -425,7 +434,7 @@ namespace SalvageRun.Orbit
                         var core = Add(pixel, from, 0.05f, new Color(1f, 0.95f, 0.8f, 1f), 8, 0.5f); core.a = from; core.b = to; core.size = 0.15f;
                         Add(glow, to, 2.2f, new Color(1f, 0.55f, 0.2f, 0.7f), 7, 0.9f);
                         OrbitSfx.Play("launch", 0.7f); shake = Mathf.Max(shake, 0.25f); flash = Mathf.Max(flash, 0.25f);
-                        PopAt(e.x, e.y - 30, "운석!", Orange, 22);
+                        Note("운석!", Orange);
                         break;
                     }
                     case SwEv.Tourist:
@@ -471,13 +480,13 @@ namespace SalvageRun.Orbit
                     {   // 🔫 확률 효과 발동 — 무기 이름이 조준점 위에 잠깐 · 포대가 그 색으로 번쩍
                         int pw = (int)e.v; var pc = WeaponCol(pw);
                         curW = pw; if (pw > 0 && pw < 9) { wTgt[pw] = PxToWorld(e.x, e.y + (e.k == 0 ? 26 : 20)); wRec[pw] = 1; }
-                        if (e.k == 0) { PopAt(e.x, e.y, SweepSim.WeaponName[pw] + "!", pc, 15); Add(glow, ShotFrom(), 1.1f * cam.orthographicSize / 6f, pc, 7, 0.18f).sr.sortingOrder = 150; }
+                        if (e.k == 0) { Add(glow, ShotFrom(), 1.1f * cam.orthographicSize / 6f, pc, 7, 0.18f).sr.sortingOrder = 150; }
                         break;
                     }
                     case SwEv.Volley:
                     {   // 🚀 전탄 발사 — 멈칫 · 번쩍 · 흔들림 · 큰 글자
                         hitStop = Mathf.Max(hitStop, 0.22f); flash = Mathf.Max(flash, 0.55f); shake = Mathf.Max(shake, 0.35f);
-                        PopAt(e.x, e.y - 60, "전탄 발사!", new Color(1f, 0.87f, 0.58f), 30);
+                        if (hud != null) hud.Big("전탄 발사!", 1f, 34, new Color(1f, 0.87f, 0.58f));
                         OrbitSfx.Play("launch", 1f); OrbitSfx.Play("blast", 0.8f, 0.1f);
                         break;
                     }
@@ -488,7 +497,7 @@ namespace SalvageRun.Orbit
                         if (animVortex != null)
                         {
                             if (vacView == null) vacView = Make(animVortex[0], at, 1f, Color.white, 57);
-                            vacView.transform.position = at; vacView.transform.localScale = Vector3.one * R * 2.3f / animVortex[0].bounds.size.x; vacT = 0.3f;
+                            vacView.transform.position = at; vacView.transform.localScale = Vector3.one * R * 1.6f / animVortex[0].bounds.size.x; vacView.color = new Color(1, 1, 1, 0.7f); vacT = 0.3f;   // 2.3 → 1.6 · 반투명 (09-26 정돈 3: 보라 덩어리가 숫자를 덮었다)
                         }
                         Add(glow, at, R * 1.2f, new Color(0.3f, 0.8f, 0.75f, 0.18f), 7, 0.12f);
                         for (int q = 0; q < 3; q++)
@@ -547,12 +556,12 @@ namespace SalvageRun.Orbit
                     case SwEv.Tier:
                         OnTier(e.k);
                         break;
-                    case SwEv.Crit: PopAt(e.x, e.y, "치명타!", Orange, 20); OrbitSfx.Play("blast", 0.8f, 0.1f); shake = Mathf.Max(shake, 0.1f); break;
-                    case SwEv.Collapse: PopAt(e.x, e.y, "붕괴! " + (int)e.v + "개 흩어짐", Red, 22); Burst(at, Red, 40, 7f); shake = 0.25f; OrbitSfx.Play("collide", 1f); break;
+                    case SwEv.Crit: PopAt(e.x, e.y, "치명타!", Orange, 16); OrbitSfx.Play("blast", 0.8f, 0.1f); shake = Mathf.Max(shake, 0.1f); break;
+                    case SwEv.Collapse: Note("붕괴! " + (int)e.v + "개 흩어짐", Red); Burst(at, Red, 40, 7f); shake = 0.25f; OrbitSfx.Play("collide", 1f); break;
                     case SwEv.Release:
-                        Burst(at, Violet, 26 + (int)Mathf.Min(60, (float)e.v * 2), 8f);
+                        Burst(at, Violet, 12 + (int)Mathf.Min(24, (float)e.v), 6f);
                         shake = Mathf.Max(shake, Mathf.Min(0.3f, 0.08f + (float)e.v * 0.01f));
-                        if (e.text != null) PopAt(e.x, e.y - 40, e.text, Violet, 18 + Mathf.Min(14, (float)e.v / 3));
+                        if (e.text != null) Note(e.text, Violet);
                         OrbitSfx.Play("break", 1f, 0.05f);
                         break;
                     case SwEv.Shatter: RingFx(at, Ice, 0.3f, 0.6f); OrbitSfx.Play("pick", 0.7f); break;
@@ -671,8 +680,14 @@ namespace SalvageRun.Orbit
 
         public void PopAt(double x, double y, string text, Color c, float size)
         {
-            if (pops.Count > 40) pops.RemoveAt(0);
-            pops.Add(new Pop { px = new Vector2((float)x + Random.Range(-6f, 6f), (float)y), text = text, c = c, size = size });
+            var at = new Vector2((float)x + Random.Range(-6f, 6f), (float)y);
+            for (int i = pops.Count - 1; i >= 0; i--)
+            {   // 같은 말이 막 떠 있으면 합친다 — 「치명타! ×3」
+                var q = pops[i]; if (q.val > 0 || q.baseText != text || q.age > 0.6f || (q.px - at).sqrMagnitude > 140 * 140) continue;
+                q.n++; q.text = text + " ×" + q.n; q.age = Mathf.Min(q.age, 0.15f); return;
+            }
+            while (pops.Count >= 6) pops.RemoveAt(0);                          // 한 번에 여섯까지 (정돈 2)
+            pops.Add(new Pop { px = at, text = text, baseText = text, c = c, size = size });
         }
 
         public static Color JunkColor(int k)
@@ -924,7 +939,7 @@ namespace SalvageRun.Orbit
                 {
                     holeAnim.sprite = animHole[(int)(Time.time * 10) % animHole.Length];
                     holeAnim.transform.position = holeCore.transform.position;
-                    holeAnim.transform.localScale = Vector3.one * holeCore.transform.lossyScale.x * disc.bounds.size.x * 3.4f / animHole[0].bounds.size.x;
+                    holeAnim.transform.localScale = Vector3.one * holeCore.transform.lossyScale.x * disc.bounds.size.x * 2.5f / animHole[0].bounds.size.x; holeAnim.color = new Color(1, 1, 1, 0.8f);   // 3.4 → 2.5 (정돈 3)
                 }
             }
             Cursor.visible = true;                                         // 마우스는 늘 보인다 — 판 중 · AUTO 여도 (사장님 09-24)
@@ -960,10 +975,10 @@ namespace SalvageRun.Orbit
                 reticleView.enabled = claw.enabled;
                 if (wind < lastWind - 0.3f) retKick = 1f;                                  // 방금 쐈다 — 꺾쇠가 튕겨 나간다
                 lastWind = wind; retKick = Mathf.MoveTowards(retKick, 0, Time.deltaTime * 6f);
-                float sc = r * 1.2f * (1f - 0.16f * wind + 0.14f * retKick);                   // 장전될수록 조여들고 · 쏘면 벌어진다
+                float sc = r * 0.9f * (1f - 0.16f * wind + 0.14f * retKick);                   // 1.2 → 0.9 (09-26 정돈 4: 꺾쇠가 잔해 여러 개를 덮었다)                   // 장전될수록 조여들고 · 쏘면 벌어진다
                 reticleView.transform.position = at; reticleView.transform.rotation = Quaternion.identity;
                 reticleView.transform.localScale = Vector3.one * sc / retSpr.bounds.size.x;
-                reticleView.color = fuel ? new Color(1f, 1f, 1f, auto ? 0.55f + 0.45f * wind : 1f) : new Color(0.45f, 0.48f, 0.55f, 0.6f);
+                reticleView.color = fuel ? new Color(1f, 1f, 1f, auto ? 0.45f + 0.4f * wind : 0.85f) : new Color(0.45f, 0.48f, 0.55f, 0.6f);
                 claw.enabled = false;                                                      // 가운데 도는 표시는 조준경 가운데 점이 대신한다
             }
             float ang = wind * Mathf.PI * 2 + Mathf.PI / 2;
@@ -1230,7 +1245,7 @@ namespace SalvageRun.Orbit
             if (vacView != null)
             {
                 vacT -= dt; vacView.enabled = vacT > 0 && sim.R != null && !sim.R.over;
-                if (vacView.enabled) { vacView.sprite = animVortex[(int)(Time.time * 14) % animVortex.Length]; vacView.color = new Color(1, 1, 1, Mathf.Clamp01(vacT / 0.12f)); }
+                if (vacView.enabled) { vacView.sprite = animVortex[(int)(Time.time * 14) % animVortex.Length]; vacView.color = new Color(1, 1, 1, 0.7f * Mathf.Clamp01(vacT / 0.12f)); }
             }
             for (int i = fx.Count - 1; i >= 0; i--)
             {
@@ -1274,6 +1289,7 @@ namespace SalvageRun.Orbit
                 if (dead) { p.sr.gameObject.SetActive(false); pool.Push(p.sr); fx.RemoveAt(i); }
             }
             for (int i = pops.Count - 1; i >= 0; i--) { pops[i].age += dt; pops[i].px.y -= 30 * dt; if (pops[i].age > 1f) pops.RemoveAt(i); }
+            for (int i = notices.Count - 1; i >= 0; i--) { notices[i].t += Time.unscaledDeltaTime; if (notices[i].t > 2.8f) notices.RemoveAt(i); }
         }
 
         // ───────────────────────────────── 그림 (단순한 도형)

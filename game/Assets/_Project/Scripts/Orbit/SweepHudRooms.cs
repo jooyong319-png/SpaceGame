@@ -186,7 +186,8 @@ namespace SalvageRun.Orbit
                 if (HoloBtn(new Rect(x, y0 + 190, bw, 32), "납부", Holo, can, fl)) sim.PayBill();
                 if (HoloBtn(new Rect(x + bw + 6, y0 + 190, bw, 32), "대출로", HoloRed, loanOk, fl)) RequestLoan(need, true);
                 GUI.color = new Color(1, 1, 1, fl);
-                string foot = loanOk ? "<color=#ffc2b8>" + KNum.Fmt(need) + " 빌려 납부 · 빚 +" + KNum.Fmt(need * SweepSim.LoanMult) + "</color>" : can ? "<color=#9ff0bf>지금 낼 수 있다</color>" : "<color=#7fcfe0>대출 한도 부족</color>";
+                bool loanOv = new Rect(x + bw + 6, y0 + 190, bw, 32).Contains(Event.current.mousePosition);
+                string foot = loanOk ? (loanOv ? "<color=#ffc2b8>" + KNum.Fmt(need) + " 빌려 납부 · 빚 +" + KNum.Fmt(need * SweepSim.LoanMult) + "</color>" : "<color=#7fcfe0>" + KNum.Fmt(need) + " 모자라다</color>") : can ? "<color=#9ff0bf>지금 낼 수 있다</color>" : "<color=#7fcfe0>대출 한도 부족</color>";   // 빚 얼마는 [대출로]에 올렸을 때만 (정돈 11)
                 GUI.Label(new Rect(x - 6, y0 + 224, w + 12, 18), "<size=10>" + foot + "</size>", center);
                 GUI.color = Color.white;
             }
@@ -634,11 +635,11 @@ namespace SalvageRun.Orbit
             var p = new Rect(ox + 588, 404, 108, 92);
             bool ov = p.Contains(Event.current.mousePosition);
             float fl = Flick(5.3f);
-            HoloBase(p, ox + 642, 524, 100, HoloPink, fl, ov);
+            HoloBase(p, ox + 642, 524, 100, Holo, fl, ov);                                  // 분홍 → 다른 홀로그램과 같은 청록 (09-26 정돈 10)
             GUI.color = new Color(1, 1, 1, fl);
-            GUI.Label(new Rect(p.x, p.y + 6, p.width, 18), "<size=11><b><color=#ffd6f7>SCRATCH</color></b></size>", center);
-            GUI.Label(new Rect(p.x, p.y + 26, p.width, 32), "<size=22><b><color=#ffe8fb>복권</color></b></size>", center);
-            GUI.Label(new Rect(p.x, p.y + 62, p.width, 18), "<size=10><color=#ffb8ee>즉석 복권 " + sim.ScratchLeft + "장</color></size>", center);
+            GUI.Label(new Rect(p.x, p.y + 6, p.width, 18), "<size=11><b><color=#bff3ff>SCRATCH</color></b></size>", center);
+            GUI.Label(new Rect(p.x, p.y + 26, p.width, 32), "<size=22><b><color=#e8fbff>복권</color></b></size>", center);
+            GUI.Label(new Rect(p.x, p.y + 62, p.width, 18), "<size=10><color=#7fcfe0>즉석 복권 " + sim.ScratchLeft + "장</color></size>", center);
             GUI.color = Color.white;
             if (GUI.Button(p, GUIContent.none, GUIStyle.none)) { lottoOpen = true; OrbitSfx.Play("tick", 0.6f); }
         }
@@ -696,7 +697,15 @@ namespace SalvageRun.Orbit
             string b = M.news.Count > 1 ? M.news[M.news.Count - 2].head + (M.news.Count > 2 ? "  ▸  " + M.news[M.news.Count - 3].head : "") : "궤도 청소부 영업 중";
             LedStrip(new Rect(r.x + 8, r.y + 26, r.width - 16, 34), a, 15, 38f);
             LedStrip(new Rect(r.x + 8, r.y + 66, r.width - 16, 26), b, 12, 26f);
-            GUI.Label(new Rect(r.x + 10, r.yMax - 26, r.width - 20, 20), "<size=10><color=" + (ov ? "#ffdf95" : "#7a6a55") + ">누르면 신문 ▸</color></size>", label);
+            if (S.front1 >= 0 && S.front2 >= 0 && sim.Mk != null && !frontOpen)
+            {   // ★ 내일 1면 — 창을 띄우지 않고 모니터 아랫줄 단추 하나 (09-26 정돈 9: 조종실에 올 때마다 창문 한가운데를 덮었다)
+                var fb = new Rect(r.x + 6, r.yMax - 28, r.width - 12, 22); float pp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 5);
+                bool fov = fb.Contains(Event.current.mousePosition);
+                GUI.color = new Color(0.35f, 0.08f, 0.26f, fov ? 1f : 0.7f + 0.3f * pp); GUI.DrawTexture(fb, white); Frame(fb, new Color(1f, 0.36f, 0.81f), 1); GUI.color = Color.white;
+                GUI.Label(fb, "<size=11><b><color=#ffd6f2>★ 내일 1면 고르기 ▸</color></b></size>", center);
+                if (GUI.Button(fb, GUIContent.none, GUIStyle.none)) { frontOpen = true; OrbitSfx.Play("tick", 0.6f); }
+            }
+            else GUI.Label(new Rect(r.x + 10, r.yMax - 26, r.width - 20, 20), "<size=10><color=" + (ov ? "#ffdf95" : "#7a6a55") + ">누르면 신문 ▸</color></size>", label);
             if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { newsOpen = true; newsSel = -1; }
         }
         void LedStrip(Rect s, string text, int size, float speed)
@@ -1012,6 +1021,7 @@ namespace SalvageRun.Orbit
         static int NodeIndex(string id) { for (int i = 0; i < SweepSim.Nodes.Length; i++) if (SweepSim.Nodes[i].id == id) return i; return 0; }
 
         // ★ 1면 조작 — 조종실 창 위에 신문 두 장. 고른 기사가 증권 속보로 나간다
+        bool frontOpen;
         void FrontPick()
         {
             var S = sim.S;
@@ -1021,7 +1031,8 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(0.08f, 0.07f, 0.06f, 0.92f); GUI.DrawTexture(fr, white); Frame(fr, new Color(1f, 0.36f, 0.81f, 0.7f), 1); GUI.color = Color.white;
                 GUI.Label(fr, "<size=12><color=#ffb3ea>★ 내일 1면</color>  " + Clip(Market.NewsBook[S.frontPick].head.Replace("[소문] ", ""), 24) + "  <color=#8a93a3>· 출동하면 발행</color></size>", center);
             }
-            if (S.front1 < 0 || S.front2 < 0 || sim.Mk == null) return;
+            if (S.front1 < 0 || S.front2 < 0 || sim.Mk == null) { frontOpen = false; return; }
+            if (!frontOpen) return;                                             // 궤도일보 모니터의 「★ 내일 1면 고르기」를 눌러야 뜬다
             var w = new Rect(ox + 250, 52, 460, 170);
             GUI.color = new Color(0, 0, 0, 0.6f); GUI.DrawTexture(new Rect(w.x + 4, w.y + 6, w.width, w.height), white);
             GUI.color = new Color(0.08f, 0.07f, 0.06f, 0.96f); GUI.DrawTexture(w, white); Frame(w, new Color(1f, 0.36f, 0.81f), 2);
@@ -1039,8 +1050,9 @@ namespace SalvageRun.Orbit
                 string eff = (nd.up != null ? "<color=#b3261e>▲ " + SecName(new NewsDef { up = nd.up }) + "</color>  " : "") + (nd.down != null ? "<color=#1f4fb3>▼ " + SecName(new NewsDef { down = nd.down }) + "</color>" : "");
                 paperBody.fontSize = 11; GUI.Label(new Rect(r.x + 8, r.y + 78, r.width - 16, 40), eff, paperBody);
                 paperBody.fontSize = 14;
-                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { sim.PickFront(k); OrbitSfx.Play("buy", 0.8f); BuyFx(r.center, new Color(1f, 0.36f, 0.81f), true, "1면 확정!"); }
+                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { sim.PickFront(k); frontOpen = false; OrbitSfx.Play("buy", 0.8f); BuyFx(r.center, new Color(1f, 0.36f, 0.81f), true, "1면 확정!"); }
             }
+            if (GUI.Button(new Rect(w.xMax - 30, w.y + 4, 26, 22), "<size=13>✕</size>", btnOff)) frontOpen = false;   // 나중에
         }
     }
 }

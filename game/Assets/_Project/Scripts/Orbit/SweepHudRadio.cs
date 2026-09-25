@@ -40,7 +40,7 @@ namespace SalvageRun.Orbit
             radioT -= Time.unscaledDeltaTime;
             float age = 7f - radioT, a = Mathf.Clamp01(age / 0.25f) * Mathf.Clamp01(radioT / 0.5f);
             if (radioTex == null) radioTex = Resources.Load<Texture2D>("news/yoon");
-            var r = new Rect(ox + 250, sim.S.front1 >= 0 ? 228 : 80, 460, 84);            // 1면 고르기 창이 떠 있으면 그 아래                                   // 창 위쪽 가운데 — 홀로그램 · 파산 단추를 안 가린다
+            var r = new Rect(ox + 250, sim.S.front1 >= 0 && frontOpen ? 228 : 80, 460, 84);            // 1면 고르기 창이 떠 있으면 그 아래                                   // 창 위쪽 가운데 — 홀로그램 · 파산 단추를 안 가린다
             GUI.color = new Color(0.04f, 0.06f, 0.08f, 0.94f * a); GUI.DrawTexture(r, white);
             Frame(r, new Color(0.95f, 0.76f, 0.31f, 0.7f * a), 1);
             var face = new Rect(r.x + 4, r.y + 4, 76, 76);
