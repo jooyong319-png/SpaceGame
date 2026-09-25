@@ -183,16 +183,26 @@ namespace SalvageRun.Orbit
         }
 
         // 🚀 전탄 게이지 — 화면 아래 가운데 (무기 둘부터). 차오르면 빨개지고, 퍼붓는 동안은 빛난다
+        public static bool VolleyReq; public bool overVolley;
+        // 🚀 전탄 발사 단추 — 계기판 가운데 아래. 차면 빛나며 기다리고, 누르거나 Space (09-26 사장님 「스킬처럼 수동으로」 · 시안 https://claude.ai/artifact/1hpRaMr1i8S6ABeTV4XSEP)
         void VolleyGauge()
         {
+            overVolley = false;
             if (!sim.VolleyOn) return;
-            var R = sim.R; float k = R.volleyT > 0 ? 1 : Mathf.Clamp01((float)R.volley);
-            var r = new Rect(vw / 2 - 110, RefH - 16, 220, 7);
-            GUI.color = new Color(0.05f, 0.06f, 0.09f, 0.9f); GUI.DrawTexture(new Rect(r.x - 2, r.y - 2, r.width + 4, r.height + 4), white);
-            Color c = R.volleyT > 0 ? Color.Lerp(new Color(1f, 0.9f, 0.6f), Color.white, 0.5f + 0.5f * Mathf.Sin(Time.time * 30)) : k > 0.8f ? new Color(1f, 0.36f, 0.3f) : SweepGame.Amber;
-            GUI.color = c; GUI.DrawTexture(new Rect(r.x, r.y, r.width * k, r.height), white);
-            GUI.color = new Color(1, 1, 1, 0.8f); GUI.Label(new Rect(r.x - 60, r.y - 6, 56, 18), "<size=10><color=#8a93a3>전탄</color></size>", cost);
+            var R = sim.R; bool firing = R.volleyT > 0, ready = sim.VolleyReady;
+            float k = firing ? (float)(R.volleyT / 1.1) : Mathf.Clamp01((float)R.volley);
+            var r = new Rect(vw / 2 - 90, RefH - 36, 180, 30);
+            overVolley = r.Contains(Event.current.mousePosition);
+            float p = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 8);
+            if (ready) { GUI.color = new Color(1f, 0.6f, 0.25f, 0.25f + 0.25f * p); GUI.DrawTexture(new Rect(r.x - 6, r.y - 6, r.width + 12, r.height + 12), texDisc); }
+            GUI.color = ready ? new Color(0.95f, 0.45f + 0.15f * p, 0.18f) : firing ? new Color(0.35f, 0.28f, 0.14f) : new Color(0.1f, 0.085f, 0.06f, 0.92f); GUI.DrawTexture(r, white);
+            Frame(r, ready ? new Color(1f, 0.87f, 0.58f) : new Color(0.35f, 0.29f, 0.17f), ready ? 2 : 1);
+            GUI.color = new Color(0.23f, 0.17f, 0.06f); GUI.DrawTexture(new Rect(r.x + 6, r.yMax - 7, r.width - 12, 4), white);
+            GUI.color = firing ? Color.white : ready ? new Color(1f, 0.96f, 0.84f) : SweepGame.Amber; GUI.DrawTexture(new Rect(r.x + 6, r.yMax - 7, (r.width - 12) * k, 4), white);
             GUI.color = Color.white;
+            string t = firing ? "<color=#ffffff>발사 중!</color>" : ready ? "<color=#2a1400>전탄 발사 · Space</color>" : "<color=#8a7a5a>전탄 " + Mathf.FloorToInt(k * 100) + "%</color>";
+            GUI.Label(new Rect(r.x, r.y + 2, r.width, 20), "<size=13><b>" + t + "</b></size>", center);
+            if (GUI.Button(r, GUIContent.none, GUIStyle.none) && ready) VolleyReq = true;
         }
 
         // ⚙ 설정 — 늘 오른쪽 위 (09-24 사장님 18번 「소리 설정 버튼 · 항상 오른쪽 위」). 시안 https://claude.ai/artifact/CthkM2c8KDnFcaxG8m5zJt

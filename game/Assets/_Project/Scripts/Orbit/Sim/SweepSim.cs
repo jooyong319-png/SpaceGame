@@ -604,6 +604,15 @@ namespace SalvageRun.Orbit.Sim
             x = best.x; y = best.y; return true;
         }
         void FireAt(int w, double x, double y) { var r = R; double ox = r.ax, oy = r.ay; r.ax = x; r.ay = y; FireW(w); r.ax = ox; r.ay = oy; }
+        /// <summary>🚀 전탄 발사를 스킬로 (09-26 사장님 「수동으로 누르게」) — 게이지가 차면 멈춰 기다리고, Space · 단추로 쏜다. 봇 · 자동은 false</summary>
+        public bool VolleyManual;
+        public bool VolleyReady => VolleyOn && R != null && !R.over && R.volleyT <= 0 && R.volley >= 1;
+        public bool FireVolley()
+        {
+            if (!VolleyReady) return false;
+            var r = R; r.volley = 0; r.volleyT = 1.1; r.volleyNext = 0.3; Emit(SwEv.Volley, r.ax, r.ay, OwnedWeapons, 0, "전탄 발사!");
+            return true;
+        }
         void VolleyTick(double dt)
         {
             var r = R;
@@ -623,10 +632,10 @@ namespace SalvageRun.Orbit.Sim
         void Procs()                                                           // 기본 공격 한 번마다 산 무기들이 각자 굴린다
         {
             var r = R;
-            if (VolleyOn && r.volleyT <= 0)
+            if (VolleyOn && r.volleyT <= 0 && r.volley < 1)
             {
                 r.volley += VolleyGain;
-                if (r.volley >= 1) { r.volley = 0; r.volleyT = 1.1; r.volleyNext = 0.3; Emit(SwEv.Volley, r.ax, r.ay, OwnedWeapons, 0, "전탄 발사!"); }
+                if (r.volley >= 1) { r.volley = 1; if (VolleyManual) Emit(SwEv.SkillReady, r.ax, r.ay, 0, 1); else FireVolley(); }   // 차면 기다린다 — 사람이 누른다 (봇 · 자동은 바로)
             }
             for (int w = 1; w < ProcBase.Length; w++)
             {
