@@ -31,6 +31,7 @@ static class Tests
         Section("9. 복권 칸", Lotto);
         Section("10. 수동 사격", () => Clicks(Math.Max(4, n / 2)));
         Section("11. 트리 배치 — 같은 자리에 칸 둘 금지", TreeLayout);
+        Section("12. 행성 특성 — 행성마다 나오나", Traits);
         Console.WriteLine();
         Console.WriteLine(fails == 0 ? $"✅ 모두 통과 ({sw.Elapsed.TotalSeconds:0}초)" : $"❌ 실패 {fails}건 ({sw.Elapsed.TotalSeconds:0}초)");
         return fails == 0 ? 0 : 1;
@@ -361,5 +362,32 @@ static class Tests
         }
         if (!(b > a)) Fail($"클릭해도 더 안 부숨 ({a} vs {b})");
         Console.WriteLine($"   첫 판 부순 수 — 클릭 없음 {a} · 클릭 {b} ({(a > 0 ? (double)b / a : 0):0.00}배)");
+    }
+
+    // 🪐 행성마다 한 가지 (09-26) — 행성마다 30초 돌려 특성이 실제로 나오고 오류가 없는지
+    static void Traits()
+    {
+        var line = new List<string>();
+        for (int orbit = 0; orbit < SweepSim.Orbits.Length; orbit++)
+        {
+            var sim = new SweepSim(null, null, 100 + orbit);
+            sim.S.planets = 511; sim.S.orbit = orbit; sim.S.cash = 1e6;
+            sim.StartRun(); sim.R.fuel = sim.R.max = 60;
+            int tr = SweepSim.TraitOf(orbit); bool seen = false, fired = false; int notes = 0; var rng = new Random(orbit);
+            double ax = 480, ay = 300;
+            for (int t = 0; t < 600 && !sim.R.over; t++)
+            {
+                if (t % 6 == 0 && sim.R.junk.Count > 0) { var j = sim.R.junk[rng.Next(sim.R.junk.Count)]; if (!j.dead) { ax = j.x; ay = j.y; } }
+                sim.Tick(0.05, ax, ay, true, false);
+                foreach (var d in sim.R.junk) { if (d.sig == tr && tr != 0) seen = true; if (d.sig == 10) fired = true; }
+                if (tr == 5 && sim.SpotOn) seen = true;
+                if (tr == 8 && sim.GustOn) seen = true;
+                if (tr == 9 && sim.Comet != null) seen = true;
+                while (sim.Events.Count > 0) { var e = sim.Events.Dequeue(); if (e.kind == SwEv.Pop && e.text != null && e.text.StartsWith("★")) notes++; }
+            }
+            if (tr > 0 && !seen) Fail($"{SweepSim.Orbits[orbit].name}: 「{SweepSim.TraitName[tr]}」이 30초 안에 안 나옴");
+            line.Add($"{SweepSim.Orbits[orbit].name} {(seen ? "○" : "✕")}{(fired ? "연쇄" : "")}·알림{notes}");
+        }
+        Console.WriteLine("   " + string.Join(" · ", line));
     }
 }

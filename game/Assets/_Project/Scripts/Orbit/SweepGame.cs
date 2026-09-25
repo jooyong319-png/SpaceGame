@@ -582,7 +582,7 @@ namespace SalvageRun.Orbit
                     case SwEv.Ring:
                         LoadAnims();
                         if (e.k == 2 && sim.WeaponOwned(7)) Shot(MuzzleOf(7), at, new Color(0.78f, 0.66f, 1f), 0.16f, 0, 0.08f);   // 🧲 보라 구슬이 쏜살같이
-                        if (e.k == 2) { var mf = OrbitFxArt.Magnet; var mg = Make(mf[0], at, (float)e.v * 1.7f / PxPerUnit, Color.white, 58); frameFx.Add(new FrameFx { sr = mg, f = mf, fps = 22 }); }   // 🧲 코드로 그린 자석 — 조여드는 고리 둘 (09-26)   // 🧲 픽셀랩 자석 — 조여든다
+                        if (e.k == 2) { var mf = OrbitFxArt.Magnet; var mg = Make(mf[0], at, (float)e.v * 1.3f / PxPerUnit, Color.white, 58); frameFx.Add(new FrameFx { sr = mg, f = mf, fps = 22 }); }   // 🧲 코드로 그린 자석 — 조여드는 고리 둘 (09-26)   // 🧲 픽셀랩 자석 — 조여든다
                         else RingFx(at, e.k == 1 ? Red : e.k == 2 ? Mag : Orange, 0.45f, (float)e.v * 2 / PxPerUnit);
                         break;
                     case SwEv.Blast:
@@ -709,7 +709,7 @@ namespace SalvageRun.Orbit
             for (int i = pops.Count - 1; i >= 0; i--)
             {
                 var q = pops[i];
-                if (q.val <= 0 || q.age > 0.35f || q.c != c || (q.px - at).sqrMagnitude > 45 * 45) continue;
+                if (q.val <= 0 || q.age > 0.45f || q.c != c || (q.px - at).sqrMagnitude > 80 * 80) continue;   // 45 → 80 · 0.35 → 0.45초 — 돈 숫자가 겹쳐 쌓였다 (09-26 밤)
                 q.val += v; q.text = pre + KNum.Fmt(q.val); q.size = 14 + Mathf.Min(12, Mathf.Log10((float)q.val + 1) * 2); q.age = Mathf.Min(q.age, 0.2f);
                 return;
             }
