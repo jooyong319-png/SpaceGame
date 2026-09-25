@@ -1311,7 +1311,7 @@ namespace SalvageRun.Orbit
         static Sprite consoleSpr, mountSpr; static bool consoleTried;
         int curW;                                                                     // 지금 쏘는 무기 — 발동 신호가 먼저 와서 효과가 그 포대에서 나간다
         readonly Vector3[] wTgt = new Vector3[9]; readonly float[] wRec = new float[9];
-        static readonly float[] WSlot = { -96, 96, -192, 192, -288, -384, -480, -576 };
+        static readonly float[] WSlot = { -70, 70, -140, 140, -210, -280, -350, -420 };   // 96 간격이면 무기 8개 중 셋이 화면 왼쪽 밖 · 오른쪽 액정 뒤였다 (09-26 사장님 「무기들이 다 안 보여」) — 왼쪽 여섯 · 오른쪽 둘, 액정 앞까지
         Vector3 WTurretPos(int w)
         {
             int k = 0; for (int i = 1; i < w; i++) if (sim.WeaponOwned(i)) k++;

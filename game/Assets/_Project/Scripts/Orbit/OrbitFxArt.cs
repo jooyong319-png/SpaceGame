@@ -105,42 +105,31 @@ namespace SalvageRun.Orbit
             for (int i = 0; i < n; i++) { float an = i / (float)n * Mathf.PI * 2; Px(px, cx + Mathf.Cos(an) * r, cy + Mathf.Sin(an) * r, c, a); }
         }
 
-        // ❄ 얼음 (09-26 새로 — 고리는 자석과 똑같아 보였다 · 사장님 「얼음이 자석이랑 너무 같다」)
-        //    조준점 둘레에 각진 얼음 덩어리 넷이 톡 얼어붙고(하늘 속 · 흰 윗모서리 · 짙은 아랫모서리), 끝에 잘게 깨져 흩어진다
+        // ❄ 얼음 A 「서리가 번진다」 (09-26 사장님 시안 https://claude.ai/artifact/HDVCmWeKeJC3CUkbwsYxMZ 에서 고름 — 얼음 덩어리는 별로)
+        //    가운데서 서리 가지 여섯이 바깥으로 자라고 가지마다 60° 잔가지, 끝은 흰 점 · 뒤 40%에 흐려진다. 창문에 성에 끼듯 얇고 잔잔
+        static void Line(Color32[] px, float x0, float y0, float x1, float y1, Color32 c, float a)
+        {
+            int n = Mathf.Max(1, Mathf.CeilToInt(Mathf.Max(Mathf.Abs(x1 - x0), Mathf.Abs(y1 - y0))));
+            for (int i = 0; i <= n; i++) { float u = i / (float)n; Px(px, x0 + (x1 - x0) * u, y0 + (y1 - y0) * u, c, a); }
+        }
         static void DrawFrost(Color32[] px, float k)
         {
-            float cx = N / 2f, cy = N / 2f, sc = N / 48f;
-            var fill = new Color32(170, 222, 255, 255); var hi = White; var lo = new Color32(96, 160, 214, 255);
-            for (int i = 0; i < 4; i++)
+            var c = new Color32(150, 215, 255, 255); float cx = N / 2f, cy = N / 2f, sc = N / 48f;
+            float fade = k < 0.6f ? 1 : 1 - (k - 0.6f) / 0.4f, full = 18 * sc / 2, L = Mathf.Min(1, k / 0.45f) * full;
+            for (int b = 0; b < 6; b++)
             {
-                float an = i * 1.57f + 0.5f + (i % 2) * 0.35f, d = (7 + (i % 2) * 4) * sc;
-                float bx = cx + Mathf.Cos(an) * d, by = cy + Mathf.Sin(an) * d;
-                if (k < 0.72f)
-                {   // 얼어붙기 — 0 → 제 크기로 톡 (살짝 넘쳤다 돌아옴)
-                    float g = Mathf.Clamp01((k - i * 0.05f) / 0.3f); if (g <= 0) continue;
-                    float pop = g < 1 ? g * 1.15f : 1f;
-                    int h = Mathf.Max(1, Mathf.RoundToInt((3 + (i % 2)) * sc * pop));
-                    int x0 = Mathf.RoundToInt(bx - h), y0 = Mathf.RoundToInt(by - h);
-                    for (int yy = 0; yy <= h * 2; yy++) for (int xx = 0; xx <= h * 2; xx++)
-                    {
-                        bool top = yy == h * 2, left = xx == 0, bot = yy == 0, right = xx == h * 2;
-                        var c = top || left ? hi : bot || right ? lo : fill;
-                        Px(px, x0 + xx, y0 + yy, c, top || left || bot || right ? 1f : 0.8f);
-                    }
-                    for (int q = 1; q < h; q++) Px(px, x0 + q + 1, y0 + h * 2 - q - 1, hi, 0.9f);   // 얼음 빛줄기 — 왼쪽 위에서 비스듬히 (네모가 밋밋했다)
+                float an = b * Mathf.PI / 3 + 0.3f, ca = Mathf.Cos(an), sa = Mathf.Sin(an);
+                float ex = cx + ca * L, ey = cy + sa * L;
+                Line(px, cx + ca * 3, cy + sa * 3, ex, ey, c, 0.85f * fade);
+                for (int st = 1; st <= 3; st++)
+                {
+                    float t = st / 4f; if (t * full > L) break;
+                    float bx = cx + ca * L * t, by = cy + sa * L * t, sl = (4 - st) * 1.6f * sc / 2;
+                    for (int d = -1; d <= 1; d += 2) { float a2 = an + d * Mathf.PI / 3; Line(px, bx, by, bx + Mathf.Cos(a2) * sl, by + Mathf.Sin(a2) * sl, c, 0.7f * fade); }
                 }
-                else
-                {   // 깨짐 — 조각 넷이 바깥으로 튀며 흐려진다
-                    float u = (k - 0.72f) / 0.28f;
-                    for (int q = 0; q < 4; q++)
-                    {
-                        float a2 = an + (q - 1.5f) * 0.9f, dd = u * 7 * sc;
-                        float sx = bx + Mathf.Cos(a2) * dd, sy = by + Mathf.Sin(a2) * dd;
-                        var c = q % 2 == 0 ? hi : fill; float a = 1 - u;
-                        Px(px, sx, sy, c, a); Px(px, sx + 1, sy, c, a); if (sc > 1) { Px(px, sx, sy + 1, c, a); Px(px, sx + 1, sy + 1, c, a); }
-                    }
-                }
+                Px(px, ex, ey, White, fade);
             }
+            Px(px, cx, cy, White, 1 - k);
         }
 
         // 🧲 자석 — 얇은 보라 고리 둘이 안쪽으로 조여들고, 끝에 가운데 한 점
