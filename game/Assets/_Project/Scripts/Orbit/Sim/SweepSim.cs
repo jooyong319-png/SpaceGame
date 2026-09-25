@@ -1697,6 +1697,7 @@ namespace SalvageRun.Orbit.Sim
                 else { double a = k * Math.PI * 2 / n + Rnd(-0.2, 0.2), d = Rnd(55, 110); fx = ax + Math.Cos(a) * d; fy = ay + Math.Sin(a) * d * Tilt; }
                 double t0 = 0.5 + k * 0.04;
                 r.pend.Add(new Blast { x = fx, y = fy, t = t0, R = 22, w = true });
+                Emit(SwEv.Shell, ax, ay, t0, 1, null, fx, fy);                       // 🚀 자탄 — 화면만 (터진 자리 → 파편 자리, t0에 떨어짐)
                 if (awk) for (int j = 0; j < 3; j++) r.pend.Add(new Blast { x = fx + Rnd(-35, 35), y = fy + Rnd(-25, 25), t = t0 + 0.18 + j * 0.03, R = 14, w = true });
             }
             OnHit(1);

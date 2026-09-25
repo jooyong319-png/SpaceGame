@@ -368,7 +368,7 @@ namespace SalvageRun.Orbit
             while (sim.Events.Count > 0)
             {
                 var e = sim.Events.Dequeue();
-                if ((e.kind == SwEv.Laser || e.kind == SwEv.Vac || e.kind == SwEv.Shell || e.kind == SwEv.Rail || e.kind == SwEv.Bolt) && sim.R != null && !sim.R.over
+                if ((e.kind == SwEv.Laser || e.kind == SwEv.Vac || e.kind == SwEv.Shell && e.k == 0 || e.kind == SwEv.Rail || e.kind == SwEv.Bolt) && sim.R != null && !sim.R.over
                     && (e.kind != SwEv.Bolt || e.v < 0.5)                                     // 번개는 첫 줄기만 — 튀는 줄기까지 포구에서 뻗으면 화면을 가르는 선이 됐다 (09-25)
                     && (curW > 0 || System.Math.Abs(e.x - sim.ShipX) < 2 && System.Math.Abs(e.y - sim.ShipY) < 2))   // 무기 포대가 쏘는 중이면 늘 그 포구에서
                 {
@@ -513,10 +513,19 @@ namespace SalvageRun.Orbit
                         break;
                     }
                     case SwEv.Shell:
-                    {
+                    {   // 🚀 분열탄 = 진짜 미사일 (09-26 사장님 「미사일처럼」 · 시안 https://claude.ai/artifact/PiacR6DKdyPgWiYXsSZsAo)
                         var s0 = PxToWorld(e.x, e.y); var s1 = PxToWorld(e.x2, e.y2);
-                        var tr = Add(pixel, s0, 0.05f, new Color(1f, 0.7f, 0.3f, 0.8f), 8, 0.35f); tr.a = s0; tr.b = s1; tr.size = 0.12f;
-                        OrbitSfx.PlayPitch("tick", 0.4f, 0.7f);
+                        if (e.k == 1)
+                        {   // 자탄 — 터진 자리에서 파편 자리로 짧은 포물선
+                            var bl = Make(pixel, s0, 0.09f, new Color(1f, 0.82f, 0.54f), 62); bl.enabled = false;
+                            missiles.Add(new Missile { sr = bl, p0 = s0, p1 = (s0 + s1) / 2 + new Vector3(0, 0.3f, 0), p2 = s1, delay = 0.35f, dur = Mathf.Max(0.08f, (float)e.v - 0.35f), small = true });
+                            break;
+                        }
+                        float bend = (Random.value < 0.5f ? -1 : 1) * Random.Range(0.8f, 1.8f);
+                        var c1 = (s0 + s1) / 2 + new Vector3(bend, 0, 0); c1.y = Mathf.Max(s0.y, s1.y) + 1.2f;   // 위로 튀어 나갔다가 휘어 떨어진다
+                        var mf = OrbitFxArt.Missile;
+                        missiles.Add(new Missile { sr = Make(mf[0], s0, 0.66f, Color.white, 62), p0 = s0, p1 = c1, p2 = s1, dur = 0.35f });
+                        OrbitSfx.PlayPitch("launch", 0.3f, 2.2f);
                         break;
                     }
                     case SwEv.Rail:
@@ -1051,6 +1060,34 @@ namespace SalvageRun.Orbit
             animMag = LoadAnim("magnet", new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
         }
         class FrameFx { public SpriteRenderer sr; public Sprite[] f; public float t, fps; }
+        class Missile { public SpriteRenderer sr; public Vector3 p0, p1, p2; public float t, delay, dur, smokeT; public bool small; }
+        readonly List<Missile> missiles = new List<Missile>();
+        public Vector3 TestMissileScreen() { foreach (var m in missiles) if (!m.small && m.sr != null && m.sr.enabled) return cam.WorldToScreenPoint(m.sr.transform.position); return new Vector3(-1, -1, 0); }   // 에디터 시험용
+        static Vector3 Bez(Vector3 a, Vector3 b, Vector3 c, float u) => (1 - u) * (1 - u) * a + 2 * (1 - u) * u * b + u * u * c;
+        void UpdateMissiles(float dt)
+        {
+            for (int i = missiles.Count - 1; i >= 0; i--)
+            {
+                var m = missiles[i];
+                if (m.sr == null) { missiles.RemoveAt(i); continue; }
+                m.t += dt; float lt = m.t - m.delay;
+                if (lt < 0) continue;
+                float u = Mathf.Clamp01(lt / m.dur);
+                if (u >= 1) { Destroy(m.sr.gameObject); missiles.RemoveAt(i); continue; }
+                m.sr.enabled = true;
+                float ev = m.small ? u : u * u * (3 - 2 * u) * 0.4f + u * 0.6f;              // 처음엔 튀어 나가고 끝에 빨라진다
+                Vector3 p = Bez(m.p0, m.p1, m.p2, ev), q = Bez(m.p0, m.p1, m.p2, Mathf.Min(1, ev + 0.02f));
+                m.sr.transform.position = p;
+                m.smokeT -= dt;
+                if (!m.small)
+                {
+                    var d = q - p; m.sr.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);   // 머리가 날아가는 쪽
+                    m.sr.sprite = OrbitFxArt.Missile[(int)(m.t * 30) % 2];
+                    if (m.smokeT <= 0) { m.smokeT = 0.018f; Add(pixel, p - d.normalized * 0.3f, 0.09f, new Color(0.7f, 0.66f, 0.62f, 0.7f), 0, 0.45f).v = new Vector3(0, 0.12f, 0); }   // 연기
+                }
+                else if (m.smokeT <= 0) { m.smokeT = 0.04f; Add(pixel, p, 0.035f, new Color(0.63f, 0.59f, 0.55f, 0.45f), 0, 0.22f); }
+            }
+        }
         readonly List<FrameFx> frameFx = new List<FrameFx>();
         SpriteRenderer reticleView; static Sprite retSpr; float lastWind, retKick;
         SpriteRenderer vacView, holeAnim, burnView; float vacT, burnT, lastFrost;
@@ -1230,6 +1267,7 @@ namespace SalvageRun.Orbit
 
         void UpdateFx(float dt)
         {
+            UpdateMissiles(dt);
             var aS = hud == null ? Vector2.zero : sim.R != null && !sim.R.over ? hud.TallyScreen : hud.CreditScreen;   // 출동 중엔 금화가 계산대로
             Vector3 anchor = hud != null ? ScreenToWorld(aS) : Vector3.zero;
             anchor.z = 0;
