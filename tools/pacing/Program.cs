@@ -17,6 +17,7 @@ static class Program
 
     static void Main(string[] args)
     {
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
         if (double.TryParse(Environment.GetEnvironmentVariable("LOANMULT"), out double lm)) SweepSim.LoanMult = lm;
         if (args.Length > 0 && args[0] == "test") { Environment.ExitCode = Tests.RunAll(args.Length > 1 && int.TryParse(args[1], out int tn) ? tn : 12); return; }   // 🧪 헤드리스 테스트
         var seeds = args.Length > 0 && int.TryParse(args[0], out int one) ? new[] { one } : new[] { 3, 7, 11 };

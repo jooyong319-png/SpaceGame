@@ -1044,7 +1044,7 @@ namespace SalvageRun.Orbit.Sim
             double carry = Lv("x_bh_eco") > 0 ? Math.Floor(S.cash * 0.1) : 0; int keepPart = -1;
             int bk = BankruptKeys, keptKeys = S.keys;                                                    // 🔑 파산하면 열쇠 (09-24 사장님 「파산의 가치를 늘리려고」)
             if (Lv("x_bh_eco") > 0 && S.parts != null) foreach (var pid in S.parts) if (pid >= 0 && (keepPart < 0 || Parts.Defs[pid].rar > Parts.Defs[keepPart].rar)) keepPart = pid;
-            S = new SweepState { startedAt = M.playSeconds };
+            S = new SweepState { startedAt = M.playSeconds, layout = 2 };   // layout 2 — 빠뜨리면 다음에 켤 때 밀린 옛 저장으로 알고 칸을 옮겼다 (09-25 테스트 짜다 발견)
             if (carry > 0) S.cash += carry;
             S.keys += bk + keptKeys; ApplyPerm();                         // 남은 열쇠도 넘어간다 · ◆ 핵심 칸은 켜진 채로
             if (keepPart >= 0) S.parts[Parts.Defs[keepPart].slot] = keepPart;   // ◆ 파산 보험 — 돈 10% · 제일 좋은 부품 하나

@@ -25,6 +25,11 @@ static class Tests
         Section("3. 밀린 저장 옮기기", Migration);
         Section("4. 행성 구역 규칙", Zones);
         Section("5. 무한 궤도", Endless);
+        Section("6. 파산만 거듭하기 · 다시 불러오기", () => Bankrupts(Math.Max(3, n / 4)));
+        Section("7. 무한 궤도 60층", DeepEndless);
+        Section("8. 가게 소모품", Consumables);
+        Section("9. 복권 칸", Lotto);
+        Section("10. 수동 사격", () => Clicks(Math.Max(4, n / 2)));
         Console.WriteLine();
         Console.WriteLine(fails == 0 ? $"✅ 모두 통과 ({sw.Elapsed.TotalSeconds:0}초)" : $"❌ 실패 {fails}건 ({sw.Elapsed.TotalSeconds:0}초)");
         return fails == 0 ? 0 : 1;
@@ -200,5 +205,112 @@ static class Tests
         if (sim.M.depth != d0 + 6) Fail($"층이 안 늘어남 {d0} → {sim.M.depth}");
         if (!(sim.HpMul > hp0)) Fail("층이 늘어도 체력이 그대로");
         Console.WriteLine($"   {d0}층 → {sim.M.depth}층 · 체력 ×{sim.HpMul / hp0:0.0}");
+    }
+
+    // 6 — 회사 여러 대를 연달아 파산 · 파산 뒤 다시 불러와도 칸이 그대로인가
+    static void Bankrupts(int n)
+    {
+        for (int seed = 1; seed <= n; seed++)
+        {
+            var sim = new SweepSim(null, null, seed * 17); var rng = new Random(seed);
+            for (int c = 0; c < 10; c++)
+            {
+                if (sim.M.careerOpen) { for (int i = 0; i < SweepSim.CareerCount; i++) sim.BuyCareer(i); sim.CloseCareer(); }
+                sim.S.cash += 1e7; sim.S.keys += 2;
+                for (int k = 0; k < 200; k++) BuyCheapest(sim, sim.ZoneOpen);
+                for (int pi = 1; pi < SweepSim.Orbits.Length; pi++) sim.BuyPermit(pi);
+                for (int k = 0; k < 100; k++) BuyCheapest(sim, sim.ZoneOpen);
+                while (sim.S.bill < 3 && sim.PayBill()) { }
+                PlayRun(sim, rng, false);
+                var perm = sim.M.perm.ToList();
+                int keysBefore = sim.S.keys, bk = sim.BankruptKeys;
+                if (!sim.CanBankrupt) { sim.S.bill = Math.Max(sim.S.bill, 3); }
+                if (!sim.Bankrupt()) { Fail($"씨앗 {seed} 회사 {c}: 파산 안 됨"); break; }
+                if (sim.S.keys != keysBefore + bk) Fail($"씨앗 {seed} 회사 {c}: 열쇠 {sim.S.keys} (기대 {keysBefore + bk})");
+                foreach (var id in perm) if (sim.Lv(id) <= 0) Fail($"씨앗 {seed} 회사 {c}: 핵심 칸 {id} 가 파산 뒤 꺼짐");
+                if (sim.S.layout != 2) Fail($"씨앗 {seed} 회사 {c}: 파산 뒤 layout {sim.S.layout}");
+                // 새 회사에서 좀 산 뒤 저장 → 다시 불러오기 (칸 번호가 그대로인가)
+                if (sim.M.careerOpen) { sim.CloseCareer(); }
+                sim.S.cash += 1e9; for (int k = 0; k < 300; k++) BuyCheapest(sim, 9);
+                var snap = (int[])sim.S.lv.Clone();
+                var re = new SweepSim(sim.S, sim.M, 1);
+                for (int i = 0; i < SweepSim.NodeCount; i++) if (re.S.lv[i] != snap[i]) { Fail($"씨앗 {seed} 회사 {c}: 다시 불러오니 {SweepSim.Nodes[i].id} {snap[i]} → {re.S.lv[i]}"); break; }
+                sim = re;
+                Check(sim, $"씨앗 {seed} 회사 {c}");
+            }
+        }
+        Console.WriteLine($"   {n}씨앗 × 회사 10대");
+    }
+
+    // 7 — 무한 궤도를 60층까지: 숫자가 터지지 않고 판이 끝나는가
+    static void DeepEndless()
+    {
+        var sim = new SweepSim(null, null, 21); var rng = new Random(21);
+        sim.S.cash = 1e13; sim.S.keys = 999;
+        for (int i = 0; i < 3000; i++) sim.BuyTile(i % SweepSim.NodeCount);
+        sim.S.bill = SweepSim.Bills.Length; sim.M.won = true; sim.EnterEndless();
+        for (int r = 0; r < 60; r++) { PlayRun(sim, rng, false); Check(sim, $"무한 {sim.M.depth}층"); if (fails > 0 && fails > 20) break; }
+        Console.WriteLine($"   {sim.M.depth}층 · 체력 ×{sim.HpMul:0} · 값 ×{sim.ValMult:0.0e0} · 돈 {sim.S.cash:0.0e0}");
+    }
+
+    // 8 — 소모품은 다음 판에만 먹고 사라진다
+    static void Consumables()
+    {
+        var sim = new SweepSim(null, null, 33); var rng = new Random(33);
+        sim.S.cash = 1e9; sim.S.keys = 9;
+        sim.BuyTile(Ix("e_shop"));
+        for (int k = 0; k < 400 && !sim.ShopOpen; k++) BuyCheapest(sim, 9);
+        if (!sim.ShopOpen) { sim.S.lv[Ix("e_shop")] = 1; }
+        double fuel0 = sim.FuelMax;
+        // 진열을 소모품으로 채워 산다
+        sim.S.shop.Clear(); for (int i = 0; i < 4; i++) sim.S.shop.Add(SweepSim.Cons0 + i); sim.S.shopSale = -1;
+        int sc0 = sim.ScratchLeft;
+        for (int i = 0; i < 4; i++) if (!sim.BuyPart(0)) Fail($"소모품 {i} 못 삼");
+        if (sim.S.nFuel != 10 || sim.S.nDmg != 20 || sim.S.nVal != 15) Fail($"소모품 쌓임: 연료 {sim.S.nFuel} 화력 {sim.S.nDmg} 값 {sim.S.nVal}");
+        if (sim.ScratchLeft != sc0 + 3) Fail($"복권 묶음: {sc0} → {sim.ScratchLeft}");
+        double dmgOff = sim.DmgMul, valOff = sim.ValMult;
+        sim.StartRun();
+        if (Math.Abs(sim.R.max - (fuel0 + 10)) > 1e-6) Fail($"연료 캔: 판 연료 {sim.R.max} (기대 {fuel0 + 10})");
+        if (!(sim.DmgMul > dmgOff * 1.19)) Fail($"과부하 탄창: 화력 {dmgOff} → {sim.DmgMul}");
+        if (!(sim.ValMult > valOff * 1.14)) Fail($"감정 할인권: 값 {valOff} → {sim.ValMult}");
+        while (!sim.R.over) { sim.Tick(0.05, 480, 300, true, false); sim.Events.Clear(); }
+        if (sim.S.nFuel != 0 || sim.S.nDmg != 0 || sim.S.nVal != 0) Fail("소모품이 판 뒤에도 남음");
+        sim.StartRun();
+        if (Math.Abs(sim.R.max - fuel0) > 1e-6) Fail($"다음 판에도 연료 캔이 먹음 {sim.R.max}");
+        Console.WriteLine("   연료 캔 · 복권 묶음 · 과부하 탄창 · 감정 할인권");
+    }
+
+    // 9 — 복권 칸
+    static void Lotto()
+    {
+        var sim = new SweepSim(null, null, 44);
+        sim.S.cash = 1e9;
+        int b0 = sim.ScratchLeft; double c0 = sim.ScratchCost;
+        if (b0 != 3) Fail($"처음 복권 {b0}장");
+        sim.S.lv[Ix("l_more")] = 2; sim.S.lv[Ix("l_free")] = 1;
+        if (sim.ScratchLeft != 5) Fail($"복권 단골 2: {sim.ScratchLeft}장");
+        if (sim.ScratchCost != 0) Fail($"첫 장 공짜: {sim.ScratchCost}");
+        double cash = sim.S.cash; sim.ScratchBuy(out _); sim.ScratchClaim();
+        if (sim.ScratchCost <= 0) Fail("둘째 장도 공짜");
+        int wins = 0; var s2 = new SweepSim(null, null, 45); s2.S.cash = 1e12; s2.S.lv[Ix("l_luck")] = 3;
+        for (int i = 0; i < 4000; i++) { s2.S.runs = i; s2.ScratchBuy(out int w); s2.ScratchClaim(); if (w >= 0) wins++; }
+        var s3 = new SweepSim(null, null, 46); s3.S.cash = 1e12; int wins0 = 0;
+        for (int i = 0; i < 4000; i++) { s3.S.runs = i; s3.ScratchBuy(out int w); s3.ScratchClaim(); if (w >= 0) wins0++; }
+        if (!(wins > wins0 * 1.3)) Fail($"행운의 긁개 3: 당첨 {wins} vs 없음 {wins0}");
+        Console.WriteLine($"   단골 · 공짜 · 긁개(당첨 {wins0} → {wins} / 4000)");
+    }
+
+    // 10 — 클릭한 판이 더 부순다
+    static void Clicks(int n)
+    {
+        long a = 0, b = 0;
+        for (int seed = 1; seed <= n; seed++)
+        {
+            var s1 = new SweepSim(null, null, seed); var s2 = new SweepSim(null, null, seed);
+            PlayRun(s1, new Random(seed), false); PlayRun(s2, new Random(seed), true);
+            a += s1.R.broke; b += s2.R.broke;
+        }
+        if (!(b > a)) Fail($"클릭해도 더 안 부숨 ({a} vs {b})");
+        Console.WriteLine($"   첫 판 부순 수 — 클릭 없음 {a} · 클릭 {b} ({(a > 0 ? (double)b / a : 0):0.00}배)");
     }
 }
