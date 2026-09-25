@@ -565,77 +565,109 @@ namespace SalvageRun.Orbit
         }
 
         // 🟦 항로 홀로그램 — 행성 다섯 빛 구슬 · 열린 곳은 누르면 간다 · 판매 중이면 허가증 (두 번)
+        // 🧭 항로 — B 「한 장씩 넘기기」 (09-26 사장님 · 시안 https://claude.ai/artifact/WLid5UFWSgJxQ1LM9chNDH)
+        //    행성 하나를 크게 · ◀ ▶ · 휠로 넘기면 그 궤도로 바로 정해진다. 아래 점 · 특성 칩(값 · 체력 · 폭풍 · 중력 · 고리 틈 · 부착물) · 의뢰
+        int routeBrowse = -1;                                                    // 보고 있는 칸 (열린 행성 + 다음 하나 안에서) · -1 = 지금 궤도
         void RouteHolo()
         {
             var S = sim.S; var M = sim.M;
-            var p = new Rect(ox + 685, 262, 200, 186);
+            var p = new Rect(ox + 685, 248, 200, 200);
             float fl = Flick(2.1f);
             HoloBase(p, ox + 785, 506, 140, Holo, fl, false);
             GUI.color = new Color(1, 1, 1, fl);
-            GUI.Label(new Rect(p.x + 10, p.y + 5, p.width - 20, 20), "<size=12><b><color=#bff4ff>NAV // 항로</color></b></size>", label);
-            GUI.Label(new Rect(p.x + 10, p.y + 5, p.width - 20, 20), "<size=11><color=#7fcfe0>지금 " + SweepSim.Orbits[S.orbit].name + "</color></size>", cost);
-            // 🪐 열린 행성 + 바로 다음 하나만 (09-24 사장님 35 · 16번) — 칸이 줄면 아이콘이 커진다
             var vis = new List<int>(); foreach (int oi2 in SweepSim.OrbitOrder) { vis.Add(oi2); if (!sim.Open(oi2)) break; }
-            int hoverP = -1; float cw = (p.width - 12) / Mathf.Max(4, vis.Count);
-            if (!M.cleanReady)
-                for (int oi = 0; oi < vis.Count; oi++)                              // 가까운 → 먼 순서 (소행성대는 번호 5지만 셋째 자리)
-                {
-                    int i = vis[oi];
-                    var o = SweepSim.Orbits[i];
-                    var cell = new Rect(p.x + 6 + oi * cw, p.y + 26, cw, 50);
-                    bool open = sim.Open(i), sale = sim.OnSale(i);
-                    if (cell.Contains(Event.current.mousePosition)) hoverP = i;
-                    if (i == S.orbit) { GUI.color = new Color(1f, 0.87f, 0.58f, 0.14f * fl); GUI.DrawTexture(cell, white); Frame(cell, new Color(1f, 0.87f, 0.58f, fl), 1.5f); }
-                    float isz = Mathf.Min(34, cw - 8); var ic = new Rect(cell.center.x - isz / 2, cell.y + 3, isz, isz);
-                    GUI.color = new Color(Holo.r, Holo.g, Holo.b, (hoverP == i ? 0.5f : 0.25f) * fl); GUI.DrawTexture(new Rect(ic.x - 5, ic.y - 5, ic.width + 10, ic.height + 10), texDisc);
-                    GUI.color = open ? new Color(1, 1, 1, 0.9f * fl) : sale ? new Color(0.6f, 0.65f, 0.7f, 0.8f * fl) : new Color(0.2f, 0.24f, 0.28f, 0.8f * fl);
-                    GUI.DrawTexture(ic, PlanetArt.Get(i).texture);
-                    if (!open) { GUI.color = new Color(1, 1, 1, 0.8f * fl); GUI.Label(ic, "<size=14><b>?</b></size>", center); }
-                    if (i == 4) GUI.DrawTexture(new Rect(ic.x - 4, ic.center.y - 1, ic.width + 8, 2), white);
-                    GUI.color = new Color(1, 1, 1, fl);
-                    string sub = open ? "<color=#dff8ff>" + o.name + "</color>" : "<color=#ffdf95>다음</color>";
-                    if (i == S.orbit || hoverP == i || !open) GUI.Label(new Rect(cell.x - 16, cell.y + 36, cell.width + 32, 16), "<size=9>" + sub + "</size>", center);
-                    GUI.color = Color.white;
-                    if (GUI.Button(cell, GUIContent.none, GUIStyle.none))
-                    {
-                        if (open) { sim.SetOrbit(i); permitArmed = -1; OrbitSfx.Play("tick", 0.5f); }
-                        else GoFlow(3);                                          // 항로는 정비고에서 산다 (09-24)
-                    }
-                }
-            GUI.color = new Color(1, 1, 1, fl);
-            float x = p.x + 10, w = p.width - 20;
-            int show = hoverP >= 0 ? hoverP : S.orbit;
-            var so = SweepSim.Orbits[show];
-            int zl = sim.ZoneLeft(sim.ZoneOpen);
-            string st = sim.Open(show) ? "<color=#9ff0bf>열림</color>" : zl > 0 ? "<color=#ff9b8f>" + SweepSim.ZoneName[sim.ZoneOpen] + " 칸 " + zl + "개 더</color>" : "<color=#ffdf95>정비고 항로 " + KNum.Fmt(SweepSim.PermitCost(show)) + " ›</color>";
-            if (M.cleanReady) GUI.Label(new Rect(x, p.y + 34, w, 40), "<size=12><color=#bff4ff>청산 출동 — 항로 고정</color></size>", center);
-            else
+            int cur = Mathf.Max(0, vis.IndexOf(S.orbit));
+            if (routeBrowse < 0 || routeBrowse >= vis.Count) routeBrowse = cur;
+            if (routeBrowse < vis.Count && sim.Open(vis[routeBrowse]) && vis[routeBrowse] != S.orbit) routeBrowse = cur;   // 다른 데서 궤도가 바뀌면 따라간다
+            GUI.Label(new Rect(p.x + 10, p.y + 5, p.width - 20, 20), "<size=12><b><color=#bff4ff>NAV // 항로</color></b></size>", label);
+            GUI.Label(new Rect(p.x + 10, p.y + 5, p.width - 20, 20), "<size=11><color=#7fcfe0>" + (routeBrowse + 1) + " / " + vis.Count + "</color></size>", cost);
+            if (M.cleanReady)
             {
-                GUI.Label(new Rect(x, p.y + 80, w, 20), "<size=12><b><color=#ffdf95>" + so.name + " ×" + so.mult + "</color></b>  " + st + "</size>", label);
-                GUI.Label(new Rect(x, p.y + 98, w, 30), "<size=10><color=#7fcfe0>" + so.desc + "</color></size>", small);
+                GUI.Label(new Rect(p.x + 10, p.y + 60, p.width - 20, 40), "<size=12><color=#bff4ff>청산 출동 — 항로 고정</color></size>", center);
+                GUI.color = Color.white; return;
+            }
+            void Browse(int d)
+            {
+                routeBrowse = (routeBrowse + d + vis.Count) % vis.Count;
+                int pi = vis[routeBrowse];
+                if (sim.Open(pi) && pi != S.orbit) { sim.SetOrbit(pi); permitArmed = -1; }
+                OrbitSfx.Play("tick", 0.5f);
+            }
+            var ev = Event.current;
+            if (ev.type == EventType.ScrollWheel && p.Contains(ev.mousePosition)) { Browse(ev.delta.y > 0 ? 1 : -1); ev.Use(); }
+            int show = vis[routeBrowse]; var so = SweepSim.Orbits[show]; bool open = sim.Open(show);
+            // ◀ 큰 행성 ▶
+            if (HoloBtn(new Rect(p.x + 8, p.y + 34, 24, 50), "<size=13>◀</size>", Holo, true, fl)) Browse(-1);
+            if (HoloBtn(new Rect(p.xMax - 32, p.y + 34, 24, 50), "<size=13>▶</size>", Holo, true, fl)) Browse(1);
+            GUI.color = new Color(1, 1, 1, fl);
+            var big = new Rect(p.center.x - 30, p.y + 26, 60, 60);
+            GUI.color = new Color(Holo.r, Holo.g, Holo.b, 0.22f * fl); GUI.DrawTexture(new Rect(big.x - 8, big.y - 8, big.width + 16, big.height + 16), texDisc);
+            GUI.color = open ? new Color(1, 1, 1, fl) : new Color(0.25f, 0.28f, 0.32f, 0.9f * fl); GUI.DrawTexture(big, PlanetArt.Get(show).texture);
+            if (!open) { GUI.color = new Color(1, 1, 1, fl); GUI.Label(big, "<size=20><b>?</b></size>", center); }
+            GUI.color = new Color(1, 1, 1, fl);
+            GUI.Label(new Rect(p.x + 6, p.y + 86, p.width - 12, 18), "<size=13><b><color=#ffdf95>" + so.name + "</color></b>" + (open ? "" : "  <color=#ffb3a8>다음</color>") + "</size>", center);
+            GUI.Label(new Rect(p.x + 6, p.y + 103, p.width - 12, 16), "<size=9><color=#7fcfe0>" + Clip(so.desc, 20) + "</color></size>", center);
+            // 점 — 어디쯤인지
+            float dw = 9, dx0 = p.center.x - vis.Count * dw / 2;
+            for (int k = 0; k < vis.Count; k++)
+            {
+                var dr = new Rect(dx0 + k * dw + 1, p.y + 121, 6, 6);
+                bool on = k == routeBrowse, lk = !sim.Open(vis[k]);
+                if (lk) Frame(dr, new Color(Holo.r, Holo.g, Holo.b, 0.6f * fl), 1);
+                else { GUI.color = on ? new Color(1f, 0.87f, 0.58f, fl) : new Color(Holo.r, Holo.g, Holo.b, 0.4f * fl); GUI.DrawTexture(dr, white); }
+                GUI.color = Color.white;
+                if (GUI.Button(new Rect(dr.x - 1, dr.y - 3, 9, 12), GUIContent.none, GUIStyle.none)) Browse(k - routeBrowse);
+            }
+            // 특성 칩
+            {
+                var chips = new List<(string, Color)>();
+                chips.Add(("값 ×" + so.mult, new Color(0.62f, 0.94f, 0.75f)));
+                chips.Add(("체력 ×" + so.hp, new Color(1f, 0.7f, 0.66f)));
+                if (so.storm) chips.Add(("폭풍", new Color(0.62f, 0.94f, 0.75f)));
+                if (so.pull > 0) chips.Add(("중력", new Color(0.75f, 0.96f, 1f)));
+                if (so.gap > 0) chips.Add(("고리 틈", new Color(0.75f, 0.96f, 1f)));
+                chips.Add(("부착물 " + Mathf.RoundToInt((float)so.att * 100) + "%", new Color(0.75f, 0.96f, 1f)));
+                float lineW = 0; var widths = new List<float>();
+                foreach (var c in chips) { float cwd = label.CalcSize(new GUIContent("<size=9>" + c.Item1 + "</size>")).x + 8; widths.Add(cwd); lineW += cwd + 3; }
+                float cx = p.center.x - Mathf.Min(lineW, p.width - 12) / 2, cy = p.y + 132, x0 = cx;
+                for (int k = 0; k < chips.Count; k++)
+                {
+                    if (cx + widths[k] > p.xMax - 6) { cx = p.x + 8; cy += 15; }
+                    var cr = new Rect(cx, cy, widths[k], 13); var c = chips[k].Item2;
+                    Frame(cr, new Color(c.r, c.g, c.b, 0.6f * fl), 1);
+                    GUI.color = new Color(1, 1, 1, fl); GUI.Label(new Rect(cr.x, cr.y - 2, cr.width, 16), "<size=9><color=#" + ColorUtility.ToHtmlStringRGB(c) + ">" + chips[k].Item1 + "</color></size>", center);
+                    cx += widths[k] + 3;
+                }
             }
             GUI.color = new Color(Holo.r, Holo.g, Holo.b, 0.35f * fl);
-            for (float xx = x; xx < x + w; xx += 6) GUI.DrawTexture(new Rect(xx, p.y + 130, 3, 1), white);
+            for (float xx = p.x + 10; xx < p.xMax - 10; xx += 6) GUI.DrawTexture(new Rect(xx, p.y + 164, 3, 1), white);
             GUI.color = new Color(1, 1, 1, fl);
-            var ct = sim.CurContract;
-            if (ct != null && !M.cleanReady)
+            // 아래 — 열린 행성이면 의뢰 · 다음 행성이면 항로 사러
+            if (!open)
             {
-                GUI.Label(new Rect(x, p.y + 134, w - (S.rerolled ? 0 : 46), 32), "<size=10><color=#7fcfe0>의뢰</color> <color=#dff8ff>" + ct.Value.text + "</color></size>", small);
-                GUI.Label(new Rect(x, p.y + 162, w, 18), "<size=10><color=#7fcfe0>성공하면 판 수입 +" + (25 + 10 * sim.Lv("e_quest")) + "%</color></size>", label);
-                GUI.color = Color.white;
-                if (!S.rerolled && HoloBtn(new Rect(p.xMax - 52, p.y + 136, 44, 20), "<size=10>바꾸기</size>", Holo, true, fl)) sim.Reroll();
+                if (HoloBtn(new Rect(p.x + 10, p.y + 170, p.width - 20, 22), "<size=11>정비고에서 항로 사기 ▸</size>", Holo, true, fl)) GoFlow(3);
             }
-            else GUI.Label(new Rect(x, p.y + 140, w, 36), "<size=10><color=#7fcfe0>의뢰는 청구서 2 뒤에 들어온다</color></size>", small);
+            else
+            {
+                var ct = sim.CurContract;
+                if (ct != null)
+                {
+                    GUI.Label(new Rect(p.x + 10, p.y + 168, p.width - 64, 30), "<size=10><color=#7fcfe0>의뢰</color> <color=#dff8ff>" + ct.Value.text + "</color>  <color=#9ff0bf>+" + (25 + 10 * sim.Lv("e_quest")) + "%</color></size>", small);
+                    GUI.color = Color.white;
+                    if (!S.rerolled && HoloBtn(new Rect(p.xMax - 52, p.y + 170, 44, 20), "<size=10>바꾸기</size>", Holo, true, fl)) sim.Reroll();
+                }
+                else GUI.Label(new Rect(p.x + 10, p.y + 170, p.width - 20, 24), "<size=10><color=#7fcfe0>의뢰는 청구서 2 뒤에 들어온다</color></size>", small);
+            }
             GUI.color = Color.white;
         }
 
         // 🩷 복권 홀로그램 (출동 버튼 오른쪽) — 누르면 복권 창
         void LottoHolo()
         {
-            var p = new Rect(ox + 588, 404, 108, 92);
+            var p = new Rect(ox + 570, 404, 108, 92);                            // 588 → 570 — 항로 홀로그램 왼쪽 아래를 덮었다 (09-26)
             bool ov = p.Contains(Event.current.mousePosition);
             float fl = Flick(5.3f);
-            HoloBase(p, ox + 642, 524, 100, Holo, fl, ov);                                  // 분홍 → 다른 홀로그램과 같은 청록 (09-26 정돈 10)
+            HoloBase(p, ox + 624, 524, 100, Holo, fl, ov);                                  // 분홍 → 다른 홀로그램과 같은 청록 (09-26 정돈 10)
             GUI.color = new Color(1, 1, 1, fl);
             GUI.Label(new Rect(p.x, p.y + 6, p.width, 18), "<size=11><b><color=#bff3ff>SCRATCH</color></b></size>", center);
             GUI.Label(new Rect(p.x, p.y + 26, p.width, 32), "<size=22><b><color=#e8fbff>복권</color></b></size>", center);
