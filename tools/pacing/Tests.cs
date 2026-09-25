@@ -30,6 +30,7 @@ static class Tests
         Section("8. 가게 소모품", Consumables);
         Section("9. 복권 칸", Lotto);
         Section("10. 수동 사격", () => Clicks(Math.Max(4, n / 2)));
+        Section("11. 트리 배치 — 같은 자리에 칸 둘 금지", TreeLayout);
         Console.WriteLine();
         Console.WriteLine(fails == 0 ? $"✅ 모두 통과 ({sw.Elapsed.TotalSeconds:0}초)" : $"❌ 실패 {fails}건 ({sw.Elapsed.TotalSeconds:0}초)");
         return fails == 0 ? 0 : 1;
@@ -281,6 +282,33 @@ static class Tests
     }
 
     // 9 — 복권 칸
+    // 🌳 트리 배치 — 한 자리에 칸이 둘이면 「같은 곳을 두 번 눌러야」 한다 (09-25 사장님 · 26곳이 겹쳐 있었다)
+    static void TreeLayout()
+    {
+        var seen = new Dictionary<(int, int), string>(); int tiles = 0;
+        for (int i = 0; i < SweepSim.NodeCount; i++)
+        {
+            var id = SweepSim.Nodes[i].id;
+            if (!SweepSim.Layout.TryGetValue(id, out var pl)) { Fail($"{id} 자리가 없다"); continue; }
+            if (pl.par != "R")
+            {
+                int pix = -1; for (int q = 0; q < SweepSim.NodeCount; q++) if (SweepSim.Nodes[q].id == pl.par) pix = q;
+                if (pix < 0) { Fail($"{id} 부모 {pl.par} 없음"); continue; }
+                int T = SweepSim.Tiles(pix);
+                if (pl.tile < 1 || pl.tile > T) Fail($"{id} 부모 {pl.par} 칸 {pl.tile} / {T}");
+            }
+            int n = SweepSim.Tiles(i);
+            if (n > 1 && pl.dx == 0 && pl.dy == 0) Fail($"{id} 칸 {n}개가 한 자리 (dx · dy 0)");
+            for (int j = 1; j <= n; j++)
+            {
+                var c = (pl.x + pl.dx * (j - 1), pl.y + pl.dy * (j - 1)); tiles++;
+                if (seen.TryGetValue(c, out var other)) Fail($"{c} 에 {other} 와 {id} #{j} 가 겹침");
+                else seen[c] = id + " #" + j;
+            }
+        }
+        Console.WriteLine($"   칸 {tiles}개 · 자리 {seen.Count}곳");
+    }
+
     static void Lotto()
     {
         var sim = new SweepSim(null, null, 44);
