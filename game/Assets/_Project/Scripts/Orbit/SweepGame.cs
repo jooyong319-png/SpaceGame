@@ -487,7 +487,7 @@ namespace SalvageRun.Orbit
                         if (spot && ice)
                         {   // ❄ 서리 원 — 픽셀랩 얼음 폭발 (0.25초마다 한 번 · 없으면 원 + 서리)
                             LoadAnims();
-                            { if (Time.time - lastFrost > 0.25f) { lastFrost = Time.time; var ff = OrbitFxArt.Frost; var fr = Make(ff[0], s1, spotR * 2.1f, Color.white, 58); frameFx.Add(new FrameFx { sr = fr, f = ff, fps = 22 }); } }   // ❄ 코드로 그린 얼음 — 고리 + 조각 넷 (09-26 · 픽셀랩 눈꽃은 과했다)
+                            { if (Time.time - lastFrost > 0.25f) { lastFrost = Time.time; var ff = OrbitFxArt.Frost; var fr = Make(ff[0], s1, Mathf.Min(spotR * 1.4f, 1.6f), Color.white, 58); frameFx.Add(new FrameFx { sr = fr, f = ff, fps = 22 }); } }   // ❄ 코드로 그린 얼음 — 고리 + 조각 넷 (09-26 · 픽셀랩 눈꽃은 과했다)
                             for (int q = 0; q < 3; q++) { var fp = s1 + (Vector3)(Random.insideUnitCircle * spotR); Add(pixel, fp, 0.08f, new Color(0.9f, 0.98f, 1f), 0, 0.5f).v = (Vector3)(Random.insideUnitCircle * 0.6f); }
                         }
                         if (cr && !fence) Star(s1, hc, 0.5f, 7, 0.16f);                             // 치명타 — 끝점에서 빛살
@@ -501,6 +501,11 @@ namespace SalvageRun.Orbit
                         if (e.k == 0) { Add(glow, ShotFrom(), 0.3f * cam.orthographicSize / 6f, pc, 7, 0.18f).sr.sortingOrder = 150; }
                         break;
                     }
+                    case SwEv.TraitFx:
+                        if (e.k == 2) { Burst(at, new Color(1f, 0.85f, 0.35f), 22, 6f); RingFx(at, new Color(1f, 0.85f, 0.35f), 0.35f, (float)e.v * 2 / PxPerUnit); OrbitSfx.Play("coin", 0.8f); shake = Mathf.Max(shake, 0.12f); }   // 🌕 월면 금고 — 금화
+                        else if (e.k == 6) { var ff = OrbitFxArt.Frost; var fr = Make(ff[0], at, (float)e.v * 2 / PxPerUnit, Color.white, 58); frameFx.Add(new FrameFx { sr = fr, f = ff, fps = 18 }); OrbitSfx.PlayPitch("tick", 0.4f, 2.6f); }   // 🧊 고리 얼음 — 둘레가 언다
+                        else if (e.k == 8) OrbitSfx.PlayPitch("launch", 0.35f, 0.6f);        // 🌬 돌풍
+                        break;
                     case SwEv.Volley:
                     {   // 🚀 전탄 발사 — 멈칫 · 번쩍 · 흔들림 · 큰 글자
                         hitStop = Mathf.Max(hitStop, 0.22f); flash = Mathf.Max(flash, 0.55f); shake = Mathf.Max(shake, 0.35f);
@@ -862,7 +867,7 @@ namespace SalvageRun.Orbit
                 c.a = (float)d.fade;
                 v.color = c;
                 float r = (float)SweepSim.Types[d.k].r;
-                float size = r * 2.6f / PxPerUnit * (d.hit > 0 ? 1.25f : 1f) * (px != null ? 1.3f : d.k == SweepSim.Fuel ? 0.6f : 1f);   // 그림은 둘레가 비어 있어 1.3배
+                float size = r * 2.6f / PxPerUnit * (d.hit > 0 ? 1.25f : 1f) * (px != null ? 1.3f : d.k == SweepSim.Fuel ? 0.6f : 1f) * (d.sig == 2 ? 1.9f : d.sig == 3 ? 1.5f : d.sig == 6 ? 1.5f : d.sig == 9 ? 0.7f : 1f);   // 🪐 월면 금고 · 탐사차 · 얼음 덩이는 크게, 혜성 머리는 작게   // 그림은 둘레가 비어 있어 1.3배
                 v.transform.localScale = new Vector3(size / Mathf.Max(0.01f, s.bounds.size.x), size / Mathf.Max(0.01f, s.bounds.size.x) * (px == null && d.k == SweepSim.Fuel ? 1.6f : 1f), 1);
                 v.transform.rotation = Quaternion.Euler(0, 0, (float)d.rot * Mathf.Rad2Deg);
                 int order = 10 + Mathf.Clamp((int)(d.y / 6), 0, 99);
@@ -975,6 +980,7 @@ namespace SalvageRun.Orbit
                 var mf = OrbitFxArt.Mine; mv.sprite = mf[m.t > 0 || Mathf.Sin(Time.time * 10 + i) < 0 ? 1 : 0];   // 💣 켜지면 빨간 불이 깜빡
                 mv.color = Color.white; mv.transform.localScale = Vector3.one * 0.34f / FullW(mv.sprite);
             }
+            TraitView(R);                                                           // 🪐 행성 특성 — 대적점 · 돌풍 · 혜성 꼬리
             DrawTurret(!R.over);
             clawWind.enabled = show && R.fuel > 0;
             holeCore.enabled = holeGlow.enabled = holding; holeRing.enabled = false;         // 범위 고리 없앰 — 도트 블랙홀이 보여 준다
@@ -1096,6 +1102,40 @@ namespace SalvageRun.Orbit
             animMag = LoadAnim("magnet", new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8 });
         }
         class FrameFx { public SpriteRenderer sr; public Sprite[] f; public float t, fps; }
+        // 🪐 행성 특성 화면 (09-26) — 대적점(붉은 점선 소용돌이) · 돌풍(바람 줄기) · 혜성 꼬리
+        SpriteRenderer spotView; float gustFx;
+        void TraitView(SweepRun R)
+        {
+            bool spot = sim.SpotOn;
+            if (spotView == null) spotView = Make(ring, Vector3.zero, 1f, new Color(1f, 0.4f, 0.28f, 0f), 6);
+            spotView.enabled = spot;
+            if (spot)
+            {
+                var c = PxToWorld(sim.SpotX, sim.SpotY); float w = (float)SweepSim.SpotR * 2 / PxPerUnit;
+                spotView.transform.position = c; spotView.transform.localScale = new Vector3(w / ring.bounds.size.x, w * (float)SweepSim.Tilt / ring.bounds.size.y, 1);
+                spotView.color = new Color(1f, 0.42f, 0.3f, 0.35f + 0.1f * Mathf.Sin(Time.time * 2));
+                if (Random.value < 0.6f)
+                {   // 소용돌이 — 가장자리에서 안으로 휘어 드는 점
+                    float a = Random.value * 6.283f, rr = w * 0.5f;
+                    var p = c + new Vector3(Mathf.Cos(a) * rr, Mathf.Sin(a) * rr * (float)SweepSim.Tilt, 0);
+                    Add(pixel, p, 0.06f, new Color(1f, 0.5f, 0.35f, 0.7f), 0, 0.7f).v = (c - p) * 1.4f + new Vector3(-Mathf.Sin(a), Mathf.Cos(a) * (float)SweepSim.Tilt, 0) * rr * 1.2f;
+                }
+            }
+            if (sim.GustOn && Random.value < 0.8f)
+            {   // 돌풍 — 쏠리는 쪽으로 흐르는 옅은 줄기
+                float ga = (float)sim.GustA, rr = (float)(sim.Bo / PxPerUnit) * Random.Range(0.6f, 1.05f), a = ga + Random.Range(-1.6f, -0.3f);
+                var p = PxToWorld(SweepSim.EX + Mathf.Cos(a) * rr * PxPerUnit, SweepSim.EY + Mathf.Sin(a) * rr * PxPerUnit * (float)SweepSim.Tilt);
+                var tgt = PxToWorld(SweepSim.EX + Mathf.Cos(ga) * rr * PxPerUnit, SweepSim.EY + Mathf.Sin(ga) * rr * PxPerUnit * (float)SweepSim.Tilt);
+                var st = Add(pixel, p, 0.05f, new Color(0.7f, 0.85f, 1f, 0.45f), 0, 0.5f); st.v = (tgt - p).normalized * 3.2f;
+            }
+            var cm = sim.Comet;
+            if (cm != null)
+            {   // 혜성 꼬리 — 지나온 쪽으로 청백 알갱이
+                var p = PxToWorld(cm.x, cm.y); var back = -new Vector3((float)cm.vx, -(float)cm.vy, 0).normalized;
+                for (int q = 0; q < 3; q++) Add(pixel, p + back * Random.Range(0f, 0.25f) + (Vector3)(Random.insideUnitCircle * 0.08f), Random.Range(0.06f, 0.11f), Color.Lerp(new Color(0.75f, 0.92f, 1f, 0.9f), Color.white, Random.value), 0, 0.6f).v = back * Random.Range(1.5f, 3f);
+                if (Random.value < 0.3f) Add(glow, p, 0.5f, new Color(0.6f, 0.85f, 1f, 0.4f), 7, 0.2f);
+            }
+        }
         class Missile { public SpriteRenderer sr; public Vector3 p0, p1, p2; public float t, delay, dur, smokeT; public bool small, noSmoke; }
         // ⚡ 번개 차례로 튀기 · 🔫 포구 위치 (09-26 무기별 발사 방식 · 시안 https://claude.ai/artifact/Y679kvU53W1S3pprANSqgg)
         class LateBolt { public Vector3 p0, p1; public Color c; public float delay; public int hop; }

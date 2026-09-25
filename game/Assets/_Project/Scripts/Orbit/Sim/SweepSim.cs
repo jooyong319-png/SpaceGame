@@ -17,6 +17,7 @@ namespace SalvageRun.Orbit.Sim
         public double a, rr, ws, x, y, vx, vy, capT, fade, hit, rot, vr, tr, frz;   // frz = 얼어 있는 시간 (냉동 빔)
         public bool free, dead, convoy;
         public Junk link1, link2;
+        public int sig, grp; public double sigCd;                               // 🪐 행성 특성 (SweepTraits.cs) — 특성 번호 · 무리 · 광석 흘리기 간격
     }
 
     [Serializable]
@@ -92,10 +93,12 @@ namespace SalvageRun.Orbit.Sim
         public readonly List<Blast> pend = new List<Blast>();
         public readonly List<Drone> drones = new List<Drone>();
         public readonly List<Pod> pods = new List<Pod>();
+        public double sigT, spotA, gustT, gustA, gustLeft; public bool roverUp; public int grpId, spotEaten; public Junk comet;   // 🪐 행성 특성
+        public readonly List<SigKill> sigKills = new List<SigKill>();
         public double Earned => earnClaw + earnDrone + earnBlast;
     }
 
-    public enum SwEv { Supply, SupplyGet, Strike, Broke, Coin, Pop, Beam, Ring, Blast, Tier, Crit, Collapse, Warn, EventGo, Collector, Shatter, Release, RunEnd, BillPaid, Overdue, Bankrupt, News, Won, SkillReady, NodeBought, Laser, Bolt, Meteor, Tourist, Vac, Shell, Rail , Proc, Act, Volley }
+    public enum SwEv { Supply, SupplyGet, Strike, Broke, Coin, Pop, Beam, Ring, Blast, Tier, Crit, Collapse, Warn, EventGo, Collector, Shatter, Release, RunEnd, BillPaid, Overdue, Bankrupt, News, Won, SkillReady, NodeBought, Laser, Bolt, Meteor, Tourist, Vac, Shell, Rail , Proc, Act, Volley, TraitFx }
 
     public struct SwEvent
     {
@@ -107,7 +110,7 @@ namespace SalvageRun.Orbit.Sim
 
     public enum NodeSt { Hidden, Locked, Poor, Can, Max }
 
-    public sealed class SweepSim
+    public sealed partial class SweepSim
     {
         public const double EX = 480, EY = 310, Tilt = 0.6;
 
@@ -1176,7 +1179,7 @@ namespace SalvageRun.Orbit.Sim
             r.maxShots = clean ? 6 : Bombs; r.shots = 0;   // 블랙홀은 스킬 — 한 칸 들고 나가서 시간 따라 찬다
             int nfuel = clean ? 0 : Lv("c_find");
             for (int i = 0; i < nfuel; i++) r.pods.Add(new Pod { kind = 0, t = 9 + i * 7 });
-            R = r;
+            R = r; TraitStart();
             var o = Orbits[S.orbit];
             var forms = o.forms;
             int nf = Math.Min(forms.Length, 2 + (Rnd() < 0.5 ? 1 : 0));
@@ -1246,6 +1249,10 @@ namespace SalvageRun.Orbit.Sim
             new Species { name = "고리 정거장",      art = "junk_big_ring",     kind = Big,    tier = 5 },
             new Species { name = "얼음 화물선",      art = "junk_big_ice",      kind = Big,    tier = 7 },
             new Species { name = "외계 유물",        art = "junk_big_relic",    kind = Big,    tier = 8 },
+            new Species { name = "폭풍 속 탐사차",   art = "junk_sig_rover",    kind = Sat,    tier = 99 },   // 🪐 행성 특성 전용 (99 = 무작위로 안 나옴)
+            new Species { name = "월면 금고",        art = "junk_sig_moonvault", kind = Vault, tier = 99 },
+            new Species { name = "광맥 소행성",      art = "junk_sig_ore",      kind = Big,    tier = 99 },
+            new Species { name = "고리 얼음 덩이",   art = "junk_sig_ice",      kind = Rocket, tier = 99 },
         };
         public int Rank => Math.Max(0, Array.IndexOf(OrbitOrder, S.orbit));      // 가까운 → 먼 순위
         int PickSpecies(int k)
@@ -1360,6 +1367,7 @@ namespace SalvageRun.Orbit.Sim
             if (r.holding && (r.holdT >= HoleDur || r.fuel <= 0)) Release();
 
             Schedule(dt);
+            TraitTick(dt);                                                   // 🪐 행성 특성
             Supply(dt);
             Motion(dt);
             if (r.holding) Pull(dt);
@@ -1488,11 +1496,11 @@ namespace SalvageRun.Orbit.Sim
             foreach (var d in R.junk)
             {
                 if (d.dead) continue;
-                d.fade = Math.Min(1, d.fade + dt * 1.4); d.hit = Math.Max(0, d.hit - dt); d.rot += d.vr * dt;
+                d.fade = Math.Min(1, d.fade + dt * 1.4); d.hit = Math.Max(0, d.hit - dt); d.rot += d.vr * dt; if (d.sigCd > 0) d.sigCd -= dt;
                 if (d.frz > 0) d.frz -= dt;
                 if (d.free)
                 {
-                    d.x += d.vx * dt; d.y += d.vy * dt; d.vx *= 1 - 0.9 * dt; d.vy *= 1 - 0.9 * dt;
+                    d.x += d.vx * dt; d.y += d.vy * dt; if (d.sig != 9) { d.vx *= 1 - 0.9 * dt; d.vy *= 1 - 0.9 * dt; }   // 혜성은 줄지 않고 가로지른다
                     if (d.capT > 0) { d.capT -= dt; if (d.capT <= 0) Recapture(d, o.bi, Bo); }
                 }
                 else
@@ -1969,6 +1977,7 @@ namespace SalvageRun.Orbit.Sim
             if (d.att == Att.Armor && src == 0 && !pierce) dmg = Math.Min(dmg, 1);
             if (d.frz > 0) dmg = (int)Math.Round(dmg * FrzMul);                        // 언 것은 두 배
             d.hp -= dmg; d.hit = 0.12;
+            TraitOnHit(d);                                                      // 🪐 광맥 소행성
             if (d.att == Att.Ice && d.hp <= d.max - 2)
             {
                 d.att = Att.None;
@@ -2051,6 +2060,7 @@ namespace SalvageRun.Orbit.Sim
             if (Lv("q_meteor") > 0 && r.meteors < 3 && r.weaponKills >= r.meteorAt) { r.meteorAt += 80; r.meteors++; Meteor(); }   // 무기로 부순 것만 센다 · 한 판 4번 (운석이 운석을 부르지 않게)
             // ★ 관광 명소 — 한 판에 연쇄 100
             if (Lv("q_tour") > 0 && !r.tourDone && r.chain >= 100) { r.tourDone = true; Emit(SwEv.Pop, EX, EY - 120, 0, 4, "관광객이 몰려든다!"); Emit(SwEv.Tourist, 0, 0); if (Mk != null) Mk.GameEvent("토성 고리 관광객, 청소선 구경 러시", "궤도 청소부의 연쇄 파괴를 보려는 관광선이 줄을 섰다.", new[] { "sat" }, null, 0.12f); }
+            mult *= TraitMult(d);                                               // 🪐 월면 금고 ×3 · 탐사차 ×5 · 혜성 ×4 · 대적점 안 ×2
             double v = Types[d.k].val * ValMult * mult * vacMul;
             if (d.att == Att.Gold) { v *= 3; if (r.goldN < 2) { r.goldN++; if (S.scratchRun != S.runs) { S.scratchRun = S.runs; S.scratchN = 0; } S.scratchN--; Emit(SwEv.Pop, d.x, d.y - 14, 0, 4, "황금! 복권 +1"); } else Emit(SwEv.Pop, d.x, d.y - 14, 0, 4, "황금 ×3"); }   // 복권은 한 판 2장까지
             if (d.att == Att.Rock)
@@ -2081,6 +2091,7 @@ namespace SalvageRun.Orbit.Sim
                     Emit(SwEv.Pop, d.x, d.y - 14, 0, 3, "블랙박스 — 특종 제보!");
                     break;
             }
+            TraitOnKill(d);                                                     // 🪐 위성 줄 · 결정 공명 · 금고 · 얼음 · 혜성
         }
 
         // 연료는 탱크를 넘지 않고, 한 판에 되찾는 양도 탱크의 60%까지 — 판이 끝없이 길어지지 않게
