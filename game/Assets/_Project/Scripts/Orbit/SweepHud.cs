@@ -1187,6 +1187,15 @@ namespace SalvageRun.Orbit
         }
 
         int[] gmemo;
+        /// <summary>이 칸을 막고 있는 앞 칸 (아직 안 산 부모 칸) — 없으면 -1</summary>
+        int BlockTile(int k)
+        {
+            var t = gtiles[k];
+            if (t.lpar >= 0 && GTileState(t.lpar) != 3) return t.lpar;
+            foreach (var x in t.xpar) if (GTileState(x) != 3) return x;
+            return -1;
+        }
+        string TileName(int k) { var t = gtiles[k]; if (t.stat < 0) return "청소선"; return SweepSim.Nodes[t.stat].name + (SweepSim.Tiles(t.stat) > 1 ? " " + Roman[t.j] : ""); }
         int GTileState(int k)   // 0 안 보임 · 1 실루엣 · 2 다음 칸 · 3 산 것 (한 번 그릴 때 한 번만 계산 — 부모를 거슬러 가는 재귀가 겹치면 기하급수로 느려진다)
         {
             if (gmemo[k] >= 0) return gmemo[k];
@@ -1559,7 +1568,7 @@ namespace SalvageRun.Orbit
                     nodePulse[t.stat] = 1; OrbitSfx.Play("buy", 0.7f, 0.01f, 0.15f); lastBuyBranch = n.branch; BuyFx(pc, SweepSim.KeyNodes.Contains(n.id) ? new Color(0.71f, 0.61f, 1f) : bcol, n.max == 1, SweepSim.KeyNodes.Contains(n.id) ? "핵심 해금!" : "해금!");
                 }
                 else if (clicked && ns != NodeSt.Max)
-                { OrbitSfx.Play("clank", 0.35f, 0.05f, 0f); Deny(pc, WhyNot(t.stat)); }   // 🚫 안 눌리는 칸 — 왜 안 되는지 그 자리에 (09-25 사장님 「안 눌리는 게 있던데」)
+                { OrbitSfx.Play("clank", 0.35f, 0.05f, 0f); int bk = ns == NodeSt.Hidden ? BlockTile(k) : -1; Deny(pc, bk >= 0 ? TileName(bk) + " 먼저" : WhyNot(t.stat)); }   // 🚫 안 눌리는 칸 — 왜 안 되는지 그 자리에 (09-25 사장님 「안 눌리는 게 있던데」)
             }
             // 영역 밖 띠 — 넘어간 칸을 덮고 머리 · 안내를 다시 그린다
             GUI.color = new Color(0.02f, 0.027f, 0.04f); GUI.DrawTexture(new Rect(0, 0, vw, area.y), white); GUI.DrawTexture(new Rect(0, area.yMax, vw, RefH - area.yMax), white);
@@ -1585,6 +1594,16 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(zr.x + 8, zr.y + 3, zr.width - 16, 18), "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> 구역 " + (zt - zl) + "/" + zt + (last ? "" : zl > 0 ? " <color=#8a93a3>— 다 찍으면 " + nx + " 항로</color>" : " <color=#6fcf97>— " + nx + " 항로를 살 수 있다</color>") + "</size>", label);
             }
             if (testTip >= 0) { for (int k = 0; k < nT; k++) if (gtiles[k].stat >= 0 && SweepSim.Nodes[gtiles[k].stat].id == testTipId) hover = k; }   // 에디터 시험용
+            if (hover >= 0 && gtiles[hover].stat >= 0 && st[hover] != 3 && (st[hover] == 1 || sim.State(gtiles[hover].stat) == NodeSt.Hidden))
+            {   // 🔗 막고 있는 칸을 깜빡 — 「먼저 이것」
+                int bk = BlockTile(hover);
+                if (bk >= 0 && st[bk] != 0 && area.Contains(ToScr(gtiles[bk].cell)))
+                {
+                    var bp = ToScr(gtiles[bk].cell); float bp2 = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 8), bs = tile * (1.5f + 0.25f * bp2);
+                    GUI.color = new Color(1f, 0.6f, 0.55f, 0.35f + 0.3f * bp2); GUI.DrawTexture(new Rect(bp.x - bs / 2, bp.y - bs / 2, bs, bs), texRing);
+                    GUI.color = Color.white; GUI.Label(new Rect(bp.x - 40, bp.y - tile * 0.5f - 20, 80, 18), "<size=11><b><color=#ff9b8f>먼저 이 칸</color></b></size>", center);
+                }
+            }
             if (hover >= 0) Tip(hover, ToScr(gtiles[hover].cell), st[hover], tile);
             else GUI.Label(new Rect(ox, area.yMax + 2, 750, 16), "<size=11>칸에 마우스를 올리면 무엇인지 보인다 · 빛나는 칸을 누르면 산다 · 휠 = 확대 · 끌기 = 이동</size>", center);
         }
@@ -1620,7 +1639,7 @@ namespace SalvageRun.Orbit
             if (vis == 1)
             {
                 GUI.Label(new Rect(r.x, r.y + 4, r.width, 28), "<color=#b89a6a>?</color>", title);
-                GUI.Label(new Rect(r.x, r.y + 52, r.width, 20), "앞 칸을 사면 무엇인지 보인다", center);
+                { int bk = BlockTile(k); GUI.Label(new Rect(r.x, r.y + 52, r.width, 20), bk >= 0 ? "「" + TileName(bk) + "」 사면 무엇인지 보인다" : "앞 칸을 사면 무엇인지 보인다", center); }
                 return;
             }
             string nm = n.name + (SweepSim.Tiles(t.stat) > 1 ? " " + Roman[t.j] : "");
@@ -1636,8 +1655,7 @@ namespace SalvageRun.Orbit
             else if (ns == NodeSt.Locked && n.id.StartsWith("p_") && sim.ZoneLeft(SweepSim.Zone[t.stat]) > 0) foot = "<color=#ff9b8f>" + SweepSim.ZoneName[SweepSim.Zone[t.stat]] + " 칸 " + sim.ZoneLeft(SweepSim.Zone[t.stat]) + "개 더 찍으면 열린다</color>";   // 🪐 구역
             else if (ns == NodeSt.Locked && SweepSim.Zone[t.stat] > sim.ZoneOpen) foot = "<color=#ff9b8f>" + SweepSim.ZoneName[SweepSim.Zone[t.stat]] + " 항로를 열면 열린다</color>";
             else if (ns == NodeSt.Locked) foot = SweepSim.Ring4(n.id) ? "<color=#ff9b8f>목성 항로를 열면 — 외행성 면허</color>" : "<color=#ff9b8f>청구서 " + SweepSim.BranchNeed[b] + "을 갚으면 열린다</color>";
-            else if (ns == NodeSt.Hidden && vis != 2) foot = "<color=#ff9b8f>앞 칸을 먼저 사야 한다</color>";
-            else if (ns == NodeSt.Hidden) foot = "<color=#ff9b8f>이어진 다른 칸도 사야 한다</color>";
+            else if (ns == NodeSt.Hidden) { int bk = BlockTile(k); foot = "<color=#ff9b8f>" + (bk >= 0 ? "「" + TileName(bk) + "」 먼저 사야 열린다" : "앞 칸을 먼저 사야 한다") + "</color>"; }   // 어느 칸인지 콕 집어 — 「앞 칸」만으론 이미 산 칸을 또 눌러야 하나 헷갈렸다 (09-25 사장님)
             else if (SweepSim.KeyNodes.Contains(n.id) && sim.S.keys < 1) foot = (sim.S.cash >= sim.TileCost(t.stat) ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>  <color=#ff9b8f>+ 열쇠 1 (없음)</color>";   // 돈은 되는데 열쇠가 없다 — 값만 빨개서 이유를 몰랐다
             else foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>" + (SweepSim.KeyNodes.Contains(n.id) ? "  <color=#d8ccff>+ 열쇠 1</color>" : "");
             if (keyNote) GUI.Label(new Rect(r.x, r.y + 136 + oy, r.width, 16), "<size=11><color=#b9a9ee>" + (sim.S.keys < 1 ? "열쇠 0 — 청구서를 갚거나 파산하면 +1" : "가진 열쇠 " + sim.S.keys + " · ◆ 핵심 칸은 파산해도 남는다") + "</color></size>", center);
