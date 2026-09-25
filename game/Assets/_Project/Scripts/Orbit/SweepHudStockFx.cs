@@ -251,6 +251,7 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(r.x + 8, r.y + 1, r.width, 20), txt, label);
                 y += 25;
             }
+            Chip("<size=12><color=#9ff0bf>●</color> 장 열림 · <color=#8a9bb3>매매는 조종실</color></size>", false);   // 출동 중엔 시세만 — 사고팔기는 돌아가서 (09-25 사장님 「출발에선 못 산다는 걸 모르겠다」)
             Chip("<size=12>내 주식 <b>" + PctTxt(MyTotal()) + "</b></size>", false);
             if (sim.PlanetStockBonus > 1) Chip("<size=12><color=#9fe8ff>행성 투자 값 <b>+20%</b></color></size>", false);
             if (sim.Rage > 0.005) Chip("<size=12><color=#ff8a7a>분노 화력 <b>+" + Mathf.RoundToInt((float)sim.Rage * 100) + "%</b></color></size>", true);

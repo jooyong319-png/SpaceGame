@@ -257,7 +257,7 @@ namespace SalvageRun.Orbit
             L(top.x + 120, top.y + 10, 300, "<size=12><color=#8a9bb3>궤도 종합</color>  <b>" + idx.ToString("#,0.00") + "</b>  " + Tone(idx - idx0, (idx >= idx0 ? "▲ " : "▼ ") + System.Math.Abs(idx - idx0).ToString("0.00")) + " " + Pct(idx / idx0 - 1) + "</size>");
             L(top.x + 420, top.y + 10, 280, "<size=12><color=#8a9bb3>내 주식</color>  <b>" + KNum.Fmt(tv) + "</b>" + (tc > 0 ? "  " + Tone(tv - tc, (tv >= tc ? "+" : "") + KNum.Fmt(tv - tc)) + " " + Pct(tv / tc - 1) : "") + "</size>");
             L(top.x + 720, top.y + 10, 160, "<size=12><color=#8a9bb3>돈</color>  <b><color=#ffdf95>" + KNum.Fmt(S.cash) + "</color></b></size>");
-            Rt(top.x, top.y + 10, top.width - 12, "<size=11><color=#8a9bb3>" + (open ? "장중 · 다음 봉 " + Mathf.CeilToInt(Market.CandleSec - MS.candleT) + "초" : "휴장") + "</color></size>");
+            Rt(top.x, top.y + 10, top.width - 12, "<size=12>" + (open ? "<color=#ffcf6e><b>■ 시세 멈춤</b></color>" : "<color=#8a9bb3>휴장</color>") + "</size>");   // 조종실에선 시장이 안 흐른다 — 「장중 · 다음 봉」은 틀린 말이었다 (09-25 사장님 「정지돼 있는 걸 보여 줘」)
 
             // ── 왼쪽 — 종목표 · 속보 · 내부자
             var ls = new Rect(X0 + 8, 54, 214, 538); Box(ls);
@@ -468,6 +468,16 @@ namespace SalvageRun.Orbit
             {
                 if (ordSide == 0) TradeBuy(si, ordFrac, go.center);
                 else TradeSell(si, ordFrac, go.center);
+            }
+
+            if (open) GUI.Label(new Rect(ob.x + 4, go.yMax + 3, ob.width - 8, 18), "<size=10><color=#9ff0bf>●</color> <color=#c8d0dc>매매는 조종실에서만 · 출동 중엔 잠김</color></size>", center);
+            // ⏸ 차트 위 — 지금은 멈춰 있다
+            if (open)
+            {
+                var pz = new Rect(g.x + g.width / 2 - 150, g.y + 6, 300, 40);
+                GUI.color = new Color(0.1f, 0.08f, 0.03f, 0.82f); GUI.DrawTexture(pz, white); Frame(pz, new Color(1f, 0.81f, 0.43f, 0.8f), 1); GUI.color = Color.white;
+                GUI.Label(new Rect(pz.x, pz.y + 3, pz.width, 18), "<size=13><b><color=#ffcf6e>■ 시세 멈춤</color></b></size>", center);
+                GUI.Label(new Rect(pz.x, pz.y + 20, pz.width, 16), "<size=10><color=#c8b88a>출동하면 다시 움직인다 · 지금 사 두면 출동 중에 오르내린다</color></size>", center);
             }
 
             // ── 아래 — 내 잔고
