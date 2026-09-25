@@ -83,6 +83,10 @@ tools/pacing/Program.cs  페이스 봇 (dotnet · 또는 에디터 안에서)
 
 8. 🔴 **트리 칸 자리(`Layout`)** — 단계가 여럿인 칸은 `dx`/`dy`가 0이면 Ⅰ·Ⅱ·Ⅲ이 한 자리에 쌓여 「같은 곳을 두 번 눌러야」 한다. 새 칸은 빈자리 확인 필수. 09-24 밤 붙인 28칸 중 26곳이 겹쳐 있었다 → 테스트 11 「트리 배치」가 잡는다.
 
+9. 🔴 **이 프로젝트는 플레이 들어갈 때 도메인 재로드를 안 한다**(`EnterPlayModeOptions = DisableDomainReload`) — static 필드가 플레이 사이에 남는다. 코드로 만든 Sprite · Texture를 static에 담으면 플레이를 멈출 때 유니티가 지워 「지워진 Sprite」 오류가 난다 → `== null`이면 다시 만들고 `hideFlags = HideAndDontSave`. (09-26 `OrbitFxArt` 자석 · 얼음, 로그 1,200번 · 랙)
+10. 🔴 **사장님 플레이 중에 스크립트를 고치면** 예전엔 유니티가 플레이 도중 다시 컴파일해 `tracks` 같은 배열이 날아가고 매 프레임 NullReference(로그 10만 8천 번 · 랙). 09-26 에디터 설정 「플레이 중 스크립트 변경」을 **플레이 끝난 뒤 컴파일**(`EditorPrefs ScriptCompilationDuringPlay = 1`)로 바꿨다. 되돌리기 = 0.
+11. 랙이 나면 먼저 `%LOCALAPPDATA%/Unity/Editor/Editor.log`에서 `(Filename: … Line: N)`을 줄별로 센다 — 매 프레임 오류가 가장 흔한 원인.
+
 ## 태그
 
 #orbitsweeper #architecture #unity #tools

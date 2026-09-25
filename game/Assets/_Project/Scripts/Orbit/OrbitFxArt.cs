@@ -12,8 +12,11 @@ namespace SalvageRun.Orbit
         static Sprite[] frost, magnet;
         static readonly Color32 White = new Color32(255, 255, 255, 255);
 
-        public static Sprite[] Frost => frost ?? (frost = Make(DrawFrost));
-        public static Sprite[] Magnet => magnet ?? (magnet = Make(DrawMagnet));
+        // 🔴 플레이를 멈추면 유니티가 만든 그림을 지운다 — 도메인 재로드 없이 다시 플레이하면 static 배열만 남아 「지워진 Sprite」 오류가
+        //    자석이 터질 때마다 났다(에디터 로그 11만 번 · 사장님 「출발에서 랙이 엄청」 09-26). 지워졌으면(== null) 다시 그린다 + 안 지워지게 표시.
+        public static Sprite[] Frost => Alive(frost) ? frost : (frost = Make(DrawFrost));
+        public static Sprite[] Magnet => Alive(magnet) ? magnet : (magnet = Make(DrawMagnet));
+        static bool Alive(Sprite[] a) { if (a == null) return false; foreach (var s in a) if (s == null) return false; return true; }
 
         static Sprite[] Make(System.Action<Color32[], float> draw)
         {
@@ -24,7 +27,7 @@ namespace SalvageRun.Orbit
                 draw(px, f / (float)(Frames - 1));
                 var tex = new Texture2D(N, N, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp, hideFlags = HideFlags.HideAndDontSave };
                 tex.SetPixels32(px); tex.Apply();
-                a[f] = Sprite.Create(tex, new Rect(0, 0, N, N), new Vector2(0.5f, 0.5f), N);
+                a[f] = Sprite.Create(tex, new Rect(0, 0, N, N), new Vector2(0.5f, 0.5f), N); a[f].hideFlags = HideFlags.HideAndDontSave;
             }
             return a;
         }
