@@ -115,8 +115,8 @@ namespace SalvageRun.Orbit
             var kb = Keyboard.current;
             if (lobby && sim.R.over && !sim.M.won)
             {
-                if (kb != null && kb.escapeKey.wasPressedThisFrame) settingsOpen = false;
-                else if (kb != null && (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame) && !settingsOpen) LobbyContinue();
+                if (kb != null && kb.escapeKey.wasPressedThisFrame) { settingsOpen = false; wipeAsk = false; }
+                else if (kb != null && (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame) && !settingsOpen && !wipeAsk) LobbyContinue();
                 return;
             }
             if (kb != null && kb.spaceKey.wasPressedThisFrame && sim.R.over && !sim.M.careerOpen && !sim.M.won && !newsOpen && paidT < 2.4f)
