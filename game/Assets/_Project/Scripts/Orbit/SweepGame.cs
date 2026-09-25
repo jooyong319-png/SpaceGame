@@ -434,17 +434,17 @@ namespace SalvageRun.Orbit
                     case SwEv.Meteor:
                     {
                         var to = at; var from = to + new Vector3(-6f, 7f, 0);
-                        var tail = Add(pixel, from, 0.05f, new Color(1f, 0.6f, 0.2f, 0.9f), 8, 0.4f); tail.a = from; tail.b = to; tail.size = 0.25f;
-                        var core = Add(pixel, from, 0.05f, new Color(1f, 0.95f, 0.8f, 1f), 8, 0.5f); core.a = from; core.b = to; core.size = 0.15f;
-                        Add(glow, to, 0.9f, new Color(1f, 0.55f, 0.2f, 0.6f), 7, 0.5f);   // ☄ 2.2칸 · 0.9초 → 0.9칸 · 0.5초 — 폭발과 겹쳐 화면 1/4을 덮던 주황 덩어리 (09-26)
-                        OrbitSfx.Play("launch", 0.7f); shake = Mathf.Max(shake, 0.25f); flash = Mathf.Max(flash, 0.25f);
+                        if (Prop(ref meteorSpr, "meteor") != null) meteors.Add(new Meteor { sr = MakeAnim(meteorSpr, from, 0.55f, Color.white, 62), a = from, b = to });
+                        else { var tail = Add(pixel, from, 0.05f, new Color(1f, 0.6f, 0.2f, 0.9f), 8, 0.4f); tail.a = from; tail.b = to; tail.size = 0.25f; }
+                        OrbitSfx.Play("launch", 0.7f);                                              // ☄ 빛 · 흔들림은 떨어질 때 (UpdateMissiles)
                         Note("운석!", Orange);
                         break;
                     }
                     case SwEv.Tourist:
                     {
-                        var p = Add(droneArt, PxToWorld(-40, 120), 0.9f, new Color(0.6f, 0.85f, 1f), 6, 4f);
-                        p.sr.transform.rotation = Quaternion.Euler(0, 0, -90); p.sr.sortingOrder = 85; p.v = new Vector3(1040f / PxPerUnit / 4f, -0.1f, 0);
+                        var ts = Prop(ref touristSpr, "tourist");
+                        var p = Add(ts != null ? ts : droneArt, PxToWorld(-40, 120), ts != null ? 1.3f : 0.9f, ts != null ? Color.white : new Color(0.6f, 0.85f, 1f), 6, 4f);
+                        p.sr.transform.rotation = Quaternion.Euler(0, 0, ts != null ? 0 : -90); p.sr.sortingOrder = 85;   // 🛳 관광 셔틀 (픽셀랩) p.v = new Vector3(1040f / PxPerUnit / 4f, -0.1f, 0);
                         break;
                     }
                     case SwEv.Laser:
@@ -921,12 +921,22 @@ namespace SalvageRun.Orbit
                     if (!p.up || p.got) continue;
                     while (podViews.Count <= pn) podViews.Add(Make(square, Vector3.zero, 0.2f, Color.white, 80));
                     var pv = podViews[pn++]; pv.enabled = true;
-                    pv.color = p.kind == 1 ? Violet : Green;
+                    var pspr = p.kind == 1 ? Prop(ref podRareSpr, "pod_rare") : Prop(ref podFuelSpr, "pod_fuel");   // 📦 보급 캡슐 (픽셀랩) — 초록 연료 · 보라 특수
                     var pp = PxToWorld(p.x, p.y);
                     pv.transform.position = pp;
-                    pv.transform.localScale = new Vector3(0.16f / square.bounds.size.x, 0.28f / square.bounds.size.y, 1);
                     var to = PxToWorld(aimPx.x, aimPx.y) - pp;
-                    pv.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(to.y, to.x) * Mathf.Rad2Deg - 90);
+                    if (pspr != null)
+                    {
+                        pv.sprite = pspr; pv.color = Color.white;
+                        pv.transform.localScale = Vector3.one * 0.5f / FullW(pspr);
+                        pv.transform.rotation = Quaternion.Euler(0, 0, Mathf.Sin(Time.time * 3f + pn) * 12f);   // 살짝 흔들 — 방향대로 돌리면 눕거나 뒤집혔다
+                    }
+                    else
+                    {
+                        pv.color = p.kind == 1 ? Violet : Green;
+                        pv.transform.localScale = new Vector3(0.16f / square.bounds.size.x, 0.28f / square.bounds.size.y, 1);
+                        pv.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(to.y, to.x) * Mathf.Rad2Deg - 90);
+                    }
                     if (Random.value < 0.7f) Add(pixel, pp - to.normalized * 0.15f, 0.07f, p.kind == 1 ? Violet : Green, 0, 0.4f);   // 꼬리
                 }
             for (int i = pn; i < podViews.Count; i++) podViews[i].enabled = false;
@@ -955,15 +965,15 @@ namespace SalvageRun.Orbit
             shipView.enabled = shipFlame.enabled = false;                 // 작은 배 없앰 — 조종실 포구에서 쏜다 (09-24)
             for (int i = 0; i < mineViews.Count || i < R.mines.Count; i++)
             {
-                if (i >= mineViews.Count) mineViews.Add(Make(disc, Vector3.zero, 0.22f, Red, 64));
+                if (i >= mineViews.Count) mineViews.Add(Make(OrbitFxArt.Mine[0], Vector3.zero, 0.34f, Color.white, 64));
                 var mv = mineViews[i]; bool on = !R.over && i < R.mines.Count; mv.enabled = on; if (!on) continue;
                 var m = R.mines[i]; var mp = PxToWorld(m.x, m.y);
                 if (!mineFrom.ContainsKey(m)) { if (mineFrom.Count > 64) mineFrom.Clear(); mineFrom[m] = sim.WeaponOwned(4) ? MuzzleOf(4) : mp; }
                 float age = (float)(0.4 - m.t);                                            // 💣 깔린 뒤 0.3초 동안 포구에서 포물선으로 날아간다 (켜지기 0.4초 전)
                 if (m.t > 0 && age < 0.3f) { float u = age / 0.3f; var fr = mineFrom[m]; mp = Vector3.Lerp(fr, mp, u) + new Vector3(0, Mathf.Sin(u * Mathf.PI) * 1.1f, 0); }
                 mv.transform.position = mp;
-                float bl = m.t > 0 ? 0.35f : 0.6f + 0.4f * Mathf.Sin(Time.time * 10 + i);
-                mv.color = new Color(1f, 0.3f, 0.25f, bl); mv.transform.localScale = Vector3.one * 0.22f / disc.bounds.size.x;
+                var mf = OrbitFxArt.Mine; mv.sprite = mf[m.t > 0 || Mathf.Sin(Time.time * 10 + i) < 0 ? 1 : 0];   // 💣 켜지면 빨간 불이 깜빡
+                mv.color = Color.white; mv.transform.localScale = Vector3.one * 0.34f / FullW(mv.sprite);
             }
             DrawTurret(!R.over);
             clawWind.enabled = show && R.fuel > 0;
@@ -1090,6 +1100,11 @@ namespace SalvageRun.Orbit
         // ⚡ 번개 차례로 튀기 · 🔫 포구 위치 (09-26 무기별 발사 방식 · 시안 https://claude.ai/artifact/Y679kvU53W1S3pprANSqgg)
         class LateBolt { public Vector3 p0, p1; public Color c; public float delay; public int hop; }
         readonly List<LateBolt> lateBolts = new List<LateBolt>();
+        // 🛰 소품 도트 (09-26 사장님 「도트 필요한 부분 ㄱㄱ」) — 보급 캡슐 둘 · 관광 셔틀 · 운석 돌 (픽셀랩), 기뢰는 코드 그림
+        static Sprite podFuelSpr, podRareSpr, touristSpr, meteorSpr;
+        static Sprite Prop(ref Sprite s, string n) { if (s == null) s = Resources.Load<Sprite>("ship/" + n); return s; }
+        class Meteor { public SpriteRenderer sr; public Vector3 a, b; public float t; }
+        readonly List<Meteor> meteors = new List<Meteor>();
         readonly Dictionary<object, Vector3> mineFrom = new Dictionary<object, Vector3>();
         float lastLaserCharge, lastIceShot, lastVacLine;
         Vector3 MuzzleOf(int w) { var wb = WTurretPos(w); return TAlong(wb, WTurretAng(w, wb), TurW[w] * 0.8f); }
@@ -1112,6 +1127,20 @@ namespace SalvageRun.Orbit
         static Vector3 Bez(Vector3 a, Vector3 b, Vector3 c, float u) => (1 - u) * (1 - u) * a + 2 * (1 - u) * u * b + u * u * c;
         void UpdateMissiles(float dt)
         {
+            for (int i = meteors.Count - 1; i >= 0; i--)
+            {   // ☄ 운석 — 빙글 돌며 불꽃 꼬리를 달고 날아와 떨어지는 순간 터진다
+                var m = meteors[i]; if (m.sr == null) { meteors.RemoveAt(i); continue; }
+                m.t += dt; float u = m.t / 0.28f;
+                if (u >= 1)
+                {
+                    Destroy(m.sr.gameObject); meteors.RemoveAt(i);
+                    Add(glow, m.b, 0.9f, new Color(1f, 0.55f, 0.2f, 0.6f), 7, 0.5f); Burst(m.b, Orange, 10, 4f);
+                    shake = Mathf.Max(shake, 0.25f); flash = Mathf.Max(flash, 0.2f);
+                    continue;
+                }
+                var pos = Vector3.Lerp(m.a, m.b, u * u); m.sr.transform.position = pos; m.sr.transform.Rotate(0, 0, 540f * dt);
+                Add(pixel, pos, 0.1f, new Color(1f, 0.55f + 0.3f * Random.value, 0.2f, 0.9f), 0, 0.3f).v = (m.a - m.b).normalized * 0.8f + (Vector3)(Random.insideUnitCircle * 0.3f);
+            }
             for (int i = lateBolts.Count - 1; i >= 0; i--) { var b = lateBolts[i]; b.delay -= dt; if (b.delay <= 0) { DrawBolt(b); lateBolts.RemoveAt(i); } }
             for (int i = missiles.Count - 1; i >= 0; i--)
             {
