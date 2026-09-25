@@ -37,7 +37,7 @@ tools/pacing/Program.cs  페이스 봇 (dotnet · 또는 에디터 안에서)
 - 🔴 **먼저 `EditorApplication.isPlaying` 확인** — 사장님이 플레이 중이면 멈추고 말씀드린다. 유니티 끄지 않기.
 - **컴파일**: `AssetDatabase.Refresh(ForceSynchronousImport); UnityEditor.Compilation.CompilationPipeline.RequestScriptCompilation();` → `%LOCALAPPDATA%/Unity/Editor/Editor.log`의 「Domain Reload Profiling」 줄 수가 늘 때까지 기다림 → 그다음 명령은 따로.
 - **플레이 캡처**: `sweep.state/meta`를 `sweep.backup.*`에 복사 → Play → `EditorApplication.update`로 단계 진행 → `ScreenCapture.CaptureScreenshot` → 끝나면 되돌림. 🔴 **찍는 틱과 화면을 바꾸는 틱을 나눌 것** (같은 틱이면 바뀐 첫 프레임이 찍힌다).
-- 시험용 훅: `hud.TestLotto` · `TestEnd` · `testTip/testTipId` · `game.TestAim`.
+- 시험용 훅: `hud.TestLotto` · `TestEnd` · `testTip/testTipId` · `testShopHot`(가게 깜빡일 칸) · `Deny/WhyNot` · `game.TestAim`.
 - RunCommand 안에서 `System.Reflection` 네임스페이스는 막혀 있다 (`Type.GetMethod`는 된다).
 
 ### 페이스 봇
