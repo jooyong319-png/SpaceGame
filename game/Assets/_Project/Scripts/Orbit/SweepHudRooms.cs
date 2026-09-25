@@ -941,9 +941,30 @@ namespace SalvageRun.Orbit
         struct BuyBurst { public Vector2 p; public Color c; public float t0; public bool big; public string txt; }
         readonly List<BuyBurst> bursts = new List<BuyBurst>();
         void BuyFx(Vector2 p, Color c, bool big, string txt = "해금!") { bursts.Add(new BuyBurst { p = p, c = c, t0 = Time.unscaledTime, big = big, txt = txt }); if (big) OrbitSfx.Play("launch", 0.35f); }
+        // 🚫 못 사는 칸을 누르면 — 그 자리에 이유 한 줄
+        Vector2 denyP; float denyT0 = -9; string denyMsg;
+        public void Deny(Vector2 p, string msg) { denyP = p; denyT0 = Time.unscaledTime; denyMsg = msg; }
+        public string WhyNot(int i)
+        {
+            var n = SweepSim.Nodes[i]; var st = sim.State(i); int z = SweepSim.Zone[i];
+            if (st == NodeSt.Locked && n.id.StartsWith("p_") && sim.ZoneLeft(z) > 0) return SweepSim.ZoneName[z] + " 칸 " + sim.ZoneLeft(z) + "개 더";
+            if (st == NodeSt.Locked && SweepSim.Ring4(n.id) && sim.Lv("p_jup") <= 0) return "목성 항로 먼저";
+            if (st == NodeSt.Locked && z > sim.ZoneOpen) return SweepSim.ZoneName[z] + " 항로 먼저";
+            if (st == NodeSt.Hidden) return "앞 칸 먼저";
+            if (SweepSim.KeyNodes.Contains(n.id) && sim.S.keys < 1) return "열쇠가 없다";
+            return "돈이 모자라다 · " + KNum.Fmt(sim.TileCost(i) - sim.S.cash);
+        }
         void BuyFxDraw()
         {
             float now = Time.unscaledTime;
+            float dt = now - denyT0;
+            if (dt < 1.2f && denyMsg != null)
+            {
+                float a = Mathf.Clamp01((1.2f - dt) / 0.4f), sx = dt < 0.25f ? Mathf.Sin(dt * 60) * 4 * (1 - dt / 0.25f) : 0;
+                var dr = new Rect(denyP.x - 110 + sx, denyP.y - 52 - 10 * dt, 220, 24);
+                GUI.color = new Color(0.08f, 0.03f, 0.03f, 0.85f * a); GUI.DrawTexture(new Rect(dr.center.x - center.CalcSize(new GUIContent(denyMsg)).x / 2 - 10, dr.y, center.CalcSize(new GUIContent(denyMsg)).x + 20, dr.height), white);
+                GUI.color = new Color(1, 1, 1, a); GUI.Label(dr, "<size=13><b><color=#ff9b8f>" + denyMsg + "</color></b></size>", center); GUI.color = Color.white;
+            }
             for (int i = bursts.Count - 1; i >= 0; i--)
             {
                 var b = bursts[i]; float t = now - b.t0, L = b.big ? 1.1f : 0.6f;

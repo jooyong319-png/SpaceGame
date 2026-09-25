@@ -1548,7 +1548,8 @@ namespace SalvageRun.Orbit
                 GUI.color = Color.white;
                 if (inArea && r.Contains(ev.mousePosition)) hover = k;
                 if (inf && owned) GUI.Label(new Rect(r.x - 10, r.yMax, r.width + 20, 16), "<size=10><color=#ffdf95>∞ " + sim.S.lv[t.stat] + "</color></size>", center);
-                if (!isRoot && (next || inf && owned) && inArea && GUI.Button(r, GUIContent.none, GUIStyle.none) && ns == NodeSt.Can)
+                bool clicked = !isRoot && (next || inf && owned) && inArea && GUI.Button(r, GUIContent.none, GUIStyle.none);
+                if (clicked && ns == NodeSt.Can)
                 {
                     int times = shift ? 5 : 1;
                     while (times-- > 0 && sim.State(t.stat) == NodeSt.Can) sim.BuyTile(t.stat);
@@ -1556,6 +1557,8 @@ namespace SalvageRun.Orbit
                     else if (n.id == "a_open") Guide("증권이 열렸다 — 조종실 오른쪽 「증권 하러 가기」 ▸ · 출동 중엔 S");
                     nodePulse[t.stat] = 1; OrbitSfx.Play("buy", 0.7f, 0.01f, 0.15f); lastBuyBranch = n.branch; BuyFx(pc, SweepSim.KeyNodes.Contains(n.id) ? new Color(0.71f, 0.61f, 1f) : bcol, n.max == 1, SweepSim.KeyNodes.Contains(n.id) ? "핵심 해금!" : "해금!");
                 }
+                else if (clicked && ns != NodeSt.Max)
+                { OrbitSfx.Play("clank", 0.35f, 0.05f, 0f); Deny(pc, WhyNot(t.stat)); }   // 🚫 안 눌리는 칸 — 왜 안 되는지 그 자리에 (09-25 사장님 「안 눌리는 게 있던데」)
             }
             // 영역 밖 띠 — 넘어간 칸을 덮고 머리 · 안내를 다시 그린다
             GUI.color = new Color(0.02f, 0.027f, 0.04f); GUI.DrawTexture(new Rect(0, 0, vw, area.y), white); GUI.DrawTexture(new Rect(0, area.yMax, vw, RefH - area.yMax), white);
@@ -1634,8 +1637,9 @@ namespace SalvageRun.Orbit
             else if (ns == NodeSt.Locked) foot = SweepSim.Ring4(n.id) ? "<color=#ff9b8f>목성 항로를 열면 — 외행성 면허</color>" : "<color=#ff9b8f>청구서 " + SweepSim.BranchNeed[b] + "을 갚으면 열린다</color>";
             else if (ns == NodeSt.Hidden && vis != 2) foot = "<color=#ff9b8f>앞 칸을 먼저 사야 한다</color>";
             else if (ns == NodeSt.Hidden) foot = "<color=#ff9b8f>이어진 다른 칸도 사야 한다</color>";
+            else if (SweepSim.KeyNodes.Contains(n.id) && sim.S.keys < 1) foot = (sim.S.cash >= sim.TileCost(t.stat) ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>  <color=#ff9b8f>+ 열쇠 1 (없음)</color>";   // 돈은 되는데 열쇠가 없다 — 값만 빨개서 이유를 몰랐다
             else foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>" + (SweepSim.KeyNodes.Contains(n.id) ? "  <color=#d8ccff>+ 열쇠 1</color>" : "");
-            if (keyNote) GUI.Label(new Rect(r.x, r.y + 136 + oy, r.width, 16), "<size=11><color=#b9a9ee>가진 열쇠 " + sim.S.keys + " · ◆ 핵심 칸은 파산해도 남는다</color></size>", center);
+            if (keyNote) GUI.Label(new Rect(r.x, r.y + 136 + oy, r.width, 16), "<size=11><color=#b9a9ee>" + (sim.S.keys < 1 ? "열쇠 0 — 청구서를 갚거나 파산하면 +1" : "가진 열쇠 " + sim.S.keys + " · ◆ 핵심 칸은 파산해도 남는다") + "</color></size>", center);
             center.fontSize = 20; if (center.CalcSize(new GUIContent(foot)).x > r.width - 16) center.fontSize = 14;   // 핵심 칸 · 누적 칸은 줄이 길다
             GUI.Label(new Rect(r.x, r.y + 106 + oy, r.width, 32), foot, center); center.fontSize = 13;
         }
