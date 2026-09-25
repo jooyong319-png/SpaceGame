@@ -1227,6 +1227,25 @@ namespace SalvageRun.Orbit.Sim
             new Species { name = "고대 탐사선",     art = "junk_ancient",    kind = Sat,    tier = 8 },
             new Species { name = "로켓 잔해",       art = "junk_rocket",     kind = Rocket, tier = 2 },
             new Species { name = "가스 채굴선 잔해", art = "junk_gashulk",   kind = Rocket, tier = 4 },
+            // 🛰 09-26 사장님 「쓰레기 추가 · 행성별로」 — 한 가지 그림뿐이던 금고 · 큰 잔해와, 비어 있던 로켓 · 위성 · 조각 칸 (픽셀랩)
+            new Species { name = "구형 발사체 1단",  art = "junk_rocket_old",   kind = Rocket, tier = 0 },
+            new Species { name = "고리 수송선",      art = "junk_rocket_ring",  kind = Rocket, tier = 5 },
+            new Species { name = "얼음 운반 로켓",   art = "junk_rocket_ice",   kind = Rocket, tier = 7 },
+            new Species { name = "성간 탐사 로켓",   art = "junk_rocket_probe", kind = Rocket, tier = 8 },
+            new Species { name = "통신 위성",        art = "junk_sat_comm",     kind = Sat,    tier = 0 },
+            new Species { name = "달 착륙선 잔해",   art = "junk_sat_lander",   kind = Sat,    tier = 1 },
+            new Species { name = "가스 결정",        art = "junk_chip_gas",     kind = Chip,   tier = 4 },
+            new Species { name = "은행 위성",        art = "junk_vault_bank",   kind = Vault,  tier = 0 },
+            new Species { name = "금고 위성",        art = "junk_vault",        kind = Vault,  tier = 2 },
+            new Species { name = "금괴 캡슐",        art = "junk_vault_gold",   kind = Vault,  tier = 4 },
+            new Species { name = "고대 금고",        art = "junk_vault_ancient", kind = Vault, tier = 7 },
+            new Species { name = "정거장 모듈",      art = "junk_big_station",  kind = Big,    tier = 0 },
+            new Species { name = "채굴 플랫폼",      art = "junk_big_mine",     kind = Big,    tier = 2 },
+            new Species { name = "원반 정거장",      art = "junk_big",          kind = Big,    tier = 3 },
+            new Species { name = "가스 수확기",      art = "junk_big_gas",      kind = Big,    tier = 4 },
+            new Species { name = "고리 정거장",      art = "junk_big_ring",     kind = Big,    tier = 5 },
+            new Species { name = "얼음 화물선",      art = "junk_big_ice",      kind = Big,    tier = 7 },
+            new Species { name = "외계 유물",        art = "junk_big_relic",    kind = Big,    tier = 8 },
         };
         public int Rank => Math.Max(0, Array.IndexOf(OrbitOrder, S.orbit));      // 가까운 → 먼 순위
         int PickSpecies(int k)
