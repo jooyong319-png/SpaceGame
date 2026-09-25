@@ -306,7 +306,28 @@ static class Tests
                 else seen[c] = id + " #" + j;
             }
         }
-        Console.WriteLine($"   칸 {tiles}개 · 자리 {seen.Count}곳");
+        // 선이 남의 칸을 가로지르면 그 칸 뒤에 이어진 것처럼 보인다 — 부모 칸 → 자식 칸 직선이 다른 칸 한가운데를 지나는 곳을 센다
+        var cellOf = new Dictionary<(string, int), (int, int)>();
+        foreach (var kv in seen) { var sp = kv.Value.Split(" #"); cellOf[(sp[0], int.Parse(sp[1]))] = kv.Key; }
+        int cross = 0;
+        for (int i = 0; i < SweepSim.NodeCount; i++)
+        {
+            var nd = SweepSim.Nodes[i]; var pl = SweepSim.Layout[nd.id];
+            var ends = new List<(int, int)>();
+            if (pl.par != "R") ends.Add(cellOf[(pl.par, pl.tile)]);
+            foreach (var p in nd.par) if (p != pl.par && cellOf.ContainsKey((p, 1))) ends.Add(cellOf[(p, 1)]);
+            var me = cellOf[(nd.id, 1)];
+            foreach (var a0 in ends)
+                foreach (var kv in seen)
+                {
+                    var c = kv.Key; if (c == a0 || c == me) continue;
+                    double ax = a0.Item1, ay = a0.Item2, bx = me.Item1, by = me.Item2, L2 = (bx - ax) * (bx - ax) + (by - ay) * (by - ay);
+                    double t = ((c.Item1 - ax) * (bx - ax) + (c.Item2 - ay) * (by - ay)) / L2; if (t <= 0 || t >= 1) continue;
+                    double dx = ax + t * (bx - ax) - c.Item1, dy = ay + t * (by - ay) - c.Item2;
+                    if (dx * dx + dy * dy < 0.3 * 0.3) cross++;                                   // 모양 문제 — 세기만 (✕ 연결 칸의 긴 선이 대부분)
+                }
+        }
+        Console.WriteLine($"   칸 {tiles}개 · 자리 {seen.Count}곳 · ⚠ 선이 남의 칸 위를 지나는 곳 {cross} (실패 아님)");
     }
 
     static void Lotto()
