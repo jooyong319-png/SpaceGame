@@ -70,6 +70,7 @@ namespace SalvageRun.Orbit
             SweepHud.CastReq = false;
             autoMode = PlayerPrefs.GetInt("orbit.auto", 0) == 1;
             Application.targetFrameRate = 60;
+            OrbitMusic.Ensure();                                             // 🎵 배경음 (09-25)
             if (!Application.isEditor)                                                  // 🖥 빌드는 늘 모니터 전체 화면으로 시작 (09-24 사장님 「전체 화면으로」) — Alt+Enter 로 창 모드
             {
                 var d = Screen.currentResolution; Screen.SetResolution(d.width, d.height, FullScreenMode.FullScreenWindow);
@@ -189,6 +190,14 @@ namespace SalvageRun.Orbit
                 if (kb.sKey.wasPressedThisFrame && hud != null) { if (sim.R.over) { if (hud.flow == 2) hud.GoFlow(4); else if (hud.flow == 4) hud.GoFlow(2); } else if (sim.StockOpen) hud.stockOpen = !hud.stockOpen; }   // 📈 판 중 = 주식 창 · 조종실 = 증권 방
             }
             ReadAim();
+            if (hud != null && sim != null)
+            {   // 🎵 지금 화면에 맞는 곡 — 로비 · 방 = 조종실, 출동 = 행성 따라 셋, 연체 = 긴장, 엔딩 = 빚 청산
+                string mw;
+                if (sim.M.won) mw = "end";
+                else if (!sim.R.over) mw = sim.M.endless || sim.Rank >= 6 ? "runC" : sim.Rank >= 3 ? "runB" : "runA";
+                else mw = !hud.lobby && sim.S.overdue && !sim.M.cleanReady ? "due" : "cockpit";
+                OrbitMusic.Want(mw);
+            }
             if (sim.R != null && !sim.R.over) sim.MarketTick(dt);          // 📈 시장은 출동 중에만 흐른다 (09-24 사장님 「끝난 상태에선 움직이지 않게」)
             if (!sim.R.over)
             {

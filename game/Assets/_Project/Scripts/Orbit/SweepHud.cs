@@ -213,7 +213,7 @@ namespace SalvageRun.Orbit
         }
         void SaveSettings()
         {
-            PlayerPrefs.SetFloat("orbit.vol", vol); PlayerPrefs.SetFloat("orbit.sfx", sfxVol);
+            PlayerPrefs.SetFloat("orbit.vol", vol); PlayerPrefs.SetFloat("orbit.sfx", sfxVol); PlayerPrefs.SetFloat("orbit.bgm", OrbitMusic.Vol);
             PlayerPrefs.SetInt("orbit.shake", shakeLv); PlayerPrefs.SetInt("orbit.flash", flashLv); PlayerPrefs.Save();
             ApplySettings();
         }
@@ -231,7 +231,7 @@ namespace SalvageRun.Orbit
         void SettingsWin()
         {
             GUI.color = new Color(0, 0, 0, 0.55f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
-            var w = new Rect(vw / 2 - 250, 110, 500, 330);
+            var w = new Rect(vw / 2 - 250, 100, 500, 370);
             GUI.color = new Color(0.043f, 0.063f, 0.09f, 0.98f); GUI.DrawTexture(w, white); Frame(w, SweepGame.Amber, 2); GUI.color = Color.white;
             GUI.Label(new Rect(w.x + 22, w.y + 14, 200, 30), "<size=20><b><color=#ffdf95>설정</color></b></size>", label);
             if (GUI.Button(new Rect(w.xMax - 104, w.y + 14, 88, 26), "<size=12>닫기 Esc</size>", btn)) settingsOpen = false;
@@ -257,6 +257,7 @@ namespace SalvageRun.Orbit
             }
             Slider("전체 소리", ref vol);
             Slider("효과음", ref sfxVol);
+            Slider("배경음", ref OrbitMusic.Vol);
             shakeLv = Pick("화면 흔들림", shakeLv, new[] { "켬", "줄임", "끔" });
             flashLv = Pick("번쩍임", flashLv, new[] { "켬", "줄임" });
             int fs = Screen.fullScreenMode == FullScreenMode.Windowed ? 1 : 0;
