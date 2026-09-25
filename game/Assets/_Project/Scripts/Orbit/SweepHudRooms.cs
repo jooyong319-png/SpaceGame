@@ -596,7 +596,7 @@ namespace SalvageRun.Orbit
             int show = hoverP >= 0 ? hoverP : S.orbit;
             var so = SweepSim.Orbits[show];
             int zl = sim.ZoneLeft(sim.ZoneOpen);
-            string st = sim.Open(show) ? "<color=#9ff0bf>열림</color>" : zl > 0 ? "<color=#ff9b8f>" + SweepSim.ZoneName[sim.ZoneOpen] + " 칸 " + zl + "개 더</color>" : "<color=#ffdf95>정비고 항로 " + KNum.Fmt(so.permit) + " ›</color>";
+            string st = sim.Open(show) ? "<color=#9ff0bf>열림</color>" : zl > 0 ? "<color=#ff9b8f>" + SweepSim.ZoneName[sim.ZoneOpen] + " 칸 " + zl + "개 더</color>" : "<color=#ffdf95>정비고 항로 " + KNum.Fmt(SweepSim.PermitCost(show)) + " ›</color>";
             if (M.cleanReady) GUI.Label(new Rect(x, p.y + 34, w, 40), "<size=12><color=#bff4ff>청산 출동 — 항로 고정</color></size>", center);
             else
             {

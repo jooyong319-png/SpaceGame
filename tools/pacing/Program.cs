@@ -19,13 +19,15 @@ static class Program
     {
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         if (double.TryParse(Environment.GetEnvironmentVariable("LOANMULT"), out double lm)) SweepSim.LoanMult = lm;
+        if (args.Length > 0 && args[0] == "zones") { for (int z = 0; z < 6; z++) { double sum = 0; var ids = new List<string>(); for (int i = 0; i < SweepSim.NodeCount; i++) if (SweepSim.Zone[i] == z && SweepSim.ZoneNeed(i)) { sum += SweepSim.Nodes[i].first; ids.Add(SweepSim.Nodes[i].id + ":" + SweepSim.Nodes[i].first); } Console.WriteLine($"구역 {z} {SweepSim.ZoneName[z]} 칸 {ids.Count} 합 {sum:0}"); Console.WriteLine("   " + string.Join(" ", ids)); } return; }
+        if (args.Length > 0 && args[0] == "bal") { Balance(args.Length > 1 && int.TryParse(args[1], out int bn) ? bn : 20); return; }   // 📊 밸런스 보고서
         if (args.Length > 0 && args[0] == "test") { Environment.ExitCode = Tests.RunAll(args.Length > 1 && int.TryParse(args[1], out int tn) ? tn : 12); return; }   // 🧪 헤드리스 테스트
         var seeds = args.Length > 0 && int.TryParse(args[0], out int one) ? new[] { one } : new[] { 3, 7, 11 };
         bool verbose = args.Contains("verbose");
         foreach (var s in seeds) Run(s, verbose);
     }
 
-    public class Result { public bool won; public double minutes; public int bankrupt, bill; }
+    public class Result { public bool won; public double minutes; public int bankrupt, bill; public double[] billAt = new double[13], planetAt = new double[9]; public List<double> bankAt = new List<double>(); public double earn50; }
     static bool quiet;
     public static Result RunQuiet(int seed) { quiet = true; try { return Run(seed, false); } finally { quiet = false; } }
 
@@ -39,8 +41,11 @@ static class Program
         var segEarn = new double[9]; var segRuns = new int[9]; var segSplit = new double[9, 3];
         double Min() => (sim.M.playSeconds + shopClock) / 60;
 
+        var rec = new Result(); for (int k = 0; k < 13; k++) rec.billAt[k] = -1; for (int k = 0; k < 9; k++) rec.planetAt[k] = -1;
+        void Mark() { if (rec.billAt[sim.S.bill] < 0) for (int k = 0; k <= sim.S.bill; k++) if (rec.billAt[k] < 0) rec.billAt[k] = Min(); for (int pi = 0; pi < 9; pi++) if (rec.planetAt[pi] < 0 && sim.Open(pi)) rec.planetAt[pi] = Min(); }
         for (int guard = 0; guard < 400 && !sim.M.won; guard++)
         {
+            Mark();
             // ── 정비소
             if (sim.M.careerOpen)
             {
@@ -60,18 +65,27 @@ static class Program
                 if (sim.CanBankrupt && sim.S.overdue)
                 {
                     log.Add($"{Min(),6:0.0}분  {sim.M.company}대  💥 파산 (청구서 {sim.S.bill} · 출동 {sim.S.runs} · 신용 +{sim.S.creditPending})");
+                    rec.bankAt.Add(Min());
                     sim.Bankrupt();
                     continue;
                 }
                 if (sim.S.bill >= SweepSim.Bills.Length && sim.RepayDebt()) log.Add($"{Min(),6:0.0}분  {sim.M.company}대  🏦 빚 갚는 중 · 남은 빚 {sim.S.debt:0}");
                 // 행성 허가증 — 기한이 3판 넘게 남았거나, 사고도 청구서 몫이 남으면 산다
                 for (int pi = 1; pi < SweepSim.Orbits.Length; pi++)
-                    if (sim.OnSale(pi) && !sim.S.overdue && sim.S.cash >= SweepSim.Orbits[pi].permit && (sim.S.billDue >= 3 || sim.S.cash - SweepSim.Orbits[pi].permit >= sim.BillAmount) && sim.BuyPermit(pi))
-                        log.Add($"{Min(),6:0.0}분  {sim.M.company}대  🪐 {SweepSim.Orbits[pi].name} 허가증 ({SweepSim.Orbits[pi].permit:0})");
+                    if (sim.OnSale(pi) && !sim.S.overdue && sim.S.cash >= SweepSim.PermitCost(pi) && (sim.S.billDue >= 2 || sim.S.cash - SweepSim.PermitCost(pi) >= sim.BillAmount) && sim.BuyPermit(pi))
+                        log.Add($"{Min(),6:0.0}분  {sim.M.company}대  🪐 {SweepSim.Orbits[pi].name} 허가증 ({SweepSim.PermitCost(pi):0})");
                 sim.SetOrbit(sim.MaxOrbit);
                 // 사기 — 청구서 몫은 남겨 두고 싼 것부터
                 // 기한이 한 판 남았거나 연체 중이면 모은다 (사람도 그렇게 한다)
                 double reserve = sim.S.overdue || sim.S.billDue <= 1 ? double.MaxValue : Math.Min(sim.BillAmount, sim.S.cash * 0.35);   // 첫 청구서 전엔 아끼지 않는다 (자동 집게부터)
+                // 🪐 사람처럼 — 「지구 구역 3/6 — 다 찍으면 달 항로」 안내를 따라 구역 칸부터 채운다 (09-25 밸런스: 가장 싼 것만 사면 빔 위력만 올리다 달이 22분)
+                for (int loop = 0; loop < 30 && sim.ZoneLeft(sim.ZoneOpen) > 0; loop++)
+                {
+                    int zb = -1; double zc = double.MaxValue;
+                    for (int i = 0; i < SweepSim.NodeCount; i++) if (SweepSim.Zone[i] == sim.ZoneOpen && SweepSim.ZoneNeed(i) && sim.S.lv[i] == 0 && sim.State(i) == NodeSt.Can && sim.TileCost(i) < zc) { zc = sim.TileCost(i); zb = i; }
+                    if (zb < 0 || reserve == double.MaxValue || sim.S.cash - zc < reserve) break;
+                    sim.Buy(zb);
+                }
                 for (int loop = 0; loop < 60; loop++)
                 {
                     int best = -1; double bc = double.MaxValue;
@@ -81,6 +95,7 @@ static class Program
                 }
             }
             shopClock += ShopSec;
+            if (Environment.GetEnvironmentVariable("DBG") == "2" && Min() > 90) Console.WriteLine($"  {Min(),5:0.0}분 돈 {sim.S.cash,12:0} 청구서 {sim.S.bill}({sim.BillAmount:0}) 기한 {sim.S.billDue}{(sim.S.overdue ? " 연체" : "")} 구역 {sim.ZoneOpen} 남음 {sim.ZoneLeft(sim.ZoneOpen)} 해왕성 {sim.State(Array.FindIndex(SweepSim.Nodes, x => x.id == "p_nep"))} 빚 {sim.S.debt:0} 궤도 {SweepSim.Orbits[sim.S.orbit].name}");
 
             // ── 출동
             int seg = Math.Min(8, sim.S.bill + 1);
@@ -115,7 +130,8 @@ static class Program
             if (verbose) Console.WriteLine($"{Min(),6:0.0}분    출동 {sim.S.runs,2}  구간 {seg}  {SweepSim.Orbits[sim.S.orbit].name}  +{R.Earned,8:0}  연쇄 {R.chainBest,3}  압축 {R.packBest,3}  돈 {sim.S.cash,8:0}  청구서 {sim.BillAmount,7:0}{(sim.S.overdue ? " 연체" : " 기한 " + sim.S.billDue)}");
         }
 
-        var res = new Result { won = sim.M.won, minutes = Min(), bankrupt = sim.M.bankrupt, bill = sim.S.bill };
+        Mark();
+        var res = rec; res.won = sim.M.won; res.minutes = Min(); res.bankrupt = sim.M.bankrupt; res.bill = sim.S.bill;
         if (quiet) return res;
         Console.WriteLine($"── 씨앗 {seed} ── 끝 {Min():0}분 · 출동 {sim.M.totalRuns} · 파산 {sim.M.bankrupt} · 최대 연쇄 {sim.M.bestChain} · 최대 압축 {sim.M.bestPack} · 특종 {sim.M.scoops}");
         foreach (var l in log) Console.WriteLine(l);
@@ -128,6 +144,18 @@ static class Program
         }
         Console.WriteLine();
         return res;
+    }
+
+    // 📊 씨앗 n개 — 청구서 k장 첫 도달 · 행성 첫 도달 · 파산 시각 · 끝, 가운데값(과 10% · 90%)
+    static void Balance(int n)
+    {
+        var rs = new List<Result>(); for (int i = 1; i <= n; i++) rs.Add(RunQuiet(i * 7 + 1));
+        string Q(IEnumerable<double> xs) { var a = xs.Where(x => x >= 0).OrderBy(x => x).ToList(); if (a.Count == 0) return "   -"; return $"{a[a.Count / 2],5:0}분 ({a[a.Count / 10],3:0}~{a[a.Count * 9 / 10],3:0}) {(a.Count < n ? a.Count + "/" + n : "")}"; }
+        Console.WriteLine($"📊 밸런스 — 씨앗 {n}   (가운데값 · 10%~90%)");
+        Console.WriteLine("  끝(빚 청산)      " + Q(rs.Select(r => r.won ? r.minutes : -1)));
+        Console.WriteLine($"  파산 수 평균     {rs.Average(r => r.bankrupt):0.0}  · 첫 파산 " + Q(rs.Select(r => r.bankAt.Count > 0 ? r.bankAt[0] : -1)) + " · 둘째 " + Q(rs.Select(r => r.bankAt.Count > 1 ? r.bankAt[1] : -1)));
+        for (int k = 1; k <= 12; k++) Console.WriteLine($"  청구서 {k,2}장 갚음 {Q(rs.Select(r => r.billAt[k]))}   {SweepSim.Bills[k - 1].t} {SweepSim.Bills[k - 1].m:0}");
+        foreach (int pi in SweepSim.OrbitOrder) if (pi > 0) Console.WriteLine($"  🪐 {SweepSim.Orbits[pi].name,-6} {Q(rs.Select(r => r.planetAt[pi]))}   허가 {SweepSim.PermitCost(pi):0}");
     }
 
     static string Pct(double a, double t) => t <= 0 ? "-" : Math.Round(a / t * 100).ToString();
