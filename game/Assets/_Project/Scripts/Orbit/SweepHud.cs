@@ -1600,6 +1600,7 @@ namespace SalvageRun.Orbit
                     int times = shift ? 5 : 1;
                     while (times-- > 0 && sim.State(t.stat) == NodeSt.Can) sim.BuyTile(t.stat);
                     if (n.id == "e_shop") Guide("부품 가게가 생겼다 — 오른쪽 탭 「부품 가게」 ▸");                       // 🧭 새 방 안내 (09-24 사장님 32번)
+                    else if (n.id == "v_volley" && sim.S.lv[t.stat] == 1) Guide("전탄 발사가 생겼다 — 출동 중 게이지가 차면 Space · 계기판 가운데 단추 (무기 둘부터)");
                     else if (n.id == "a_open") Guide("증권이 열렸다 — 조종실 오른쪽 「증권 하러 가기」 ▸ · 출동 중엔 S");
                     nodePulse[t.stat] = 1; OrbitSfx.Play("buy", 0.7f, 0.01f, 0.15f); lastBuyBranch = n.branch; BuyFx(pc, SweepSim.KeyNodes.Contains(n.id) ? new Color(0.71f, 0.61f, 1f) : bcol, n.max == 1, SweepSim.KeyNodes.Contains(n.id) ? "핵심 해금!" : "해금!");
                 }
@@ -1755,6 +1756,7 @@ namespace SalvageRun.Orbit
                 case "w_rail_a": return l > 0 ? "각성!" : "잠김";
                 case "k_claw": case "k_drone": case "k_bh": case "k_eco": case "k_route": return l > 0 ? "켜짐" : "꺼짐";
                 case "w_slot2": return l > 0 ? "발동률 ×1.5" : "없음";
+                case "v_volley": { double[] du = { 0, 0.5, 0.8, 1.1 }, gp = { 0, 0.16, 0.12, 0.09 }, fl = { 0, 0.5, 0.75, 1 }; int q = Mathf.Clamp(l, 0, 3); return q == 0 ? "없음" : du[q].ToString("0.0") + "초 · 초당 " + Mathf.RoundToInt((float)(1 / gp[q])) + "발"; }   // 게이지 배율은 설명에 — 값 줄이 길어 잘렸다
                 case "q_insider": case "q_rage": case "q_front": case "q_debt": case "q_meteor": case "q_sling": case "q_tour": case "q_rock": case "q_gold": case "q_lazy": return l > 0 ? "켜짐" : "꺼짐";
                 case "p_moon": case "p_mars": case "p_jup": case "p_sat": return l > 0 ? "열림 — 항로 다이얼에서 고른다" : "잠김";
                 case "a_auto": return l > 0 ? "내 종목 봉마다 +0.08% 쪽으로" : "없음";

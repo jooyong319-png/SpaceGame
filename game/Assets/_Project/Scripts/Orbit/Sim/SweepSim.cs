@@ -291,14 +291,15 @@ namespace SalvageRun.Orbit.Sim
             N("l_luck", "eco", "행운의 긁개", "즉석 복권 당첨 확률 +25%", new[] { "l_more" }, 1, 2000, 3, 3, 0, 0),
             N("l_free", "eco", "첫 장은 공짜", "판마다 즉석 복권 첫 장이 공짜", new[] { "l_luck" }, 1, 1500, 1, 1, 0, 0),
             N("l_jack", "eco", "잭팟", "즉석 복권 당첨금 ×2", new[] { "l_luck" }, 1, 30000, 1, 1, 0, 0),
+            N("v_volley", "arm", "🚀 전탄 발사", "출동 중 게이지가 차면 Space · 계기판 단추 — 산 무기가 모두 한꺼번에 쏜다. 단계마다 더 오래 · 더 촘촘히 · 게이지가 빨리 찬다 (무기 둘부터)", new[] { "w_hub" }, 1, 4000, 4, 3, 0, 0),   // 09-26 사장님 「전탄 발사도 트리에 · 기본은 안 좋게 · 지금이 최종」
         };
-        public const int NodeCount = 130;
+        public const int NodeCount = 131;
         /// <summary>◆ 핵심 칸 — 돈 + 열쇠 하나 (부품 가게에서 산다). 각성도 여기</summary>
         public static readonly HashSet<string> KeyNodes = new HashSet<string> { "w_laser_a", "w_chain_a", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2", "w_vac_a", "w_mine_a", "w_frz_a", "w_clus_a", "w_mag_a", "w_rail_a", "x_claw_arm", "x_arm_drone", "x_drone_bh", "x_bh_eco", "x_eco_route", "x_route_claw" };
         public static readonly string[] WeaponName = { "집게 빔", "레이저", "번개", "청소기", "기뢰", "냉동 빔", "분열탄", "자석", "레일건" };
         public static readonly string[] WeaponNode = { null, "w_laser", "w_chain", "w_vac", "w_mine", "w_frz", "w_clus", "w_mag", "w_rail" };
         public static readonly string[] PlanetNode = { null, "p_moon", "p_mars", "p_jup", "p_sat", "p_belt", "p_ura", "p_nep", "p_kui" };
-        public static readonly Dictionary<string, string> IconAlias = new Dictionary<string, string> { { "l_more", "e_val" }, { "l_luck", "e_val" }, { "l_free", "e_val" }, { "l_jack", "e_val" }, { "w_laser_e", "w_laser_u" }, { "w_chain_e", "w_chain_u" }, { "w_vac_e", "w_vac_u" }, { "w_mine_e", "w_mine_u" }, { "w_frz_e", "w_frz_u" }, { "w_clus_e", "w_clus_u" }, { "w_mag_e", "w_mag_u" }, { "w_rail_e", "w_rail_u" }, { "m_claw", "c_pow" }, { "m_crit", "c_crit" }, { "m_fuel", "c_fuel" }, { "m_drone", "d_fact" }, { "m_dcount", "d_n" }, { "m_bh", "b_n" }, { "m_val", "e_val" }, { "m_route", "o_wide" }, { "w_laser_x", "w_laser_u" }, { "w_chain_x", "w_chain_u" }, { "w_vac_x", "w_vac_u" }, { "w_mine_x", "w_mine_u" }, { "w_frz_x", "w_frz_u" }, { "w_clus_x", "w_clus_u" }, { "w_mag_x", "w_mag_u" }, { "w_rail_x", "w_rail_u" } };
+        public static readonly Dictionary<string, string> IconAlias = new Dictionary<string, string> { { "v_volley", "w_hub" }, { "l_more", "e_val" }, { "l_luck", "e_val" }, { "l_free", "e_val" }, { "l_jack", "e_val" }, { "w_laser_e", "w_laser_u" }, { "w_chain_e", "w_chain_u" }, { "w_vac_e", "w_vac_u" }, { "w_mine_e", "w_mine_u" }, { "w_frz_e", "w_frz_u" }, { "w_clus_e", "w_clus_u" }, { "w_mag_e", "w_mag_u" }, { "w_rail_e", "w_rail_u" }, { "m_claw", "c_pow" }, { "m_crit", "c_crit" }, { "m_fuel", "c_fuel" }, { "m_drone", "d_fact" }, { "m_dcount", "d_n" }, { "m_bh", "b_n" }, { "m_val", "e_val" }, { "m_route", "o_wide" }, { "w_laser_x", "w_laser_u" }, { "w_chain_x", "w_chain_u" }, { "w_vac_x", "w_vac_u" }, { "w_mine_x", "w_mine_u" }, { "w_frz_x", "w_frz_u" }, { "w_clus_x", "w_clus_u" }, { "w_mag_x", "w_mag_u" }, { "w_rail_x", "w_rail_u" } };
         public static bool Ring4(string id) => id.StartsWith("m_") || (id.StartsWith("w_") && id.EndsWith("_x"));
         public static readonly int[] OrbitOrder = { 0, 1, 2, 5, 3, 4, 6, 7, 8 };          // 가까운 → 먼 (소행성대는 번호 5지만 화성과 목성 사이)
         // ───────────────────────── 정비소 트리 자리 (손으로 격자에 놓았다 · 시안 https://claude.ai/artifact/NLZseBQWXKMGfuAmFDFJcR)
@@ -373,6 +374,7 @@ namespace SalvageRun.Orbit.Sim
             { "w_mag_x", new TreeSpot { par = "w_mag_e", tile = 3, x = 11, y = -8, dx = 0, dy = 0 } },
             { "w_rail_x", new TreeSpot { par = "w_rail_e", tile = 3, x = 11, y = -9, dx = 0, dy = 0 } },
             { "w_hub", new TreeSpot { par = "R", tile = 0, x = 1, y = -1, dx = 0, dy = 0 } },
+            { "v_volley", new TreeSpot { par = "w_hub", tile = 1, x = 2, y = -1, dx = 1, dy = 0 } },
             { "w_laser", new TreeSpot { par = "w_hub", tile = 1, x = 4, y = -2, dx = 0, dy = 0 } },
             { "w_laser_u", new TreeSpot { par = "w_laser", tile = 1, x = 5, y = -2, dx = 1, dy = 0 } },
             { "w_laser_a", new TreeSpot { par = "w_laser_u", tile = 2, x = 7, y = -2, dx = 0, dy = 0 } },
@@ -588,8 +590,10 @@ namespace SalvageRun.Orbit.Sim
         public double ProcChance(int w) => w <= 0 || w >= ProcBase.Length || !WeaponOwned(w) ? 0 : ProcBase[w] * (Lv(ProcUp[w]) >= 1 ? 1.5 : 1) * (Lv("w_slot2") > 0 ? 1.5 : 1) * (Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1);
         void FireW(int w) { wMul = w > 0 && Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1; Fire(w); wMul = 1; }
         public int OwnedWeapons { get { int n = 0; for (int w = 1; w < ProcBase.Length; w++) if (WeaponOwned(w)) n++; return n; } }
-        public bool VolleyOn => OwnedWeapons >= 2;                            // 🚀 전탄 발사 — 무기 둘부터
-        public double VolleyGain => 0.012 + 0.006 * OwnedWeapons * (Lv("w_slot2") > 0 ? 1.3 : 1);
+        public int VolleyLv => Math.Min(3, Lv("v_volley"));
+        static readonly double[] VolleyDur = { 0, 0.5, 0.8, 1.1 }, VolleyGap = { 0, 0.16, 0.12, 0.09 }, VolleyFill = { 0, 0.5, 0.75, 1 };   // 3단계 = 09-26 전의 세기
+        public bool VolleyOn => OwnedWeapons >= 2 && VolleyLv > 0;                            // 🚀 전탄 발사 — 무기 둘부터
+        public double VolleyGain => (0.012 + 0.006 * OwnedWeapons * (Lv("w_slot2") > 0 ? 1.3 : 1)) * VolleyFill[VolleyLv];
         bool PickNear(double cx, double cy, double rad, out double x, out double y)
         {
             x = cx; y = cy; Junk best = null; int seen = 0;
@@ -610,7 +614,7 @@ namespace SalvageRun.Orbit.Sim
         public bool FireVolley()
         {
             if (!VolleyReady) return false;
-            var r = R; r.volley = 0; r.volleyT = 1.1; r.volleyNext = 0.3; Emit(SwEv.Volley, r.ax, r.ay, OwnedWeapons, 0, "전탄 발사!");
+            var r = R; r.volley = 0; r.volleyT = VolleyDur[VolleyLv]; r.volleyNext = 0.3; Emit(SwEv.Volley, r.ax, r.ay, OwnedWeapons, 0, "전탄 발사!");
             return true;
         }
         void VolleyTick(double dt)
@@ -619,7 +623,7 @@ namespace SalvageRun.Orbit.Sim
             if (r.volleyT <= 0) return;
             r.volleyT -= dt; r.volleyNext -= dt;
             if (r.volleyNext > 0) return;
-            r.volleyNext = 0.09;
+            r.volleyNext = VolleyGap[VolleyLv];
             for (int w = 0; w < ProcBase.Length; w++)
             {
                 if (w > 0 && !WeaponOwned(w)) continue;
