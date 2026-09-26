@@ -568,6 +568,35 @@ namespace SalvageRun.Orbit
         // 가운데 창 = 지금 내 궤도 (사면 바로 창밖에 보인다) · 계기판마다 할 일 하나 · 강화는 정비고(네 칸 · 36칸)
 
         public bool bayOpen; int bayTab;
+        // 한글은 유니티가 글자 가운데서 줄을 끊는다 (09-27 「머물 / 다」) — 띄어쓰기 자리에서만 끊도록 줄바꿈을 미리 넣는다. 꾸밈 태그 없는 글만
+        static string Ro(string w)   // 받침이 있으면 「으로」 (ㄹ 받침은 「로」)
+        {
+            if (string.IsNullOrEmpty(w)) return "로";
+            char c = w[w.Length - 1]; if (c < 0xAC00 || c > 0xD7A3) return "로";
+            int jong = (c - 0xAC00) % 28; return jong == 0 || jong == 8 ? "로" : "으로";
+        }
+        GUIStyle kwrapSt;
+        string KWrap(string s, int size, float w)
+        {
+            if (string.IsNullOrEmpty(s) || s.IndexOf('<') >= 0 || w < 20) return s;
+            if (kwrapSt == null) kwrapSt = new GUIStyle(label) { wordWrap = false, richText = false };
+            kwrapSt.fontSize = size;
+            var sb = new System.Text.StringBuilder();
+            foreach (var para in s.Split('\n'))
+            {
+                if (sb.Length > 0) sb.Append('\n');
+                string line = "";
+                foreach (var word in para.Split(' '))
+                {
+                    string t = line.Length == 0 ? word : line + " " + word;
+                    if (line.Length > 0 && kwrapSt.CalcSize(new GUIContent(t)).x > w) { sb.Append(line).Append('\n'); line = word; }
+                    else line = t;
+                }
+                sb.Append(line);
+            }
+            return sb.ToString();
+        }
+
         public bool CockpitView => (flow >= 2 && flow <= 5) && sim != null && sim.R.over && !sim.M.careerOpen && !sim.M.won;   // 조종실 — 카메라가 물러나 지구가 창 가운데 (09-23 부활)
         public int flow;                         // 0 출동 중 · 1 결산 · 2 조종실 · 3 정비고(왼쪽 끝) · 5 부품 가게(정비고 오른쪽) · 4 증권(오른쪽 방)
         static readonly Color[] BranchCol = { SweepGame.Amber, SweepGame.Cyan, SweepGame.Violet, SweepGame.Green };
@@ -1752,7 +1781,8 @@ namespace SalvageRun.Orbit
             // 설명 길이에 맞춰 키가 자란다 (09-24 글자 잘림 점검 — 긴 설명이 한 줄 칸에서 잘렸다)
             if (tipWrap == null) tipWrap = new GUIStyle(center) { wordWrap = true, fontSize = 13 };
             const float TipW = 340;
-            float dh = vis == 1 ? 22 : Mathf.Max(22, tipWrap.CalcHeight(new GUIContent(sim.NodeDesc(t.stat)), TipW - 24));
+            string tipDesc = KWrap(sim.NodeDesc(t.stat), 13, TipW - 30);
+            float dh = vis == 1 ? 22 : Mathf.Max(22, tipWrap.CalcHeight(new GUIContent(tipDesc), TipW - 24));
             bool keyNote = vis != 3 && vis != 1 && SweepSim.KeyNodes.Contains(n.id) && sim.State(t.stat) != NodeSt.Locked && sim.State(t.stat) != NodeSt.Hidden;
             var r = new Rect(at.x + tile / 2 + 14, at.y - 70, TipW, vis == 1 ? 96 : 138 + dh + (keyNote ? 18 : 0));
             if (r.xMax > vw - 8) r.x = at.x - tile / 2 - 14 - r.width;
@@ -1770,7 +1800,7 @@ namespace SalvageRun.Orbit
             }
             string nm = sim.NodeName(t.stat) + (SweepSim.Tiles(t.stat) > 1 ? " " + Roman[t.j] : "");
             GUI.Label(new Rect(r.x, r.y + 4, r.width, 28), "<color=#d9b98a>" + nm + "</color>", title);
-            GUI.Label(new Rect(r.x + 12, r.y + 42, r.width - 24, dh), sim.NodeDesc(t.stat), tipWrap);
+            GUI.Label(new Rect(r.x + 12, r.y + 42, r.width - 24, dh), tipDesc, tipWrap);
             float oy = dh - 22;                                          // 설명이 길어진 만큼 아래 줄을 내린다
             GUI.color = new Color(0.3f, 0.28f, 0.24f); GUI.DrawTexture(new Rect(r.x + 24, r.y + 70 + oy, r.width - 48, 1), white); GUI.DrawTexture(new Rect(r.x + 24, r.y + 98 + oy, r.width - 48, 1), white); GUI.color = Color.white;
             int from = t.j == 1 ? 0 : SweepSim.TileLv(t.stat, t.j - 1), to = SweepSim.TileLv(t.stat, t.j);

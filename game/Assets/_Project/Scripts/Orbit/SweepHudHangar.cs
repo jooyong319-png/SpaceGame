@@ -60,7 +60,7 @@ namespace SalvageRun.Orbit
             GUI.enabled = true;
             int goShip = sim.ShipOwned(hangarPick) ? hangarPick : sim.Ship;          // 안 산 배를 보고 있으면 지금 타는 배로 나간다
             var go = new Rect(w.xMax - 330, w.yMax - 64, 330, 52);
-            if (GUI.Button(go, "(" + M.company + "대) " + SweepSim.Ships[goShip].name + "로 출발 ▸", bigBtn))
+            if (GUI.Button(go, "(" + M.company + "대) " + SweepSim.Ships[goShip].name + Ro(SweepSim.Ships[goShip].name) + " 출발 ▸", bigBtn))
             {
                 sim.SelectShip(goShip); sim.CloseCareer(); showResult = false; flow = 2; hangarPick = -1; hangarTab = 0; game.Save();   // 09-26 사장님 「조종실이 첫 화면으로」
             }
@@ -101,7 +101,7 @@ namespace SalvageRun.Orbit
             GUI.Label(new Rect(I.x, I.y, I.width, 30), "<size=22><b><color=#" + ah + ">" + sd.name + "</color></b></size>", label);
             GUI.Label(new Rect(I.x, I.y + 34, I.width, 20), "<size=12><color=#e7ecf8>기본 무기 · " + sd.weapon + "</color>   <color=#8d99b8>" + sd.trait + "</color></size>", label);
             var dsty = new GUIStyle(label) { wordWrap = true };
-            GUI.Label(new Rect(I.x, I.y + 62, I.width, 64), "<size=12><color=#c4cce2>" + sd.desc + "</color></size>", dsty);
+            GUI.Label(new Rect(I.x, I.y + 62, I.width, 64), "<size=12><color=#c4cce2>" + KWrap(sd.desc, 12, I.width - 6) + "</color></size>", dsty);
             string[] lab = { "한 방", "넓이", "연쇄" };
             for (int k = 0; k < 3; k++)
             {
@@ -116,10 +116,10 @@ namespace SalvageRun.Orbit
             {
                 bool can = M.credit >= sd.price;
                 GUI.enabled = can;
-                if (GUI.Button(bb, can ? "<size=15>신용 " + sd.price + "로 들여오기</size>" : "<size=13><color=#5a6475>신용 " + sd.price + " 필요 (지금 " + M.credit.ToString("0") + ")</color></size>", btnC) && sim.BuyShip(hangarPick)) { OrbitSfx.Play("buy", 1f); OrbitSfx.Play("unit", 0.8f); }
+                if (GUI.Button(bb, can ? "<size=15>들여오기 · 신용 " + sd.price + "</size>" : "<size=13><color=#5a6475>신용 " + sd.price + " 필요 (지금 " + M.credit.ToString("0") + ")</color></size>", btnC) && sim.BuyShip(hangarPick)) { OrbitSfx.Play("buy", 1f); OrbitSfx.Play("unit", 0.8f); }
                 GUI.enabled = true;
             }
-            GUI.Label(new Rect(I.x, I.y + 256, I.width, 80), "<size=10><color=#5a6475>트리의 빔 칸 셋은 배의 무기에 맞게 바뀐다 (산탄 위력 · 작살 관통 …).\n무기고의 보조 무기는 어느 배든 그대로.</color></size>", dsty);
+            GUI.Label(new Rect(I.x, I.y + 256, I.width, 80), "<size=10><color=#5a6475>트리의 빔 칸 셋은 배의 무기에 맞게 바뀐다.\n무기고의 보조 무기는 어느 배든 그대로.</color></size>", dsty);
         }
 
         void HangarUps(Rect body)
@@ -137,7 +137,7 @@ namespace SalvageRun.Orbit
                 var t = UpTex(i); if (t != null) GUI.DrawTexture(new Rect(r.x + 6, r.y + 8, 52, 52), t);
                 GUI.Label(new Rect(r.x + 64, r.y + 4, r.width - 68, 20), "<size=13><b>" + u.name + "</b></size>", label);
                 var ws = new GUIStyle(label) { wordWrap = true };
-                GUI.Label(new Rect(r.x + 64, r.y + 22, r.width - 68, 30), "<size=10><color=#8d99b8>" + u.desc + "</color></size>", ws);
+                GUI.Label(new Rect(r.x + 64, r.y + 22, r.width - 68, 30), "<size=10><color=#8d99b8>" + KWrap(u.desc, 10, r.width - 74) + "</color></size>", ws);
                 float pw = Mathf.Min(10, (r.width - 72) / u.max - 2);
                 for (int k = 0; k < u.max; k++) { GUI.color = k < lv ? new Color(1f, 0.81f, 0.29f) : new Color(0.14f, 0.17f, 0.27f); GUI.DrawTexture(new Rect(r.x + 64 + k * (pw + 2), r.y + 56, pw, 6), white); }
                 GUI.color = Color.white;

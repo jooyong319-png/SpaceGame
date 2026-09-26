@@ -518,7 +518,7 @@ namespace SalvageRun.Orbit.Sim
             new Upg { id = "dmg",   name = "화력",      desc = "모든 무기 피해 +8%",            max = 8, cost = 2 },
             new Upg { id = "fuel",  name = "연료",      desc = "연료 용량 +5%",                 max = 6, cost = 2 },
             new Upg { id = "rad",   name = "범위",      desc = "주 무기 범위 +4%",              max = 6, cost = 2 },
-            new Upg { id = "cash",  name = "시작 돈",   desc = "새 회사가 돈 60을 들고 시작",   max = 3, cost = 3 },
+            new Upg { id = "cash",  name = "시작 돈",   desc = "새 회사 시작 돈 +60",   max = 3, cost = 3 },
             new Upg { id = "luck",  name = "행운",      desc = "치명타 확률 +3%",               max = 6, cost = 3 },
             new Upg { id = "val",   name = "시세",      desc = "모든 값 +6%",                   max = 8, cost = 3 },
             new Upg { id = "due",   name = "청구 기한", desc = "첫 청구서 기한 +1판",           max = 2, cost = 6 },
@@ -526,7 +526,7 @@ namespace SalvageRun.Orbit.Sim
             new Upg { id = "shop",  name = "가게 할인", desc = "가게 값 −5%",                   max = 3, cost = 3 },
             new Upg { id = "gate",  name = "관문 파쇄", desc = "관문에 주는 피해 +10%",         max = 6, cost = 3 },
             new Upg { id = "chain", name = "연쇄 반경", desc = "폭발 · 연쇄 반경 +6%",          max = 6, cost = 3 },
-            new Upg { id = "key",   name = "예비 열쇠", desc = "새 회사가 열쇠 1개 들고 시작",  max = 2, cost = 8 },
+            new Upg { id = "key",   name = "예비 열쇠", desc = "새 회사 시작 열쇠 +1",  max = 2, cost = 8 },
         };
         public const int UpCount = 12;
         public const double UpGrow = 1.5, CreditK = 2;                          // 단계마다 값 ×1.5 · 파산 신용 = 쌓인 신용 × 2 (봇으로 맞춤)
