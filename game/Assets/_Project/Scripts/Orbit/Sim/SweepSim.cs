@@ -901,7 +901,7 @@ namespace SalvageRun.Orbit.Sim
                 if (!key && Rnd() < 0.18) { S.shop.Add(Parts.Key); key = true; continue; }
                 for (int t = 0; t < 30; t++)
                 {
-                    double u = Rnd(); int rar = u < 0.68 ? 0 : u < 0.94 || S.bill < Parts.LegendBill ? 1 : 2;   // 전설은 할부 2회부터
+                    double u = Rnd(); int rar = u < 0.62 ? 0 : u < 0.87 ? 1 : u < 0.96 ? 2 : 3;   // 일반 · 희귀 · 영웅 · 전설 — 처음부터 다 나온다, 막는 건 값 (09-26 사장님 「진열에는 나와도 됨」)
                     int id = rng.Next(Parts.Defs.Length);
                     if (Parts.Defs[id].rar != rar || used.Contains(id) || S.shop.Contains(id)) continue;
                     S.shop.Add(id); break;

@@ -11,7 +11,7 @@ namespace SalvageRun.Orbit
     public partial class SweepHud
     {
         public bool partsOpen;
-        static readonly Color[] RarCol = { new Color(0.72f, 0.76f, 0.82f), new Color(0.44f, 0.83f, 0.91f), new Color(1f, 0.8f, 0.35f) };
+        static readonly Color[] RarCol = { new Color(0.72f, 0.76f, 0.82f), new Color(0.44f, 0.83f, 0.91f), new Color(0.8f, 0.45f, 1f), new Color(1f, 0.8f, 0.35f) };   // 일반 · 희귀 · 영웅(진보라 — 열쇠의 옅은 보라와 다르게) · 전설
         static readonly Color KeyCol = new Color(0.71f, 0.61f, 1f);
         struct FlyCard { public Rect a, b; public float t0; public Color c; public string txt; public int id, slot; }
         // 🎨 부품 칸 색 · 모양 — 카드 띠 · 청소선 점 · 목록이 같은 색 (09-25)
@@ -19,7 +19,7 @@ namespace SalvageRun.Orbit
         static readonly string[] SlotMark = { "▼", "▲", "■", "◆", "●" };
         static readonly Vector2[] SlotAt = { new Vector2(0.5f, 0.92f), new Vector2(0.5f, 0.07f), new Vector2(0.26f, 0.81f), new Vector2(0.5f, 0.33f), new Vector2(0.5f, 0.66f) };   // hull.png 위 자리 — 꼬리 · 코 · 날개 · 창 · 해치
         static readonly Vector2[] SlotTag = { new Vector2(0.66f, 0.95f), new Vector2(0.66f, 0.05f), new Vector2(0.1f, 0.94f), new Vector2(0.72f, 0.33f), new Vector2(0.71f, 0.62f) };
-        static readonly string[] RarStar = { "◇", "◆", "◆◆" };
+        static readonly string[] RarStar = { "◇", "◆", "◆◆", "◆◆◆" };
         static Texture2D shipTex; int shopHot = -1; readonly float[] slotFlash = { -9, -9, -9, -9, -9 }; Rect consRect;
         public int testShopHot = -1;                                         // 에디터 시험용 — 깜빡일 칸 강제로
         readonly List<FlyCard> flyCards = new List<FlyCard>();
@@ -134,7 +134,7 @@ namespace SalvageRun.Orbit
                 if (ov || k == testShopTip) { tipK = k; tipR = r; }
                 GUI.color = new Color(rc.r * 0.07f + 0.02f, rc.g * 0.07f + 0.025f, rc.b * 0.08f + 0.035f, 1); GUI.DrawTexture(r, white);
                 Frame(r, sale ? new Color(1f, 0.36f, 0.3f) : rc, ov ? 3 : 2);
-                if (key || !cn && Parts.Defs[id].rar == 2) { GUI.color = new Color(rc.r, rc.g, rc.b, 0.06f + 0.05f * Mathf.Sin(Time.unscaledTime * 4)); GUI.DrawTexture(new Rect(r.x + 3, r.y + 3, r.width - 6, r.height - 6), white); }
+                if (key || !cn && Parts.Defs[id].rar >= 2) { GUI.color = new Color(rc.r, rc.g, rc.b, 0.06f + 0.05f * Mathf.Sin(Time.unscaledTime * 4)); GUI.DrawTexture(new Rect(r.x + 3, r.y + 3, r.width - 6, r.height - 6), white); }
                 // 어디로 가나 — 칸 색 띠
                 Color dc = slot >= 0 ? SlotCol[slot] : rc;
                 string dt = key ? "열쇠 +1 · 핵심 칸 하나" : cn ? "다음 출동 한 번용" : SlotMark[slot] + " " + Parts.SlotName[slot] + "에 끼움";

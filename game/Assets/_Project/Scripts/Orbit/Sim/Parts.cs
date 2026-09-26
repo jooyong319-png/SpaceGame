@@ -11,10 +11,9 @@ namespace SalvageRun.Orbit.Sim
     {
         public const int Key = 100;                                          // 가게에 올라오는 열쇠
         public static readonly string[] SlotName = { "엔진", "사출기", "선체", "레이더", "부적" };
-        public static readonly string[] RarName = { "일반", "희귀", "전설" };
-        public static readonly double[] RarPrice = { 1.5, 6, 25 };  // 판 벌이 배수 — 전설은 1억 바닥까지 (SweepSim.PartPrice · 09-26 사장님 「전설은 정말 나중에야」)
-        public static readonly double[] RarFloor = { 0, 1000000, 100000000 };   // 등급 바닥 — 희귀 100만 · 전설 1억 (09-26 사장님 「등급별로 정말 비싸지게」)
-        public const int LegendBill = 5;                          // 청구서 5장을 갚기 전엔 전설이 진열에 안 나온다 (S.bill >= 5 = 할부 2회부터)
+        public static readonly string[] RarName = { "일반", "희귀", "영웅", "전설" };   // 09-26 사장님 「영웅 등급은 없나?」 — 희귀와 전설 사이
+        public static readonly double[] RarPrice = { 1.5, 6, 12, 25 };  // 판 벌이 배수 — 전설은 1억 바닥까지 (SweepSim.PartPrice · 09-26 사장님 「전설은 정말 나중에야」)
+        public static readonly double[] RarFloor = { 0, 1000000, 10000000, 100000000 };   // 등급 바닥 — 희귀 100만 · 영웅 1천만 · 전설 1억 (09-26 사장님 「등급별로 정말 비싸지게」)
         static PartDef P(int slot, int rar, string name, string desc, params object[] kv)
         {
             var k = new string[kv.Length / 2]; var v = new double[kv.Length / 2];
@@ -26,11 +25,11 @@ namespace SalvageRun.Orbit.Sim
             P(0, 1, "과급 엔진", "화력 +10% · 연료 −3초", "dmg", 0.10, "fuel", -3),
             P(0, 0, "장거리 탱크", "연료 +5초", "fuel", 5),
             P(0, 1, "플라즈마 점화기", "연사 +12%", "spd", 0.12),
-            P(0, 2, "핵융합 엔진", "화력 +20% · 연료 +4초", "dmg", 0.20, "fuel", 4),
+            P(0, 3, "핵융합 엔진", "화력 +20% · 연료 +4초", "dmg", 0.20, "fuel", 4),
             P(1, 1, "쌍발 사출구", "35% 확률로 한 발 더", "dbl", 0.35),
             P(1, 0, "대구경 사출구", "크기 +20% (집게 원 · 레이저 굵기 · 번개 거리)", "rad", 0.20),
             P(1, 0, "고속 사출구", "연사 +8%", "spd", 0.08),
-            P(1, 2, "삼연발 포탑", "60% 확률로 한 발 더 · 화력 +10%", "dbl", 0.60, "dmg", 0.10),
+            P(1, 3, "삼연발 포탑", "60% 확률로 한 발 더 · 화력 +10%", "dbl", 0.60, "dmg", 0.10),
             P(1, 1, "치명 조준경", "치명 +8%", "crit", 0.08),
             P(2, 0, "보강 선체", "연료 +3초", "fuel", 3),
             P(2, 1, "흡착 선체", "드론 몫 +25%", "drone", 0.25),
@@ -39,12 +38,18 @@ namespace SalvageRun.Orbit.Sim
             P(3, 0, "금고 레이더", "금고 위성 +50%", "vault", 0.5),
             P(3, 0, "부착물 레이더", "부착물 +40%", "att", 0.4),
             P(3, 1, "고철 감정기", "모든 값 +12%", "val", 0.12),
-            P(3, 2, "심우주 레이더", "모든 값 +20% · 금고 위성 +50%", "val", 0.20, "vault", 0.5),
+            P(3, 3, "심우주 레이더", "모든 값 +20% · 금고 위성 +50%", "val", 0.20, "vault", 0.5),
             P(4, 1, "케슬러의 금니", "빚 상환으로 떼는 몫 −10%p", "cut", 0.10),
             P(4, 0, "행운 동전", "치명 +4% · 연쇄 보너스 상한 +30", "crit", 0.04, "combo", 30),
             P(4, 1, "증권사 배지", "주식 수수료 0 · 배당 +0.05%", "fee0", 1, "div", 0.0005),
             P(4, 1, "연쇄 부적", "연쇄 보너스 상한 +100 (최대 ×2.5)", "combo", 100),
-            P(4, 2, "황금 나사", "모든 값 +15% · 화력 +10%", "val", 0.15, "dmg", 0.10),
+            P(4, 3, "황금 나사", "모든 값 +15% · 화력 +10%", "val", 0.15, "dmg", 0.10),
+            // 👑 영웅 (09-26) — 효과 둘, 전설 바로 아래. 새 번호는 맨 뒤에만
+            P(0, 2, "이온 추진기", "화력 +15% · 연사 +10%", "dmg", 0.15, "spd", 0.10),
+            P(1, 2, "산탄 사출구", "45% 확률로 한 발 더 · 크기 +15%", "dbl", 0.45, "rad", 0.15),
+            P(2, 2, "공명 선체", "드론 몫 +40% · 블랙홀 확률 +0.8%", "drone", 0.40, "hole", 0.008),
+            P(3, 2, "금맥 탐지기", "모든 값 +15% · 부착물 +50%", "val", 0.15, "att", 0.5),
+            P(4, 2, "연쇄 목걸이", "연쇄 보너스 상한 +150 · 치명 +6%", "combo", 150, "crit", 0.06),
         };
         // 📖 효과마다 판에서 무슨 뜻인지 (09-26 사장님 「가게 아이템 설명이 더 자세했으면」) — 카드에 올리면 옆 창에
         public static readonly System.Collections.Generic.Dictionary<string, string> Help = new System.Collections.Generic.Dictionary<string, string>
