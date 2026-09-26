@@ -410,6 +410,7 @@ namespace SalvageRun.Orbit
                     case SwEv.Strike:
                     {
                         curW = 0;
+                        if (sim.Ship == 1) { ScatterFx(at, (float)e.v, e.k == 1); break; }   // 🚀 산탄선 (09-26)
                         bool spot = e.v <= SweepSim.PickR + 0.1;      // 아직 좁은 빔 — 한 점
                         Beam(at, e.k == 1);
                         if (e.k == 1) RingFx(at, Amber2, spot ? 0.26f : 0.22f, (float)e.v * 2 / PxPerUnit);
@@ -714,6 +715,22 @@ namespace SalvageRun.Orbit
             var halo = Add(pixel, at, 0.05f, new Color(1f, 0.76f, 0.3f, hit ? 0.55f : 0.22f), 8, 0.3f);
             halo.a = muzzle; halo.b = at; halo.size = hit ? 0.3f : 0.14f;
             if (hit) { Add(glow, at, 0.5f, new Color(1f, 0.87f, 0.58f, 0.6f), 7, 0.18f); Zap(muzzle, at, new Color(1f, 0.8f, 0.4f), 0.14f, 0.16f, 9); Star(at, new Color(1f, 0.85f, 0.5f), 0.45f, 6, 0.14f); }   // ⚡ 빔 둘레 번개 · ✦ 맞는 자리 빛살
+        }
+
+        // 🚀 산탄선 — 포구에서 알 여러 개가 부채꼴로 퍼져 조준 원 안에 흩어진다 (09-26)
+        void ScatterFx(Vector3 at, float radiusPx, bool hit)
+        {
+            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);
+            float rw = radiusPx / PxPerUnit; var col = new Color(1f, 0.8f, 0.25f);
+            for (int i = 0; i < 7; i++)
+            {
+                var p = at + (Vector3)(Random.insideUnitCircle * rw);
+                var tr = Add(pixel, p, 0.05f, new Color(1f, 0.92f, 0.6f, hit ? 0.95f : 0.5f), 8, 0.12f); tr.a = muzzle; tr.b = p; tr.size = 0.05f;
+                if (hit) Add(glow, p, 0.22f, new Color(col.r, col.g, col.b, 0.55f), 7, 0.14f);
+            }
+            RingFx(at, col, 0.2f, rw * 2);
+            if (hit) { OrbitSfx.Play("blast", 0.35f, 0.08f); shake = Mathf.Max(shake, 0.05f); Burst(at, col, 6, 2.6f); }
+            else OrbitSfx.Play("tick", 0.4f, 0.05f);
         }
 
         void CollectorShip()
@@ -1106,6 +1123,7 @@ namespace SalvageRun.Orbit
             sr.transform.localScale = new Vector3(w * TK / square.bounds.size.x, h * TK / square.bounds.size.y, 1);
         }
         static Sprite hullSpr, turClawSpr, dronePx;
+        static int turClawShip = -1;                                             // 🚀 포탑 그림을 불러온 배 (09-26)
         static readonly Sprite[][] planetFrames = new Sprite[9][]; static readonly bool[] planetTried = new bool[9];
         static Sprite[] PlanetFrames(int pi)
         {
@@ -1338,7 +1356,7 @@ namespace SalvageRun.Orbit
                 else switch (w)
                 {
                     case 0: { var b = B(0); float a = A(0);
-                        if (turClawSpr == null) turClawSpr = Resources.Load<Sprite>("ship/turret_claw");
+                        if (turClawSpr == null || turClawShip != sim.Ship) { turClawShip = sim.Ship; turClawSpr = Resources.Load<Sprite>(sim.Ship == 1 ? "ship/turret_scatter" : "ship/turret_claw") ?? Resources.Load<Sprite>("ship/turret_claw"); }   // 🚀 배마다 포탑
                         if (turClawSpr != null) { TSprite(turClawSpr, TAlong(b, a, -recoil[0] * 6), 44, a - Mathf.PI / 2, 2); break; }   // 🔫 픽셀랩 포대 — 위를 보는 그림이라 -90°
                         TDisc(b, 28, new Color(0.106f, 0.133f, 0.176f), 0); TBarrel(b, a, 52, 16, c, recoil[0]); break; }
                     case 1: for (int i = 0; i < n; i++) { var b = B(i); TBox(TW((float)M[i * 3], 666), 56, 32, 0, edge, -2); TBox(TW((float)M[i * 3], 666), 52, 28, 0, plateC, -1); TDisc(b, 16, new Color(0.106f, 0.133f, 0.176f), 0);

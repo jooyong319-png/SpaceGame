@@ -53,7 +53,7 @@ static class Program
             if (sim.M.careerOpen)
             {
                 bool bought = true;
-                while (bought) { bought = false; int best = -1, bc = 999; for (int i = 0; i < SweepSim.CareerCount; i++) { int c = sim.CareerCost(i); if (c > 0 && c <= sim.M.credit && c < bc) { bc = c; best = i; } } if (best >= 0) { sim.BuyCareer(best); bought = true; } }
+                while (bought) { bought = false; int best = -1, bc = 999; for (int i = 0; i < SweepSim.UpCount; i++) { int c = sim.UpCost(i); if (c > 0 && c <= sim.M.credit && c < bc) { bc = c; best = i; } } if (best >= 0) { sim.BuyUp(best); bought = true; } }   // 🛠 격납고 — 싼 영구 강화부터
                 sim.CloseCareer();
             }
             if (!sim.M.cleanReady)

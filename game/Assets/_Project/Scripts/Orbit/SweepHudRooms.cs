@@ -772,7 +772,7 @@ namespace SalvageRun.Orbit
             { GUI.color = new Color(0.4f, 0.3f, 0.12f); GUI.DrawTexture(new Rect(sp.x, sp.y, 6, 6), texDisc); GUI.color = new Color(1, 1, 1, 0.35f); GUI.DrawTexture(new Rect(sp.x + 1, sp.y + 1, 2, 2), texDisc); }
             GUI.color = Color.white;
             GUI.Label(new Rect(r.x + 14, r.y + 6, r.width - 60, 22), "<size=13><b><color=#3b2a08>궤도 청소부 " + M.company + "대</color></b></size>", label);
-            GUI.Label(new Rect(r.x + 14, r.y + 26, r.width - 60, 20), "<size=10><color=#4a360c>쌓인 신용 +" + S.creditPending + "</color></size>", label);
+            GUI.Label(new Rect(r.x + 14, r.y + 26, r.width - 60, 20), "<size=10><color=#4a360c>쌓인 신용 +" + S.creditPending * SweepSim.CreditK + "</color></size>", label);
             GUI.color = Color.white; return;                                   // 파산은 출동 단추 왼쪽 위 유리 덮개 단추로 옮겼다 (09-24)
 #pragma warning disable CS0162
             var cv = new Rect(r.xMax - 48, r.y + 7, 36, r.height - 14);

@@ -147,7 +147,7 @@ namespace SalvageRun.Orbit
             }
             if (!sim.R.over) { Storm(); WindowEdge(); Pops(); Notices(); RunHud(); VolleyGauge(); MyStockChips(); if (launchT > 0) Launch(); }
             if (sim.M.won) Ending();
-            else if (sim.M.careerOpen) Career();
+            else if (sim.M.careerOpen) Hangar();
             else if (sim.R.over)
             {
                 if (flow == 0) flow = 2;                                // 켜자마자 · 파산 뒤 = 조종실
@@ -699,8 +699,8 @@ namespace SalvageRun.Orbit
             if (stuck)
             {
                 Panel2(RB, "<color=#ff9b8f>대출 한도로도 못 갚는다</color>");
-                GUI.Label(new Rect(RB.x + 16, RB.y + 30, RB.width - 32, 20), "<size=13>파산하면 빚이 사라지고 <color=#ffdf95>신용 +" + S.creditPending + "</color> · <color=#d8ccff>열쇠 +" + sim.BankruptKeys + "</color></size>", label);
-                GUI.Label(new Rect(RB.x + 16, RB.y + 50, RB.width - 32, 20), "<size=13>신용으로 경력을 사면 다음 회사는 처음부터 더 세다</size>", label);
+                GUI.Label(new Rect(RB.x + 16, RB.y + 30, RB.width - 32, 20), "<size=13>파산하면 빚이 사라지고 <color=#ffdf95>신용 +" + S.creditPending * SweepSim.CreditK + "</color></size>", label);
+                GUI.Label(new Rect(RB.x + 16, RB.y + 50, RB.width - 32, 20), "<size=13>격납고에서 신용으로 새 배 · 영구 강화를 산다</size>", label);
                 var bb = new Rect(RB.x + 16, RB.y + 76, RB.width - 32, 34);
                 if (GUI.Button(bb, bankruptArmed ? "<color=#ffb3a8>정말? 한 번 더 누르면 파산</color>" : "<color=#ffb3a8>파산하고 새 회사로 ▸</color>", btn))
                 {
@@ -1853,30 +1853,7 @@ namespace SalvageRun.Orbit
             return l.ToString();
         }
 
-        // ───────────────────────────────── 파산 뒤 — 경력 (신용으로 산다)
-
-        void Career()
-        {
-            var M = sim.M;
-            GUI.DrawTexture(new Rect(0, 0, vw, RefH), texDim);
-            float x = ox + 180, w = 600;
-            title.fontSize = 30;
-            GUI.Label(new Rect(x, 50, w, 40), "<color=#ff8a7a>파산</color>", title);
-            GUI.Label(new Rect(x, 94, w, 22), "<color=#5a6475>주식회사 궤도 청소부 (" + (M.company - 1) + "대)</color>  →  <color=#ffdf95>주식회사 궤도 청소부 (" + M.company + "대)</color>", center);
-            GUI.Label(new Rect(x, 124, w, 20), "잃은 것: 돈 · 트리 · 청구서 · 면허     남은 것: 신용 · 경력 · 읽은 기사 · 기록", center);
-            GUI.Label(new Rect(x, 158, w, 26), "신용 <color=#ffdf95>" + M.credit + "</color> — 경력은 파산할 때만 산다", label);
-            for (int i = 0; i < SweepSim.CareerCount; i++)
-            {
-                var c = SweepSim.Careers[i]; int lv = M.career[i], cc = sim.CareerCost(i);
-                bool can = cc > 0 && M.credit >= cc;
-                var rr = new Rect(x + (i % 2) * 304, 192 + (i / 2) * 64, 296, 56);
-                if (GUI.Button(rr, GUIContent.none, can ? btn : btnOff) && can && sim.BuyCareer(i)) OrbitSfx.Play("buy", 0.8f);
-                GUI.Label(new Rect(rr.x + 10, rr.y + 6, rr.width - 20, 20), c.name + "  " + lv + " / " + c.cost.Length, can ? label : dim);
-                GUI.Label(new Rect(rr.x + 10, rr.y + 6, rr.width - 20, 20), cc < 0 ? "<color=#6fcf97>끝</color>" : "신용 " + cc, cost);
-                GUI.Label(new Rect(rr.x + 10, rr.y + 30, rr.width - 20, 18), c.desc, small);
-            }
-            if (GUI.Button(new Rect(x + 150, 400, 300, 56), "(" + M.company + "대) 출발 ▸", bigBtn)) { sim.CloseCareer(); showResult = false; flow = 2; game.Save(); }   // 09-26 사장님 「조종실이 첫 화면으로」
-        }
+        // 파산 뒤 화면은 격납고 (SweepHudHangar.cs · 09-26) — 경력 6칸은 영구 강화로 바꿨다
 
         // ───────────────────────────────── 궤도일보 (§11)
 

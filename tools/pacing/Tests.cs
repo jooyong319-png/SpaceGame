@@ -104,7 +104,7 @@ static class Tests
             for (int cyc = 0; cyc < 80 && !sim.M.won; cyc++)
             {
                 string at = $"씨앗 {seed} 걸음 {cyc}";
-                if (sim.M.careerOpen) { for (int i = 0; i < SweepSim.CareerCount; i++) if (rng.NextDouble() < .5) sim.BuyCareer(i); sim.CloseCareer(); }
+                if (sim.M.careerOpen) { for (int i = 0; i < SweepSim.UpCount; i++) if (rng.NextDouble() < .5) sim.BuyUp(i); if (rng.NextDouble() < .3) sim.RefundUps(); if (rng.NextDouble() < .5) sim.BuyShip(1); sim.SelectShip(rng.Next(2)); sim.CloseCareer(); }
                 // 부자 흉내 — 가끔 돈을 크게 준다 (뒤쪽 칸 · 행성까지 닿게)
                 if (rng.NextDouble() < .25) sim.S.cash += Math.Pow(10, rng.Next(2, 10));
                 if (rng.NextDouble() < .2) sim.S.keys += rng.Next(0, 3);
@@ -229,19 +229,20 @@ static class Tests
             var sim = new SweepSim(null, null, seed * 17); var rng = new Random(seed);
             for (int c = 0; c < 10; c++)
             {
-                if (sim.M.careerOpen) { for (int i = 0; i < SweepSim.CareerCount; i++) sim.BuyCareer(i); sim.CloseCareer(); }
+                if (sim.M.careerOpen) { sim.M.credit += 50; for (int i = 0; i < SweepSim.UpCount; i++) sim.BuyUp(i); sim.BuyShip(1); sim.SelectShip(c % 2); sim.CloseCareer(); }
                 sim.S.cash += 1e7; sim.S.keys += 2;
                 for (int k = 0; k < 200; k++) BuyCheapest(sim, sim.ZoneOpen);
                 for (int pi = 1; pi < SweepSim.Orbits.Length; pi++) sim.BuyPermit(pi);
                 for (int k = 0; k < 100; k++) BuyCheapest(sim, sim.ZoneOpen);
                 while (sim.S.bill < 3 && sim.PayBill()) { }
                 PlayRun(sim, rng, false);
-                var perm = sim.M.perm.ToList();
-                int keysBefore = sim.S.keys, bk = sim.BankruptKeys;
+                var ups = (int[])sim.M.up.Clone(); double cr0 = sim.M.credit;
                 if (!sim.CanBankrupt) { sim.S.bill = Math.Max(sim.S.bill, 3); }
                 if (!sim.Bankrupt()) { Fail($"씨앗 {seed} 회사 {c}: 파산 안 됨"); break; }
-                if (sim.S.keys != keysBefore + bk) Fail($"씨앗 {seed} 회사 {c}: 열쇠 {sim.S.keys} (기대 {keysBefore + bk})");
-                foreach (var id in perm) if (sim.Lv(id) <= 0) Fail($"씨앗 {seed} 회사 {c}: 핵심 칸 {id} 가 파산 뒤 꺼짐");
+                if (sim.S.keys != sim.Up(11)) Fail($"씨앗 {seed} 회사 {c}: 열쇠 {sim.S.keys} (기대 예비 열쇠 {sim.Up(11)} — 이월은 없앴다)");
+                for (int i = 0; i < SweepSim.UpCount; i++) if (sim.M.up[i] != ups[i]) Fail($"씨앗 {seed} 회사 {c}: 영구 강화 {SweepSim.Ups[i].id} 가 파산 뒤 바뀜");
+                if (sim.M.credit < cr0) Fail($"씨앗 {seed} 회사 {c}: 파산했는데 신용이 줄었다");
+                { double before = sim.M.credit + sim.UpSpent; sim.RefundUps(); if (Math.Abs(sim.M.credit - before) > 1e-9 || sim.UpSpent != 0) Fail($"씨앗 {seed} 회사 {c}: 환불 합이 안 맞음"); for (int i = 0; i < SweepSim.UpCount; i++) for (int l = 0; l < ups[i]; l++) sim.BuyUp(i); }
                 if (sim.S.layout != 2) Fail($"씨앗 {seed} 회사 {c}: 파산 뒤 layout {sim.S.layout}");
                 // 새 회사에서 좀 산 뒤 저장 → 다시 불러오기 (칸 번호가 그대로인가)
                 if (sim.M.careerOpen) { sim.CloseCareer(); }
