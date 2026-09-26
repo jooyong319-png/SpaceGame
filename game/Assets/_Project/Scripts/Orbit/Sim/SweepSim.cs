@@ -527,6 +527,7 @@ namespace SalvageRun.Orbit.Sim
         {
             new ShipDef { id = "old",     name = "낡은 청소선", weapon = "빔",   trait = "무난", price = 0, desc = "처음부터 있는 배. 한 점을 겨누는 빔 — 무엇 하나 튀지 않지만 무엇도 모자라지 않다" },
             new ShipDef { id = "scatter", name = "산탄선",      weapon = "산탄", trait = "연쇄", price = 10, desc = "넓게 퍼지는 산탄. 가까울수록 세고 멀수록 약하다 — 몰린 잔해를 한 번에 터뜨려 연쇄를 연다" },
+            new ShipDef { id = "harpoon", name = "작살선",      weapon = "작살", trait = "꿰뚫기", price = 16, desc = "작살이 조준 방향으로 한 줄을 꿰뚫는다 — 줄 위의 잔해를 모두 맞히고, 뚫을 때마다 약해진다. 줄지어 선 잔해에 강하다" },
         };
         public int Ship => M.ship >= 0 && M.ship < Ships.Length && ShipOwned(M.ship) ? M.ship : 0;
         public bool ShipOwned(int i) => i == 0 || (M.shipsOwned & (1 << i)) != 0;
@@ -539,8 +540,16 @@ namespace SalvageRun.Orbit.Sim
             { "c_rad", new[] { "산탄 퍼짐", "퍼지는 원 반지름 +6 (단계마다) — 처음부터 38" } },
             { "c_spd", new[] { "산탄 증폭", "산탄 화력 +8% (단계마다)" } },
         };
-        public string NodeName(int i) => Ship == 1 && ScatterNode.TryGetValue(Nodes[i].id, out var a) ? a[0] : Nodes[i].name;
-        public string NodeDesc(int i) => Ship == 1 && ScatterNode.TryGetValue(Nodes[i].id, out var a) ? a[1] : Nodes[i].desc;
+        static readonly System.Collections.Generic.Dictionary<string, string[]> HarpoonNode = new System.Collections.Generic.Dictionary<string, string[]>
+        {
+            { "c_pow", new[] { "작살 위력", "작살 피해 +1 (단계마다) — 뚫을 때마다 20%씩 약해진다" } },
+            { "c_rad", new[] { "작살 관통", "한 번에 꿰뚫는 수 +1 · 30 더 멀리 (단계마다) — 처음 3개" } },
+            { "c_spd", new[] { "작살 증폭", "작살 화력 +8% (단계마다)" } },
+        };
+        System.Collections.Generic.Dictionary<string, string[]> ShipNode => Ship == 1 ? ScatterNode : Ship == 2 ? HarpoonNode : null;
+        public string NodeName(int i) => ShipNode != null && ShipNode.TryGetValue(Nodes[i].id, out var a) ? a[0] : Nodes[i].name;
+        public string NodeDesc(int i) => ShipNode != null && ShipNode.TryGetValue(Nodes[i].id, out var a) ? a[1] : Nodes[i].desc;
+        public double ShipGateK => Ship == 1 ? 0.6 : Ship == 2 ? 1.0 : 1;         // 🛰 관문 체력은 배 무기가 한 방에 주는 만큼으로 (산탄 한 알은 약하다)
         public double ScatterR => (38 + 6 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));   // 산탄 — 처음부터 넓다
 
         // ───────────────────────── 의뢰 (§4-4) — kind: 0 금고 1 연료통 2 조각 3 위성 4 연쇄 5 탱크 6 압축 7 큰 잔해 8 압류
@@ -734,7 +743,7 @@ namespace SalvageRun.Orbit.Sim
         public string GateName => HasGate ? GateNames[Frontier] : "";
         public string NextName => HasGate ? Orbits[OrbitOrder[Frontier + 1]].name : "";
         public int GateMax { get { if (S.gateMax <= 0) S.gateMax = Math.Max(Types[Big].hp * HpMul * GateK, GateShotDmg * FuelMax / Gap * GateRuns); return (int)Math.Min(2e9, Math.Round(S.gateMax)); } }   // 🛰 처음 뜰 때 「지금 화력으로 한 판 내내 관문만 쳤을 때의 90%」 — 한 판 안에 부숴야 한다 (09-26)
-        public double GateShotDmg => Pow * (1 + Crit * (CritX - 1)) * (1 + 0.1 * Lv("c_double") + Part("dbl"));   // 🛰 처음 뜰 때 「지금 한 판 피해 × 6」으로 정한다 — 화력이 불어나도 늘 몇 판 공들여야
+        public double GateShotDmg => ShipGateK * Pow * (1 + Crit * (CritX - 1)) * (1 + 0.1 * Lv("c_double") + Part("dbl"));   // 🛰 처음 뜰 때 「지금 한 판 피해 × 6」으로 정한다 — 화력이 불어나도 늘 몇 판 공들여야
         public const double GateRuns = 1.6;
         public Junk GateJunk { get { if (R == null) return null; foreach (var d in R.junk) if (d.sig == GateSig && !d.dead) return d; return null; } }
         public double GateLeft { get { var g = GateJunk; return g != null ? Math.Max(0, (double)g.hp / Math.Max(1, g.max)) : S.gateFrac; } }
@@ -2057,6 +2066,7 @@ namespace SalvageRun.Orbit.Sim
         {
             var r = R;
             if (Ship == 1) { Scatter(); return; }
+            if (Ship == 2) { Harpoon(); return; }
             if (ClawR <= 0)
             {
                 // 범위가 없으면 커서 밑의 하나만
@@ -2091,7 +2101,7 @@ namespace SalvageRun.Orbit.Sim
         void Scatter()
         {
             var r = R;
-            double R0 = ScatterR, dx0 = r.ax - ShipX, dy0 = r.ay - ShipY, near = Math.Max(0.45, Math.Min(1.3, 1.35 - Math.Sqrt(dx0 * dx0 + dy0 * dy0) / 520));
+            double R0 = ScatterR, dx0 = r.ax - ShipX, dy0 = r.ay - ShipY, near = Math.Max(0.6, Math.Min(1.3, 1.4 - Math.Sqrt(dx0 * dx0 + dy0 * dy0) / 560));
             bool hit = false, crit = Rnd() < Crit; int dmg = Math.Max(1, RoundP(Pow * 0.7 * near * (crit ? CritX : 1)));
             var list = r.junk;
             for (int i = 0; i < list.Count; i++)
@@ -2105,6 +2115,40 @@ namespace SalvageRun.Orbit.Sim
             Emit(SwEv.Strike, r.ax, r.ay, R0, hit ? 1 : 0);
             if (hit && crit) Emit(SwEv.Crit, r.ax, r.ay - R0 - 8);
             if (hit) OnHit(1);
+        }
+        /// <summary>🚀 작살선 — 포구에서 조준 방향으로 한 줄 꿰뚫기. 뚫을 때마다 피해 −15% (09-26)</summary>
+        public double HarpoonL => (340 + 30 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));
+        public double HarpoonW => 7 + 1.5 * Lv("c_rad");
+        public int HarpoonN => 3 + Lv("c_rad");                                    // 한 번에 꿰뚫는 개수 (관문은 세지 않는다)
+        public const double HarpoonDecay = 0.8;                                 // 뚫을 때마다 남는 피해 (봇으로 맞춤)
+        void Harpoon()
+        {
+            var r = R;
+            double sx = ShipX, sy = ShipY, dx = r.ax - sx, dy = r.ay - sy, len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 1) return;
+            double ux = dx / len, uy = dy / len, L = HarpoonL, W = HarpoonW;
+            var hits = new List<(double t, Junk d)>();
+            foreach (var d in r.junk)
+            {
+                if (d.dead) continue;
+                double px = d.x - sx, py = d.y - sy, t = px * ux + py * uy;
+                if (t < 0 || t > L) continue;
+                if (Math.Abs(px * uy - py * ux) > W + Types[d.k].r) continue;
+                hits.Add((t, d));
+            }
+            hits.Sort((a, b) => a.t.CompareTo(b.t));
+            bool crit = Rnd() < Crit;
+            int n = 0;
+            foreach (var h in hits)
+            {
+                bool gate = h.d.sig == GateSig;
+                if (!gate && n >= HarpoonN) continue;
+                Hit(h.d, Math.Max(1, RoundP(Pow * (gate ? 1 : Math.Pow(HarpoonDecay, n)) * (crit ? CritX : 1))), 0, true);   // 🛰 관문은 늘 제 위력
+                if (!gate) n++;
+            }
+            Emit(SwEv.Strike, r.ax, r.ay, hits.Count, hits.Count > 0 ? 1 : 0, null, sx + ux * L, sy + uy * L);
+            if (hits.Count > 0 && crit) Emit(SwEv.Crit, hits[0].d.x, hits[0].d.y - 20);
+            if (hits.Count > 0) OnHit(1);
         }
         void HoleRoll() { if (Rnd() < HoleChance) OpenHole(); }
         /// <summary>무기가 맞았다 — 블랙홀 · ★ 내부자 거래 (share = 레이저처럼 자주 쏘는 무기는 몫을 나눈다)</summary>

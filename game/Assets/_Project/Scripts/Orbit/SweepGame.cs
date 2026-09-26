@@ -411,6 +411,7 @@ namespace SalvageRun.Orbit
                     {
                         curW = 0;
                         if (sim.Ship == 1) { ScatterFx(at, (float)e.v, e.k == 1); break; }   // 🚀 산탄선 (09-26)
+                        if (sim.Ship == 2) { HarpoonFx(PxToWorld(e.x2, e.y2), (int)e.v); break; }   // 🚀 작살선
                         bool spot = e.v <= SweepSim.PickR + 0.1;      // 아직 좁은 빔 — 한 점
                         Beam(at, e.k == 1);
                         if (e.k == 1) RingFx(at, Amber2, spot ? 0.26f : 0.22f, (float)e.v * 2 / PxPerUnit);
@@ -739,6 +740,24 @@ namespace SalvageRun.Orbit
                 cs.v = new Vector3(side * Random.Range(1.6f, 2.6f), Random.Range(2.2f, 3.4f), 0);
             }
             if (hit) { OrbitSfx.Play("blast", 0.35f, 0.08f); shake = Mathf.Max(shake, 0.06f); }
+            else OrbitSfx.Play("tick", 0.4f, 0.05f);
+        }
+
+        // 🚀 작살선 — 작살 머리가 한 줄로 날아가고 밧줄이 따라가다 감긴다 · 꿰뚫은 수만큼 탁탁 (09-26)
+        void HarpoonFx(Vector3 end, int hits)
+        {
+            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);
+            var teal = new Color(0.45f, 0.95f, 0.9f);
+            Add(glow, muzzle, 0.8f, new Color(0.6f, 1f, 0.95f, 0.8f), 7, 0.09f);                              // 포구 불빛
+            var head = Add(pixel, muzzle, 0.05f, new Color(0.9f, 1f, 1f, 1f), 9, 0.2f); head.a = muzzle; head.b = end; head.size = 0.13f;   // 작살 머리
+            var rope = Add(pixel, (muzzle + end) / 2, 0.05f, new Color(0.84f, 0.7f, 0.45f, 0.85f), 8, 0.32f); rope.a = muzzle; rope.b = end; rope.size = 0.045f;   // 밧줄
+            var dir = (end - muzzle).normalized;
+            for (int i = 0; i < Mathf.Min(hits, 8); i++)                                                    // 꿰뚫은 자리 — 앞에서부터 차례로
+            {
+                var p = muzzle + dir * ((end - muzzle).magnitude * (0.35f + 0.08f * i));
+                var h = Add(glow, p, 0.34f, new Color(teal.r, teal.g, teal.b, 0.8f), 7, 0.15f); h.age = -0.04f - 0.025f * i;
+            }
+            if (hits > 0) { OrbitSfx.Play("clank", 0.7f, 0.05f); shake = Mathf.Max(shake, 0.04f + 0.01f * Mathf.Min(hits, 5)); }
             else OrbitSfx.Play("tick", 0.4f, 0.05f);
         }
 
@@ -1133,8 +1152,9 @@ namespace SalvageRun.Orbit
         }
         static Sprite hullSpr, turClawSpr, dronePx;
         static int turClawShip = -1;
-        static Sprite scatterTur; static bool scatterTried;
-        static Sprite ScatterTur() { if (!scatterTried) { scatterTried = true; scatterTur = Resources.Load<Sprite>("ship/turret_scatter"); } return scatterTur; }                                             // 🚀 포탑 그림을 불러온 배 (09-26)
+        static readonly Sprite[] shipTur = new Sprite[8]; static readonly bool[] shipTurTried = new bool[8];
+        static readonly string[] ShipTurName = { "claw", "scatter", "harpoon" };
+        static Sprite ShipTur(int s) { if (s < 0 || s >= ShipTurName.Length) return null; if (!shipTurTried[s]) { shipTurTried[s] = true; shipTur[s] = Resources.Load<Sprite>("ship/turret_" + ShipTurName[s]); } return shipTur[s] ?? TurSprite(0); }                                             // 🚀 포탑 그림을 불러온 배 (09-26)
         static readonly Sprite[][] planetFrames = new Sprite[9][]; static readonly bool[] planetTried = new bool[9];
         static Sprite[] PlanetFrames(int pi)
         {
@@ -1351,7 +1371,7 @@ namespace SalvageRun.Orbit
                     for (int k = -4; k <= 4; k++) TSprite(consoleSpr, TW(640 + k * tw, 720 - 34 * q), tw, 0, -11);
                 }
                 if (mountSpr != null) TSprite(mountSpr, TW((float)M[0], (float)M[1]) + new Vector3(0, -12 * TK, 0), 64, 0, -1);
-                var ts = w == 0 && sim.Ship == 1 ? ScatterTur() : TurSprite(w);        // 🚀 산탄선은 산탄 포탑 (09-26 — 빔 포탑이 먼저 불려 와 안 바뀌던 것)
+                var ts = w == 0 && sim.Ship > 0 ? ShipTur(sim.Ship) : TurSprite(w);     // 🚀 배마다 포탑 (09-26 — 빔 포탑이 먼저 불려 와 안 바뀌던 것)
                 if (ts != null)                                                            // 🔫 픽셀랩 포대 그림 (위를 보는 그림 → -90°)
                 {
                     const float up = Mathf.PI / 2;
@@ -1361,7 +1381,7 @@ namespace SalvageRun.Orbit
                         var pc = TW(651, 641); var d6 = turAim - pc; TSprite(ts, pc, TurW[6], Mathf.Atan2(d6.y, d6.x) - up, 2);
                         for (int i = 0; i < n; i++) if (recoil[i] > 0) TDisc(B(i), 14, new Color(c.r, c.g, c.b, recoil[i]), 4, glow);
                     }
-                    else for (int i = 0; i < n; i++) TSprite(ts, TAlong(B(i), A(i), -recoil[i] * 6), w == 0 && sim.Ship == 1 ? 54 : TurW[w], A(i) - up, 2);
+                    else for (int i = 0; i < n; i++) TSprite(ts, TAlong(B(i), A(i), -recoil[i] * 6), w == 0 && sim.Ship > 0 ? 54 : TurW[w], A(i) - up, 2);
                     if (w == 8) { float ch = Mathf.Clamp01(1f - (float)sim.R.next / 1.2f); if (ch > 0.5f) TDisc(TAlong(B(0), A(0), 108), 10 + 24 * ch, new Color(0.75f, 0.9f, 1f, ch * 0.8f), 4, glow); }
                 }
                 else switch (w)

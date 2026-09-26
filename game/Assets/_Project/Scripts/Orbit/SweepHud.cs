@@ -786,6 +786,12 @@ namespace SalvageRun.Orbit
             return inside;
         }
         static Vector2[] Grow(Vector2[] q, float d) => new[] { q[0] + new Vector2(-d * 1.1f, -d), q[1] + new Vector2(d * 1.1f, -d), q[2] + new Vector2(d * 1.1f, d), q[3] + new Vector2(-d * 1.1f, d) };
+        // 🪢 밧줄 — 비스듬한 꼬임이 번갈아 밝고 어둡다
+        static Color32 Rope(float fx, float fy, Color32 rim)
+        {
+            int k = ((int)(fx * 0.7f + fy) / 5) % 3;
+            return k == 0 ? new Color32(214, 176, 112, 255) : k == 1 ? new Color32(168, 128, 74, 255) : rim;
+        }
         static void BuildHull(ShipTheme t)
         {
             const int W = 960, H = 600;
@@ -802,7 +808,7 @@ namespace SalvageRun.Orbit
                     Color32 c;
                     if (InQuad(WinPoly, fx, fy)) c = new Color32(0, 0, 0, 0);
                     else if (InQuad(inner, fx, fy)) c = edge;
-                    else if (InQuad(outer, fx, fy)) c = t.deco == 1 && ((int)(fx + fy) / 8) % 2 == 0 ? new Color32(255, 204, 31, 255) : rim;   // 산탄선 — 창틀 경고 줄무늬
+                    else if (InQuad(outer, fx, fy)) c = t.deco == 1 ? (((int)(fx + fy) / 8) % 2 == 0 ? new Color32(255, 204, 31, 255) : rim) : t.deco == 2 ? Rope(fx, fy, rim) : rim;   // 창틀 무늬 — 산탄선 경고 줄무늬 · 작살선 밧줄
                     else if (fy > 336 && (fy > 384 || InQuad(new[] { new Vector2(0, 384), new Vector2(126, 336), new Vector2(834, 336), new Vector2(W, 384) }, fx, fy) || fy >= 384))
                     {
                         float k = Mathf.InverseLerp(336, H, fy);   // 조종대 — 위가 밝고 아래로 어두워진다

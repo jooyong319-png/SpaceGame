@@ -15,7 +15,7 @@ namespace SalvageRun.Orbit
             public Color room, scan, bayTint;                                // 방 바탕 · 주사선 · 정비고 덧칠
             public Color btnFace, btnHover, btnWall, btnGlow; public string btnInk;   // 출동 단추
             public Color accent;                                             // 테두리 · 탭 강조
-            public int deco;                                                 // 창틀 무늬 — 0 없음 · 1 경고 줄무늬
+            public int deco;                                                 // 창틀 무늬 — 0 없음 · 1 경고 줄무늬 · 2 밧줄
             public float rimW = 8;                                           // 창틀 두께
             public string charm;                                             // 창 위에 매달린 장식 (Resources/cockpit/…)
         }
@@ -39,6 +39,15 @@ namespace SalvageRun.Orbit
                 room = new Color(0.035f, 0.045f, 0.065f), scan = new Color(1f, 0.76f, 0.35f, 0.04f), bayTint = new Color(0, 0, 0, 0),
                 btnFace = new Color(0.95f, 0.72f, 0.26f), btnHover = new Color(1f, 0.8f, 0.36f), btnWall = new Color(0.55f, 0.36f, 0.08f), btnGlow = new Color(0.95f, 0.76f, 0.31f), btnInk = "#3a2306",
                 accent = new Color(0.95f, 0.76f, 0.31f), deco = 1, rimW = 13, charm = "charm_1",
+            },
+            new ShipTheme   // 작살선 — 밧줄 감은 창틀 · 고래 이빨 장식
+            {
+                bg = new Color32(7, 11, 17, 255), plate = new Color32(12, 19, 28, 255), rim = new Color32(96, 70, 40, 255), edge = new Color32(60, 150, 140, 255),
+                deskTop = new Color32(18, 28, 41, 255), deskBot = new Color32(10, 16, 25, 255),
+                rivet = new Color(0.2f, 0.27f, 0.36f), plateCol = new Color(0.075f, 0.11f, 0.16f), bezel = new Color(0.15f, 0.21f, 0.29f), screen = new Color(0.03f, 0.05f, 0.075f),
+                room = new Color(0.035f, 0.045f, 0.065f), scan = new Color(1f, 0.76f, 0.35f, 0.04f), bayTint = new Color(0, 0, 0, 0),
+                btnFace = new Color(0.95f, 0.72f, 0.26f), btnHover = new Color(1f, 0.8f, 0.36f), btnWall = new Color(0.55f, 0.36f, 0.08f), btnGlow = new Color(0.95f, 0.76f, 0.31f), btnInk = "#3a2306",
+                accent = new Color(0.3f, 0.82f, 0.78f), deco = 2, rimW = 12, charm = "charm_2",
             },
         };
         ShipTheme Th => Themes[sim != null ? Mathf.Clamp(sim.Ship, 0, Themes.Length - 1) : 0];

@@ -12,9 +12,9 @@ namespace SalvageRun.Orbit
         int hangarTab;
         int hangarPick = -1;
         static Texture2D[] upTex, shipHullTex;
-        static readonly string[] HullName = { "ship/hull", "ship/hull_scatter" };
-        static readonly Color[] ShipCol = { new Color(0.91f, 0.53f, 0.23f), new Color(1f, 0.77f, 0.23f) };
-        static readonly int[][] ShipStat = { new[] { 3, 2, 2 }, new[] { 2, 4, 4 } };   // 한 방 · 넓이 · 연쇄 (5칸)
+        static readonly string[] HullName = { "ship/hull", "ship/hull_scatter", "ship/hull_harpoon" };
+        static readonly Color[] ShipCol = { new Color(0.91f, 0.53f, 0.23f), new Color(1f, 0.77f, 0.23f), new Color(0.3f, 0.82f, 0.78f) };
+        static readonly int[][] ShipStat = { new[] { 3, 2, 2 }, new[] { 2, 4, 4 }, new[] { 3, 3, 2 } };   // 한 방 · 넓이 · 연쇄 (5칸)
 
         Texture2D UpTex(int i) { if (upTex == null) upTex = new Texture2D[SweepSim.UpCount]; if (upTex[i] == null) upTex[i] = Resources.Load<Texture2D>("hangar/up_" + i); return upTex[i]; }
         Texture2D HullTex(int i) { if (shipHullTex == null) shipHullTex = new Texture2D[HullName.Length]; if (shipHullTex[i] == null) shipHullTex[i] = Resources.Load<Texture2D>(HullName[i]); return shipHullTex[i]; }
@@ -85,7 +85,7 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(r.x + 104, r.y + 32, r.width - 108, 20), "<size=11><color=#8d99b8>" + d.weapon + " · </color>" + (own ? (sim.Ship == i ? "<color=#6fe3a0>타는 중</color>" : "<color=#8d99b8>보유</color>") : "<color=#ffdf95>신용 " + d.price + "</color>") + "</size>", label);
                 if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { hangarPick = i; OrbitSfx.Play("tick", 0.5f); }
             }
-            GUI.Label(new Rect(L.x, L.y + SweepSim.Ships.Length * 76 + 6, L.width, 60), "<size=11><color=#5a6475>작살선 · 레일건선 · 드론 모함 · 폭뢰선은\n산탄선을 해 보고 정한다</color></size>", label);
+            GUI.Label(new Rect(L.x, L.y + SweepSim.Ships.Length * 76 + 6, L.width, 60), "<size=11><color=#5a6475>레일건선 · 드론 모함 · 폭뢰선은\n차례로 들어온다</color></size>", label);
 
             // 오른쪽 — 고른 배
             var sd = SweepSim.Ships[hangarPick]; bool mine = sim.ShipOwned(hangarPick);
@@ -118,7 +118,7 @@ namespace SalvageRun.Orbit
                 if (GUI.Button(bb, can ? "<size=15>신용 " + sd.price + "로 들여오기</size>" : "<size=13><color=#5a6475>신용 " + sd.price + " 필요 (지금 " + M.credit.ToString("0") + ")</color></size>", btnC) && sim.BuyShip(hangarPick)) { OrbitSfx.Play("buy", 1f); OrbitSfx.Play("unit", 0.8f); }
                 GUI.enabled = true;
             }
-            GUI.Label(new Rect(I.x, I.y + 256, I.width, 80), "<size=10><color=#5a6475>트리의 「빔 위력 · 빔 범위」 칸은 이 배에서는 산탄 위력 · 산탄 퍼짐으로 든다.\n무기고의 보조 무기는 어느 배든 그대로.</color></size>", dsty);
+            GUI.Label(new Rect(I.x, I.y + 256, I.width, 80), "<size=10><color=#5a6475>트리의 빔 칸 셋은 배의 무기에 맞게 바뀐다 (산탄 위력 · 작살 관통 …).\n무기고의 보조 무기는 어느 배든 그대로.</color></size>", dsty);
         }
 
         void HangarUps(Rect body)
