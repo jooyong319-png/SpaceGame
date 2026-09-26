@@ -377,7 +377,7 @@ namespace SalvageRun.Orbit
                 float a = 1 - k / 0.55f, sc = 1 + k * 3.2f;
                 var m = GUI.matrix;
                 GUIUtility.ScaleAroundPivot(new Vector2(sc, sc), new Vector2(ox + 480, 190));
-                GUI.color = new Color(1, 1, 1, a); GUI.DrawTexture(new Rect(ox, 0, 960, 600), CockTex(sim.Ship) ?? hullTex); GUI.color = Color.white;
+                GUI.color = new Color(1, 1, 1, a); GUI.DrawTexture(new Rect(ox, 0, 960, 600), hullTex); GUI.color = Color.white;
                 GUI.matrix = m;
             }
             // 도착 제목
@@ -792,7 +792,7 @@ namespace SalvageRun.Orbit
             hullTex = new Texture2D(W, H, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
             var px = new Color32[W * H];
             Color32 bg = t.bg, plate = t.plate, rim = t.rim, edge = t.edge;   // 🎨 배 테마 (09-26)
-            Vector2[] outer = Grow(WinPoly, 8), inner = Grow(WinPoly, 1.4f);
+            Vector2[] outer = Grow(WinPoly, t.rimW), inner = Grow(WinPoly, 1.4f);
             var leftPlate = new[] { new Vector2(0, 0), new Vector2(198, 42), new Vector2(126, 336), new Vector2(0, 384) };
             var rightPlate = new[] { new Vector2(W, 0), new Vector2(762, 42), new Vector2(834, 336), new Vector2(W, 384) };
             for (int y = 0; y < H; y++)
@@ -806,7 +806,7 @@ namespace SalvageRun.Orbit
                     else if (fy > 336 && (fy > 384 || InQuad(new[] { new Vector2(0, 384), new Vector2(126, 336), new Vector2(834, 336), new Vector2(W, 384) }, fx, fy) || fy >= 384))
                     {
                         float k = Mathf.InverseLerp(336, H, fy);   // 조종대 — 위가 밝고 아래로 어두워진다
-                        c = t.deco == 1 && fy < 346 && ((int)(fx + fy) / 8) % 2 == 0 ? new Color32(255, 204, 31, 255) : Color32.Lerp(t.deskTop, t.deskBot, k);   // 산탄선 — 조종대 가장자리 줄무늬
+                        c = Color32.Lerp(t.deskTop, t.deskBot, k);
                     }
                     else if (InQuad(leftPlate, fx, fy) || InQuad(rightPlate, fx, fy)) c = plate;
                     else c = bg;
@@ -836,16 +836,12 @@ namespace SalvageRun.Orbit
             if (hullTex == null || hullShip != sim.Ship) { hullShip = sim.Ship; BuildHull(Th); }
             // 선체 — 가운데 960 밖(넓은 화면)은 바탕색
             GUI.color = (Color)Th.bg; GUI.DrawTexture(new Rect(0, 0, ox + 1, RefH), white); GUI.DrawTexture(new Rect(ox + 959, 0, vw - ox - 959, RefH), white); GUI.color = Color.white;
-            var cockArt = CockTex(sim.Ship);
-            if (cockArt != null) { GUI.DrawTexture(new Rect(ox, 0, 960, 600), cockArt); CockDeco(sim.Ship); }   // 🎨 배마다 도트 조종실 · 흔들리는 소품 (09-26 사장님 「색놀이만 하면 별로 · 키링 같은 거」)
-            else
-            {
-                GUI.DrawTexture(new Rect(ox, 0, 960, 600), hullTex);
-                GUI.color = Th.rivet;                                             // 리벳
-                for (int i = 0; i <= 12; i++) GUI.DrawTexture(new Rect(ox + 198 + 564 * i / 12f - 2, 30, 4, 4), texDisc);
-                for (int i = 0; i <= 18; i++) { float x = 36 + i * 49; GUI.DrawTexture(new Rect(ox + x - 2, 365 + (x < 126 || x > 834 ? 12 : 0), 4, 4), texDisc); }
-                GUI.color = Color.white;
-            }
+            GUI.DrawTexture(new Rect(ox, 0, 960, 600), hullTex);
+            GUI.color = Th.rivet;                                             // 리벳
+            for (int i = 0; i <= 12; i++) GUI.DrawTexture(new Rect(ox + 198 + 564 * i / 12f - 2, 30, 4, 4), texDisc);
+            for (int i = 0; i <= 18; i++) { float x = 36 + i * 49; GUI.DrawTexture(new Rect(ox + x - 2, 365 + (x < 126 || x > 834 ? 12 : 0), 4, 4), texDisc); }
+            GUI.color = Color.white;
+            CockDeco();                                                       // 🎨 배 테마는 창으로만 — 창틀 무늬(BuildHull) · 창 위 장식 (09-26)
 
             // 위 — 돈 (창 위 가운데)
             big.fontSize = 22;   // 도트 글꼴 11의 배수 (정돈 5)
@@ -1511,8 +1507,6 @@ namespace SalvageRun.Orbit
             if (gtiles == null) BuildGraph();
             var S = sim.S;
             GUI.DrawTexture(new Rect(0, 0, vw, RefH), texDim);
-            if (Th.bayTint.a > 0) { GUI.color = Th.bayTint; GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white; }   // 🎨 배 테마
-            if (Th.deco == 1) { Hazard(new Rect(0, 0, vw, 6), 0.9f); Hazard(new Rect(0, RefH - 6, vw, 6), 0.9f); }
             void BayHead()
             {
             // 머리 — 돈 · 청구서 · 궤도일보

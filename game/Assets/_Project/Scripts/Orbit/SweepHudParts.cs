@@ -59,7 +59,6 @@ namespace SalvageRun.Orbit
             var S = sim.S;
             GUI.color = Th.room; GUI.DrawTexture(new Rect(0, 0, vw, RefH), white);   // 🎨 배 테마
             GUI.color = Th.scan; for (float yy = 0; yy < RefH; yy += 4) GUI.DrawTexture(new Rect(0, yy, vw, 1), white);
-            if (Th.deco == 1) { Hazard(new Rect(0, 0, vw, 6), 0.9f); Hazard(new Rect(0, RefH - 6, vw, 6), 0.9f); }
             GUI.color = Color.white;
             var w = new Rect(ox + 50, 14, 860, 572);
             GUI.Label(new Rect(w.x, w.y, 900, 34), "<size=24><b><color=#ffdf95>부품 가게</color></b></size>  <size=12><color=#8a9bb3>진열은 출동하고 오면 바뀐다 · 카드에 올리면 끼울 자리가 깜빡인다</color></size>", label);

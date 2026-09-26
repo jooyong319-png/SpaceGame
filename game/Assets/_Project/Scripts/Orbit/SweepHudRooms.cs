@@ -242,7 +242,6 @@ namespace SalvageRun.Orbit
         {
             if (rR == null) rR = new GUIStyle(label) { alignment = TextAnchor.UpperRight };
             GUI.color = Th.room; GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;   // 🎨 배 테마
-            if (Th.deco == 1) { Hazard(new Rect(0, 0, vw, 6), 0.9f); Hazard(new Rect(0, RefH - 6, vw, 6), 0.9f); }
             if (NavTab(false, "조종실로", "", SweepGame.Amber)) GoFlow(2);
             var mk = sim.Mk; if (mk == null) return;
             var MS = mk.M; var S = sim.S;
