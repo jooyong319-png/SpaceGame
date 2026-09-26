@@ -35,7 +35,7 @@ namespace SalvageRun.Orbit
         float breakingT, tickT; int tickI; string breakingHead;
         readonly float[] nodePulse = new float[SweepSim.NodeCount];
 
-        GUIStyle big, label, dim, small, cost, head, title, btn, btnOff, bigBtn, pop, paperHead, paperBody, paperSmall, center, chainSt;
+        GUIStyle big, label, dim, small, cost, head, title, btn, btnOff, btnC, btnOffC, bigBtn, pop, paperHead, paperBody, paperSmall, center, chainSt;
         Texture2D texInk, white, texDim, texCard, texCard2, texRed, texAmber, texBar, texPaper, texDisc, texRing, texVignette;
 
         public void Banner(string s, int kind, float time) { banner = s.Replace("⚠", "!!"); bannerKind = kind; bannerT = time; }
@@ -93,6 +93,7 @@ namespace SalvageRun.Orbit
             btn.normal.background = Tex(new Color(0.08f, 0.11f, 0.16f)); btn.hover.background = Tex(new Color(0.12f, 0.16f, 0.22f)); btn.active.background = Tex(new Color(0.16f, 0.21f, 0.29f));
             btn.normal.textColor = btn.hover.textColor = btn.active.textColor = text;
             btnOff = new GUIStyle(btn); btnOff.hover.background = btnOff.active.background = btnOff.normal.background;
+            btnC = new GUIStyle(btn) { alignment = TextAnchor.MiddleCenter }; btnOffC = new GUIStyle(btnOff) { alignment = TextAnchor.MiddleCenter };   // 창 단추 — 글자 가운데
             btnOff.normal.textColor = btnOff.hover.textColor = btnOff.active.textColor = gray;
             bigBtn = new GUIStyle(btn) { fontSize = 22, alignment = TextAnchor.MiddleCenter };
             bigBtn.normal.background = Tex(new Color(0.24f, 0.18f, 0.05f)); bigBtn.hover.background = Tex(new Color(0.34f, 0.25f, 0.07f));
@@ -920,7 +921,7 @@ namespace SalvageRun.Orbit
             GUI.Label(new Rect(r.x + 20, r.y + 14, 200, 30), "<size=18><b><color=#f3c8ff>즉석 복권</color></b></size>", label);   // 🎱 궤도 로또는 뺐다 (09-24 사장님 「로또는 의미가 없다」)
             GUI.Label(new Rect(r.x, r.y + 18, r.width - 20, 24), "<size=13><color=#8a9bb3>돈</color> " + KNum.Fmt(S.cash) + "</size>", cost);
             Scratch(r, ev);
-            if (GUI.Button(new Rect(r.xMax - 106, r.yMax - 46, 92, 34), "닫기", btnOff)) lottoOpen = false;
+            if (GUI.Button(new Rect(r.xMax - 106, r.yMax - 46, 92, 34), "닫기", btnOffC)) lottoOpen = false;
         }
 
         void Scratch(Rect r, Event ev)
@@ -935,7 +936,7 @@ namespace SalvageRun.Orbit
             {
                 GUI.Label(card, "<size=18><color=#6a5a40>한 장 사서 긁어 보세요</color></size>", center);
                 bool can = sim.ScratchLeft > 0 && S.cash >= sim.ScratchCost;
-                if (GUI.Button(new Rect(r.center.x - 110, r.yMax - 92, 220, 48), can ? "<size=17>한 장 사기 · " + (sim.ScratchCost <= 0 ? "공짜" : KNum.Fmt(sim.ScratchCost)) + "</size>" : "<size=13>" + (sim.ScratchLeft <= 0 ? "오늘은 다 긁었다 — 출동하고 오자" : "돈이 모자라다") + "</size>", can ? btn : btnOff) && can)
+                if (GUI.Button(new Rect(r.center.x - 110, r.yMax - 92, 220, 48), can ? "<size=17>한 장 사기 · " + (sim.ScratchCost <= 0 ? "공짜" : KNum.Fmt(sim.ScratchCost)) + "</size>" : "<size=13>" + (sim.ScratchLeft <= 0 ? "오늘은 다 긁었다 — 출동하고 오자" : "돈이 모자라다") + "</size>", can ? btnC : btnOffC) && can)
                 {
                     scGrid = sim.ScratchBuy(out scWin); scCoat = new bool[9, ScCols * ScRows]; scDone = false; scGot = 0; OrbitSfx.Play("buy", 0.5f);
                 }
@@ -1005,7 +1006,7 @@ namespace SalvageRun.Orbit
                 if (GUI.Button(nb, GUIContent.none, GUIStyle.none)) { if (on) lottoPick.Remove(n); else if (lottoPick.Count < 3) lottoPick.Add(n); OrbitSfx.Play("tick", 0.4f); }
             }
             bool can = lottoPick.Count == 3 && S.lotto.Count < 3 && S.cash >= sim.LottoPrice;
-            if (GUI.Button(new Rect(r.x + 400, r.y + 116, 170, 44), can ? "<size=14>이 번호로 사기</size>" : "<size=12>" + (S.lotto.Count >= 3 ? "이번 회는 3장까지" : lottoPick.Count < 3 ? "번호 셋을 고르세요" : "돈이 모자라다") + "</size>", can ? btn : btnOff) && can)
+            if (GUI.Button(new Rect(r.x + 400, r.y + 116, 170, 44), can ? "<size=14>이 번호로 사기</size>" : "<size=12>" + (S.lotto.Count >= 3 ? "이번 회는 3장까지" : lottoPick.Count < 3 ? "번호 셋을 고르세요" : "돈이 모자라다") + "</size>", can ? btnC : btnOffC) && can)
             { lottoPick.Sort(); if (sim.LottoBuy(lottoPick[0], lottoPick[1], lottoPick[2])) { OrbitSfx.Play("buy", 0.6f); lottoPick.Clear(); } }
             if (GUI.Button(new Rect(r.x + 400, r.y + 166, 170, 34), "<size=12>자동 고르기</size>", btnOff))
             { lottoPick.Clear(); while (lottoPick.Count < 3) { int n = Random.Range(1, 13); if (!lottoPick.Contains(n)) lottoPick.Add(n); } OrbitSfx.Play("tick", 0.5f); }
@@ -1131,11 +1132,11 @@ namespace SalvageRun.Orbit
             double quarter = System.Math.Min(sim.LoanCap, System.Math.Ceiling(sim.BillAmount * 0.25));
             float by = r.y + 146;
             GUI.enabled = quarter > 0;
-            if (GUI.Button(new Rect(cx + 4, by, 160, 36), "<size=12>대출 +" + KNum.Fmt(quarter) + "</size>", btn)) RequestLoan(quarter, false);
+            if (GUI.Button(new Rect(cx + 4, by, 160, 36), "<size=12>대출 +" + KNum.Fmt(quarter) + "</size>", btnC)) RequestLoan(quarter, false);
             GUI.enabled = sim.LoanCap > 0;
-            if (GUI.Button(new Rect(cx + 172, by, 160, 36), "<size=12>한도까지 +" + KNum.Fmt(sim.LoanCap) + "</size>", btn)) RequestLoan(sim.LoanCap, false);
+            if (GUI.Button(new Rect(cx + 172, by, 160, 36), "<size=12>한도까지 +" + KNum.Fmt(sim.LoanCap) + "</size>", btnC)) RequestLoan(sim.LoanCap, false);
             GUI.enabled = S.debt > 0 && S.cash > 0;
-            if (GUI.Button(new Rect(cx + 340, by, 168, 36), "<size=12>빚 갚기 −" + KNum.Fmt(System.Math.Min(S.cash, S.debt)) + "</size>", btn)) Repay();
+            if (GUI.Button(new Rect(cx + 340, by, 168, 36), (S.debt > 0 ? "<size=12>빚 갚기 −" + KNum.Fmt(System.Math.Min(S.cash, S.debt)) + "</size>" : "<size=12>갚을 빚 없음</size>"), btnC)) Repay();
             GUI.enabled = true;
             GUI.Label(new Rect(cx + 4, by + 38, 500, 20), S.bill >= SweepSim.Bills.Length - 1
                 ? "<size=11><color=#ff9b8f>마지막 할부(완납)엔 대출이 안 된다 — 제힘으로 갚거나, 못 갚으면 파산</color></size>"
@@ -1156,7 +1157,7 @@ namespace SalvageRun.Orbit
                     GUI.Label(new Rect(cx + 4, hy + 26 + i * 20, 90, 18), "<size=11>출동 " + e.run + "</size>", small);
                     GUI.Label(new Rect(cx + 96, hy + 26 + i * 20, 420, 18), "<size=12>" + what + "</size>", label);
                 }
-            if (GUI.Button(new Rect(r.xMax - 110, r.yMax - 44, 96, 32), "닫기", btn)) loanOpen = false;
+            if (GUI.Button(new Rect(r.xMax - 110, r.yMax - 44, 96, 32), "닫기", btnC)) loanOpen = false;
         }
 
         bool CanPayNow => !sim.M.cleanReady && sim.S.bill < SweepSim.Bills.Length && sim.S.cash >= sim.BillAmount;
@@ -1882,7 +1883,7 @@ namespace SalvageRun.Orbit
                 var it = M.news[newsSel];
                 float x = pr.x + 22, w = pr.width - 44, y = pr.y + 16;
                 paperHead.fontSize = 26; GUI.Label(new Rect(x, y, 200, 30), "궤도일보", paperHead);
-                paperSmall.alignment = TextAnchor.UpperRight; GUI.Label(new Rect(x, y + 8, w, 18), "출동 " + it.run + "일째 · (" + it.company + "대) 시절", paperSmall); paperSmall.alignment = TextAnchor.UpperLeft;
+                paperSmall.alignment = TextAnchor.UpperRight; GUI.Label(new Rect(x, y + 8, w, 18), "출동 " + it.run + "일째 · " + it.company + "대 시절", paperSmall); paperSmall.alignment = TextAnchor.UpperLeft;
                 y += 36; GUI.DrawTexture(new Rect(x, y, w, 3), texInk); y += 12;
                 string kn = it.kind == "scoop" ? "특종" : it.kind == "world" ? "세상 소식" : it.kind == "extra" ? "호외" : "우리 소식";
                 GUI.color = it.kind == "scoop" ? new Color(0.75f, 0.22f, 0.17f) : it.kind == "world" ? new Color(0.42f, 0.39f, 0.34f) : new Color(0.72f, 0.53f, 0.04f);

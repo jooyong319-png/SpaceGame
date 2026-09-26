@@ -1056,6 +1056,7 @@ namespace SalvageRun.Orbit
 
         // ★ 1면 조작 — 조종실 창 위에 신문 두 장. 고른 기사가 증권 속보로 나간다
         bool frontOpen;
+        public void TestOpen(string w, bool v) { if (w == "front") frontOpen = v; else if (w == "bank") bankruptArmed = v; else if (w == "glass") glassOpen = v; }   // 에디터 시험용 — 비공개 창 열기
         void FrontPick()
         {
             var S = sim.S;
