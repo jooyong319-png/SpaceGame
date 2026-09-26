@@ -75,13 +75,14 @@ namespace SalvageRun.Orbit.Sim
         public List<PastCompany> history = new List<PastCompany>();
     }
 
-    public class Blast { public double x, y, t, R; public bool w; }     // w = 무기가 낸 폭발 (이것만 또 번진다 — 09-24 사장님 「연쇄 반응도 무기 특성으로」)
+    public class Blast { public double x, y, t, R; public bool w; public int wid = -1; }   // wid = 피해를 세어 줄 곳 (DmgCat) — 기뢰 · 분열탄처럼 늦게 터져도 제 무기로     // w = 무기가 낸 폭발 (이것만 또 번진다 — 09-24 사장님 「연쇄 반응도 무기 특성으로」)
     public class Drone { public double a, cd, x, y; }
     public class Pod { public int kind; public double t, x, y, a, rr; public bool up, got; }     // 지구 보급 — kind 0 연료 · 1 폭탄
 
     public class SweepRun
     {
         public readonly double[] chan = new double[9], chanNext = new double[9], chanX = new double[9], chanY = new double[9];   // 이어서 쏘는 확률 효과 · 그 무기의 목표
+        public readonly double[] dmgBy = new double[SweepSim.DmgCatN];     // 📊 이번 판 피해 — 곳별 (결과 화면 원그래프 · 09-27)
         public double volley, volleyT, volleyNext; public int consDmg, consVal;   // 🧃 이번 판 소모품                          // 🚀 전탄 발사 게이지 · 퍼붓는 중
         public double shipA = -1.57, heat = 1, next2, idleT, rockT = -1, fenceT, magHole, magX, magY; public int vacAmmo; public readonly List<Blast> mines = new List<Blast>(); public bool twin, lazyDone, tourDone; public int insiderN, meteorAt = 80, meteors, weaponKills, goldN;                            // 청소선 — 궤도 바깥에서 조준 방향으로 따라온다 · 레이저 열
         public double hx, hy, holeCd, clickCd, fuelGot, refill, fuel, max, t, next = 0.3, endT, formT = 9, rushT, rushX, rushY, chainT, holdT, ax = 480, ay = 310, refillT;
@@ -681,8 +682,18 @@ namespace SalvageRun.Orbit.Sim
         public const double ProcK = 1.8;                                          // 🔫 09-26 밤 사장님 「무기들이 너무 약한 것 같아」 — 발동 확률 ×1.8 (0.5초 한 발 · 한 판 30초면 몇 번 안 터졌다)
         static readonly string[] ProcUp = { null, "w_laser_u", "w_chain_u", "w_vac_u", "w_mine_u", "w_frz_u", "w_clus_u", "w_mag_u", "w_rail_u" };
         public double ProcChance(int w) => w <= 0 || w >= ProcBase.Length || !WeaponOwned(w) ? 0 : ProcK * ProcBase[w] * (Lv(ProcUp[w]) >= 1 ? 1.5 : 1) * (Lv("w_slot2") > 0 ? 1.5 : 1) * (Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1);
-        void FireW(int w) { wMul = w > 0 && Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1; dbgW = w; Fire(w); dbgW = 0; wMul = 1; }
-        static int dbgW; public static readonly double[] DbgWDmg = new double[10];   // 📊 봇 진단 — 무기마다 준 피해 (0 = 주 무기 · 드론 · 폭발)
+        void FireW(int w) { wMul = w > 0 && Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1; int sv = dmgCat; dmgCat = w; Fire(w); dmgCat = sv; wMul = 1; }
+        // 📊 피해를 준 곳 — 0 주 무기 · 1~8 무기고(레이저 · 번개 · 진공 · 기뢰 · 냉동 · 분열탄 · 자석 · 레일건) · 9 드론 · 10 폭발·연쇄 · 11 블랙홀 · 12 행성 특성 (09-27 사장님 「출동 결과에 무기별 피해 원그래프」)
+        public const int DmgCatN = 13;
+        public static readonly string[] DmgCatName = { "주 무기", "레이저", "번개", "진공", "기뢰", "냉동", "분열탄", "자석", "레일건", "드론", "폭발·연쇄", "블랙홀", "행성 특성" };
+        int dmgCat = -1;                                                         // 지금 피해를 주는 곳 (-1 = src 로 정한다)
+        public static readonly double[] DbgCat = new double[DmgCatN];           // 봇 진단 — 모든 판 합
+        void Tally(double amt, int src)
+        {
+            if (amt <= 0 || R == null) return;
+            int c = dmgCat >= 0 ? dmgCat : src == 1 ? 9 : src == 2 ? 10 : 0;
+            R.dmgBy[c] += amt; DbgCat[c] += amt;
+        }
         public int OwnedWeapons { get { int n = 0; for (int w = 1; w < ProcBase.Length; w++) if (WeaponOwned(w)) n++; return n; } }
         public int VolleyLv => Math.Min(3, Lv("v_volley"));
         static readonly double[] VolleyDur = { 0, 0.5, 0.8, 1.1 }, VolleyGap = { 0, 0.16, 0.12, 0.09 }, VolleyFill = { 0, 0.5, 0.75, 1 };   // 3단계 = 09-26 전의 세기
@@ -1546,7 +1557,7 @@ namespace SalvageRun.Orbit.Sim
                 var p = r.pend[i];
                 if (p.t > 0) continue;
                 r.pend.RemoveAt(i);
-                blastW = p.w; DoBlast(p.x, p.y, p.R * BlastK); blastW = false;
+                blastW = p.w; dmgCat = p.wid; DoBlast(p.x, p.y, p.R * BlastK); dmgCat = -1; blastW = false;
             }
             r.chainT -= dt;
             if (r.chainT <= 0 && r.pend.Count == 0 && !r.holding) { r.chain = 0; r.tier = 0; }
@@ -1731,15 +1742,17 @@ namespace SalvageRun.Orbit.Sim
             if (n >= 50) Record("pack50", "중력 폭탄 하나에 잔해 " + n + "개 — 제조사 「그렇게 쓰라고 만든 게 아닌데」", "민간 청소선이 중력 폭탄 하나로 잔해 " + n + "개를 한데 모아 터뜨렸다.");
             if (n >= 100) Record("pack100", "잔해 " + n + "개를 한 점에 — 「작은 블랙홀을 봤다」", "지상 관측소에서도 한 점으로 빨려 드는 빛이 보였다고 한다.");
             double mult = 1 + n * PackK;
+            dmgCat = 11;
             foreach (var d in r.packed)
             {
                 d.x = r.hx + Rnd(-8, 8); d.y = r.hy + Rnd(-8, 8); d.dead = false;
                 Kill(d, 2, mult);
             }
+            dmgCat = -1;
             if (Lv("q_sling") > 0 && n >= 3) Sling(r.hx, r.hy, Math.Min(12, 3 + n / 4));
             r.packed.Clear();
             Emit(SwEv.Release, r.hx, r.hy, n, 0, n >= 6 ? n + "개 압축 · ×" + mult.ToString("0.00") : null);
-            DoBlast(r.hx, r.hy, (60 + n * 2.5) * BlastK, false);
+            dmgCat = 11; DoBlast(r.hx, r.hy, (60 + n * 2.5) * BlastK, false); dmgCat = -1;
             if (Lv("k_bh") > 0 && !r.twin && r.fuel > 0) { r.twin = true; r.holding = true; r.holdT = 0; r.chain = 0; r.tier = 0; r.shots++; Emit(SwEv.SkillReady, r.hx, r.hy, 2); }   // ◆ 쌍둥이 — 그 자리에 한 번 더
             else r.twin = false;
             // 모이다 만 것들은 궤도로 돌아간다
@@ -1793,7 +1806,7 @@ namespace SalvageRun.Orbit.Sim
                 d.capT = 0.5; d.vx += dx * 1.2; d.vy += dy * 1.2;                     // 가운데로 끌려온다
                 int dmg = RoundP(per * (dist < 16 ? 4 : 1)); if (dmg <= 0) continue;   // 가운데 닿으면 흡수
                 bool was = d.dead; Hit(d, dmg, 0, true); any = true;
-                if (!was && d.dead && awk) { r.vacAmmo++; if (r.vacAmmo >= 25) { r.vacAmmo = 0; r.pend.Add(new Blast { x = cx, y = cy, t = 0.25, R = 70, w = true }); Emit(SwEv.Bolt, ShipX, ShipY, 0, 1, null, cx, cy); Emit(SwEv.Pop, cx, cy - 20, 0, 3, "압축 고철탄!"); } }
+                if (!was && d.dead && awk) { r.vacAmmo++; if (r.vacAmmo >= 25) { r.vacAmmo = 0; r.pend.Add(new Blast { wid = 3, x = cx, y = cy, t = 0.25, R = 70, w = true }); Emit(SwEv.Bolt, ShipX, ShipY, 0, 1, null, cx, cy); Emit(SwEv.Pop, cx, cy - 20, 0, 3, "압축 고철탄!"); } }
             }
             vacMul = 1;
             Emit(SwEv.Vac, cx, cy, rad, 0);
@@ -1821,7 +1834,7 @@ namespace SalvageRun.Orbit.Sim
                 foreach (var d in r.junk) { if (d.dead || d.fade < 0.35) continue; double dx = d.x - m.x, dy = d.y - m.y; if (dx * dx + dy * dy < 18 * 18) { boom = true; break; } }
                 if (!boom) continue;
                 r.mines.RemoveAt(i);
-                r.pend.Add(new Blast { x = m.x, y = m.y, t = 0.01, R = m.R, w = true });
+                r.pend.Add(new Blast { wid = 4, x = m.x, y = m.y, t = 0.01, R = m.R, w = true });
                 OnHit(1);
             }
             // 각성 — 기뢰끼리 레이저 울타리 (지나가는 것을 태운다)
@@ -1873,7 +1886,9 @@ namespace SalvageRun.Orbit.Sim
                 var q = R.junk[ji]; if (q.dead || q == d) continue;
                 double dx = q.x - d.x, dy = q.y - d.y; if (dx * dx + dy * dy > 34 * 34) continue;
                 if (awk && q.frz <= 0) q.frz = 2;
-                q.hp -= Math.Max(1, RoundP(Pow * 0.6)); q.hit = 0.12; if (q.hp <= 0) Kill(q, 0, 1);
+                if (q.sig == GateSig && !GateReady) continue;
+                { int sd = Math.Max(1, RoundP(Pow * 0.6)); if (R != null) { double a = Math.Min(sd, Math.Max(0, q.hp)); R.dmgBy[5] += a; DbgCat[5] += a; } q.hp -= sd; }
+                q.hit = 0.12; if (q.hp <= 0) { int sv = dmgCat; dmgCat = 5; Kill(q, 0, 1); dmgCat = sv; }
             }
             Emit(SwEv.Shatter, d.x, d.y, 0, 2);
         }
@@ -1884,7 +1899,7 @@ namespace SalvageRun.Orbit.Sim
             var r = R; int u = Lv("w_clus_u"); bool awk = Lv("w_clus_a") > 0;
             double ax = r.ax, ay = r.ay;
             Emit(SwEv.Shell, ShipX, ShipY, 0, 0, null, ax, ay);
-            r.pend.Add(new Blast { x = ax, y = ay, t = 0.35, R = 42 + 0.2 * ClawR, w = true });
+            r.pend.Add(new Blast { wid = 6, x = ax, y = ay, t = 0.35, R = 42 + 0.2 * ClawR, w = true });
             int n = 6 + (u >= 1 ? 3 : 0) + 2 * We("clus");
             var targets = new List<Junk>();
             if (u >= 2) { foreach (var d in r.junk) if (!d.dead) { double dx = d.x - ax, dy = d.y - ay; if (dx * dx + dy * dy < 150 * 150) targets.Add(d); } }
@@ -1894,9 +1909,9 @@ namespace SalvageRun.Orbit.Sim
                 if (u >= 2 && targets.Count > 0) { var t = targets[rng.Next(targets.Count)]; fx = t.x; fy = t.y; }
                 else { double a = k * Math.PI * 2 / n + Rnd(-0.2, 0.2), d = Rnd(55, 110); fx = ax + Math.Cos(a) * d; fy = ay + Math.Sin(a) * d * Tilt; }
                 double t0 = 0.5 + k * 0.04;
-                r.pend.Add(new Blast { x = fx, y = fy, t = t0, R = 22, w = true });
+                r.pend.Add(new Blast { wid = 6, x = fx, y = fy, t = t0, R = 22, w = true });
                 Emit(SwEv.Shell, ax, ay, t0, 1, null, fx, fy);                       // 🚀 자탄 — 화면만 (터진 자리 → 파편 자리, t0에 떨어짐)
-                if (awk) for (int j = 0; j < 3; j++) r.pend.Add(new Blast { x = fx + Rnd(-35, 35), y = fy + Rnd(-25, 25), t = t0 + 0.18 + j * 0.03, R = 14, w = true });
+                if (awk) for (int j = 0; j < 3; j++) r.pend.Add(new Blast { wid = 6, x = fx + Rnd(-35, 35), y = fy + Rnd(-25, 25), t = t0 + 0.18 + j * 0.03, R = 14, w = true });
             }
             OnHit(1);
         }
@@ -1915,7 +1930,7 @@ namespace SalvageRun.Orbit.Sim
                 d.vx = dx * 1.9; d.vy = dy * 1.9; d.capT = 1.1; n++;
             }
             Emit(SwEv.Ring, cx, cy, Rr, 2);
-            r.pend.Add(new Blast { x = cx, y = cy, t = 0.55, R = 50 + (u >= 2 ? Math.Min(60, n * 1.5) : 0), w = true });
+            r.pend.Add(new Blast { wid = 7, x = cx, y = cy, t = 0.55, R = 50 + (u >= 2 ? Math.Min(60, n * 1.5) : 0), w = true });
             if (awk && !r.holding) { r.magHole = 0.6; r.magX = cx; r.magY = cy; }
             OnHit(1);
         }
@@ -2056,7 +2071,7 @@ namespace SalvageRun.Orbit.Sim
             }
             Emit(SwEv.Laser, sx, sy, rad, (crit ? 1 : 0) + (awk ? 2 : 0) + 64, null, cx, cy);
             r.heat = any ? Math.Min(1.8, r.heat + 0.04) : 1;
-            if (any && We("laser") >= 3 && Rnd() < 0.25) r.pend.Add(new Blast { x = cx, y = cy, t = 0.05, R = rad * 1.4, w = true });   // ◇ 3단계 — 태운 자리가 터진다
+            if (any && We("laser") >= 3 && Rnd() < 0.25) r.pend.Add(new Blast { wid = 1, x = cx, y = cy, t = 0.05, R = rad * 1.4, w = true });   // ◇ 3단계 — 태운 자리가 터진다
             if (any) OnHit(0.25);
         }
 
@@ -2080,7 +2095,7 @@ namespace SalvageRun.Orbit.Sim
                 Emit(SwEv.Bolt, px, py, j, crit ? 1 : 0, null, cur.x, cur.y);
                 px = cur.x; py = cur.y;
                 Hit(cur, Math.Max(1, (int)Math.Round(dmg)), 0, true);
-                if (awk && r.chain < ChainMax) r.pend.Add(new Blast { x = px, y = py, t = 0.05 + 0.03 * j, R = 30, w = true });
+                if (awk && r.chain < ChainMax) r.pend.Add(new Blast { wid = 2, x = px, y = py, t = 0.05 + 0.03 * j, R = 30, w = true });
                 if (u >= 2) dmg *= 1.2;
                 Junk nx = null; double nd = hop * hop;
                 foreach (var d in r.junk) { if (d.dead || hit.Contains(d)) continue; double dx = d.x - px, dy = d.y - py, dd = dx * dx + dy * dy; if (dd < nd) { nd = dd; nx = d; } }
@@ -2232,7 +2247,7 @@ namespace SalvageRun.Orbit.Sim
             if (d.sig == GateSig && !GateReady) { if (Rnd() < 0.08) Emit(SwEv.Pop, d.x, d.y - 30, 0, 4, "방어막 — 청구서 " + GateBill + "장 뒤"); return; }   // 🛡 방어막
             if (d.sig == GateSig) { if (src != 0) dmg = Math.Max(1, dmg / 3); if (Up(9) > 0) dmg = Math.Max(1, (int)Math.Round(dmg * (1 + 0.10 * Up(9)))); GateHit(d); }   // 🛰 연쇄 · 드론 · 폭발은 조금만
             if (d.sig != GateSig) R.dmgDone += Math.Min(dmg, Math.Max(0, d.hp));
-            DbgWDmg[dbgW] += Math.Min(dmg, Math.Max(0, d.hp));   // 📊 판당 준 피해 (관문 체력 기준)
+            Tally(Math.Min(dmg, Math.Max(0, d.hp)), src);
             bool fresh = d.hp >= d.max; d.hp -= dmg; d.hit = 0.12; DbgHits++; if (fresh && d.hp <= 0) DbgOneShot++;   // 📊 봇 진단 — 단단함
             TraitOnHit(d);                                                      // 🪐 광맥 소행성
             if (d.att == Att.Ice && d.hp <= d.max - 2)
@@ -2287,15 +2302,17 @@ namespace SalvageRun.Orbit.Sim
                 if (d.dead || d.fade < 0.35) continue;              // 막 스며든 것은 아직 안 맞는다
                 double dx = d.x - x, dy = d.y - y, rr = Rb + Types[d.k].r;
                 if (dx * dx + dy * dy > rr * rr) continue;
-                if (Types[d.k].big) { d.hp -= 3; d.hit = 0.15; if (d.hp <= 0) Kill(d, 2, 1); }
-                else { d.hp -= BlastDmg; d.hit = 0.15; if (d.hp <= 0) Kill(d, 2, 1); }
+                if (d.sig == GateSig && !GateReady) continue;                        // 🛡 방어막
+                if (Types[d.k].big) { Tally(Math.Min(3, Math.Max(0, d.hp)), 2); d.hp -= 3; d.hit = 0.15; if (d.hp <= 0) Kill(d, 2, 1); }
+                else { Tally(Math.Min(BlastDmg, Math.Max(0, d.hp)), 2); d.hp -= BlastDmg; d.hit = 0.15; if (d.hp <= 0) Kill(d, 2, 1); }
             }
         }
 
         bool blastW; int shatterDepth;
         void Kill(Junk d, int src, double mult)
         {
-            if (d.sig == GateSig) { if (!GateReady) { d.hp = d.max; return; } if (d.hp > 0) return; GateBroken(d); }   // 🛡 방어막 — 폭발 · 얼음 파편은 Hit 를 안 거쳐서 여기서 막는다   // 🛰 관문은 빨려 들거나 휩쓸려 사라지지 않는다
+            if (d.sig == GateSig) { if (!GateReady) { d.hp = d.max; return; } if (d.hp > 0) return; GateBroken(d); }
+            if (!d.dead && d.hp > 0) Tally(d.hp, src);                          // 블랙홀 · 행성 특성처럼 체력을 안 깎고 없애는 것   // 🛡 방어막 — 폭발 · 얼음 파편은 Hit 를 안 거쳐서 여기서 막는다   // 🛰 관문은 빨려 들거나 휩쓸려 사라지지 않는다
             DbgKills++;
             if (d.dead) return;
             d.dead = true;

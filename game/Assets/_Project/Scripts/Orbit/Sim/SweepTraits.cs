@@ -58,7 +58,7 @@ namespace SalvageRun.Orbit.Sim
                 r.sigKills.RemoveAt(i);
                 if (sk.j.dead) continue;
                 if (sk.from != null) Emit(SwEv.Bolt, sk.from.x, sk.from.y, 1, 1, null, sk.j.x, sk.j.y);   // v 1 — 포구로 옮기지 않는다
-                Kill(sk.j, 2, 1);
+                { int sv = dmgCat; dmgCat = 12; Kill(sk.j, 2, 1); dmgCat = sv; }
             }
             // 나타나기
             r.sigT -= dt;
@@ -120,7 +120,7 @@ namespace SalvageRun.Orbit.Sim
                             double dx = d.x - c.x, dy = d.y - c.y;
                             if (dx * dx + dy * dy < 30 * 30) hit.Add(d);
                         }
-                        foreach (var d in hit) Kill(d, 2, 1);
+                        { int sv = dmgCat; dmgCat = 12; foreach (var d in hit) Kill(d, 2, 1); dmgCat = sv; }
                     }
                     break;
                 }
@@ -177,7 +177,7 @@ namespace SalvageRun.Orbit.Sim
                     break;
                 }
                 case 2:   // 월면 금고 — 금화가 튀며 둘레 조각까지
-                    r.pend.Add(new Blast { x = d.x, y = d.y, t = 0.05, R = 80, w = true });
+                    r.pend.Add(new Blast { wid = 12, x = d.x, y = d.y, t = 0.05, R = 80, w = true });
                     Emit(SwEv.TraitFx, d.x, d.y, 80, 2);
                     break;
                 case 6:   // 고리 얼음 덩이 — 둘레를 얼린다 · 언 것은 한 방에

@@ -688,9 +688,12 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(p.x - 40, p.y - 10, 80, 20), f.txt, pop);
             }
 
-            // 오른쪽 위 — 어디서 벌었나 · 의뢰
+            // 오른쪽 위 — 📊 무기별 피해 원그래프 (09-27 사장님 「출동 결과에서 어떤 무기들이 데미지 넣었는지 원그래프 · 블랙홀 기타 다 포함 · 잔잔바리는 기타로」)
             var RT = new Rect(cx + 10, 140, 410, 120);
-            Panel2(RT, "어디서 벌었나");
+            Panel2(RT, "이번 판 피해 — 곳별");
+            DmgChart(RT, R, tally);
+            if (R.cut > 0) GUI.Label(new Rect(RT.x + 16, RT.yMax - 2, RT.width - 32, 18), "<size=11><color=#ee7766>빚 상환으로 떼인 것 -" + KNum.Fmt(R.cut) + "</color></size>", label);
+            if (false) {
             double tot = System.Math.Max(1, R.Earned);
             float a = (float)(R.earnClaw / tot), b = (float)(R.earnDrone / tot);
             float bw = RT.width - 36, bx = RT.x + 18, by = RT.y + 38;
@@ -702,6 +705,7 @@ namespace SalvageRun.Orbit
             GUI.Label(new Rect(bx, by + 16, bw, 18), "<color=#f2c14e>빔 " + Mathf.RoundToInt(a * 100) + "%</color>   " + (sim.DronesOn ? "<color=#6fd3e8>드론 " + Mathf.RoundToInt(b * 100) + "%</color>   " : "") + (sim.BombsOn ? "<color=#b69cff>폭발 " + Mathf.RoundToInt((1 - a - b) * 100) + "%</color>" : ""), label);
             if (R.contractText != null) GUI.Label(new Rect(bx, by + 44, bw, 20), "의뢰 · " + R.contractText + "  " + (R.contractOk ? "<color=#6fcf97>성공 +" + KNum.Fmt(R.bonus) + "</color>" : "<color=#ee7766>실패 " + R.contractProg + "/" + R.contractTarget + "</color>"), label);
             else if (R.cut > 0) GUI.Label(new Rect(bx, by + 44, bw, 20), "<color=#ee7766>빚 상환으로 떼인 것 -" + KNum.Fmt(R.cut) + "</color>", label);
+            }
 
             // 오른쪽 아래 — 다음 해금 (청구서를 갚으면 열리는 것)
             var RB = new Rect(cx + 10, 270, 410, 120);

@@ -209,7 +209,7 @@ static class Program
         var rs = new List<Result>(); for (int i = 1; i <= n; i++) rs.Add(RunQuiet(i * 7 + 1));
         string Q(IEnumerable<double> xs) { var a = xs.Where(x => x >= 0).OrderBy(x => x).ToList(); if (a.Count == 0) return "   -"; return $"{a[a.Count / 2],5:0}분 ({a[a.Count / 10],3:0}~{a[a.Count * 9 / 10],3:0}) {(a.Count < n ? a.Count + "/" + n : "")}"; }
         Console.WriteLine($"📊 밸런스 — 씨앗 {n}   (가운데값 · 10%~90%)");
-        { double tw = SweepSim.DbgWDmg.Sum(); string[] wn = { "주무기·드론·폭발", "레이저", "번개", "진공", "기뢰", "냉동", "분열탄", "자석", "레일건" }; Console.WriteLine("  🔫 피해 몫  " + string.Join("  ", Enumerable.Range(0, 9).Select(i => wn[i] + " " + (SweepSim.DbgWDmg[i] / Math.Max(1, tw) * 100).ToString("0.0") + "%"))); }
+        { double tw = SweepSim.DbgCat.Sum(); Console.WriteLine("  🔫 피해 몫  " + string.Join("  ", Enumerable.Range(0, SweepSim.DmgCatN).Select(i => SweepSim.DmgCatName[i] + " " + (SweepSim.DbgCat[i] / Math.Max(1, tw) * 100).ToString("0.0") + "%"))); }
         Console.WriteLine("  끝(빚 청산)      " + Q(rs.Select(r => r.won ? r.minutes : -1)));
         Console.WriteLine("  끝낼 때 트리 %     " + Q(rs.Where(r => r.won).Select(r => r.tree)).Replace("분", "%"));
         Console.WriteLine($"  파산 수 평균     {rs.Average(r => r.bankrupt):0.0}  · 첫 파산 " + Q(rs.Select(r => r.bankAt.Count > 0 ? r.bankAt[0] : -1)) + " · 둘째 " + Q(rs.Select(r => r.bankAt.Count > 1 ? r.bankAt[1] : -1)));

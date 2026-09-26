@@ -12,6 +12,12 @@ namespace SalvageRun.Orbit
     {
         static readonly string[] Units = { "", "만", "억", "조", "경" };
 
+        /// <summary>위 단위 하나만 — 34억 · 1200만 (좁은 칸용)</summary>
+        public static string Short(double v)
+        {
+            if (v < 10000) return ((long)System.Math.Max(0, v)).ToString();
+            string f = Fmt(v); int sp = f.IndexOf(' '); return sp > 0 ? f.Substring(0, sp) : f;
+        }
         public static string Fmt(double v)
         {
             if (double.IsNaN(v) || double.IsInfinity(v)) return "∞";
