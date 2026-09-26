@@ -466,7 +466,7 @@ namespace SalvageRun.Orbit
                 TallyScreen = new Vector2(tr.center.x * scale, Screen.height - tr.center.y * scale);
                 float pu = game.tallyPulse;
                 Lcd(tr, pu);
-                GUI.Label(new Rect(tr.x + 8, tr.y + 2, tr.width, 14), "<size=10><color=#5fa37d>이번 판</color></size>", label);
+                GUI.Label(new Rect(tr.x + 8, tr.y, tr.width, 18), "<size=10><color=#5fa37d>이번 판</color></size>", label);
                 GUI.Label(new Rect(tr.x, tr.y + 14, tr.width - 8, 24), "<size=" + (15 + Mathf.RoundToInt(pu * 3)) + "><b><color=#ffc35a>" + (game.runTally > 0 ? "+" + KNum.Fmt(game.runTally) : "—") + "</color></b></size>", cost);
             }
             GUI.Label(new Rect(x, 14, 40, 20), "연료", dim);
@@ -506,7 +506,7 @@ namespace SalvageRun.Orbit
                 var pb = new Rect(cr.x + 62, cr.yMax - 14, cr.width - 70, 6);
                 GUI.DrawTexture(pb, texBar); GUI.color = ok ? new Color(0.44f, 0.81f, 0.59f) : SweepGame.Amber;
                 GUI.DrawTexture(new Rect(pb.x, pb.y, pb.width * Mathf.Clamp01((float)pr / Mathf.Max(1, c.Value.target)), pb.height), white); GUI.color = Color.white;
-                GUI.Label(new Rect(cr.x + 8, pb.y - 9, 52, 16), "<size=10><color=#c8d0dc>" + Mathf.Min(pr, c.Value.target) + " / " + c.Value.target + "</color></size>", label);
+                GUI.Label(new Rect(cr.x + 8, pb.y - 11, 52, 20), "<size=10><color=#c8d0dc>" + Mathf.Min(pr, c.Value.target) + " / " + c.Value.target + "</color></size>", label);
             }
             // 첫 5분 — 새 장난감마다 한 줄씩만 (§10)
             string hint = null;
@@ -1976,7 +1976,7 @@ namespace SalvageRun.Orbit
             // ∞ 무한 궤도 · ★ 새 회사 (09-24 사장님 12 · 26번)
             if (GUI.Button(new Rect(cx - 10, 500, 220, 44), "<color=#d8ccff>무한 궤도로 ▸</color>", bigBtn)) { sim.EnterEndless(); showResult = false; flow = 2; OrbitSfx.Play("launch", 0.8f); }
             if (GUI.Button(new Rect(cx + 220, 500, 200, 44), "새 회사로 · ★" + M.legend, bigBtn)) { game.NewGame(true); showResult = false; }
-            if (GUI.Button(new Rect(cx + 430, 506, 180, 32), "<size=12>기록까지 모두 지우기</size>", btn)) { game.WipeAll(); showResult = false; }
+            if (GUI.Button(new Rect(cx + 430, 506, 180, 32), "<size=12>기록까지 모두 지우기</size>", btnC)) { game.WipeAll(); showResult = false; }
             GUI.Label(new Rect(cx, 552, cw, 18), "<size=11><color=#8a93a3>★ 전설 경력 " + M.legend + " — 다음 회사부터 모든 값 +" + (M.legend * 10) + "% · 처음 열쇠 +" + M.legend + "</color></size>", center);
         }
     }
