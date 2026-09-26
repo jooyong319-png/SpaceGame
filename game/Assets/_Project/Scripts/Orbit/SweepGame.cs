@@ -717,19 +717,28 @@ namespace SalvageRun.Orbit
             if (hit) { Add(glow, at, 0.5f, new Color(1f, 0.87f, 0.58f, 0.6f), 7, 0.18f); Zap(muzzle, at, new Color(1f, 0.8f, 0.4f), 0.14f, 0.16f, 9); Star(at, new Color(1f, 0.85f, 0.5f), 0.45f, 6, 0.14f); }   // ⚡ 빔 둘레 번개 · ✦ 맞는 자리 빛살
         }
 
-        // 🚀 산탄선 — 포구에서 알 여러 개가 부채꼴로 퍼져 조준 원 안에 흩어진다 (09-26)
+        // 🚀 산탄선 — 포구 불꽃 · 굵은 알 여덟이 날아가 조준 원 안에 흩어진다 · 닿는 자리 불똥 · 탄피 (09-26 사장님 「기본 무기 외형 바꾸자」)
         void ScatterFx(Vector3 at, float radiusPx, bool hit)
         {
             var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);
-            float rw = radiusPx / PxPerUnit; var col = new Color(1f, 0.8f, 0.25f);
-            for (int i = 0; i < 7; i++)
+            float rw = radiusPx / PxPerUnit; var col = new Color(1f, 0.8f, 0.25f); const float fly = 0.11f;
+            Add(glow, muzzle, 1.1f, new Color(1f, 0.85f, 0.4f, 0.95f), 7, 0.1f);                    // 포구 불꽃
+            Star(muzzle, new Color(1f, 0.9f, 0.55f), 0.7f, 8, 0.09f);
+            for (int i = 0; i < 8; i++)
             {
                 var p = at + (Vector3)(Random.insideUnitCircle * rw);
-                var tr = Add(pixel, p, 0.05f, new Color(1f, 0.92f, 0.6f, hit ? 0.95f : 0.5f), 8, 0.12f); tr.a = muzzle; tr.b = p; tr.size = 0.05f;
-                if (hit) Add(glow, p, 0.22f, new Color(col.r, col.g, col.b, 0.55f), 7, 0.14f);
+                var tr = Add(pixel, muzzle, 0.05f, new Color(1f, 0.95f, 0.7f, 1f), 9, fly + 0.05f); tr.a = muzzle; tr.b = p; tr.size = 0.12f;   // 날아가는 알
+                var hitFx = Add(glow, p, hit ? 0.45f : 0.26f, new Color(col.r, col.g, col.b, hit ? 0.75f : 0.35f), 7, 0.16f); hitFx.age = -fly;   // 닿는 자리
+                if (hit) for (int k = 0; k < 2; k++) { var sp = Add(pixel, p, 0.05f, new Color(1f, 0.85f, 0.45f), 0, 0.3f); sp.v = (Vector3)(Random.insideUnitCircle.normalized * Random.Range(1.5f, 3.5f)); sp.age = -fly; }
             }
-            RingFx(at, col, 0.2f, rw * 2);
-            if (hit) { OrbitSfx.Play("blast", 0.35f, 0.08f); shake = Mathf.Max(shake, 0.05f); Burst(at, col, 6, 2.6f); }
+            RingFx(at, col, 0.14f, rw * 2);
+            for (int k = 0; k < 2; k++)                                                              // 탄피 — 옆으로 튀어 떨어진다
+            {
+                float side = Random.value < 0.5f ? -1 : 1;
+                var cs = Add(pixel, muzzle + new Vector3(side * 0.25f, -0.35f, 0), 0.06f, new Color(0.85f, 0.62f, 0.2f), 10, 0.8f);
+                cs.v = new Vector3(side * Random.Range(1.6f, 2.6f), Random.Range(2.2f, 3.4f), 0);
+            }
+            if (hit) { OrbitSfx.Play("blast", 0.35f, 0.08f); shake = Mathf.Max(shake, 0.06f); }
             else OrbitSfx.Play("tick", 0.4f, 0.05f);
         }
 
@@ -1123,7 +1132,9 @@ namespace SalvageRun.Orbit
             sr.transform.localScale = new Vector3(w * TK / square.bounds.size.x, h * TK / square.bounds.size.y, 1);
         }
         static Sprite hullSpr, turClawSpr, dronePx;
-        static int turClawShip = -1;                                             // 🚀 포탑 그림을 불러온 배 (09-26)
+        static int turClawShip = -1;
+        static Sprite scatterTur; static bool scatterTried;
+        static Sprite ScatterTur() { if (!scatterTried) { scatterTried = true; scatterTur = Resources.Load<Sprite>("ship/turret_scatter"); } return scatterTur; }                                             // 🚀 포탑 그림을 불러온 배 (09-26)
         static readonly Sprite[][] planetFrames = new Sprite[9][]; static readonly bool[] planetTried = new bool[9];
         static Sprite[] PlanetFrames(int pi)
         {
@@ -1340,7 +1351,7 @@ namespace SalvageRun.Orbit
                     for (int k = -4; k <= 4; k++) TSprite(consoleSpr, TW(640 + k * tw, 720 - 34 * q), tw, 0, -11);
                 }
                 if (mountSpr != null) TSprite(mountSpr, TW((float)M[0], (float)M[1]) + new Vector3(0, -12 * TK, 0), 64, 0, -1);
-                var ts = TurSprite(w);
+                var ts = w == 0 && sim.Ship == 1 ? ScatterTur() : TurSprite(w);        // 🚀 산탄선은 산탄 포탑 (09-26 — 빔 포탑이 먼저 불려 와 안 바뀌던 것)
                 if (ts != null)                                                            // 🔫 픽셀랩 포대 그림 (위를 보는 그림 → -90°)
                 {
                     const float up = Mathf.PI / 2;
@@ -1350,7 +1361,7 @@ namespace SalvageRun.Orbit
                         var pc = TW(651, 641); var d6 = turAim - pc; TSprite(ts, pc, TurW[6], Mathf.Atan2(d6.y, d6.x) - up, 2);
                         for (int i = 0; i < n; i++) if (recoil[i] > 0) TDisc(B(i), 14, new Color(c.r, c.g, c.b, recoil[i]), 4, glow);
                     }
-                    else for (int i = 0; i < n; i++) TSprite(ts, TAlong(B(i), A(i), -recoil[i] * 6), TurW[w], A(i) - up, 2);
+                    else for (int i = 0; i < n; i++) TSprite(ts, TAlong(B(i), A(i), -recoil[i] * 6), w == 0 && sim.Ship == 1 ? 54 : TurW[w], A(i) - up, 2);
                     if (w == 8) { float ch = Mathf.Clamp01(1f - (float)sim.R.next / 1.2f); if (ch > 0.5f) TDisc(TAlong(B(0), A(0), 108), 10 + 24 * ch, new Color(0.75f, 0.9f, 1f, ch * 0.8f), 4, glow); }
                 }
                 else switch (w)
@@ -1451,7 +1462,8 @@ namespace SalvageRun.Orbit
             {
                 var p = fx[i];
                 p.age += dt;
-                float k = p.age / p.life;
+                p.sr.enabled = p.age >= 0;                                          // 늦게 나타나는 것 (산탄이 닿는 자리) — 나이가 음수인 동안 숨긴다
+                float k = Mathf.Max(0, p.age) / p.life;
                 var tr = p.sr.transform;
                 bool dead = k >= 1f;
                 switch (p.kind)
@@ -1485,6 +1497,21 @@ namespace SalvageRun.Orbit
                         break;
                     }
                     case 7: p.sr.color = new Color(p.c.r, p.c.g, p.c.b, p.c.a * (1 - k)); break;
+                    case 9:      // 산탄 알 — 포구에서 닿는 자리까지 짧은 굵은 선이 날아간다
+                    {
+                        float u = Mathf.Clamp01(p.age / Mathf.Max(0.01f, p.life - 0.05f)), h = Mathf.Min(1, u), tl = Mathf.Clamp01(u - 0.4f);
+                        Vector3 ha = Vector3.Lerp(p.a, p.b, h), ta = Vector3.Lerp(p.a, p.b, tl), d9 = ha - ta;
+                        tr.position = (ha + ta) / 2;
+                        tr.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(d9.y, d9.x) * Mathf.Rad2Deg);
+                        tr.localScale = new Vector3(Mathf.Max(0.02f, d9.magnitude) / pixel.bounds.size.x, p.size / pixel.bounds.size.y, 1);
+                        p.sr.color = new Color(p.c.r, p.c.g, p.c.b, u >= 1 ? 1 - Mathf.Clamp01((p.age - (p.life - 0.05f)) / 0.05f) : 1);
+                        break;
+                    }
+                    case 10:     // 탄피 — 튀어 올랐다 떨어지며 돈다
+                        p.v += new Vector3(0, -14f, 0) * dt; tr.position += p.v * dt; tr.rotation = Quaternion.Euler(0, 0, p.age * 900f);
+                        tr.localScale = new Vector3(0.05f / pixel.bounds.size.x, 0.11f / pixel.bounds.size.y, 1);
+                        p.sr.color = new Color(p.c.r, p.c.g, p.c.b, 1 - k * k);
+                        break;
                 }
                 if (dead) { p.sr.gameObject.SetActive(false); pool.Push(p.sr); fx.RemoveAt(i); }
             }
