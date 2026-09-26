@@ -187,7 +187,7 @@ static class Tests
         if (sim.Open(1)) Fail("관문을 안 부쉈는데 달이 열림");
         // 관문 — 한 판 안에 못 부수면 다음 판엔 다시 가득 (09-26)
         sim.SetOrbit(0); sim.StartRun();
-        if (sim.GateJunk != null) Fail("청구서 1장을 안 갚았는데 관문이 나옴 (09-27 — 관문은 그 차례 청구서 뒤)");
+        { var sg = sim.GateJunk; if (sg == null) Fail("방어막 관문이 안 보임 (09-27 — 차례 청구서 전엔 방어막을 두르고 보인다)"); else { int hp0 = sg.hp; sim.DebugHit(sg, 999999); sim.DebugBlast(sg.x, sg.y); sg.hp = 0; sim.DebugKill(sg); if (sim.GateJunk == null || sim.GateJunk.hp != hp0 || sim.Open(1)) Fail("방어막 관문이 깨짐 (피해 · 폭발 · 바로 부수기 모두 막아야)"); } }
         while (sim.R != null && !sim.R.over) sim.Tick(0.1, 480, 300, false, false);
         sim.S.bill = Math.Max(sim.S.bill, sim.GateBill); sim.SetOrbit(0); sim.StartRun();
         var g = sim.GateJunk; if (g == null) { Fail("지구 판에 관문이 없음"); return; }

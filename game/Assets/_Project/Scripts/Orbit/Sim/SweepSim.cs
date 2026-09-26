@@ -778,11 +778,16 @@ namespace SalvageRun.Orbit.Sim
         }
         void SpawnGate()
         {
-            if (!GateReady || R.clean || S.orbit != OrbitOrder[Frontier]) return;
+            if (!HasGate || R.clean || S.orbit != OrbitOrder[Frontier]) return;
             var o = Orbits[S.orbit];
             var g = Spawn(Big, Rnd(0, Math.PI * 2), (o.bi + Bo) / 2, Att.None, false, 0.35);
-            g.sig = GateSig; g.fade = 1; g.max = Math.Max(1, GateMax); g.hp = Math.Max(1, (int)Math.Round(g.max * Math.Max(0.02, S.gateFrac)));
+            g.sig = GateSig; g.fade = 1;
+            if (!GateReady) { g.max = g.hp = 1; return; }                          // 🛡 09-27 사장님 「보스가 없는데?」 — 차례 청구서 전엔 방어막 (보이기만 · 안 깨진다 · 체력은 풀릴 때 정한다)
+            g.max = Math.Max(1, GateMax); g.hp = Math.Max(1, (int)Math.Round(g.max * Math.Max(0.02, S.gateFrac)));
         }
+        public void DebugHit(Junk d, int dmg) => Hit(d, dmg, 0, true);             // 시험용
+        public void DebugBlast(double x, double y) { for (int i = 0; i < 40; i++) DoBlast(x, y, 80); }   // 시험용
+        public void DebugKill(Junk d) => Kill(d, 0, 1);                                   // 시험용
         public bool DebugBreakGate() { var g = GateJunk; if (g == null) return false; g.hp = 0; Kill(g, 0, 1); return true; }   // 시험용
         void GateHit(Junk d)
         {   // 칠 때마다 가끔 비싼 파편이 떨어진다 — 관문을 치는 판도 손해만은 아니게
@@ -2224,6 +2229,7 @@ namespace SalvageRun.Orbit.Sim
             if (d.dead) return;
             if (d.att == Att.Armor && src == 0 && !pierce) dmg = Math.Min(dmg, 1);
             if (d.frz > 0) dmg = (int)Math.Round(dmg * FrzMul);                        // 언 것은 두 배
+            if (d.sig == GateSig && !GateReady) { if (Rnd() < 0.08) Emit(SwEv.Pop, d.x, d.y - 30, 0, 4, "방어막 — 청구서 " + GateBill + "장 뒤"); return; }   // 🛡 방어막
             if (d.sig == GateSig) { if (src != 0) dmg = Math.Max(1, dmg / 3); if (Up(9) > 0) dmg = Math.Max(1, (int)Math.Round(dmg * (1 + 0.10 * Up(9)))); GateHit(d); }   // 🛰 연쇄 · 드론 · 폭발은 조금만
             if (d.sig != GateSig) R.dmgDone += Math.Min(dmg, Math.Max(0, d.hp));
             DbgWDmg[dbgW] += Math.Min(dmg, Math.Max(0, d.hp));   // 📊 판당 준 피해 (관문 체력 기준)
@@ -2289,7 +2295,7 @@ namespace SalvageRun.Orbit.Sim
         bool blastW; int shatterDepth;
         void Kill(Junk d, int src, double mult)
         {
-            if (d.sig == GateSig) { if (d.hp > 0) return; GateBroken(d); }   // 🛰 관문은 빨려 들거나 휩쓸려 사라지지 않는다
+            if (d.sig == GateSig) { if (!GateReady) { d.hp = d.max; return; } if (d.hp > 0) return; GateBroken(d); }   // 🛡 방어막 — 폭발 · 얼음 파편은 Hit 를 안 거쳐서 여기서 막는다   // 🛰 관문은 빨려 들거나 휩쓸려 사라지지 않는다
             DbgKills++;
             if (d.dead) return;
             d.dead = true;

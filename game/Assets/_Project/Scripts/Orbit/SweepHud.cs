@@ -482,11 +482,22 @@ namespace SalvageRun.Orbit
                     Vector3 gsp = game.WorldToScreen(game.PxToWorld(gj.x, gj.y));    // 🛰 관문 바로 위에 따라다닌다 (09-26 — 위 가운데 막대가 화면을 가렸다)
                     var gr = new Rect(Mathf.Clamp(gsp.x / scale - 110, 8, vw - 228), Mathf.Clamp((Screen.height - gsp.y) / scale - 78, 60, RefH - 120), 220, 30);
                     GUI.color = new Color(0.05f, 0.04f, 0.04f, 0.85f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.6f, 0.4f, 0.8f), 1);
+                    if (!sim.GateReady)
+                    {   // 🛡 방어막 — 관문 둘레에 푸른 막 · 막대 대신 자물쇠 (09-27)
+                        float sp = 0.5f + 0.5f * Mathf.Sin(Time.time * 3f), gx = gsp.x / scale, gy = (Screen.height - gsp.y) / scale;
+                        GUI.color = new Color(0.45f, 0.8f, 1f, 0.12f + 0.08f * sp); GUI.DrawTexture(new Rect(gx - 78, gy - 78, 156, 156), texDisc);
+                        GUI.color = new Color(0.6f, 0.9f, 1f, 0.55f + 0.25f * sp); GUI.DrawTexture(new Rect(gx - 80, gy - 80, 160, 160), texRing);
+                        GUI.color = Color.white;
+                        GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), "<size=11><color=#ffb36b>🛰 " + sim.GateName + "</color> <color=#9fdcff>· 방어막</color></size>", label);
+                        GUI.Label(new Rect(gr.x + 8, gr.y + 14, gr.width - 16, 16), "<size=10><color=#9fdcff>청구서 " + sim.GateBill + "장을 갚으면 풀린다</color></size>", label);
+                        goto gateDone;
+                    }
                     float gk = Mathf.Clamp01((float)gj.hp / Mathf.Max(1, gj.max));
                     GUI.color = new Color(0.2f, 0.12f, 0.1f); GUI.DrawTexture(new Rect(gr.x + 6, gr.yMax - 9, gr.width - 12, 5), white);
                     GUI.color = new Color(1f, 0.55f, 0.35f); GUI.DrawTexture(new Rect(gr.x + 6, gr.yMax - 9, (gr.width - 12) * gk, 5), white); GUI.color = Color.white;
                     GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), "<size=11><color=#ffb36b>🛰 " + sim.GateName + "</color> <color=#8a93a3>→ " + sim.NextName + "</color></size>", label);
                     GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), "<size=11>" + Mathf.CeilToInt(gk * 100) + "%</size>", cost);
+                    gateDone:;
                 }
             }
             // 💰 이번 판 계산대 — 계기판 위, 포구 오른쪽. 금화가 여기로 날아와 한 숫자로 (시안 DbsvFEEy1K5ddbZsM61B2y)
