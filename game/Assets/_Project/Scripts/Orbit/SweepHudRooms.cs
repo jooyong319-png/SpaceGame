@@ -307,7 +307,7 @@ namespace SalvageRun.Orbit
             if (il > 0 && open)
             {
                 var nn = mk.NextNews;
-                string tip = "다음 속보 " + Mathf.CeilToInt(mk.NextNewsIn) + "초" + (il >= 2 ? " · " + (nn.up != null ? "<color=" + UpHex + ">오를</color>" : "<color=" + DnHex + ">내릴</color>") + " 쪽: " + Clip(SecName(nn), 10) : "");
+                string tip = "다음 출동 중 속보" + (il >= 2 ? " · " + (nn.up != null ? "<color=" + UpHex + ">오를</color>" : "<color=" + DnHex + ">내릴</color>") + " 쪽: " + Clip(SecName(nn), 10) : "");
                 GUI.Label(new Rect(ls.x + 8, ls.yMax - 38, ls.width - 16, 36), "<size=10><color=#e8c77e>내부자</color> " + tip + "</size>", small);
             }
 
@@ -809,6 +809,16 @@ namespace SalvageRun.Orbit
         void BankruptGlass(Rect r)
         {
             bool can = sim.CanBankrupt;
+            bool stuck = can && sim.S.overdue && sim.S.cash + sim.LoanCap < sim.BillAmount;   // 🧯 대출로도 못 갚는다 — 파산할 때 (09-26 사장님 「파산해야 하는 경우엔 파산 쪽에 표시」)
+            if (stuck && glassK < 0.05f)
+            {
+                float sp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 5f);
+                GUI.color = new Color(1f, 0.2f, 0.15f, 0.22f + 0.3f * sp); GUI.DrawTexture(new Rect(r.center.x - 70, r.y - 22, 140, 110), texDisc);
+                GUI.color = Color.white;
+                var tag = new Rect(r.center.x - 70, r.y - 44 - 4 * sp, 140, 22);
+                GUI.color = new Color(0.45f, 0.05f, 0.04f, 0.95f); GUI.DrawTexture(tag, white); Frame(tag, new Color(1f, 0.35f, 0.25f), 2); GUI.color = Color.white;
+                GUI.Label(tag, "<size=12><b><color=#ffd2c8>대출로도 못 갚는다 ▼</color></b></size>", center);
+            }
             float dt = Time.unscaledDeltaTime;
             if (glassOpen) { glassT -= dt; if (glassT <= 0 || !can) glassOpen = false; }
             glassK = Mathf.MoveTowards(glassK, glassOpen ? 1 : 0, dt / 0.25f);
@@ -853,7 +863,7 @@ namespace SalvageRun.Orbit
             // 명판
             var plate = new Rect(r.x - 6, box.yMax + 3, r.width + 12, 18);
             GUI.color = new Color(0.12f, 0.04f, 0.04f, 0.9f); GUI.DrawTexture(plate, white); Frame(plate, new Color(0.7f, 0.18f, 0.12f), 1); GUI.color = Color.white;
-            string pl = !can ? "3장부터" : glassK > 0.95f ? "누르면 파산 · 열쇠 +" + sim.BankruptKeys : "파산";
+            string pl = !can ? "3장부터" : glassK > 0.95f ? "누르면 파산 · 신용 +" + sim.S.creditPending * SweepSim.CreditK : stuck ? "지금 파산" : "파산";
             GUI.Label(plate, "<size=10><b><color=#ffb3a8>" + pl + "</color></b></size>", center);
         }
 

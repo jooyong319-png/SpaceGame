@@ -125,7 +125,9 @@ namespace SalvageRun.Orbit.Sim
             StartCandle(s);
         }
 
-        void RollNews() { M.nextNews = rng.Next(NewsBook.Length); M.nextNewsT = 30 + (float)rng.NextDouble() * 30; M.newsT = 0; }
+        void RollNews() { M.nextNews = rng.Next(NewsBook.Length); M.nextNewsT = 1e9f; M.newsT = 0; }   // 다음 속보는 정해 두고, 언제 터질지는 출동이 시작될 때 정한다 (ArmNews)
+        /// <summary>📰 출동마다 속보 하나 — 출동 5~14초 사이에 터진다 (09-26 사장님 「미리 알아도 출발한 뒤엔 못 사서 의미가 없다」 → 출발 전에 사 두게)</summary>
+        public void ArmNews(double t) { if (M.nextNews < 0) RollNews(); M.newsT = 0; M.nextNewsT = (float)t; }
 
         bool Hits(int i, string[] keys) { if (keys == null) return false; foreach (var k in keys) if (k == Defs[i].id || k == Defs[i].sector) return true; return false; }
 

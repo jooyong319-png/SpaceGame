@@ -1292,6 +1292,7 @@ namespace SalvageRun.Orbit.Sim
         {
             if (!R.over || S.bill >= Bills.Length && !M.cleanReady && S.debt <= 0 && !M.endless) return;   // 청구서를 다 갚아도 빚이 남았으면 갚으러 출동한다
             bool clean = M.cleanReady;
+            if (Mk != null) Mk.ArmNews(Rnd(5, 14));                                 // 📰 이번 출동 중 속보 하나
             if (clean) S.orbit = MaxOrbit;
             S.runs++; S.rerolled = false;
             var r = new SweepRun { clean = clean };

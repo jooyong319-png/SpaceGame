@@ -1402,7 +1402,7 @@ namespace SalvageRun.Orbit
             if (il > 0)
             {
                 var nn = mk.NextNews; string who = nn.up != null ? string.Join(" ", nn.up) : string.Join(" ", nn.down);
-                string tip = "다음 속보까지 " + Mathf.CeilToInt(mk.NextNewsIn) + "초" + (il >= 2 ? " · " + (nn.up != null ? "<color=#ff5c5c>오를</color>" : "<color=#5494ff>내릴</color>") + " 쪽: " + SecName(nn) : "") + (il >= 3 ? " · 「" + Clip(nn.head, 16) + "」" : "");
+                string tip = "다음 출동 중 속보" + (il >= 2 ? " · " + (nn.up != null ? "<color=#ff5c5c>오를</color>" : "<color=#5494ff>내릴</color>") + " 쪽: " + SecName(nn) : "") + (il >= 3 ? " · 「" + Clip(nn.head, 16) + "」" : "");
                 GUI.Label(new Rect(r.x + 12, y, r.width - 24, 20), "<size=11><color=#e8c77e>내부자</color> " + tip + "</size>", label);
                 y += 20;
             }
