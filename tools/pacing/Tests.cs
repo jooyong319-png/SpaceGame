@@ -185,13 +185,12 @@ static class Tests
         for (int i = 0; i < SweepSim.NodeCount; i++)
             if (!SweepSim.Infinite(i) && SweepSim.Tiles(i) > 1 && sim.S.lv[i] > SweepSim.TileLv(i, Math.Min(SweepSim.Tiles(i), sim.TileCap))) { Fail($"{SweepSim.Nodes[i].id} 가 지구 한도({sim.TileCap}칸)를 넘음"); break; }
         if (sim.Open(1)) Fail("관문을 안 부쉈는데 달이 열림");
-        // 관문 체력은 판을 넘어 남는다
+        // 관문 — 한 판 안에 못 부수면 다음 판엔 다시 가득 (09-26)
         sim.SetOrbit(0); sim.StartRun();
         var g = sim.GateJunk; if (g == null) { Fail("지구 판에 관문이 없음"); return; }
         g.hp = g.max / 2; EndRunNow(sim);
-        if (Math.Abs(sim.S.gateFrac - 0.5) > 0.05) Fail($"관문 체력이 안 남음 ({sim.S.gateFrac:0.00})");
         sim.StartRun(); g = sim.GateJunk;
-        if (g == null || Math.Abs((double)g.hp / g.max - 0.5) > 0.05) Fail("다음 판 관문 체력이 반이 아님"); EndRunNow(sim);
+        if (g == null || g.hp != g.max) Fail("못 부순 관문이 다음 판에 가득 차지 않음"); EndRunNow(sim);
         // 관문을 차례로 부수면 끝까지 열린다
         for (int z = 0; z + 1 < SweepSim.OrbitOrder.Length; z++)
         {
@@ -204,7 +203,7 @@ static class Tests
         }
         if (sim.HasGate) Fail("카이퍼 벨트에도 관문이 있음");
         if (sim.S.keys < 999) Fail("관문 보상 열쇠가 안 늘어남");
-        Console.WriteLine($"   관문 {SweepSim.OrbitOrder.Length - 1}개 → 열린 곳 {SweepSim.ZoneName[sim.ZoneOpen]} · 지구 한도 3칸 · 체력은 판을 넘어 남음");
+        Console.WriteLine($"   관문 {SweepSim.OrbitOrder.Length - 1}개 → 열린 곳 {SweepSim.ZoneName[sim.ZoneOpen]} · 지구 한도 3칸 · 못 부수면 다시 가득");
     }
 
     static void Endless()

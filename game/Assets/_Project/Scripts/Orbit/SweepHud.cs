@@ -479,12 +479,13 @@ namespace SalvageRun.Orbit
                 var gj = sim.GateJunk;
                 if (gj != null)
                 {
-                    var gr = new Rect(vw / 2 - 170, 58, 340, 30);
+                    Vector3 gsp = game.WorldToScreen(game.PxToWorld(gj.x, gj.y));    // 🛰 관문 바로 위에 따라다닌다 (09-26 — 위 가운데 막대가 화면을 가렸다)
+                    var gr = new Rect(Mathf.Clamp(gsp.x / scale - 110, 8, vw - 228), Mathf.Clamp((Screen.height - gsp.y) / scale - 78, 60, RefH - 120), 220, 30);
                     GUI.color = new Color(0.05f, 0.04f, 0.04f, 0.85f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.6f, 0.4f, 0.8f), 1);
                     float gk = Mathf.Clamp01((float)gj.hp / Mathf.Max(1, gj.max));
                     GUI.color = new Color(0.2f, 0.12f, 0.1f); GUI.DrawTexture(new Rect(gr.x + 6, gr.yMax - 9, gr.width - 12, 5), white);
                     GUI.color = new Color(1f, 0.55f, 0.35f); GUI.DrawTexture(new Rect(gr.x + 6, gr.yMax - 9, (gr.width - 12) * gk, 5), white); GUI.color = Color.white;
-                    GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), "<size=11><color=#ffb36b>🛰 " + sim.GateName + "</color> <color=#8a93a3>관문 · 겨눠 쳐야 깎인다 → " + sim.NextName + "</color></size>", label);
+                    GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), "<size=11><color=#ffb36b>🛰 " + sim.GateName + "</color> <color=#8a93a3>→ " + sim.NextName + "</color></size>", label);
                     GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), "<size=11>" + Mathf.CeilToInt(gk * 100) + "%</size>", cost);
                 }
             }
@@ -1233,6 +1234,7 @@ namespace SalvageRun.Orbit
             first["R"] = 0;
             for (int i = 0; i < N.Length; i++)
             {
+                if (SweepSim.Retired(i)) continue;                             // 없앤 칸 (의뢰) — 트리에 안 그린다
                 var pl = SweepSim.Layout[N[i].id];
                 for (int j = 1; j <= SweepSim.Tiles(i); j++)
                 {
@@ -1825,7 +1827,7 @@ namespace SalvageRun.Orbit
                 case "d_mag": return "+" + (25 * l) + "%";
                 case "d_sig": return (3 + 2 * l) + "초";
                 case "d_grade": return "한 방 " + (1 + l);
-                case "d_fix": return "+" + (2 * l) + "초";
+                case "d_fix": return "+" + l + "초";
                 case "d_pair": return l > 0 ? "둘씩" : "하나씩";
                 case "d_fact": return "+" + l + "대";
                 case "b_n": return "공격마다 +" + (0.2f * l).ToString("0.#") + "%";
@@ -1873,7 +1875,7 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(rr.x + 10, rr.y + 6, rr.width - 20, 20), cc < 0 ? "<color=#6fcf97>끝</color>" : "신용 " + cc, cost);
                 GUI.Label(new Rect(rr.x + 10, rr.y + 30, rr.width - 20, 18), c.desc, small);
             }
-            if (GUI.Button(new Rect(x + 150, 400, 300, 56), "(" + M.company + "대) 출발 ▸", bigBtn)) { sim.CloseCareer(); showResult = false; flow = 3; game.Save(); }
+            if (GUI.Button(new Rect(x + 150, 400, 300, 56), "(" + M.company + "대) 출발 ▸", bigBtn)) { sim.CloseCareer(); showResult = false; flow = 2; game.Save(); }   // 09-26 사장님 「조종실이 첫 화면으로」
         }
 
         // ───────────────────────────────── 궤도일보 (§11)

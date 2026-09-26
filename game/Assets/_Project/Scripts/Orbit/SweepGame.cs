@@ -271,7 +271,8 @@ namespace SalvageRun.Orbit
             bool manual = inside && !hud.overSkill && !hud.overAuto && !hud.overStock && !hud.overVolley && mouse.leftButton.isPressed;
             if ((manual || !autoMode) && !sim.R.over) sim.R.idleT = 0;          // ★ 게으름 보너스 — 손을 대면 처음부터
             autoAiming = autoMode && !sim.R.over && !manual;
-            sim.FireHeld = manual || autoAiming && !hud.manualFire;            // 수동이면 AUTO 칸이 있어도 누르고 있는 동안만 — 자동 · 수동을 그대로 비교하게 (09-26)
+            sim.FireHeld = manual || autoAiming && !hud.manualFire;
+            if (manual && mouse.leftButton.wasPressedThisFrame) sim.PressFire();   // 👆 누르는 순간 한 방            // 수동이면 AUTO 칸이 있어도 누르고 있는 동안만 — 자동 · 수동을 그대로 비교하게 (09-26)
             if (autoAiming) { AutoAim(3); return; }
             if (!inside) return;
             Vector3 w = ScreenToWorld(sp);

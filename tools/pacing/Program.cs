@@ -114,7 +114,7 @@ static class Program
             int seg = Math.Min(8, sim.S.bill + 1);
             sim.StartRun();
             var R = sim.R;
-            bool gateRun = sim.GateJunk != null && !sim.S.overdue && CappedOut(sim) && (sim.S.cash >= sim.BillAmount || sim.S.billDue >= 3 && sim.S.cash >= sim.BillAmount * 0.5);   // 청구서 돈이 있거나 넉넉할 때만   // 🛰 사람처럼 — 트리에서 한도까지 다 샀고 청구서가 급하지 않으면 관문만 노린다
+            bool gateRun = sim.GateJunk != null && !sim.S.overdue && sim.S.billDue >= 3 && rng.NextDouble() < 0.35;   // 🛰 청구서 기한이 넉넉할 때 가끔 관문만 노린다   // 🛰 사람처럼 — 트리에서 한도까지 다 샀고 청구서가 급하지 않으면 관문만 노린다
             long h0 = SweepSim.DbgHits, o0 = SweepSim.DbgOneShot, k0 = SweepSim.DbgKills;
             long ticks = 0;
             while (!R.over)
@@ -141,6 +141,7 @@ static class Program
                 while (sim.Events.Count > 0) sim.Events.Dequeue();
             }
             hold = false;
+            if (Environment.GetEnvironmentVariable("DBG") == "gate" && sim.S.bill < 4) Console.WriteLine($"  {Min(),5:0.0}분 청구서 {sim.S.bill} 관문판 {gateRun} 관문 {(sim.GateJunk != null ? sim.GateJunk.hp + "/" + sim.GateJunk.max : "-")} max {sim.S.gateMax:0} 돈 {sim.S.cash:0} 청구 {sim.BillAmount:0} 살칸없음 {CappedOut(sim)} 화력 {sim.Pow:0.0}");
             if (R.clean) { log.Add($"{Min(),6:0.0}분  ✨ 청산 출동 끝 — 빚 청산"); break; }
             segEarn[seg] += R.Earned; segRuns[seg]++;
             if (econOn && R.Earned > 0)
@@ -172,7 +173,7 @@ static class Program
 
     static bool CappedOut(SweepSim sim)
     {   // 한도 안에서 더 살 칸이 없다 (항로 · 가게 · 열쇠 칸 제외)
-        for (int i = 0; i < SweepSim.NodeCount; i++) { var id = SweepSim.Nodes[i].id; if (id.StartsWith("p_") || id == "e_shop") continue; var st = sim.State(i); if (st == NodeSt.Can || st == NodeSt.Poor && !SweepSim.KeyNodes.Contains(id)) return false; }
+        for (int i = 0; i < SweepSim.NodeCount; i++) { var id = SweepSim.Nodes[i].id; if (id.StartsWith("p_") || id == "e_shop") continue; var st = sim.State(i); if (st == NodeSt.Can) return false; }   // 지금 살 수 있는 칸이 없다
         return true;
     }
     // 💰 경제 진단 (09-26 사장님 「돈이 전혀 안 모자라 · 스킬이 너무 싸 · 한 판이 너무 길어」)
