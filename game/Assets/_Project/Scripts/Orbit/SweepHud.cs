@@ -1624,7 +1624,7 @@ namespace SalvageRun.Orbit
                 if (!isRoot && SweepSim.KeyNodes.Contains(n.id)) { float kp = sim.S.keys > 0 && next ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3 + k) : 0.3f; GUI.color = new Color(0.71f, 0.61f, 1f, owned ? 0.9f : 0.35f + 0.3f * kp); Frame(new Rect(r.x - 3 * zz, r.y - 3 * zz, r.width + 6 * zz, r.height + 6 * zz), GUI.color, 2f); GUI.color = Color.white; }   // 「열쇠」 글자는 툴팁에서 · 열쇠가 있을 때만 깜빡 (09-26 정돈 14)
                 if (!isRoot && n.max == 1 && System.Array.IndexOf(SweepSim.WeaponNode, n.id) == sim.Weapon && owned) { GUI.color = new Color(1f, 0.55f, 0.5f); GUI.Label(new Rect(pc.x - 40, r.yMax + 2 * zz, 80, 16), "<size=10><b>장착 중</b></size>", center); GUI.color = Color.white; }
                 if (k == recK) { float rp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 4); GUI.color = new Color(1f, 0.87f, 0.4f, 0.55f + 0.45f * rp); Frame(new Rect(r.x - 5 * zz, r.y - 5 * zz, r.width + 10 * zz, r.height + 10 * zz), GUI.color, 2.5f); GUI.color = Color.white; recLbl = new Rect(pc.x - 17, r.yMax + 1 * zz, 34, 15); }
-                if (lockedTile && next) DashFrame(new Rect(r.x - 3 * zz, r.y - 3 * zz, r.width + 6 * zz, r.height + 6 * zz), gtiles[k].stat >= 0 && sim.CapLocked(gtiles[k].stat) ? new Color(1f, 0.6f, 0.4f) : new Color(1f, 0.42f, 0.38f));   // 잠김 = 점선 테두리 (주황 = 행성 한도) — 「잠」 글자가 칸 위에 겹쳐 두 개처럼 보였다 (09-26)
+                if (lockedTile && next) { var lcol = gtiles[k].stat >= 0 && sim.CapLocked(gtiles[k].stat) ? new Color(1f, 0.6f, 0.4f) : new Color(1f, 0.42f, 0.38f); DashFrame(new Rect(r.x - 3 * zz, r.y - 3 * zz, r.width + 6 * zz, r.height + 6 * zz), lcol); lockLbls.Add((new Rect(pc.x - 17, r.yMax - 8, 34, 14), lcol)); }   // 잠김 = 점선 테두리 + 아래 가장자리 「잠김」 딱지 (주황 = 행성 한도)   // 잠김 = 점선 테두리 (주황 = 행성 한도) — 「잠」 글자가 칸 위에 겹쳐 두 개처럼 보였다 (09-26)
                 GUI.color = Color.white;
                 if (inArea && r.Contains(ev.mousePosition)) hover = k;
                 if (inf && owned) GUI.Label(new Rect(r.x - 10, r.yMax, r.width + 20, 16), "<size=10><color=#ffdf95>∞ " + sim.S.lv[t.stat] + "</color></size>", center);
@@ -1655,6 +1655,12 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(0.04f, 0.05f, 0.07f, 0.9f); GUI.DrawTexture(zr, white); GUI.color = Color.white;
                 GUI.Label(zr, "<size=11><color=#8a93a3>" + Mathf.RoundToInt(userZ * 100) + "%</color></size>", center);
             }
+            foreach (var (lr, lc) in lockLbls)
+            {   // 🔒 「잠김」 — 칸을 다 그린 뒤 맨 위에 (09-26 사장님 「잠? 이해하기 힘듦 — 잠김으로」)
+                GUI.color = new Color(0.08f, 0.04f, 0.04f, 0.92f); GUI.DrawTexture(lr, white); GUI.color = Color.white;
+                GUI.Label(lr, "<size=9><b><color=#" + ColorUtility.ToHtmlStringRGB(lc) + ">잠김</color></b></size>", center);
+            }
+            lockLbls.Clear();
             if (recLbl.width > 0)
             {   // ⭐ 추천 글자 — 칸을 다 그린 뒤 맨 위에, 어두운 바탕으로 (아래 칸에 깔려 안 읽혔다)
                 GUI.color = new Color(0.1f, 0.08f, 0.03f, 0.95f); GUI.DrawTexture(recLbl, white); Frame(recLbl, new Color(1f, 0.8f, 0.4f, 0.8f), 1); GUI.color = Color.white;
@@ -1688,7 +1694,7 @@ namespace SalvageRun.Orbit
             else GUI.Label(new Rect(ox, area.yMax + 2, 750, 16), "<size=11>칸에 마우스를 올리면 무엇인지 보인다 · 빛나는 칸을 누르면 산다 · 휠 = 확대 · 끌기 = 이동</size>", center);
         }
 
-        GUIStyle tipWrap; Rect recLbl;
+        GUIStyle tipWrap; Rect recLbl; readonly List<(Rect, Color)> lockLbls = new List<(Rect, Color)>();
         public int testTip = -1; public string testTipId;                  // 에디터 시험용 — 툴팁 강제로 띄우기
         void Tip(int k, Vector2 at, int vis, float tile)
         {
