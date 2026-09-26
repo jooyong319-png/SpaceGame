@@ -381,6 +381,12 @@ namespace SalvageRun.Orbit
                 var o = SweepSim.Orbits[sim.S.orbit];
                 float dy = (1 - Mathf.Clamp01((k - 0.25f) / 0.25f)) * 14;
                 title.fontSize = 38;
+                for (int i = 0; i < 16; i++)
+                {   // 제목 뒤 옅은 띠 — 가운데 진하고 양끝 옅게 (궤도 잔해 위에서 글자가 묻혔다)
+                    float kk = Mathf.Abs(i - 7.5f) / 7.5f;
+                    GUI.color = new Color(0.02f, 0.03f, 0.05f, 0.55f * ta * (1 - kk * kk));
+                    GUI.DrawTexture(new Rect(vw / 2 - 360 + i * 45, 146 + dy, 46, 86), white);
+                }
                 GUI.color = new Color(1, 1, 1, ta);
                 GUI.Label(new Rect(0, 150 + dy, vw, 50), "<color=#ffdf95>" + (sim.R.clean ? "청산 출동" : o.name + " 궤도") + "</color>", title);
                 var c = sim.CurContract;
@@ -517,7 +523,12 @@ namespace SalvageRun.Orbit
             else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "블랙홀이 열렸다 — 집게로 칠 때 가끔 저절로 열려 빨아들인다";
             else if (sim.DronesOn && !sim.M.flags.Contains("hint_drone") && R.t < 8) hint = "드론은 알아서 줍는다 — 한 방에 부서지는 것만";
             else if (sim.S.orbit > 0 && !sim.M.flags.Contains("hint_p" + sim.S.orbit) && R.t < 8) hint = PlanetHint[sim.S.orbit];   // 새 행성 첫 판
-            if (hint != null) GUI.Label(new Rect(vw / 2 - 360, RefH - 70, 720, 20), hint, center);
+            if (hint != null)
+            {   // 궤도 · 포대 위에서도 읽히게 — 글자 폭만큼 어두운 띠 (09-26 밤 둘러보기)
+                float hw = center.CalcSize(new GUIContent(hint)).x + 28;
+                GUI.color = new Color(0.02f, 0.03f, 0.05f, 0.72f); GUI.DrawTexture(new Rect(vw / 2 - hw / 2, RefH - 72, hw, 24), white); GUI.color = Color.white;
+                GUI.Label(new Rect(vw / 2 - 360, RefH - 70, 720, 20), hint, center);
+            }
             if (game.timeScale > 1) GUI.Label(new Rect(vw - 120, RefH - 46, 106, 18), "시험 속도 ×3", cost);
         }
 
