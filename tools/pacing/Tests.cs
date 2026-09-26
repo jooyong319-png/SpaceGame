@@ -187,6 +187,9 @@ static class Tests
         if (sim.Open(1)) Fail("관문을 안 부쉈는데 달이 열림");
         // 관문 — 한 판 안에 못 부수면 다음 판엔 다시 가득 (09-26)
         sim.SetOrbit(0); sim.StartRun();
+        if (sim.GateJunk != null) Fail("청구서 1장을 안 갚았는데 관문이 나옴 (09-27 — 관문은 그 차례 청구서 뒤)");
+        while (sim.R != null && !sim.R.over) sim.Tick(0.1, 480, 300, false, false);
+        sim.S.bill = Math.Max(sim.S.bill, sim.GateBill); sim.SetOrbit(0); sim.StartRun();
         var g = sim.GateJunk; if (g == null) { Fail("지구 판에 관문이 없음"); return; }
         g.hp = g.max / 2; EndRunNow(sim);
         sim.StartRun(); g = sim.GateJunk;
@@ -194,6 +197,7 @@ static class Tests
         // 관문을 차례로 부수면 끝까지 열린다
         for (int z = 0; z + 1 < SweepSim.OrbitOrder.Length; z++)
         {
+            sim.S.bill = Math.Min(SweepSim.Bills.Length - 1, Math.Max(sim.S.bill, sim.GateBill));   // 그 차례 청구서까지 갚았다고 치고
             sim.SetOrbit(SweepSim.OrbitOrder[sim.Frontier]); sim.StartRun();
             if (!sim.DebugBreakGate()) { Fail($"{SweepSim.ZoneName[sim.Frontier]} 판에 관문이 없음"); break; }
             EndRunNow(sim);

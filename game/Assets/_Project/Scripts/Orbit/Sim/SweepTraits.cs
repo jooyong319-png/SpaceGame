@@ -25,7 +25,7 @@ namespace SalvageRun.Orbit.Sim
             "돌풍 — 가끔 잔해가 한쪽으로 쏠린다",
             "혜성 통과 — 꼬리에 닿은 잔해가 부서지고, 머리를 맞히면 열쇠",
         };
-        public static int TraitOf(int orbit) { switch (orbit) { case 0: return 1; case 1: return 2; case 2: return 3; case 5: return 4; case 3: return 5; case 4: return 6; case 6: return 7; case 7: return 8; case 8: return 9; default: return 0; } }
+        public static int TraitOf(int orbit) { switch (orbit) { case 0: return 1; case 1: return 2; case 2: return 3; case 5: return 4; case 3: return 5; case 4: return 6; case 6: return 7; case 7: return 8; case 9: return 9; case 10: return 8; case 11: return 7; case 8: return 9; default: return 0; } }
         public int Trait => R == null || R.clean ? 0 : TraitOf(S.orbit);
 
         // 🔴 목성 대적점 — 화면이 읽는다

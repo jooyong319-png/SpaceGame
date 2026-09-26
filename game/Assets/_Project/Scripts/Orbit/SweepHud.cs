@@ -792,6 +792,13 @@ namespace SalvageRun.Orbit
             int k = ((int)(fx * 0.7f + fy) / 5) % 3;
             return k == 0 ? new Color32(214, 176, 112, 255) : k == 1 ? new Color32(168, 128, 74, 255) : rim;
         }
+        // 🎖 군용 — 남색 틀 가운데 하늘색 선 한 줄 · 일정한 간격의 볼트
+        static Color32 Mil(float fx, float fy, Color32 rim, Vector2[] outer)
+        {
+            float d = Mathf.Min(Mathf.Abs(fy - (outer[0].y + 6)), Mathf.Abs(fy - (outer[2].y - 6)));
+            if (d < 1.2f) return new Color32(110, 210, 255, 255);
+            return ((int)fx % 40 < 3 && ((int)fy % 40 < 3)) ? new Color32(80, 110, 160, 255) : rim;
+        }
         static void BuildHull(ShipTheme t)
         {
             const int W = 960, H = 600;
@@ -808,7 +815,7 @@ namespace SalvageRun.Orbit
                     Color32 c;
                     if (InQuad(WinPoly, fx, fy)) c = new Color32(0, 0, 0, 0);
                     else if (InQuad(inner, fx, fy)) c = edge;
-                    else if (InQuad(outer, fx, fy)) c = t.deco == 1 ? (((int)(fx + fy) / 8) % 2 == 0 ? new Color32(255, 204, 31, 255) : rim) : t.deco == 2 ? Rope(fx, fy, rim) : rim;   // 창틀 무늬 — 산탄선 경고 줄무늬 · 작살선 밧줄
+                    else if (InQuad(outer, fx, fy)) c = t.deco == 1 ? (((int)(fx + fy) / 8) % 2 == 0 ? new Color32(255, 204, 31, 255) : rim) : t.deco == 2 ? Rope(fx, fy, rim) : t.deco == 3 ? Mil(fx, fy, rim, outer) : rim;   // 창틀 무늬 — 산탄선 경고 줄무늬 · 작살선 밧줄
                     else if (fy > 336 && (fy > 384 || InQuad(new[] { new Vector2(0, 384), new Vector2(126, 336), new Vector2(834, 336), new Vector2(W, 384) }, fx, fy) || fy >= 384))
                     {
                         float k = Mathf.InverseLerp(336, H, fy);   // 조종대 — 위가 밝고 아래로 어두워진다
@@ -1479,7 +1486,7 @@ namespace SalvageRun.Orbit
             if (GUI.Button(r, GUIContent.none, GUIStyle.none) && ready) CastReq = true;
         }
 
-        static readonly string[] PlanetHint = { "", "달 — 궤도가 느리다 · 금고 위성이 많으니 노려 보자", "화성 — 판 중간에 모래 폭풍이 온다 · 얼음 껍질은 먼저 깨 두자", "목성 — 중력이 잔해를 안쪽으로 모은다 · 안쪽 가장자리에 블랙홀을", "토성 — 고리가 두 겹 · 가운데 틈은 비어 있다" , "소행성대 — 단단한 암석과 광석이 많다", "천왕성 — 옆으로 누운 궤도 · 얼음 결정", "해왕성 — 초속 폭풍이 잔해를 흩는다", "카이퍼 벨트 — 태양계 끝 · 고대 탐사선과 혜성" };
+        static readonly string[] PlanetHint = { "", "달 — 궤도가 느리다 · 금고 위성이 많으니 노려 보자", "화성 — 판 중간에 모래 폭풍이 온다 · 얼음 껍질은 먼저 깨 두자", "목성 — 중력이 잔해를 안쪽으로 모은다 · 안쪽 가장자리에 블랙홀을", "토성 — 고리가 두 겹 · 가운데 틈은 비어 있다" , "소행성대 — 단단한 암석과 광석이 많다", "천왕성 — 옆으로 누운 궤도 · 얼음 결정", "해왕성 — 초속 폭풍이 잔해를 흩는다", "카이퍼 벨트 — 태양계 끝 · 고대 탐사선과 혜성", "오르트 구름 — 얼음 혜성 떼가 단단하다 · 혜성 머리를 맞히면 열쇠", "태양권 계면 — 태양풍이 불면 잔해가 한쪽으로 쏠린다 · 폭풍 땐 값 ×1.5", "성간 공간 — 드문드문하지만 하나하나가 비싸다 · 결정 하나를 깨면 같은 결정이 모두" };
         static Texture2D iconTex;
         void DrawIcon(Rect r, string id)
         {
@@ -1681,7 +1688,9 @@ namespace SalvageRun.Orbit
             {   // 🪐 구역 진행 — 지금 구역 칸을 다 찍으면 다음 항로 (09-24 6·21번)
                 int zo = sim.ZoneOpen, zl = sim.ZoneLeft(zo), zt = 0; for (int i = 0; i < SweepSim.Nodes.Length; i++) if (SweepSim.Zone[i] == zo && SweepSim.ZoneNeed(i)) zt++;
                 bool last = zo + 1 >= SweepSim.OrbitOrder.Length;
-                string zs = sim.HasGate
+                string zs = sim.HasGate && !sim.GateReady
+                    ? "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> 한 줄 " + sim.TileCap + "칸까지 · <color=#ffb36b>🛰 청구서 " + sim.GateBill + "장을 갚으면 " + sim.GateName + " 관문이 나타난다</color></size>"
+                    : sim.HasGate
                     ? "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> 한 줄 " + sim.TileCap + "칸까지 · <color=#ffb36b>🛰 " + sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + "%</color> <color=#8a93a3>부수면 " + sim.NextName + "</color></size>"
                     : "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> <color=#8a93a3>— 마지막 항로 · 한도 없음</color></size>";
                 var zr = new Rect(zb.xMax + 58, zb.y + 3, label.CalcSize(new GUIContent(zs)).x + 20, 24);   // 글자 폭만큼만 — 넓으면 트리 윗줄 칸을 덮었다
@@ -1749,7 +1758,7 @@ namespace SalvageRun.Orbit
             string foot;
             if (vis == 3 && SweepSim.Infinite(t.stat)) foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>  <color=#ffdf95>∞ " + sim.S.lv[t.stat] + "번 삼 · 계속 살 수 있다</color>";   // 누적 칸 — 다음 가격 (09-24 친구들 「가격이 안 보인다」)
             else if (vis == 3) foot = "<color=#6fcf97>샀다</color>";
-            else if (ns == NodeSt.Locked && n.id.StartsWith("p_")) foot = "<color=#ffb36b>🛰 " + (sim.HasGate ? sim.GateName + " 관문을 부수면 열린다" : "앞 항로부터") + "</color>";   // 🛰 항로 = 관문
+            else if (ns == NodeSt.Locked && n.id.StartsWith("p_")) foot = "<color=#ffb36b>🛰 " + (sim.HasGate ? (sim.GateReady ? "" : "청구서 " + sim.GateBill + "장을 갚으면 나타나는 ") + sim.GateName + " 관문을 부수면 열린다" : "앞 항로부터") + "</color>";   // 🛰 항로 = 관문
             else if (ns == NodeSt.Locked && sim.CapLocked(t.stat)) foot = "<color=#ffb36b>행성 한도 — " + sim.GateName + "을(를) 부수면 한 칸 더</color>";
             else if (ns == NodeSt.Locked && SweepSim.Zone[t.stat] > sim.ZoneOpen) foot = "<color=#ff9b8f>" + SweepSim.ZoneName[SweepSim.Zone[t.stat]] + " 항로를 열면 열린다</color>";
             else if (ns == NodeSt.Locked) foot = SweepSim.Ring4(n.id) ? "<color=#ff9b8f>목성 항로를 열면 — 외행성 면허</color>" : "<color=#ff9b8f>청구서 " + SweepSim.BranchNeed[b] + "을 갚으면 열린다</color>";

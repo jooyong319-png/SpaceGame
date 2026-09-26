@@ -29,7 +29,7 @@ static class Program
         foreach (var s in seeds) Run(s, verbose);
     }
 
-    public class Result { public bool won; public double minutes; public int bankrupt, bill; public double[] billAt = new double[13], planetAt = new double[9]; public List<double> bankAt = new List<double>(); public List<int> bankBill = new List<int>(); public double earn50, tree; public List<int>[] slack = Enumerable.Range(0, 13).Select(_ => new List<int>()).ToArray(), win = Enumerable.Range(0, 13).Select(_ => new List<int>()).ToArray(); }
+    public class Result { public bool won; public double minutes; public int bankrupt, bill; public double[] billAt = new double[13], planetAt = new double[12]; public List<double> bankAt = new List<double>(); public List<int> bankBill = new List<int>(); public double earn50, tree; public List<int>[] slack = Enumerable.Range(0, 13).Select(_ => new List<int>()).ToArray(), win = Enumerable.Range(0, 13).Select(_ => new List<int>()).ToArray(); }
     public static double TreePct(SweepSim sim) { double h = 0, m = 0; for (int i = 0; i < SweepSim.NodeCount; i++) { var nd = SweepSim.Nodes[i]; if (nd.id.StartsWith("p_") || nd.id == "e_quest") continue; h += Math.Min(sim.S.lv[i], nd.max); m += nd.max; } return m > 0 ? h / m * 100 : 0; }
     static bool quiet;
     public static Result RunQuiet(int seed) { quiet = true; try { return Run(seed, false); } finally { quiet = false; } }
@@ -37,7 +37,7 @@ static class Program
     static Result Run(int seed, bool verbose)
     {
         var sim = new SweepSim(null, null, seed);
-        if (int.TryParse(Environment.GetEnvironmentVariable("SHIP"), out int forceShip)) { sim.M.shipsOwned = 7; sim.M.ship = forceShip; }   // 🚀 배 비교용 (SHIP=0 빔 · 1 산탄 · 2 작살)
+        if (int.TryParse(Environment.GetEnvironmentVariable("SHIP"), out int forceShip)) { sim.M.shipsOwned = 15; sim.M.ship = forceShip; }   // 🚀 배 비교용 (SHIP=0 빔 · 1 산탄 · 2 작살)
         var rng = new Random(seed * 31 + 1);
         double ax = 600, ay = 360, tx = 600, ty = 360, retarget = 0, shopClock = 0;
         bool hold = false;
@@ -45,8 +45,8 @@ static class Program
         var segEarn = new double[9]; var segRuns = new int[9]; var segSplit = new double[9, 3];
         double Min() => (sim.M.playSeconds + shopClock) / 60;
 
-        var rec = new Result(); for (int k = 0; k < 13; k++) rec.billAt[k] = -1; for (int k = 0; k < 9; k++) rec.planetAt[k] = -1;
-        void Mark() { if (rec.billAt[sim.S.bill] < 0) for (int k = 0; k <= sim.S.bill; k++) if (rec.billAt[k] < 0) rec.billAt[k] = Min(); for (int pi = 0; pi < 9; pi++) if (rec.planetAt[pi] < 0 && sim.Open(pi)) rec.planetAt[pi] = Min(); }
+        var rec = new Result(); for (int k = 0; k < 13; k++) rec.billAt[k] = -1; for (int k = 0; k < 12; k++) rec.planetAt[k] = -1;
+        void Mark() { if (rec.billAt[sim.S.bill] < 0) for (int k = 0; k <= sim.S.bill; k++) if (rec.billAt[k] < 0) rec.billAt[k] = Min(); for (int pi = 0; pi < 12; pi++) if (rec.planetAt[pi] < 0 && sim.Open(pi)) rec.planetAt[pi] = Min(); }
         for (int guard = 0; guard < 400 && !sim.M.won; guard++)
         {
             Mark();

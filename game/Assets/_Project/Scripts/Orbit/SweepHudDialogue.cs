@@ -170,7 +170,7 @@ namespace SalvageRun.Orbit
             if (sim.M.won) return;
             if (flow == 2 && dlgQueue.Count > 0) { var q = dlgQueue[0]; dlgQueue.RemoveAt(0); DlgStart(q); return; }
             if (flow == 2 && sim.S.runs > 0) DlgStart("fuel");
-            if (dlgId == null && flow == 2 && sim.S.runs > 0 && sim.HasGate) DlgStart("gate");
+            if (dlgId == null && flow == 2 && sim.S.runs > 0 && sim.GateReady) DlgStart("gate");
             if (dlgId != null) return;
             if (flow == 3 && sim.StockOpen && !sim.M.flags.Contains("dlg:stock")) { GoFlow(4); return; }   // 📈 09-26 사장님 「증권을 열면 아예 증권 페이지로 가면서 알려 주게」
             if (flow == 4 && sim.StockOpen) DlgStart("stock");

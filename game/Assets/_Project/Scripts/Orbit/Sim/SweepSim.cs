@@ -148,6 +148,9 @@ namespace SalvageRun.Orbit.Sim
             new OrbitDef { name = "천왕성", desc = "옆으로 누운 궤도 · 얼음 결정",       bi = 180, bo = 380, mult = 10, att = 0.35, spin = 0.8,  hp = 2.8, sell = 8, permit = 15000000, pull = 6, mix = new double[] { 34, 18, 10, 9, 5, 8, 4 }, nMin = 280, nMax = 440, forms = new[] { 2, 3, 4 }, events = new[] { 3, 4 } },
             new OrbitDef { name = "해왕성", desc = "초속 폭풍 · 무거운 잔해",           bi = 175, bo = 390, mult = 15, att = 0.38, spin = 1.4,  hp = 3.8, sell = 10, permit = 30000000, storm = true, mix = new double[] { 32, 16, 10, 10, 5, 9, 5 }, nMin = 300, nMax = 460, forms = new[] { 3, 4, 2 }, events = new[] { 4, 3 } },
             new OrbitDef { name = "카이퍼 벨트", desc = "태양계 끝 · 고대 탐사선 · 혜성",   bi = 150, bo = 400, mult = 24, att = 0.40, spin = 0.6,  hp = 5.2, sell = 14, permit = 60000000, gap = 0.2, mix = new double[] { 30, 16, 10, 12, 5, 9, 6 }, nMin = 320, nMax = 480, forms = new[] { 4, 3, 2, 1 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = "오르트 구름", desc = "얼음 혜성 떼 · 단단하고 느리다",   bi = 155, bo = 410, mult = 24, att = 0.42, spin = 0.5,  hp = 7.2, sell = 18, permit = 60000000, mix = new double[] { 30, 16, 10, 12, 5, 9, 6 }, nMin = 320, nMax = 480, forms = new[] { 4, 3, 2, 1 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = "태양권 계면", desc = "태양풍이 부딪히는 경계 · 잔해가 출렁인다",   bi = 160, bo = 420, mult = 24, att = 0.44, spin = 1.6,  hp = 9.6, sell = 22, permit = 60000000, storm = true, mix = new double[] { 30, 16, 10, 12, 5, 9, 6 }, nMin = 320, nMax = 480, forms = new[] { 4, 3, 2, 1 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = "성간 공간", desc = "태양 빛이 닿지 않는 곳 · 드문드문하지만 값이 가장 크다",   bi = 165, bo = 430, mult = 24, att = 0.46, spin = 0.4,  hp = 13, sell = 28, permit = 60000000, mix = new double[] { 30, 16, 10, 12, 5, 9, 6 }, nMin = 320, nMax = 480, forms = new[] { 4, 3, 2, 1 }, events = new[] { 3, 4 } },
         };
         public static readonly string[] FormNames = { "무리", "탱크 사슬", "케이블 망", "호송대", "난파 구역" };
         public static readonly string[] EventNames = { "연료 보급선", "충돌 사고", "파편 폭풍", "금고 호송대", "대충돌" };
@@ -307,16 +310,20 @@ namespace SalvageRun.Orbit.Sim
             N("l_free", "eco", "첫 장은 공짜", "판마다 즉석 복권 첫 장이 공짜", new[] { "l_luck" }, 1, 1500, 1, 1, 0, 0),
             N("l_jack", "eco", "잭팟", "즉석 복권 당첨금 ×2", new[] { "l_luck" }, 1, 30000, 1, 1, 0, 0),
             N("v_volley", "arm", "🚀 전탄 발사", "출동 중 게이지가 차면 Space · 계기판 단추 — 산 무기가 모두 한꺼번에 쏜다. 단계마다 더 오래 · 더 촘촘히 · 게이지가 빨리 찬다 (무기 둘부터)", new[] { "w_hub" }, 1, 4000, 4, 3, 0, 0),   // 09-26 사장님 「전탄 발사도 트리에 · 기본은 안 좋게 · 지금이 최종」
+            // 🪐 09-27 행성 셋 더 — 맨 뒤에만 (저장 규칙)
+            N("p_oort", "route", "오르트 구름 항로", "태양계 바깥 얼음 혜성 떼 — 값 ×19683 · 단단하고 느리다", new[] { "p_kui" }, 1, 120000000, 1, 1, 0, 0),
+            N("p_helio", "route", "태양권 계면 항로", "태양풍이 부딪히는 경계 — 값 ×59049 · 잔해가 출렁인다", new[] { "p_oort" }, 1, 240000000, 1, 1, 0, 0),
+            N("p_inter", "route", "성간 공간 항로", "태양 빛이 닿지 않는 곳 — 값 ×177147 · 드문드문 · 가장 비싸다", new[] { "p_helio" }, 1, 480000000, 1, 1, 0, 0),
         };
-        public const int NodeCount = 131;
+        public const int NodeCount = 134;
         /// <summary>◆ 핵심 칸 — 돈 + 열쇠 하나 (부품 가게에서 산다). 각성도 여기</summary>
         public static readonly HashSet<string> KeyNodes = new HashSet<string> { "w_laser_a", "w_chain_a", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2", "w_vac_a", "w_mine_a", "w_frz_a", "w_clus_a", "w_mag_a", "w_rail_a", "x_claw_arm", "x_arm_drone", "x_drone_bh", "x_bh_eco", "x_eco_route", "x_route_claw" };
         public static readonly string[] WeaponName = { "집게 빔", "레이저", "번개", "청소기", "기뢰", "냉동 빔", "분열탄", "자석", "레일건" };
         public static readonly string[] WeaponNode = { null, "w_laser", "w_chain", "w_vac", "w_mine", "w_frz", "w_clus", "w_mag", "w_rail" };
-        public static readonly string[] PlanetNode = { null, "p_moon", "p_mars", "p_jup", "p_sat", "p_belt", "p_ura", "p_nep", "p_kui" };
+        public static readonly string[] PlanetNode = { null, "p_moon", "p_mars", "p_jup", "p_sat", "p_belt", "p_ura", "p_nep", "p_kui", "p_oort", "p_helio", "p_inter" };   // 09-27 행성 셋 더 (사장님 「끝까지 가려면 행성이 더 있어야」)
         public static readonly Dictionary<string, string> IconAlias = new Dictionary<string, string> { { "v_volley", "w_hub" }, { "l_more", "e_val" }, { "l_luck", "e_val" }, { "l_free", "e_val" }, { "l_jack", "e_val" }, { "w_laser_e", "w_laser_u" }, { "w_chain_e", "w_chain_u" }, { "w_vac_e", "w_vac_u" }, { "w_mine_e", "w_mine_u" }, { "w_frz_e", "w_frz_u" }, { "w_clus_e", "w_clus_u" }, { "w_mag_e", "w_mag_u" }, { "w_rail_e", "w_rail_u" }, { "m_claw", "c_pow" }, { "m_crit", "c_crit" }, { "m_fuel", "c_fuel" }, { "m_drone", "d_fact" }, { "m_dcount", "d_n" }, { "m_bh", "b_n" }, { "m_val", "e_val" }, { "m_route", "o_wide" }, { "w_laser_x", "w_laser_u" }, { "w_chain_x", "w_chain_u" }, { "w_vac_x", "w_vac_u" }, { "w_mine_x", "w_mine_u" }, { "w_frz_x", "w_frz_u" }, { "w_clus_x", "w_clus_u" }, { "w_mag_x", "w_mag_u" }, { "w_rail_x", "w_rail_u" } };
         public static bool Ring4(string id) => id.StartsWith("m_") || (id.StartsWith("w_") && id.EndsWith("_x"));
-        public static readonly int[] OrbitOrder = { 0, 1, 2, 5, 3, 4, 6, 7, 8 };          // 가까운 → 먼 (소행성대는 번호 5지만 화성과 목성 사이)
+        public static readonly int[] OrbitOrder = { 0, 1, 2, 5, 3, 4, 6, 7, 8, 9, 10, 11 };          // 가까운 → 먼 (소행성대는 번호 5지만 화성과 목성 사이)
         // ───────────────────────── 정비소 트리 자리 (손으로 격자에 놓았다 · 시안 https://claude.ai/artifact/NLZseBQWXKMGfuAmFDFJcR)
         //    par = 이어지는 앞 칸의 능력 (R = 가운데 청소선) · tile = 그 능력의 몇 번째 칸 뒤 · (x, y) 첫 칸 자리 · (dx, dy) 뻗는 방향
         //    🔴 여는 조건도 이것 — 앞 칸을 사야 이 능력의 첫 칸이 열린다 (게임 · 봇 같은 규칙)
@@ -372,6 +379,9 @@ namespace SalvageRun.Orbit.Sim
             { "p_ura", new TreeSpot { par = "p_sat", tile = 1, x = -10, y = -7, dx = 0, dy = 0 } },
             { "p_nep", new TreeSpot { par = "p_ura", tile = 1, x = -12, y = -8, dx = 0, dy = 0 } },
             { "p_kui", new TreeSpot { par = "p_nep", tile = 1, x = -14, y = -9, dx = 0, dy = 0 } },
+            { "p_oort", new TreeSpot { par = "p_kui", tile = 1, x = -16, y = -10, dx = 0, dy = 0 } },
+            { "p_helio", new TreeSpot { par = "p_oort", tile = 1, x = -18, y = -11, dx = 0, dy = 0 } },
+            { "p_inter", new TreeSpot { par = "p_helio", tile = 1, x = -20, y = -12, dx = 0, dy = 0 } },
             { "m_claw", new TreeSpot { par = "k_claw", tile = 1, x = -1, y = -12, dx = 1, dy = 0 } },
             { "m_crit", new TreeSpot { par = "k_claw", tile = 1, x = -3, y = -12, dx = -1, dy = 0 } },
             { "m_fuel", new TreeSpot { par = "k_claw", tile = 1, x = -1, y = -11, dx = 1, dy = 0 } },
@@ -528,6 +538,7 @@ namespace SalvageRun.Orbit.Sim
             new ShipDef { id = "old",     name = "낡은 청소선", weapon = "빔",   trait = "무난", price = 0, desc = "처음부터 있는 배. 한 점을 겨누는 빔 — 무엇 하나 튀지 않지만 무엇도 모자라지 않다" },
             new ShipDef { id = "scatter", name = "산탄선",      weapon = "산탄", trait = "연쇄", price = 10, desc = "넓게 퍼지는 산탄. 가까울수록 세고 멀수록 약하다 — 몰린 잔해를 한 번에 터뜨려 연쇄를 연다" },
             new ShipDef { id = "harpoon", name = "작살선",      weapon = "작살", trait = "꿰뚫기", price = 16, desc = "작살이 조준 방향으로 한 줄을 꿰뚫는다 — 줄 위의 잔해를 모두 맞히고, 뚫을 때마다 약해진다. 줄지어 선 잔해에 강하다" },
+            new ShipDef { id = "rail",    name = "레일건선",    weapon = "레일건", trait = "관문", price = 24, desc = "느리게 쏘지만 한 방이 화면 끝까지 한 줄을 꿰뚫는다 — 다섯 개까지 두 배 피해 · 관문엔 세 배" },
         };
         public int Ship => M.ship >= 0 && M.ship < Ships.Length && ShipOwned(M.ship) ? M.ship : 0;
         public bool ShipOwned(int i) => i == 0 || (M.shipsOwned & (1 << i)) != 0;
@@ -546,10 +557,16 @@ namespace SalvageRun.Orbit.Sim
             { "c_rad", new[] { "작살 관통", "한 번에 꿰뚫는 수 +1 · 30 더 멀리 (단계마다) — 처음 3개" } },
             { "c_spd", new[] { "작살 증폭", "작살 화력 +8% (단계마다)" } },
         };
-        System.Collections.Generic.Dictionary<string, string[]> ShipNode => Ship == 1 ? ScatterNode : Ship == 2 ? HarpoonNode : null;
+        static readonly System.Collections.Generic.Dictionary<string, string[]> RailNode = new System.Collections.Generic.Dictionary<string, string[]>
+        {
+            { "c_pow", new[] { "레일 위력", "레일 한 방 피해 +2 (단계마다) — 꿰뚫은 잔해 모두에게" } },
+            { "c_rad", new[] { "레일 관통", "꿰뚫는 수 +1 · 2 더 굵게 (단계마다) — 처음 5개" } },
+            { "c_spd", new[] { "레일 증폭", "레일 화력 +8% (단계마다)" } },
+        };
+        System.Collections.Generic.Dictionary<string, string[]> ShipNode => Ship == 1 ? ScatterNode : Ship == 2 ? HarpoonNode : Ship == 3 ? RailNode : null;
         public string NodeName(int i) => ShipNode != null && ShipNode.TryGetValue(Nodes[i].id, out var a) ? a[0] : Nodes[i].name;
         public string NodeDesc(int i) => ShipNode != null && ShipNode.TryGetValue(Nodes[i].id, out var a) ? a[1] : Nodes[i].desc;
-        public double ShipGateK => Ship == 1 ? 0.6 : Ship == 2 ? 1.0 : 1;         // 🛰 관문 체력은 배 무기가 한 방에 주는 만큼으로 (산탄 한 알은 약하다)
+        public double ShipGateK => Ship == 1 ? 0.6 : Ship == 2 ? 1.0 : Ship == 3 ? 2.0 : 1;   // 레일건 한 방 = 빔 × 2 (관문엔 × 3 이라 조금 쉽다)         // 🛰 관문 체력은 배 무기가 한 방에 주는 만큼으로 (산탄 한 알은 약하다)
         public double ScatterR => (38 + 6 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));   // 산탄 — 처음부터 넓다
 
         // ───────────────────────── 의뢰 (§4-4) — kind: 0 금고 1 연료통 2 조각 3 위성 4 연쇄 5 탱크 6 압축 7 큰 잔해 8 압류
@@ -737,11 +754,13 @@ namespace SalvageRun.Orbit.Sim
         public bool Open(int i) => i == 0 || (S.planets & (1 << i)) != 0 || Lv(PlanetNode[i]) > 0;
         public bool OnSale(int i) => false;                                      // 🛰 허가증은 없앴다 — 관문을 부숴야 열린다
         // ───────────────────────── 🛰 행성 관문 (09-26 사장님 「엄청 안 부서지는 무언가를 두고 그걸 레벨 디자인으로」 · 시안 HTSncyfVCbLX9kZiSBaGwo)
-        public static readonly string[] GateNames = { "폐우주정거장", "달 착륙선 잔해", "궤도 엘리베이터", "소행성 채굴기", "두 동강 난 화물선", "얼음 요새", "탐사 모선", "폭풍 관측소" };   // 항로 순위 0~7 (카이퍼는 끝)
+        public static readonly string[] GateNames = { "폐우주정거장", "달 착륙선 잔해", "궤도 엘리베이터", "소행성 채굴기", "두 동강 난 화물선", "얼음 요새", "탐사 모선", "폭풍 관측소", "명왕성 탐사선", "혜성 채굴 기지", "보이저 탐사선" };   // 항로 순위 0~7 (카이퍼는 끝)
         public const int GateSig = 100;                                          // 관문 잔해 표시 (Junk.sig)
         public const double GateK = 10;                                          // 관문 체력 = 큰 잔해 × 60 (봇으로 맞춤)
         public int Frontier => ZoneOpen;                                         // 가장 먼 열린 행성의 순위
         public bool HasGate => Frontier + 1 < OrbitOrder.Length && !M.endless;  // 카이퍼 · 무한 궤도는 관문 없음
+        public int GateBill => Frontier + 1;                                     // 🛰 09-27 관문은 그 차례 청구서를 갚아야 나타난다 (행성 하나 ≈ 청구서 한 장 · 뒤쪽 관문이 줄줄이 깨지던 것)
+        public bool GateReady => HasGate && (S.bill >= GateBill || M.cleanReady);
         public string GateName => HasGate ? GateNames[Frontier] : "";
         public string NextName => HasGate ? Orbits[OrbitOrder[Frontier + 1]].name : "";
         public int GateMax { get { if (S.gateMax <= 0) S.gateMax = Math.Max(Types[Big].hp * HpMul * GateK, GateShotDmg * FuelMax / Gap * GateRuns); return (int)Math.Min(2e9, Math.Round(S.gateMax)); } }   // 🛰 처음 뜰 때 「지금 화력으로 한 판 내내 관문만 쳤을 때의 90%」 — 한 판 안에 부숴야 한다 (09-26)
@@ -759,7 +778,7 @@ namespace SalvageRun.Orbit.Sim
         }
         void SpawnGate()
         {
-            if (!HasGate || R.clean || S.orbit != OrbitOrder[Frontier]) return;
+            if (!GateReady || R.clean || S.orbit != OrbitOrder[Frontier]) return;
             var o = Orbits[S.orbit];
             var g = Spawn(Big, Rnd(0, Math.PI * 2), (o.bi + Bo) / 2, Att.None, false, 0.35);
             g.sig = GateSig; g.fade = 1; g.max = Math.Max(1, GateMax); g.hp = Math.Max(1, (int)Math.Round(g.max * Math.Max(0.02, S.gateFrac)));
@@ -792,13 +811,13 @@ namespace SalvageRun.Orbit.Sim
             if (i == 7) { Emit(SwEv.Act, 0, 0, 3, 0, "3막 · 심우주"); AddNews(null, "심우주 진입 — 해왕성 궤도에 민간 청소선", "태양이 점처럼 보이는 곳까지 왔다. 마지막 청구서가 기다린다."); }
             AddNews(null, Orbits[i].name + " 청소 허가 — 민간 청소선 첫 진입", "케슬러 금융이 " + Orbits[i].name + " 궤도 청소 허가증을 내줬다. " + Orbits[i].desc + ". 값은 지구의 " + PlanetMulOf(i).ToString("N0") + "배라고 한다.");
             S.orbit = i; RollContract(); Preview();
-            if (Mk != null && StockOpen) { string[] sec = { "", "달", "화성", "목성", "관광", "화성", "목성", "관광", "관광" }; Mk.GameEvent("민간 청소선 " + Orbits[i].name + " 진출", "궤도 청소부가 " + Orbits[i].name + " 청소 허가를 땄다. 관련 업계가 들썩인다.", new[] { sec[i], "ship" }, null, 0.14f); }
+            if (Mk != null && StockOpen) { string[] sec = { "", "달", "화성", "목성", "관광", "화성", "목성", "관광", "관광", "관광", "관광", "관광" }; Mk.GameEvent("민간 청소선 " + Orbits[i].name + " 진출", "궤도 청소부가 " + Orbits[i].name + " 청소 허가를 땄다. 관련 업계가 들썩인다.", new[] { sec[i], "ship" }, null, 0.14f); }
         }
         public double FuelMax => Math.Max(10, Math.Min(FuelCap, FuelRaw) * (1 + FuelTankPct * Lv("c_fuel") + 0.05 * Up(1)) + Part("fuel") + Lv("d_fix"));   // ⛽ 연료 탱크 = 용량 +6% (상한 위에 곱한다 — 09-26 사장님 「용량이 몇 퍼센트 늘었다가 맞을 듯」)
         public const double FuelTankPct = 0.03;   // ⛽ 09-26 사장님 「30초도 김」 — 한 판은 20초 남짓으로 묶는다
         public const double FuelCap = 22;
         double FuelRaw => Math.Max(12, 20.0 * (1 + 0.2 * Cr(0)) * (Lv("k_claw") > 0 ? 0.85 : 1)) * (1 + 0.25 * Lv("m_fuel"));   // ⚠ 트리 연료 칸은 상한에 막혀 거의 안 듣는다 — 트리 압축 때 다른 효과로
-        public double Gap => 0.5;                                              // 연사 속도는 없앴다 — 수동 공격 (09-26). 빔 증폭(c_spd)은 화력으로
+        public double Gap => Ship == 3 ? RailGap : 0.5;                        // 🚀 레일건선은 느리게 (09-27)                                              // 연사 속도는 없앴다 — 수동 공격 (09-26). 빔 증폭(c_spd)은 화력으로
         public double ClawR => Lv("c_rad") > 0 ? (20 + 5 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2)) : 0;   // 0 = 하나씩 · 09-26 사장님 「범위가 너무 커진다」 — 최대 102 → 60 (단계 수는 그대로)
         public bool AutoClaw => true;        // 🔴 자동이 기본 (사장님 09-23: "클릭은 빼자 오토는 기본으로")
         public const double PickR = 30;      // 범위 강화 전 — 커서 밑 하나를 잡는 거리
@@ -837,11 +856,12 @@ namespace SalvageRun.Orbit.Sim
         public bool StormOn => R != null && !R.over && !R.clean && Orbits[S.orbit].storm && R.t % 13.0 >= 6 && R.t % 13.0 < 10.5;   // 09-26 판이 20초 남짓 — 판 중간에 한 번
         public const double ValBase = 1.8;
         // 📈 09-26 사장님 「행성을 넘어갈수록 벌이를 기하급수로 · 스킬도 넘어갈 때 기하급수로 올려 막는다」
-        public const double PlanetBase = 3, ZoneCostBase = 2.3;                   // 행성 한 칸 = 벌이 ×3 · 관문을 부술 때마다 아직 안 산 칸 값 ×3 (봇으로 맞춤)
+        public const double PlanetBase = 3, ZoneCostBase = 2.3;
+        public static readonly double[] ZoneCostK = { 1.2, 1.7, 7.4, 16, 100, 175, 400, 3400, 3600, 3700, 4000, 6000 };   // 💰 09-27 칸 값 배수 — 열린 관문 수마다 (봇으로 「가장 싼 칸 ≈ 판 벌이 0.6판」에 맞춤 · 예전 2.3^관문)                   // 행성 한 칸 = 벌이 ×3 · 관문을 부술 때마다 아직 안 산 칸 값 ×3 (봇으로 맞춤)
         public static double PlanetMul(int rank) => Math.Pow(PlanetBase, rank);
         public static double PlanetMulOf(int orbit) => PlanetMul(Math.Max(0, Array.IndexOf(OrbitOrder, orbit)));                                   // 💰 09-26 고철 시세 묶음 · 의뢰 폐지로 줄어든 벌이를 되돌린다 (봇으로 맞춤)
         public double ValMult => ValBase * (1 + 0.06 * Up(5)) * (1 + 0.1 * M.legend) * (M.endless ? Math.Pow(1.15, M.depth) : 1) * (StormOn ? 1.5 : 1) * (R != null ? 1 + R.consVal / 100.0 : 1) * Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (PlanetMul(Rank) * (1 + (Lv("k_route") > 0 && S.orbit > 0 ? 0.15 : 0) + (S.orbit > 0 ? 0.05 * Lv("i_route") : 0))) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1) * (1 + 0.08 * Lv("i_eco")) * PlanetStockBonus * Math.Pow(1.5, Lv("m_val")) * Math.Pow(1.25, Lv("m_route"));
-        public double PlanetStockBonus { get { if (Lv("x_eco_route") <= 0 || Mk == null || S.orbit == 0) return 1; string[] ids = { "", "moon", "mars", "jup", "sat", "", "", "", "" }; if (ids[S.orbit] == "") return 1; for (int i = 0; i < Market.Defs.Length && i < Mk.M.st.Count; i++) if (Market.Defs[i].id == ids[S.orbit] && Mk.M.st[i].shares > 0) return 1.2; return 1; } }   // 새 행성은 종목이 없다
+        public double PlanetStockBonus { get { if (Lv("x_eco_route") <= 0 || Mk == null || S.orbit == 0) return 1; string[] ids = { "", "moon", "mars", "jup", "sat", "", "", "", "", "", "", "" }; if (ids[S.orbit] == "") return 1; for (int i = 0; i < Market.Defs.Length && i < Mk.M.st.Count; i++) if (Market.Defs[i].id == ids[S.orbit] && Mk.M.st[i].shares > 0) return 1.2; return 1; } }   // 새 행성은 종목이 없다
         public double Cut => S.debt > 0 ? Math.Max(0.1, (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) - Part("cut")) : 0;   // 빚이 있으면 판 수입에서 떼어 상환
         // ── 대출 (연체 대신) — 언제든 받을 수 있다. 받은 돈 × 배수를 판 수입에서 조금씩 갚는다
         public static double LoanMult = 3;
@@ -1052,7 +1072,7 @@ namespace SalvageRun.Orbit.Sim
         public double Widen => 1 + 0.1 * Lv("o_wide");      // 🔴 정비소에서 산다 (사장님 09-23: "맵 크기도 여기서 늘리게")
         public double Bo => Orbits[S.orbit].bi + (Orbits[S.orbit].bo - Orbits[S.orbit].bi) * Widen;
         public double BillAmount => S.bill < Bills.Length ? (S.billAmount >= 0 ? S.billAmount : Math.Round(Bills[S.bill].m * BillMul * BillK[S.bill])) * (Lv("k_eco") > 0 ? 1.1 : 1) : 0;
-        public static double[] BillK = { 0.8, 0.45, 2, 1, 1.2, 1.3, 1.4, 5, 150, 150, 250, 500 };   // 📈 09-26 사장님 「모든 청구서가 봇에게 간신히」 — 청구서마다 더 곱하는 수 (봇 「남긴 판」이 0~1 이 되게 맞춤)
+        public static double[] BillK = { 0.8, 0.45, 2, 1, 1.2, 1.3, 1.4, 5, 150, 900, 4000, 30000 };   // 📈 09-26 사장님 「모든 청구서가 봇에게 간신히」 — 청구서마다 더 곱하는 수 (봇 「남긴 판」이 0~1 이 되게 맞춤)
         public static double BotEarn = 1;                                    // 🤖 봇 전용 — 사장님만큼 연쇄를 못 터뜨리니 벌이를 곱해 준다 (게임에선 늘 1)
         public const double BillMul = 5.1;                                   // 🧾 09-26 사장님 기록(첫 청구서 5판에 400 · 판당 150) 기준 — 봇의 약 3배로 올림                                   // 🧾 09-26 사장님 「청구서 아직 쉬움」 — 청구서 전체 배수 (봇으로 맞춤)
         void ApplyPerm() { foreach (var kid in M.perm) if (NodeIx.TryGetValue(kid, out int ki) && S.lv[ki] < Nodes[ki].max) S.lv[ki] = Nodes[ki].max; if (S.lv[NodeIx["w_hub"]] < 1) S.lv[NodeIx["w_hub"]] = 1; }   // ⚔ 무기고는 사지 않는다 — 처음부터 열려 있다 (09-26 사장님 「왜 필요한지 모르겠음」)
@@ -1075,7 +1095,7 @@ namespace SalvageRun.Orbit.Sim
         // ───────────────────────── 트리
         public double Cost(int i) => CostAt(i, S.lv[i]);
         public const double CostMul = 4.5;                                   // 💰 09-26 사장님 「아직도 너무 싸」 — 칸 값 전체 배수 (봇으로 맞춤)
-        double CostAt(int i, int l) { var n = Nodes[i]; return Math.Ceiling(CostMul * Math.Pow(ZoneCostBase, ZoneOpen) * n.first * Math.Pow(n.mult, l) * (1 - 0.15 * Cr(2)) * (1 - 0.05 * Lv("e_used"))); }
+        double CostAt(int i, int l) { var n = Nodes[i]; return Math.Ceiling(CostMul * ZoneCostK[Math.Min(ZoneOpen, ZoneCostK.Length - 1)] * n.first * Math.Pow(n.mult, l) * (1 - 0.15 * Cr(2)) * (1 - 0.05 * Lv("e_used"))); }
 
         // 🔴 칸 = 한 번 사기 (사장님 09-23: "한 칸에 1/3 이런식 말고 무조건 다음칸으로 넘어가지는 방식")
         //    레벨이 여럿인 칸은 많아야 셋으로 나눈다 — 한 칸이 여러 레벨을 한꺼번에 올리고, 가격은 그 레벨들 값을 합친 것
@@ -1114,7 +1134,7 @@ namespace SalvageRun.Orbit.Sim
         // 🪐 행성 구역 (09-24 사장님 6·21번 「지구에선 여기까지 · 다 찍어야 다음 행성」) — 칸마다 구역(= 항로 순위).
         //    구역은 첫 가격으로 나누고 부모보다 앞설 수 없다. 항로 칸은 앞 행성 구역. 핵심 · 무한 · 네 번째 고리는 「다 찍기」에서 뺀다
         public static readonly double[] ZoneCost = { 120, 1200, 12000, 150000, 2000000 };   // 구역 칸 합 ≈ 다음 항로 값 (봇으로 맞춤)   // 지구 · 달 · 화성 · 소행성대 · 목성 · (그 위 토성)
-        public static readonly string[] ZoneName = { "지구", "달", "화성", "소행성대", "목성", "토성", "천왕성", "해왕성", "카이퍼 벨트" };
+        public static readonly string[] ZoneName = { "지구", "달", "화성", "소행성대", "목성", "토성", "천왕성", "해왕성", "카이퍼 벨트", "오르트 구름", "태양권 계면", "성간 공간" };
         static int[] zone;
         public static int[] Zone
         {
@@ -2070,6 +2090,7 @@ namespace SalvageRun.Orbit.Sim
             var r = R;
             if (Ship == 1) { Scatter(); return; }
             if (Ship == 2) { Harpoon(); return; }
+            if (Ship == 3) { Railgun(); return; }
             if (ClawR <= 0)
             {
                 // 범위가 없으면 커서 밑의 하나만
@@ -2152,6 +2173,29 @@ namespace SalvageRun.Orbit.Sim
             Emit(SwEv.Strike, r.ax, r.ay, hits.Count, hits.Count > 0 ? 1 : 0, null, sx + ux * L, sy + uy * L);
             if (hits.Count > 0 && crit) Emit(SwEv.Crit, hits[0].d.x, hits[0].d.y - 20);
             if (hits.Count > 0) OnHit(1);
+        }
+        /// <summary>🚀 레일건선 — 느린 한 방 · 화면 끝까지 한 줄 전부 · 관문엔 × 1.5 더 (09-27)</summary>
+        public const double RailGap = 1.2, RailK = 2.0;
+        public double RailW => 5 + 2 * Lv("c_rad");
+        public int RailN => 5 + Lv("c_rad");                                       // 한 번에 꿰뚫는 수 (관문은 세지 않는다)
+        void Railgun()
+        {
+            var r = R;
+            double sx = ShipX, sy = ShipY, dx = r.ax - sx, dy = r.ay - sy, len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 1) return;
+            double ux = dx / len, uy = dy / len, L = 1400, W = RailW * (1 + Part("rad")) * (1 + 0.04 * Up(2));
+            bool crit = Rnd() < Crit; int n = 0;
+            foreach (var d in r.junk.ToArray())
+            {
+                if (d.dead) continue;
+                double px = d.x - sx, py = d.y - sy, t = px * ux + py * uy;
+                if (t < 0 || t > L || Math.Abs(px * uy - py * ux) > W + Types[d.k].r) continue;
+                bool gate = d.sig == GateSig;
+                if (!gate && n >= RailN) continue;
+                Hit(d, Math.Max(1, RoundP(Pow * RailK * (gate ? 1.5 : 1) * (crit ? CritX : 1))), 0, true); if (!gate) n++;
+            }
+            Emit(SwEv.Strike, r.ax, r.ay, n, n > 0 ? 1 : 0, null, sx + ux * L, sy + uy * L);
+            if (n > 0) OnHit(1);
         }
         void HoleRoll() { if (Rnd() < HoleChance) OpenHole(); }
         /// <summary>무기가 맞았다 — 블랙홀 · ★ 내부자 거래 (share = 레이저처럼 자주 쏘는 무기는 몫을 나눈다)</summary>

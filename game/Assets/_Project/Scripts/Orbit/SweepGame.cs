@@ -418,6 +418,7 @@ namespace SalvageRun.Orbit
                         curW = 0;
                         if (sim.Ship == 1) { ScatterFx(at, (float)e.v, e.k == 1); break; }   // 🚀 산탄선 (09-26)
                         if (sim.Ship == 2) { HarpoonFx(PxToWorld(e.x2, e.y2), (int)e.v); break; }   // 🚀 작살선
+                        if (sim.Ship == 3) { RailFx(PxToWorld(e.x2, e.y2), (int)e.v); break; }      // 🚀 레일건선
                         bool spot = e.v <= SweepSim.PickR + 0.1;      // 아직 좁은 빔 — 한 점
                         Beam(at, e.k == 1);
                         if (e.k == 1) RingFx(at, Amber2, spot ? 0.26f : 0.22f, (float)e.v * 2 / PxPerUnit);
@@ -699,7 +700,7 @@ namespace SalvageRun.Orbit
         static Sprite GatePx(int n)
         {   // 🛰 관문 잔해 — 픽셀랩 Resources/gate/gate_0~7 (항로 순위)
             if (gatePx.TryGetValue(n, out var s) && s != null) return s;
-            s = Resources.Load<Sprite>("gate/gate_" + Mathf.Clamp(n, 0, 7)); gatePx[n] = s; return s;
+            s = Resources.Load<Sprite>("gate/gate_" + Mathf.Clamp(n, 0, 10)); gatePx[n] = s; return s;
         }
         void OnTier(int tier)
         {
@@ -766,6 +767,19 @@ namespace SalvageRun.Orbit
             }
             if (hits > 0) { OrbitSfx.Play("clank", 0.7f, 0.05f); shake = Mathf.Max(shake, 0.04f + 0.01f * Mathf.Min(hits, 5)); }
             else OrbitSfx.Play("tick", 0.4f, 0.05f);
+        }
+
+        // 🚀 레일건선 — 굵은 하늘색 빛줄기가 화면 끝까지 · 번쩍 · 흔들림 (09-27)
+        void RailFx(Vector3 end, int hits)
+        {
+            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);
+            var cyan = new Color(0.55f, 0.9f, 1f);
+            var core = Add(pixel, (muzzle + end) / 2, 0.05f, new Color(0.95f, 1f, 1f, 1f), 8, 0.16f); core.a = muzzle; core.b = end; core.size = 0.1f;
+            var halo = Add(pixel, (muzzle + end) / 2, 0.05f, new Color(cyan.r, cyan.g, cyan.b, 0.55f), 8, 0.3f); halo.a = muzzle; halo.b = end; halo.size = 0.42f;
+            Add(glow, muzzle, 1.4f, new Color(0.7f, 0.95f, 1f, 0.9f), 7, 0.14f);
+            Zap(muzzle, end, cyan, 0.16f, 0.2f, 14);
+            flash = Mathf.Max(flash, 0.12f); shake = Mathf.Max(shake, 0.12f + 0.02f * Mathf.Min(hits, 6));
+            OrbitSfx.Play("blast", 0.6f, 0.05f); OrbitSfx.PlayPitch("launch", 0.35f, 1.6f);
         }
 
         void CollectorShip()
@@ -840,9 +854,9 @@ namespace SalvageRun.Orbit
         // ───────────────────────────────── 궤도 · 지구 (궤도마다 카메라가 물러난다 §1-5)
 
         // 🪐 행성마다 크기 · 대기 빛 · 띠 색 (지구 · 달 · 화성 · 목성 · 토성)
-        static readonly float[] PlanetR = { 118, 80, 96, 150, 104, 64, 130, 125, 58 };   // 5 소행성대(세레스) · 6 천왕성 · 7 해왕성 · 8 카이퍼(명왕성)
-        static readonly Color[] AtmoCol = { new Color(0.35f, 0.6f, 1f, 0.35f), new Color(0.8f, 0.8f, 0.85f, 0.06f), new Color(1f, 0.5f, 0.35f, 0.18f), new Color(1f, 0.8f, 0.55f, 0.2f), new Color(1f, 0.9f, 0.6f, 0.16f) , new Color(0.7f, 0.65f, 0.6f, 0.05f), new Color(0.55f, 0.9f, 0.95f, 0.3f), new Color(0.3f, 0.45f, 1f, 0.35f), new Color(0.85f, 0.8f, 0.75f, 0.05f) };
-        static readonly Color[] BandCol = { new Color(0.43f, 0.55f, 0.78f), new Color(0.6f, 0.6f, 0.66f), new Color(0.8f, 0.45f, 0.35f), new Color(0.8f, 0.62f, 0.42f), new Color(0.85f, 0.75f, 0.5f) , new Color(0.62f, 0.55f, 0.48f), new Color(0.5f, 0.78f, 0.82f), new Color(0.38f, 0.5f, 0.9f), new Color(0.7f, 0.66f, 0.62f) };
+        static readonly float[] PlanetR = { 118, 80, 96, 150, 104, 64, 130, 125, 58, 70, 110, 96 };   // 9 오르트 · 10 태양권 계면 · 11 성간 (09-27)   // 5 소행성대(세레스) · 6 천왕성 · 7 해왕성 · 8 카이퍼(명왕성)
+        static readonly Color[] AtmoCol = { new Color(0.35f, 0.6f, 1f, 0.35f), new Color(0.8f, 0.8f, 0.85f, 0.06f), new Color(1f, 0.5f, 0.35f, 0.18f), new Color(1f, 0.8f, 0.55f, 0.2f), new Color(1f, 0.9f, 0.6f, 0.16f) , new Color(0.7f, 0.65f, 0.6f, 0.05f), new Color(0.55f, 0.9f, 0.95f, 0.3f), new Color(0.3f, 0.45f, 1f, 0.35f), new Color(0.85f, 0.8f, 0.75f, 0.05f), new Color(0.75f, 0.9f, 1f, 0.12f), new Color(1f, 0.45f, 0.8f, 0.35f), new Color(0.55f, 0.4f, 1f, 0.2f) };
+        static readonly Color[] BandCol = { new Color(0.43f, 0.55f, 0.78f), new Color(0.6f, 0.6f, 0.66f), new Color(0.8f, 0.45f, 0.35f), new Color(0.8f, 0.62f, 0.42f), new Color(0.85f, 0.75f, 0.5f) , new Color(0.62f, 0.55f, 0.48f), new Color(0.5f, 0.78f, 0.82f), new Color(0.38f, 0.5f, 0.9f), new Color(0.7f, 0.66f, 0.62f), new Color(0.72f, 0.85f, 0.95f), new Color(0.9f, 0.45f, 0.7f), new Color(0.45f, 0.38f, 0.75f) };
         int shownPlanet = -1;
 
         void DrawWorld()
@@ -1160,12 +1174,12 @@ namespace SalvageRun.Orbit
         static Sprite hullSpr, turClawSpr, dronePx;
         static int turClawShip = -1;
         static readonly Sprite[] shipTur = new Sprite[8]; static readonly bool[] shipTurTried = new bool[8];
-        static readonly string[] ShipTurName = { "claw", "scatter", "harpoon" };
+        static readonly string[] ShipTurName = { "claw", "scatter", "harpoon", "railship" };
         static Sprite ShipTur(int s) { if (s < 0 || s >= ShipTurName.Length) return null; if (!shipTurTried[s]) { shipTurTried[s] = true; shipTur[s] = Resources.Load<Sprite>("ship/turret_" + ShipTurName[s]); } return shipTur[s] ?? TurSprite(0); }                                             // 🚀 포탑 그림을 불러온 배 (09-26)
-        static readonly Sprite[][] planetFrames = new Sprite[9][]; static readonly bool[] planetTried = new bool[9];
+        static readonly Sprite[][] planetFrames = new Sprite[12][]; static readonly bool[] planetTried = new bool[12];
         static Sprite[] PlanetFrames(int pi)
         {
-            if (pi < 0 || pi >= 9) return null;
+            if (pi < 0 || pi >= 12) return null;
             if (!planetTried[pi]) { planetTried[pi] = true; var f = new System.Collections.Generic.List<Sprite>(); for (int i = 0; i < 8; i++) { var sp = Resources.Load<Sprite>("planet_anim/p" + pi + "_" + i); if (sp != null) f.Add(sp); } planetFrames[pi] = f.Count > 0 ? f.ToArray() : null; }
             return planetFrames[pi];
         }
