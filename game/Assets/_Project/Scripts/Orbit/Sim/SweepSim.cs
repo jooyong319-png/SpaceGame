@@ -185,7 +185,7 @@ namespace SalvageRun.Orbit.Sim
             N("b_n", "bh", "블랙홀", "집게로 칠 때 블랙홀이 저절로 열린다 — 단계마다 더 자주", new string[0], 1, 400, 2.6, 4, 0, 1),
             N("c_find", "bh", "연료 보급", "판마다 연료 보급선이 궤도를 돌며 나간다 (단계마다 +1) — 조준점을 대면 연료 +4초, 놓치면 사라진다", new string[0], 3, 240, 1.8, 5, 0, 3),
             N("s_speed", "bh", "재충전", "블랙홀 확률 +0.25%p (단계마다)", new[] { "b_n" }, 3, 500, 1.6, 4, 1, 2),
-            N("b_pr", "bh", "흡입 속도", "멀리 있는 것도 더 빨리 끌려온다 +20% (단계마다) — 블랙홀은 화면 전체를 빨아들인다", new[] { "b_n" }, 3, 600, 1.6, 6, 1, 0),
+            N("b_pr", "bh", "흡입 반경", "블랙홀이 빨아들이는 범위 260에서 +30 (단계마다) — 큰 잔해 · 장갑판도 빨려 든다", new[] { "b_n" }, 3, 600, 1.6, 6, 1, 0),
             N("b_cap", "bh", "붕괴 한계", "블랙홀이 터지기 전 삼키는 수 40개에서 +15 (단계마다)", new[] { "b_n" }, 3, 660, 1.6, 6, 2, 1),
             N("b_pf", "bh", "흡입 세기", "빨아들이는 힘 +25% (단계마다)", new[] { "b_pr" }, 4, 1800, 1.6, 5, 2, 0),
             N("b_br", "bh", "폭발 반경", "폭발 범위 +15% (단계마다)", new[] { "b_cap" }, 4, 1800, 1.6, 6, 3, 1),
@@ -661,9 +661,11 @@ namespace SalvageRun.Orbit.Sim
         public bool WeaponOwned(int w) => w == 0 || (w < WeaponNode.Length && Lv(WeaponNode[w]) > 0);
         public int Weapon => 0;                                                // 🔫 늘 기본 공격 (09-24 사장님 「기본 공격에 효과가 붙는 방식 · % 확률로」). S.weapon 은 옛 저장용
         public static readonly double[] ProcBase = { 0, 0.12, 0.10, 0.08, 0.08, 0.08, 0.06, 0.05, 0.04 };
+        public const double ProcK = 1.8;                                          // 🔫 09-26 밤 사장님 「무기들이 너무 약한 것 같아」 — 발동 확률 ×1.8 (0.5초 한 발 · 한 판 30초면 몇 번 안 터졌다)
         static readonly string[] ProcUp = { null, "w_laser_u", "w_chain_u", "w_vac_u", "w_mine_u", "w_frz_u", "w_clus_u", "w_mag_u", "w_rail_u" };
-        public double ProcChance(int w) => w <= 0 || w >= ProcBase.Length || !WeaponOwned(w) ? 0 : ProcBase[w] * (Lv(ProcUp[w]) >= 1 ? 1.5 : 1) * (Lv("w_slot2") > 0 ? 1.5 : 1) * (Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1);
-        void FireW(int w) { wMul = w > 0 && Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1; Fire(w); wMul = 1; }
+        public double ProcChance(int w) => w <= 0 || w >= ProcBase.Length || !WeaponOwned(w) ? 0 : ProcK * ProcBase[w] * (Lv(ProcUp[w]) >= 1 ? 1.5 : 1) * (Lv("w_slot2") > 0 ? 1.5 : 1) * (Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1);
+        void FireW(int w) { wMul = w > 0 && Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1; dbgW = w; Fire(w); dbgW = 0; wMul = 1; }
+        static int dbgW; public static readonly double[] DbgWDmg = new double[10];   // 📊 봇 진단 — 무기마다 준 피해 (0 = 주 무기 · 드론 · 폭발)
         public int OwnedWeapons { get { int n = 0; for (int w = 1; w < ProcBase.Length; w++) if (WeaponOwned(w)) n++; return n; } }
         public int VolleyLv => Math.Min(3, Lv("v_volley"));
         static readonly double[] VolleyDur = { 0, 0.5, 0.8, 1.1 }, VolleyGap = { 0, 0.16, 0.12, 0.09 }, VolleyFill = { 0, 0.5, 0.75, 1 };   // 3단계 = 09-26 전의 세기
@@ -819,8 +821,8 @@ namespace SalvageRun.Orbit.Sim
         public int Grade => 1 + Lv("d_grade");
         public double DroneMag => (1 + 0.25 * Lv("d_mag")) * (1 + Part("drone")) * (Lv("k_drone") > 0 ? 0.75 : 1) * (1 + 0.10 * Lv("i_drone")) * Math.Pow(1.5, Lv("m_drone"));
         public int Bombs => BombsOn ? Math.Min(6, 2 + Lv("b_n") + (S.bill >= 7 ? 1 : 0) + Cr(4)) : 0;
-        public double PullR => 99999;                                                          // 🌀 09-26 밤 사장님 「블랙홀 상향 — 뭐든지 다 빨아들이게」 — 화면 전체 (예전 90 + 14×칸)
-        public double PullBase => 700 * (1 + 0.2 * Lv("b_pr")) * (1 + 0.15 * Lv("m_bh"));    // 멀리 있는 것도 끌려오는 기본 힘 — 「흡입 속도」 칸
+        public double PullR => (260 + 30 * Lv("b_pr")) * (1 + 0.15 * Lv("m_bh"));                // 🌀 09-26 밤 「뭐든지 다 빨아들이게」 → 「범위가 너무 넓어」 — 260 + 30×칸 (예전 90 + 14 · 한때 화면 전체)
+        public double PullBase => 500;                                                         // 원 가장자리에서도 끌려오는 기본 힘
         public double PullF => 1 + 0.25 * Lv("b_pf");
         public int Cap => 40 + 15 * Lv("b_cap");
         public double BlastK => (1 + 0.15 * Lv("b_br")) * (1 + 0.06 * Up(10));
@@ -2179,7 +2181,8 @@ namespace SalvageRun.Orbit.Sim
             if (d.att == Att.Armor && src == 0 && !pierce) dmg = Math.Min(dmg, 1);
             if (d.frz > 0) dmg = (int)Math.Round(dmg * FrzMul);                        // 언 것은 두 배
             if (d.sig == GateSig) { if (src != 0) dmg = Math.Max(1, dmg / 3); if (Up(9) > 0) dmg = Math.Max(1, (int)Math.Round(dmg * (1 + 0.10 * Up(9)))); GateHit(d); }   // 🛰 연쇄 · 드론 · 폭발은 조금만
-            if (d.sig != GateSig) R.dmgDone += Math.Min(dmg, Math.Max(0, d.hp));   // 📊 판당 준 피해 (관문 체력 기준)
+            if (d.sig != GateSig) R.dmgDone += Math.Min(dmg, Math.Max(0, d.hp));
+            DbgWDmg[dbgW] += Math.Min(dmg, Math.Max(0, d.hp));   // 📊 판당 준 피해 (관문 체력 기준)
             bool fresh = d.hp >= d.max; d.hp -= dmg; d.hit = 0.12; DbgHits++; if (fresh && d.hp <= 0) DbgOneShot++;   // 📊 봇 진단 — 단단함
             TraitOnHit(d);                                                      // 🪐 광맥 소행성
             if (d.att == Att.Ice && d.hp <= d.max - 2)

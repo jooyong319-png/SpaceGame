@@ -1084,7 +1084,7 @@ namespace SalvageRun.Orbit
                 holeGlow.transform.position = hp + shakeOff; holeGlow.transform.localScale = Vector3.one * core * 3.2f / glow.bounds.size.x;
                 holeGlow.color = k > 0.8f ? new Color(0.9f, 0.3f, 0.25f, 0.9f) : new Color(0.42f, 0.31f, 0.78f, 0.9f);
                 if (k > 0.8f) OrbitSfx.Play("danger", 0.6f, 0.45f, 0.05f);        // 붕괴 직전 — 떼라는 신호
-                holeRing.transform.position = hp; holeRing.transform.localScale = Vector3.one * (260f + 16f * Mathf.Sin(Time.time * 5f)) * 2 / PxPerUnit / ring.bounds.size.x;   // 🌀 화면 전체를 빨아들인다 — 원은 크게 (09-26 사장님 「커져도 돼」)
+                holeRing.transform.position = hp; holeRing.transform.localScale = Vector3.one * ((float)sim.PullR + 10f * Mathf.Sin(Time.time * 5f)) * 2 / PxPerUnit / ring.bounds.size.x;   // 🌀 화면 전체를 빨아들인다 — 원은 크게 (09-26 사장님 「커져도 돼」)
                 // 소용돌이 — 모인 것들이 가운데서 돈다
                 if (Random.value < 0.5f && n > 0) { float a = Random.value * 6.28f, rr = core * 0.8f; var p = Add(pixel, hp + new Vector3(Mathf.Cos(a), Mathf.Sin(a)) * rr, 0.06f, Grey, 0, 0.3f); p.v = new Vector3(-Mathf.Sin(a), Mathf.Cos(a)) * 2f; }
             }
