@@ -458,6 +458,8 @@ namespace SalvageRun.Orbit
             {
                 Item("궤도 청소율", Mathf.Min(100, Mathf.FloorToInt(100f * R.cleanKills / R.cleanGoal)) + "%", big);
             }
+            else if (sim.M.endless)
+                Item("무한 궤도", "<color=#d8ccff>" + sim.M.depth + "층</color>  <color=#8a93a3>최고 " + sim.M.bestDepth + "층</color>", label);   // 빚은 끝났다 — 청구서 대신 층
             else if (S.bill < SweepSim.Bills.Length)
                 Item("청구서", KNum.Fmt(sim.BillAmount) + " · " + S.billDue + "판" + (S.debt > 0 ? " <color=#ee7766>빚 상환 " + Mathf.RoundToInt((float)sim.Cut * 100) + "%</color>" : ""), label);
             // 💰 이번 판 계산대 — 계기판 위, 포구 오른쪽. 금화가 여기로 날아와 한 숫자로 (시안 DbsvFEEy1K5ddbZsM61B2y)
