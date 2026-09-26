@@ -114,7 +114,7 @@ static class Program
             int seg = Math.Min(8, sim.S.bill + 1);
             sim.StartRun();
             var R = sim.R;
-            bool gateRun = sim.GateJunk != null && !sim.S.overdue && sim.S.billDue >= 2 && CappedOut(sim);   // 🛰 사람처럼 — 트리에서 한도까지 다 샀고 청구서가 급하지 않으면 관문만 노린다
+            bool gateRun = sim.GateJunk != null && !sim.S.overdue && CappedOut(sim) && (sim.S.cash >= sim.BillAmount || sim.S.billDue >= 3 && sim.S.cash >= sim.BillAmount * 0.5);   // 청구서 돈이 있거나 넉넉할 때만   // 🛰 사람처럼 — 트리에서 한도까지 다 샀고 청구서가 급하지 않으면 관문만 노린다
             long h0 = SweepSim.DbgHits, o0 = SweepSim.DbgOneShot, k0 = SweepSim.DbgKills;
             long ticks = 0;
             while (!R.over)

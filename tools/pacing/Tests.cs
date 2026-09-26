@@ -150,7 +150,7 @@ static class Tests
         int[] eVals = { 3, 2, 1, 3, 0, 2, 0, 1 }, lVals = { 3, 2, 1, 1 }, oVals = { 1, 1, 0, 1, 0, 0, 1, 4, 0, 7, 2, 0 };
         for (int j = 0; j < 8; j++) { s.lv[106 + j] = eVals[j]; want[ids[j]] = eVals[j]; }
         for (int j = 0; j < 4; j++) { s.lv[114 + j] = lVals[j]; want[ids[8 + j]] = lVals[j]; }
-        for (int j = 0; j < 12; j++) { s.lv[118 + j] = oVals[j]; want[old[j]] = oVals[j]; }
+        for (int j = 0; j < 12; j++) { s.lv[118 + j] = oVals[j]; want[old[j]] = Math.Min(oVals[j], SweepSim.Nodes[Ix(old[j])].max); }   // 예전 ∞ 칸은 5단계로 잘린다 (09-26)
         var sim = new SweepSim(s, null, 1);
         foreach (var kv in want) if (sim.Lv(kv.Key) != kv.Value) Fail($"옮기기: {kv.Key} = {sim.Lv(kv.Key)} (기대 {kv.Value})");
         if (sim.S.layout != 2) Fail($"옮기기: layout {sim.S.layout}");
@@ -160,7 +160,7 @@ static class Tests
         // 옛 118칸 판 — 뒤에 붙기만
         var s118 = new SweepState(); s118.lv = new int[118]; s118.lv[Ix("i_bh")] = 9;
         var sim118 = new SweepSim(s118, null, 1);
-        if (sim118.Lv("i_bh") != 9 || sim118.Lv("w_laser_e") != 0) Fail($"118칸 판: i_bh {sim118.Lv("i_bh")} · w_laser_e {sim118.Lv("w_laser_e")}");
+        if (sim118.Lv("i_bh") != 5 || sim118.Lv("w_laser_e") != 0) Fail($"118칸 판: i_bh {sim118.Lv("i_bh")} · w_laser_e {sim118.Lv("w_laser_e")}");
         Console.WriteLine("   130칸 · 118칸 · 두 번 불러오기");
     }
 

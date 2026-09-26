@@ -218,7 +218,7 @@ namespace SalvageRun.Orbit
         {
             vol = PlayerPrefs.GetFloat("orbit.vol", 0.7f); sfxVol = PlayerPrefs.GetFloat("orbit.sfx", 1f);
             shakeLv = PlayerPrefs.GetInt("orbit.shake", 0); flashLv = PlayerPrefs.GetInt("orbit.flash", 0);
-            manualFire = PlayerPrefs.GetInt("orbit.manual", 1) == 1;          // 👆 해 보시라고 수동이 기본 (09-26)
+            manualFire = true;                                                 // 👆 수동 공격으로 확정 (09-26 사장님 「아싸리 수동으로 하자」)
             ApplySettings();
         }
         void ApplySettings()
@@ -275,7 +275,6 @@ namespace SalvageRun.Orbit
             Slider("전체 소리", ref vol);
             Slider("효과음", ref sfxVol);
             Slider("배경음", ref OrbitMusic.Vol);
-            manualFire = Pick("공격", manualFire ? 1 : 0, new[] { "자동", "수동" }) == 1;   // 👆 수동 = 왼쪽 단추를 누르고 있는 동안만 쏜다
             shakeLv = Pick("화면 흔들림", shakeLv, new[] { "켬", "줄임", "끔" });
             flashLv = Pick("번쩍임", flashLv, new[] { "켬", "줄임" });
             int fs = Screen.fullScreenMode == FullScreenMode.Windowed ? 1 : 0;
@@ -1768,7 +1767,7 @@ namespace SalvageRun.Orbit
             {
                 case "c_pow": return "한 방 " + (1 + l);
                 case "c_rad": return l > 0 ? "반지름 " + (20 + 5 * l) : "한 점";
-                case "c_spd": return Mathf.Max(0.3f, 0.6f - 0.045f * l).ToString("0.00") + "초";
+                case "c_spd": return "화력 +" + 8 * l + "%";
                 case "a_open": return l > 0 ? "열림" : "잠김";
                 case "w_hub": return l > 0 ? "무기 효과 열림" : "잠김";
                 case "w_laser": case "w_chain": return l > 0 ? "발동 " + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : "잠김";
@@ -1783,11 +1782,11 @@ namespace SalvageRun.Orbit
                 case "x_bh_eco": return l > 0 ? "켜짐" : "꺼짐";
                 case "x_eco_route": return l > 0 ? "켜짐" : "꺼짐";
                 case "x_route_claw": return l > 0 ? "켜짐" : "꺼짐";
-                case "i_claw": return "화력 +" + 5 * l + "%";
-                case "i_drone": return "드론 +" + 5 * l + "%";
-                case "i_bh": return "블랙홀 확률 +" + (0.1 * l).ToString("0.#") + "%";
-                case "i_eco": return "값 +" + 4 * l + "%";
-                case "i_route": return "행성 배수 +" + (0.05 * l).ToString("0.00");
+                case "i_claw": return "화력 +" + 10 * l + "%";
+                case "i_drone": return "드론 +" + 10 * l + "%";
+                case "i_bh": return "블랙홀 확률 +" + (0.2 * l).ToString("0.#") + "%";
+                case "i_eco": return "값 +" + 8 * l + "%";
+                case "i_route": return "행성 배수 +" + (0.1 * l).ToString("0.0");
                 case "w_vac": return l > 0 ? "발동 " + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : "잠김";
                 case "w_vac_u": return new[] { "없음", "1단계", "2단계" }[Mathf.Min(2, l)];
                 case "w_vac_a": return l > 0 ? "각성!" : "잠김";

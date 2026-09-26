@@ -57,9 +57,9 @@ namespace SalvageRun.Orbit
                         "anc|…사실 제보 하나를 받았는데요. 케슬러 발사 위성이 *수명보다 훨씬 일찍* 부서진대요. 확인되면 꼭 1면에 싣고 싶어요." } },
                     { "fuel", new[] {
                         "yoon|아, 하나 알려 줄게. 이제 청소선은 *쏠 때마다 연료*를 먹어.",
-                        "yoon|빈 데를 겨누면 안 쏘고, 연료도 안 닳아. 가만히 있어도 조금씩은 닳지만.",
+                        "yoon|손을 떼면 안 쏘고 연료도 덜 닳아. 가만히 있어도 조금씩은 닳지만.",
                         "yoon|그러니까 *뭉친 데*를 골라서 쏴. 같은 연료로 더 많이 부수는 게 실력이야.",
-                        "yoon|클릭으로 쏘면 세게 나가는 대신 연료를 더 먹고, 전탄 발사는 한 번에 크게 먹어." } },
+                        "yoon|왼쪽 단추를 *누르고 있는 동안* 쏴. 전탄 발사는 한 번에 연료를 크게 먹고." } },
                     { "ev0", new[] { "anc|방금 왼쪽에서 흘러온 건 *연료 보급선*이에요.", "anc|연료통을 부수면 연료가 차요. 판이 그만큼 길어지죠." } },
                     { "ev1", new[] { "anc|오른쪽 위 *충돌 사고* 보셨죠? 위성끼리 부딪쳐 파편 서른 개가 한꺼번에 쏟아져요.", "anc|흩어지기 전에 뭉친 데를 치면 한 방에 여럿 — *연쇄*가 붙어요." } },
                     { "ev2", new[] { "anc|*파편 폭풍*은 왼쪽에서 고철이 줄줄이 쏟아지는 거예요.", "anc|크기가 큰 무기로 길목을 막고 서 있으면 저절로 쓸려 들어와요." } },
@@ -172,6 +172,7 @@ namespace SalvageRun.Orbit
             if (flow == 2 && sim.S.runs > 0) DlgStart("fuel");
             if (dlgId == null && flow == 2 && sim.S.runs > 0 && sim.HasGate) DlgStart("gate");
             if (dlgId != null) return;
+            if (flow == 3 && sim.StockOpen && !sim.M.flags.Contains("dlg:stock")) { GoFlow(4); return; }   // 📈 09-26 사장님 「증권을 열면 아예 증권 페이지로 가면서 알려 주게」
             if (flow == 4 && sim.StockOpen) DlgStart("stock");
             else if (flow == 5 && sim.ShopOpen) DlgStart("shop");
             else if (newsOpen) DlgStart("news");
