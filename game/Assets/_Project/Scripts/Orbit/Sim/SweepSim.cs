@@ -988,7 +988,7 @@ namespace SalvageRun.Orbit.Sim
         public double Widen => 1 + 0.1 * Lv("o_wide");      // 🔴 정비소에서 산다 (사장님 09-23: "맵 크기도 여기서 늘리게")
         public double Bo => Orbits[S.orbit].bi + (Orbits[S.orbit].bo - Orbits[S.orbit].bi) * Widen;
         public double BillAmount => S.bill < Bills.Length ? (S.billAmount >= 0 ? S.billAmount : Math.Round(Bills[S.bill].m * BillMul * BillK[S.bill])) * (Lv("k_eco") > 0 ? 1.1 : 1) : 0;
-        public static double[] BillK = { 1, 1, 2, 1, 1.2, 1.3, 1.4, 5, 150, 800, 1400, 2000 };   // 📈 09-26 사장님 「모든 청구서가 봇에게 간신히」 — 청구서마다 더 곱하는 수 (봇 「남긴 판」이 0~1 이 되게 맞춤)
+        public static double[] BillK = { 0.8, 0.45, 2, 1, 1.2, 1.3, 1.4, 5, 150, 800, 1400, 2000 };   // 📈 09-26 사장님 「모든 청구서가 봇에게 간신히」 — 청구서마다 더 곱하는 수 (봇 「남긴 판」이 0~1 이 되게 맞춤)
         public static double BotEarn = 1;                                    // 🤖 봇 전용 — 사장님만큼 연쇄를 못 터뜨리니 벌이를 곱해 준다 (게임에선 늘 1)
         public const double BillMul = 5.1;                                   // 🧾 09-26 사장님 기록(첫 청구서 5판에 400 · 판당 150) 기준 — 봇의 약 3배로 올림                                   // 🧾 09-26 사장님 「청구서 아직 쉬움」 — 청구서 전체 배수 (봇으로 맞춤)
         void ApplyPerm() { foreach (var kid in M.perm) if (NodeIx.TryGetValue(kid, out int ki) && S.lv[ki] < Nodes[ki].max) S.lv[ki] = Nodes[ki].max; if (S.lv[NodeIx["w_hub"]] < 1) S.lv[NodeIx["w_hub"]] = 1; }   // ⚔ 무기고는 사지 않는다 — 처음부터 열려 있다 (09-26 사장님 「왜 필요한지 모르겠음」)
