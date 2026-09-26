@@ -1624,7 +1624,7 @@ namespace SalvageRun.Orbit
                 if (!isRoot && SweepSim.KeyNodes.Contains(n.id)) { float kp = sim.S.keys > 0 && next ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3 + k) : 0.3f; GUI.color = new Color(0.71f, 0.61f, 1f, owned ? 0.9f : 0.35f + 0.3f * kp); Frame(new Rect(r.x - 3 * zz, r.y - 3 * zz, r.width + 6 * zz, r.height + 6 * zz), GUI.color, 2f); GUI.color = Color.white; }   // 「열쇠」 글자는 툴팁에서 · 열쇠가 있을 때만 깜빡 (09-26 정돈 14)
                 if (!isRoot && n.max == 1 && System.Array.IndexOf(SweepSim.WeaponNode, n.id) == sim.Weapon && owned) { GUI.color = new Color(1f, 0.55f, 0.5f); GUI.Label(new Rect(pc.x - 40, r.yMax + 2 * zz, 80, 16), "<size=10><b>장착 중</b></size>", center); GUI.color = Color.white; }
                 if (k == recK) { float rp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 4); GUI.color = new Color(1f, 0.87f, 0.4f, 0.55f + 0.45f * rp); Frame(new Rect(r.x - 5 * zz, r.y - 5 * zz, r.width + 10 * zz, r.height + 10 * zz), GUI.color, 2.5f); GUI.color = Color.white; recLbl = new Rect(pc.x - 17, r.yMax + 1 * zz, 34, 15); }
-                if (lockedTile && next) { GUI.color = new Color(1f, 0.6f, 0.55f); GUI.Label(new Rect(r.xMax - 14, r.y - 4, 18, 18), "<size=11>잠</size>", center); }
+                if (lockedTile && next) DashFrame(new Rect(r.x - 3 * zz, r.y - 3 * zz, r.width + 6 * zz, r.height + 6 * zz), gtiles[k].stat >= 0 && sim.CapLocked(gtiles[k].stat) ? new Color(1f, 0.6f, 0.4f) : new Color(1f, 0.42f, 0.38f));   // 잠김 = 점선 테두리 (주황 = 행성 한도) — 「잠」 글자가 칸 위에 겹쳐 두 개처럼 보였다 (09-26)
                 GUI.color = Color.white;
                 if (inArea && r.Contains(ev.mousePosition)) hover = k;
                 if (inf && owned) GUI.Label(new Rect(r.x - 10, r.yMax, r.width + 20, 16), "<size=10><color=#ffdf95>∞ " + sim.S.lv[t.stat] + "</color></size>", center);
@@ -1665,11 +1665,12 @@ namespace SalvageRun.Orbit
             {   // 🪐 구역 진행 — 지금 구역 칸을 다 찍으면 다음 항로 (09-24 6·21번)
                 int zo = sim.ZoneOpen, zl = sim.ZoneLeft(zo), zt = 0; for (int i = 0; i < SweepSim.Nodes.Length; i++) if (SweepSim.Zone[i] == zo && SweepSim.ZoneNeed(i)) zt++;
                 bool last = zo + 1 >= SweepSim.OrbitOrder.Length;
-                var zr = new Rect(zb.xMax + 58, zb.y + 3, 470, 24);                  // 확대 단추 줄 옆 — 트리 칸과 안 겹치게
-                GUI.color = new Color(0.04f, 0.05f, 0.07f, 0.9f); GUI.DrawTexture(zr, white); GUI.color = Color.white;
-                GUI.Label(new Rect(zr.x + 8, zr.y + 3, zr.width - 16, 18), sim.HasGate
+                string zs = sim.HasGate
                     ? "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> 한 줄 " + sim.TileCap + "칸까지 · <color=#ffb36b>🛰 " + sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + "%</color> <color=#8a93a3>부수면 " + sim.NextName + "</color></size>"
-                    : "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> <color=#8a93a3>— 마지막 항로 · 한도 없음</color></size>", label);   // 🛰 09-26 구역 칸 개수 → 관문
+                    : "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> <color=#8a93a3>— 마지막 항로 · 한도 없음</color></size>";
+                var zr = new Rect(zb.xMax + 58, zb.y + 3, label.CalcSize(new GUIContent(zs)).x + 20, 24);   // 글자 폭만큼만 — 넓으면 트리 윗줄 칸을 덮었다
+                GUI.color = new Color(0.04f, 0.05f, 0.07f, 0.9f); GUI.DrawTexture(zr, white); GUI.color = Color.white;
+                GUI.Label(new Rect(zr.x + 8, zr.y + 3, zr.width - 8, 18), zs, label);   // 🛰 09-26 구역 칸 개수 → 관문
             }
             if (testTip >= 0) { for (int k = 0; k < nT; k++) if (gtiles[k].stat >= 0 && SweepSim.Nodes[gtiles[k].stat].id == testTipId) hover = k; }   // 에디터 시험용
             treeHover = hover;
