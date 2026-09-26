@@ -242,6 +242,7 @@ namespace SalvageRun.Orbit
             DrawWorld();
             DrawJunk();
             DrawTools();
+            DrawOrbs();                                                       // ⚡ 전격선 구체
             PerfDraw = PerfDraw * 0.9 + PerfSw.Elapsed.TotalMilliseconds * 0.1; PerfSw.Restart();
             UpdateFx(dt);
             PerfUfx = PerfUfx * 0.9 + PerfSw.Elapsed.TotalMilliseconds * 0.1; PerfFxN = fx.Count;
@@ -418,7 +419,7 @@ namespace SalvageRun.Orbit
                         curW = 0;
                         if (sim.Ship == 1) { ScatterFx(at, (float)e.v, e.k == 1); break; }   // 🚀 산탄선 (09-26)
                         if (sim.Ship == 2) { HarpoonFx(PxToWorld(e.x2, e.y2), (int)e.v); break; }   // 🚀 작살선
-                        if (sim.Ship == 3) { RailFx(PxToWorld(e.x2, e.y2), (int)e.v); break; }      // 🚀 레일건선
+                        if (sim.Ship == 3) { TeslaFx(); break; }                                   // 🚀 전격선
                         bool spot = e.v <= SweepSim.PickR + 0.1;      // 아직 좁은 빔 — 한 점
                         Beam(at, e.k == 1);
                         if (e.k == 1) RingFx(at, Amber2, spot ? 0.26f : 0.22f, (float)e.v * 2 / PxPerUnit);
@@ -609,6 +610,14 @@ namespace SalvageRun.Orbit
                     }
                     case SwEv.Beam: { var p = Add(pixel, at, 0.05f, Cyan, 3, 0.16f); p.a = at; p.b = PxToWorld(e.x2, e.y2); break; }
                     case SwEv.Ring:
+                        if (e.k == 3)
+                        {   // ⚡ 전격선 구체가 터진다 — 파란 고리 · 불똥 · 번개 가시
+                            var cy = new Color(0.55f, 0.88f, 1f); float rw = (float)e.v / PxPerUnit;
+                            RingFx(at, cy, 0.3f, rw * 2); Add(glow, at, rw * 1.6f, new Color(0.6f, 0.9f, 1f, 0.7f), 7, 0.16f); Burst(at, cy, 10, 4f);
+                            for (int zi = 0; zi < 5; zi++) Zap(at, at + (Vector3)(Random.insideUnitCircle.normalized * rw), cy, 0.12f, 0.15f, 5);
+                            OrbitSfx.Play("blast", 0.45f, 0.08f); shake = Mathf.Max(shake, 0.06f);
+                            break;
+                        }
                         LoadAnims();
                         if (e.k == 2 && sim.WeaponOwned(7)) Shot(MuzzleOf(7), at, new Color(0.78f, 0.66f, 1f), 0.16f, 0, 0.08f);   // 🧲 보라 구슬이 쏜살같이
                         if (e.k == 2) { var mf = OrbitFxArt.Magnet; var mg = Make(mf[0], at, (float)e.v * 1.3f / PxPerUnit, Color.white, 58); frameFx.Add(new FrameFx { sr = mg, f = mf, fps = 22 }); }   // 🧲 코드로 그린 자석 — 조여드는 고리 둘 (09-26)   // 🧲 픽셀랩 자석 — 조여든다
@@ -769,17 +778,25 @@ namespace SalvageRun.Orbit
             else OrbitSfx.Play("tick", 0.4f, 0.05f);
         }
 
-        // 🚀 레일건선 — 굵은 하늘색 빛줄기가 화면 끝까지 · 번쩍 · 흔들림 (09-27)
-        void RailFx(Vector3 end, int hits)
+        // 🚀 전격선 — 쏠 때 포구 번쩍 (구체는 DrawOrbs 가 매 판 그린다 · 09-27)
+        void TeslaFx()
         {
             var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);
-            var cyan = new Color(0.55f, 0.9f, 1f);
-            var core = Add(pixel, (muzzle + end) / 2, 0.05f, new Color(0.95f, 1f, 1f, 1f), 8, 0.16f); core.a = muzzle; core.b = end; core.size = 0.1f;
-            var halo = Add(pixel, (muzzle + end) / 2, 0.05f, new Color(cyan.r, cyan.g, cyan.b, 0.55f), 8, 0.3f); halo.a = muzzle; halo.b = end; halo.size = 0.42f;
-            Add(glow, muzzle, 1.4f, new Color(0.7f, 0.95f, 1f, 0.9f), 7, 0.14f);
-            Zap(muzzle, end, cyan, 0.16f, 0.2f, 14);
-            flash = Mathf.Max(flash, 0.12f); shake = Mathf.Max(shake, 0.12f + 0.02f * Mathf.Min(hits, 6));
-            OrbitSfx.Play("blast", 0.6f, 0.05f); OrbitSfx.PlayPitch("launch", 0.35f, 1.6f);
+            Add(glow, muzzle, 0.9f, new Color(0.6f, 0.9f, 1f, 0.9f), 7, 0.12f);
+            Star(muzzle, new Color(0.75f, 0.95f, 1f), 0.5f, 6, 0.1f);
+            OrbitSfx.PlayPitch("launch", 0.3f, 1.8f);
+        }
+        void DrawOrbs()
+        {
+            if (sim.R == null) return;
+            float t = Time.time;
+            foreach (var o in sim.R.orbs)
+            {
+                var p = PxToWorld(o.x, o.y); float pul = 0.5f + 0.5f * Mathf.Sin(t * 30 + (float)o.x);
+                Add(glow, p, 0.62f + 0.12f * pul, new Color(0.45f, 0.8f, 1f, 0.55f), 7, 0.035f);
+                Add(glow, p, 0.26f, new Color(0.9f, 0.98f, 1f, 0.95f), 7, 0.035f);
+                if (Random.value < 0.35f) { var q = p + (Vector3)(Random.insideUnitCircle * 0.35f); Zap(p, q, new Color(0.7f, 0.9f, 1f), 0.05f, 0.08f, 3); }
+            }
         }
 
         void CollectorShip()
@@ -1174,7 +1191,7 @@ namespace SalvageRun.Orbit
         static Sprite hullSpr, turClawSpr, dronePx;
         static int turClawShip = -1;
         static readonly Sprite[] shipTur = new Sprite[8]; static readonly bool[] shipTurTried = new bool[8];
-        static readonly string[] ShipTurName = { "claw", "scatter", "harpoon", "railship" };
+        static readonly string[] ShipTurName = { "claw", "scatter", "harpoon", "tesla" };
         static Sprite ShipTur(int s) { if (s < 0 || s >= ShipTurName.Length) return null; if (!shipTurTried[s]) { shipTurTried[s] = true; shipTur[s] = Resources.Load<Sprite>("ship/turret_" + ShipTurName[s]); } return shipTur[s] ?? TurSprite(0); }                                             // 🚀 포탑 그림을 불러온 배 (09-26)
         static readonly Sprite[][] planetFrames = new Sprite[12][]; static readonly bool[] planetTried = new bool[12];
         static Sprite[] PlanetFrames(int pi)

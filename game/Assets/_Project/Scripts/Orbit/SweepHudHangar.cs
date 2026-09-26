@@ -12,9 +12,9 @@ namespace SalvageRun.Orbit
         int hangarTab;
         int hangarPick = -1;
         static Texture2D[] upTex, shipHullTex;
-        static readonly string[] HullName = { "ship/hull", "ship/hull_scatter", "ship/hull_harpoon", "ship/hull_rail" };
+        static readonly string[] HullName = { "ship/hull", "ship/hull_scatter", "ship/hull_harpoon", "ship/hull_tesla" };
         static readonly Color[] ShipCol = { new Color(0.91f, 0.53f, 0.23f), new Color(1f, 0.77f, 0.23f), new Color(0.3f, 0.82f, 0.78f), new Color(0.35f, 0.78f, 1f) };
-        static readonly int[][] ShipStat = { new[] { 3, 2, 2 }, new[] { 2, 4, 4 }, new[] { 3, 3, 2 }, new[] { 5, 2, 1 } };   // 한 방 · 넓이 · 연쇄 (5칸)
+        static readonly int[][] ShipStat = { new[] { 3, 2, 2 }, new[] { 2, 4, 4 }, new[] { 3, 3, 2 }, new[] { 3, 4, 3 } };   // 한 방 · 넓이 · 연쇄 (5칸)
 
         Texture2D UpTex(int i) { if (upTex == null) upTex = new Texture2D[SweepSim.UpCount]; if (upTex[i] == null) upTex[i] = Resources.Load<Texture2D>("hangar/up_" + i); return upTex[i]; }
         Texture2D HullTex(int i) { if (shipHullTex == null) shipHullTex = new Texture2D[HullName.Length]; if (shipHullTex[i] == null) shipHullTex[i] = Resources.Load<Texture2D>(HullName[i]); return shipHullTex[i]; }
@@ -33,7 +33,7 @@ namespace SalvageRun.Orbit
             string ah = ColorUtility.ToHtmlStringRGB(ac);
 
             // 머리 — 파산 · 신용
-            GUI.Label(new Rect(w.x, w.y, 600, 34), "<size=26><b><color=#" + ah + ">격납고</color></b></size>   <size=13><color=#ff9b8f>" + (M.company - 1) + "대 파산</color> <color=#5a6475>→</color> <color=#ffdf95>" + M.company + "대 청소선</color></size>", label);
+            GUI.Label(new Rect(w.x, w.y, 600, 34), "<size=26><b><color=#" + ah + ">격납고</color></b></size>   <size=13>" + (M.company > 1 ? "<color=#ff9b8f>" + (M.company - 1) + "대 파산</color> <color=#5a6475>→</color> " : "") + "<color=#ffdf95>" + M.company + "대 청소선</color></size>", label);
             GUI.Label(new Rect(w.x, w.y + 34, 700, 20), "<size=11><color=#8a9bb3>잃은 것: 돈 · 트리 · 청구서 · 면허 · 열쇠     남은 것: 신용 · 영구 강화 · 배 · 기사 · 기록</color></size>", label);
             var cr = new Rect(w.xMax - 170, w.y + 2, 170, 34);
             GUI.color = new Color(0.14f, 0.11f, 0.04f); GUI.DrawTexture(cr, white); Frame(cr, new Color(0.35f, 0.28f, 0.07f), 2); GUI.color = Color.white;

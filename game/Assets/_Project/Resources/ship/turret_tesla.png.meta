@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: ff0279410ea28234fb703ab38ffaeca3
+guid: 4a0783aefc4b45547a9ee353c9ec0848
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 239112368701523294
-    second: hull_rail_0
+      213: -1768709022439867468
+    second: turret_tesla_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -49,8 +49,8 @@ TextureImporter:
   spriteMode: 1
   spriteExtrude: 1
   spriteMeshType: 1
-  alignment: 0
-  spritePivot: {x: 0.5, y: 0.5}
+  alignment: 9
+  spritePivot: {x: 0.5, y: 0.25}
   spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: hull_rail_0
+      name: turret_tesla_0
       rect:
         serializedVersion: 2
-        x: 39
-        y: 0
-        width: 162
-        height: 160
+        x: 4
+        y: 5
+        width: 56
+        height: 85
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: e554bd5be6f715300800000000000000
-      internalID: 239112368701523294
+      spriteID: 4bb717ed3884477e0800000000000000
+      internalID: -1768709022439867468
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      hull_rail_0: 239112368701523294
+      turret_tesla_0: -1768709022439867468
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

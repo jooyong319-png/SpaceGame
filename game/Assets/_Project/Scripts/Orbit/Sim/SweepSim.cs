@@ -77,6 +77,7 @@ namespace SalvageRun.Orbit.Sim
 
     public class Blast { public double x, y, t, R; public bool w; public int wid = -1; }   // wid = 피해를 세어 줄 곳 (DmgCat) — 기뢰 · 분열탄처럼 늦게 터져도 제 무기로     // w = 무기가 낸 폭발 (이것만 또 번진다 — 09-24 사장님 「연쇄 반응도 무기 특성으로」)
     public class Drone { public double a, cd, x, y; }
+    public class Orb { public double x, y, tx, ty, vx, vy, t, zap; public bool there; }   // ⚡ 전격선 구체 (09-27)
     public class Pod { public int kind; public double t, x, y, a, rr; public bool up, got; }     // 지구 보급 — kind 0 연료 · 1 폭탄
 
     public class SweepRun
@@ -98,6 +99,7 @@ namespace SalvageRun.Orbit.Sim
         public readonly List<Blast> pend = new List<Blast>();
         public readonly List<Drone> drones = new List<Drone>();
         public readonly List<Pod> pods = new List<Pod>();
+        public readonly List<Orb> orbs = new List<Orb>();                        // ⚡ 전격선 구체
         public double sigT, spotA, gustT, gustA, gustLeft; public bool roverUp; public int grpId, spotEaten; public Junk comet;   // 🪐 행성 특성
         public readonly List<SigKill> sigKills = new List<SigKill>();
         public double Earned => earnClaw + earnDrone + earnBlast;
@@ -539,7 +541,7 @@ namespace SalvageRun.Orbit.Sim
             new ShipDef { id = "old",     name = "낡은 청소선", weapon = "빔",   trait = "무난", price = 0, desc = "처음부터 있는 배. 한 점을 겨누는 빔 — 무엇 하나 튀지 않지만 무엇도 모자라지 않다" },
             new ShipDef { id = "scatter", name = "산탄선",      weapon = "산탄", trait = "연쇄", price = 10, desc = "넓게 퍼지는 산탄. 가까울수록 세고 멀수록 약하다 — 몰린 잔해를 한 번에 터뜨려 연쇄를 연다" },
             new ShipDef { id = "harpoon", name = "작살선",      weapon = "작살", trait = "꿰뚫기", price = 16, desc = "작살이 조준 방향으로 한 줄을 꿰뚫는다 — 줄 위의 잔해를 모두 맞히고, 뚫을 때마다 약해진다. 줄지어 선 잔해에 강하다" },
-            new ShipDef { id = "rail",    name = "레일건선",    weapon = "레일건", trait = "관문", price = 24, desc = "느리게 쏘지만 한 방이 화면 끝까지 한 줄을 꿰뚫는다 — 다섯 개까지 두 배 피해 · 관문엔 세 배" },
+            new ShipDef { id = "tesla",   name = "전격선",      weapon = "전기 구체", trait = "지지기", price = 24, desc = "조준점으로 전기 구체를 던진다 — 날아가며 둘레 잔해에 번개를 튀기고, 닿으면 잠깐 머물다 펑 터진다" },   // 09-27 사장님 「레일건 말고 전기로 무언가 — 전기 구체를 범위로 던진다든가」
         };
         public int Ship => M.ship >= 0 && M.ship < Ships.Length && ShipOwned(M.ship) ? M.ship : 0;
         public bool ShipOwned(int i) => i == 0 || (M.shipsOwned & (1 << i)) != 0;
@@ -558,16 +560,16 @@ namespace SalvageRun.Orbit.Sim
             { "c_rad", new[] { "작살 관통", "한 번에 꿰뚫는 수 +1 · 30 더 멀리 (단계마다) — 처음 3개" } },
             { "c_spd", new[] { "작살 증폭", "작살 화력 +8% (단계마다)" } },
         };
-        static readonly System.Collections.Generic.Dictionary<string, string[]> RailNode = new System.Collections.Generic.Dictionary<string, string[]>
+        static readonly System.Collections.Generic.Dictionary<string, string[]> TeslaNode = new System.Collections.Generic.Dictionary<string, string[]>
         {
-            { "c_pow", new[] { "레일 위력", "레일 한 방 피해 +2 (단계마다) — 꿰뚫은 잔해 모두에게" } },
-            { "c_rad", new[] { "레일 관통", "꿰뚫는 수 +1 · 2 더 굵게 (단계마다) — 처음 5개" } },
-            { "c_spd", new[] { "레일 증폭", "레일 화력 +8% (단계마다)" } },
+            { "c_pow", new[] { "전기 위력", "번개 · 터지는 피해 +1 (단계마다)" } },
+            { "c_rad", new[] { "구체 크기", "번개가 닿는 범위 +10 · 터지는 범위 +8 (단계마다) — 두 단계마다 번개 한 줄 더" } },
+            { "c_spd", new[] { "전기 증폭", "전기 화력 +8% (단계마다)" } },
         };
-        System.Collections.Generic.Dictionary<string, string[]> ShipNode => Ship == 1 ? ScatterNode : Ship == 2 ? HarpoonNode : Ship == 3 ? RailNode : null;
+        System.Collections.Generic.Dictionary<string, string[]> ShipNode => Ship == 1 ? ScatterNode : Ship == 2 ? HarpoonNode : Ship == 3 ? TeslaNode : null;
         public string NodeName(int i) => ShipNode != null && ShipNode.TryGetValue(Nodes[i].id, out var a) ? a[0] : Nodes[i].name;
         public string NodeDesc(int i) => ShipNode != null && ShipNode.TryGetValue(Nodes[i].id, out var a) ? a[1] : Nodes[i].desc;
-        public double ShipGateK => Ship == 1 ? 0.6 : Ship == 2 ? 1.0 : Ship == 3 ? 2.0 : 1;   // 레일건 한 방 = 빔 × 2 (관문엔 × 3 이라 조금 쉽다)         // 🛰 관문 체력은 배 무기가 한 방에 주는 만큼으로 (산탄 한 알은 약하다)
+        public double ShipGateK => Ship == 1 ? 0.6 : Ship == 2 ? 1.0 : Ship == 3 ? 2.0 : 1;   // 전격 한 발 ≈ 빔 × 2 (번개 여럿 + 펑)         // 🛰 관문 체력은 배 무기가 한 방에 주는 만큼으로 (산탄 한 알은 약하다)
         public double ScatterR => (38 + 6 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));   // 산탄 — 처음부터 넓다
 
         // ───────────────────────── 의뢰 (§4-4) — kind: 0 금고 1 연료통 2 조각 3 위성 4 연쇄 5 탱크 6 압축 7 큰 잔해 8 압류
@@ -833,7 +835,7 @@ namespace SalvageRun.Orbit.Sim
         public const double FuelTankPct = 0.03;   // ⛽ 09-26 사장님 「30초도 김」 — 한 판은 20초 남짓으로 묶는다
         public const double FuelCap = 22;
         double FuelRaw => Math.Max(12, 20.0 * (1 + 0.2 * Cr(0)) * (Lv("k_claw") > 0 ? 0.85 : 1)) * (1 + 0.25 * Lv("m_fuel"));   // ⚠ 트리 연료 칸은 상한에 막혀 거의 안 듣는다 — 트리 압축 때 다른 효과로
-        public double Gap => Ship == 3 ? RailGap : 0.5;                        // 🚀 레일건선은 느리게 (09-27)                                              // 연사 속도는 없앴다 — 수동 공격 (09-26). 빔 증폭(c_spd)은 화력으로
+        public double Gap => Ship == 3 ? TeslaGap : 0.5;                        // 🚀 레일건선은 느리게 (09-27)                                              // 연사 속도는 없앴다 — 수동 공격 (09-26). 빔 증폭(c_spd)은 화력으로
         public double ClawR => Lv("c_rad") > 0 ? (20 + 5 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2)) : 0;   // 0 = 하나씩 · 09-26 사장님 「범위가 너무 커진다」 — 최대 102 → 60 (단계 수는 그대로)
         public bool AutoClaw => true;        // 🔴 자동이 기본 (사장님 09-23: "클릭은 빼자 오토는 기본으로")
         public const double PickR = 30;      // 범위 강화 전 — 커서 밑 하나를 잡는 거리
@@ -1565,6 +1567,7 @@ namespace SalvageRun.Orbit.Sim
             Mines(dt);
             if (r.magHole > 0) { r.magHole -= dt; if (r.magHole <= 0 && !r.holding && r.fuel > 0) { r.holding = true; r.holdT = 0; r.chain = 0; r.tier = 0; r.hx = r.magX; r.hy = r.magY; r.shots++; Emit(SwEv.SkillReady, r.hx, r.hy, 1); } }   // 자석 각성 — 모인 자리에 블랙홀                           // 블랙홀이 열려 있어도 빔은 계속
             Drones(dt);
+            if (r.orbs.Count > 0) OrbTick(dt);                                  // ⚡ 전격선
 
             // 💥 연쇄
             for (int i = 0; i < r.pend.Count; i++) r.pend[i].t -= dt;
@@ -2126,7 +2129,7 @@ namespace SalvageRun.Orbit.Sim
             var r = R;
             if (Ship == 1) { Scatter(); return; }
             if (Ship == 2) { Harpoon(); return; }
-            if (Ship == 3) { Railgun(); return; }
+            if (Ship == 3) { Tesla(); return; }
             if (ClawR <= 0)
             {
                 // 범위가 없으면 커서 밑의 하나만
@@ -2210,28 +2213,54 @@ namespace SalvageRun.Orbit.Sim
             if (hits.Count > 0 && crit) Emit(SwEv.Crit, hits[0].d.x, hits[0].d.y - 20);
             if (hits.Count > 0) OnHit(1);
         }
-        /// <summary>🚀 레일건선 — 느린 한 방 · 화면 끝까지 한 줄 전부 · 관문엔 × 1.5 더 (09-27)</summary>
-        public const double RailGap = 1.2, RailK = 2.0;
-        public double RailW => 5 + 2 * Lv("c_rad");
-        public int RailN => 5 + Lv("c_rad");                                       // 한 번에 꿰뚫는 수 (관문은 세지 않는다)
-        void Railgun()
+        /// <summary>🚀 전격선 — 전기 구체를 던진다: 날아가며 번개로 지지고, 닿으면 머물다 터진다 (09-27)</summary>
+        public const double TeslaGap = 0.9, OrbSpeed = 520, OrbHover = 0.5, ZapEvery = 0.15, ZapK = 0.2, BurstK = 1.0;
+        public double ZapR => (70 + 10 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));
+        public int ZapN => 2 + Lv("c_rad") / 3;
+        public double BurstR => (55 + 8 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));
+        void Tesla()
         {
             var r = R;
             double sx = ShipX, sy = ShipY, dx = r.ax - sx, dy = r.ay - sy, len = Math.Sqrt(dx * dx + dy * dy);
             if (len < 1) return;
-            double ux = dx / len, uy = dy / len, L = 1400, W = RailW * (1 + Part("rad")) * (1 + 0.04 * Up(2));
-            bool crit = Rnd() < Crit; int n = 0;
-            foreach (var d in r.junk.ToArray())
+            r.orbs.Add(new Orb { x = sx, y = sy, tx = r.ax, ty = r.ay, vx = dx / len * OrbSpeed, vy = dy / len * OrbSpeed, zap = 0.05 });
+            Emit(SwEv.Strike, r.ax, r.ay, 0, 1);
+        }
+        void OrbTick(double dt)
+        {
+            var r = R;
+            for (int i = r.orbs.Count - 1; i >= 0; i--)
             {
-                if (d.dead) continue;
-                double px = d.x - sx, py = d.y - sy, t = px * ux + py * uy;
-                if (t < 0 || t > L || Math.Abs(px * uy - py * ux) > W + Types[d.k].r) continue;
-                bool gate = d.sig == GateSig;
-                if (!gate && n >= RailN) continue;
-                Hit(d, Math.Max(1, RoundP(Pow * RailK * (gate ? 1.5 : 1) * (crit ? CritX : 1))), 0, true); if (!gate) n++;
+                var o = r.orbs[i];
+                if (!o.there)
+                {
+                    double ddx = o.tx - o.x, ddy = o.ty - o.y, rem = Math.Sqrt(ddx * ddx + ddy * ddy), step = OrbSpeed * dt;
+                    if (rem <= step) { o.x = o.tx; o.y = o.ty; o.there = true; } else { o.x += o.vx * dt; o.y += o.vy * dt; }
+                }
+                else o.t += dt;
+                o.zap -= dt;
+                if (o.zap <= 0)
+                {   // ⚡ 가까운 잔해 몇 개에 번개
+                    o.zap = ZapEvery; double zr = ZapR;
+                    var near = new List<(double dd, Junk d)>();
+                    foreach (var d in r.junk) { if (d.dead) continue; double ex = d.x - o.x, ey = d.y - o.y, dd = ex * ex + ey * ey, lim = zr + Types[d.k].r; if (dd < lim * lim) near.Add((dd, d)); }
+                    near.Sort((a, b) => a.dd.CompareTo(b.dd));
+                    for (int k = 0; k < Math.Min(ZapN, near.Count); k++)
+                    {
+                        var d = near[k].d; bool crit = Rnd() < Crit;
+                        Emit(SwEv.Bolt, o.x, o.y, 0, crit ? 1 : 0, null, d.x, d.y);
+                        Hit(d, Math.Max(1, RoundP(Pow * ZapK * (crit ? CritX : 1))), 0, true);
+                    }
+                    if (near.Count > 0) OnHit(0.3);
+                }
+                if (o.there && o.t >= OrbHover)
+                {   // 💥 펑
+                    double br = BurstR; bool crit = Rnd() < Crit;
+                    foreach (var d in r.junk.ToArray()) { if (d.dead) continue; double ex = d.x - o.x, ey = d.y - o.y, lim = br + Types[d.k].r; if (ex * ex + ey * ey < lim * lim) Hit(d, Math.Max(1, RoundP(Pow * BurstK * (crit ? CritX : 1))), 0, true); }
+                    Emit(SwEv.Ring, o.x, o.y, br, 3);
+                    r.orbs.RemoveAt(i);
+                }
             }
-            Emit(SwEv.Strike, r.ax, r.ay, n, n > 0 ? 1 : 0, null, sx + ux * L, sy + uy * L);
-            if (n > 0) OnHit(1);
         }
         void HoleRoll() { if (Rnd() < HoleChance) OpenHole(); }
         /// <summary>무기가 맞았다 — 블랙홀 · ★ 내부자 거래 (share = 레이저처럼 자주 쏘는 무기는 몫을 나눈다)</summary>
