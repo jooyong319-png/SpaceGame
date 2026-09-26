@@ -28,7 +28,7 @@ static class Program
         foreach (var s in seeds) Run(s, verbose);
     }
 
-    public class Result { public bool won; public double minutes; public int bankrupt, bill; public double[] billAt = new double[13], planetAt = new double[9]; public List<double> bankAt = new List<double>(); public List<int> bankBill = new List<int>(); public double earn50, tree; }
+    public class Result { public bool won; public double minutes; public int bankrupt, bill; public double[] billAt = new double[13], planetAt = new double[9]; public List<double> bankAt = new List<double>(); public List<int> bankBill = new List<int>(); public double earn50, tree; public List<int>[] slack = Enumerable.Range(0, 13).Select(_ => new List<int>()).ToArray(), win = Enumerable.Range(0, 13).Select(_ => new List<int>()).ToArray(); }
     public static double TreePct(SweepSim sim) { double h = 0, m = 0; for (int i = 0; i < SweepSim.NodeCount; i++) { var nd = SweepSim.Nodes[i]; if (nd.id.StartsWith("p_") || nd.id == "e_quest") continue; h += Math.Min(sim.S.lv[i], nd.max); m += nd.max; } return m > 0 ? h / m * 100 : 0; }
     static bool quiet;
     public static Result RunQuiet(int seed) { quiet = true; try { return Run(seed, false); } finally { quiet = false; } }
@@ -57,17 +57,21 @@ static class Program
             }
             if (!sim.M.cleanReady)
             {
-                if (sim.PayBill()) log.Add($"{Min(),6:0.0}분  {sim.M.company}대  청구서 {sim.S.bill} 갚음  (출동 {sim.S.runs})");
+                int dueWas = sim.S.billDue, billWas = sim.S.bill; bool overWas = sim.S.overdue;
+                if (sim.PayBill()) { rec.slack[billWas].Add(overWas ? -1 : dueWas); rec.win[billWas].Add(overWas ? -1 : dueWas); }
+                if (sim.S.bill != billWas) log.Add($"{Min(),6:0.0}분  {sim.M.company}대  청구서 {sim.S.bill} 갚음  (출동 {sim.S.runs})");
                 // 납부일 — 모자라면 대출받아 갚는다. 한도가 모자라면 파산
                 if (sim.S.overdue && sim.S.cash < sim.BillAmount)
                 {
                     double need = sim.BillAmount - sim.S.cash;
-                    if (sim.LoanAndPay()) log.Add($"{Min(),6:0.0}분  {sim.M.company}대  🏦 대출 {need:0} 받아 청구서 {sim.S.bill} 갚음 · 빚 {sim.S.debt:0}");
+                    int lb = sim.S.bill;
+                    if (sim.LoanAndPay()) { rec.slack[lb].Add(-2); rec.win[lb].Add(-2); }
+                    if (sim.S.bill != lb) log.Add($"{Min(),6:0.0}분  {sim.M.company}대  🏦 대출 {need:0} 받아 청구서 {sim.S.bill} 갚음 · 빚 {sim.S.debt:0}");
                 }
                 if (sim.CanBankrupt && sim.S.overdue)
                 {
                     log.Add($"{Min(),6:0.0}분  {sim.M.company}대  💥 파산 (청구서 {sim.S.bill} · 출동 {sim.S.runs} · 신용 +{sim.S.creditPending})");
-                    rec.bankAt.Add(Min()); rec.bankBill.Add(sim.S.bill);
+                    rec.bankAt.Add(Min()); rec.bankBill.Add(sim.S.bill); rec.slack[sim.S.bill].Add(-9); foreach (var w in rec.win) w.Clear();
                     sim.Bankrupt();
                     continue;
                 }
@@ -154,6 +158,7 @@ static class Program
             }
             segSplit[seg, 0] += R.earnClaw; segSplit[seg, 1] += R.earnDrone; segSplit[seg, 2] += R.earnBlast;
             if (!sim.M.won) rec.tree = TreePct(sim);
+            if (Environment.GetEnvironmentVariable("DBG") == "gmax") Console.WriteLine($"  {Min(),5:0.0}분 청구서 {sim.S.bill} 관문 {sim.ZoneOpen} max {sim.S.gateMax:0} 판피해 {sim.GateShotDmg * sim.FuelMax / sim.Gap:0} 트리 {TreePct(sim):0}% 판수입 {sim.S.runAvg:0}");
             if (verbose) Console.WriteLine($"{Min(),6:0.0}분    출동 {sim.S.runs,2}  구간 {seg}  {SweepSim.Orbits[sim.S.orbit].name}  +{R.Earned,8:0}  연쇄 {R.chainBest,3}  압축 {R.packBest,3}  돈 {sim.S.cash,8:0}  청구서 {sim.BillAmount,7:0}{(sim.S.overdue ? " 연체" : " 기한 " + sim.S.billDue)}");
         }
 
@@ -206,7 +211,8 @@ static class Program
         Console.WriteLine("  끝낼 때 트리 %     " + Q(rs.Where(r => r.won).Select(r => r.tree)).Replace("분", "%"));
         Console.WriteLine($"  파산 수 평균     {rs.Average(r => r.bankrupt):0.0}  · 첫 파산 " + Q(rs.Select(r => r.bankAt.Count > 0 ? r.bankAt[0] : -1)) + " · 둘째 " + Q(rs.Select(r => r.bankAt.Count > 1 ? r.bankAt[1] : -1)));
         for (int c = 0; c < 3; c++) { var bb = rs.Where(r => r.bankBill.Count > c).Select(r => r.bankBill[c]).OrderBy(x => x).ToList(); if (bb.Count > 0) Console.WriteLine($"  {c + 1}대 파산 — 갚은 청구서 가운데 {bb[bb.Count / 2]}장 ({bb[0]}~{bb[bb.Count - 1]}) · {bb.Count}/{n}판"); }
-        for (int k = 1; k <= 12; k++) Console.WriteLine($"  청구서 {k,2}장 갚음 {Q(rs.Select(r => r.billAt[k]))}   {SweepSim.Bills[k - 1].t} {Math.Round(SweepSim.Bills[k - 1].m * SweepSim.BillMul * Math.Pow(SweepSim.BillRise, Math.Max(0, k - 4))):0}");
+        for (int k = 0; k < 12; k++) { var sl = rs.SelectMany(r => r.slack[k]).ToList(); int tot = sl.Count; if (tot == 0) continue; var paid = sl.Where(x => x >= 0).OrderBy(x => x).ToList(); Console.WriteLine($"  🧾 {k + 1,2}장 {SweepSim.Bills[k].t,-10} 기한 {SweepSim.Bills[k].due}  남긴 판(가운데) {(paid.Count > 0 ? paid[paid.Count / 2].ToString() : "-"),2}  제때 {paid.Count,3}  연체후 {sl.Count(x => x == -1),3}  대출 {sl.Count(x => x == -2),3}  파산 {sl.Count(x => x == -9),3}   ║ 완납한 회사: 남긴 판 {string.Join(",", rs.Where(r => r.won).Select(r => r.win[k].Count > 0 ? r.win[k].Max() : -3).OrderBy(x => x).Select(x => x == -2 ? "빚" : x == -1 ? "늦" : x == -3 ? "·" : x.ToString()))}"); }
+        for (int k = 1; k <= 12; k++) Console.WriteLine($"  청구서 {k,2}장 갚음 {Q(rs.Select(r => r.billAt[k]))}   {SweepSim.Bills[k - 1].t} {Math.Round(SweepSim.Bills[k - 1].m * SweepSim.BillMul * SweepSim.BillK[k - 1]):0}");
         foreach (int pi in SweepSim.OrbitOrder) if (pi > 0) Console.WriteLine($"  🪐 {SweepSim.Orbits[pi].name,-6} {Q(rs.Select(r => r.planetAt[pi]))}   관문 {SweepSim.GateNames[Math.Max(0, Array.IndexOf(SweepSim.OrbitOrder, pi) - 1)]}");
     }
 
