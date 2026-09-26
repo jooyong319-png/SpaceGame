@@ -814,6 +814,12 @@ namespace SalvageRun.Orbit
             if (d < 1.2f) return new Color32(110, 210, 255, 255);
             return ((int)fx % 40 < 3 && ((int)fy % 40 < 3)) ? new Color32(80, 110, 160, 255) : rim;
         }
+        // 🔺 붉은 화살 — 회색 틀에 일정한 간격으로 붉은 꺾쇠
+        static Color32 Chevron(float fx, float fy, Color32 rim)
+        {
+            int m = ((int)(fx + Mathf.Abs(fy % 24 - 12)) % 28);
+            return m < 5 ? new Color32(210, 60, 52, 255) : rim;
+        }
         static void BuildHull(ShipTheme t)
         {
             const int W = 960, H = 600;
@@ -830,7 +836,7 @@ namespace SalvageRun.Orbit
                     Color32 c;
                     if (InQuad(WinPoly, fx, fy)) c = new Color32(0, 0, 0, 0);
                     else if (InQuad(inner, fx, fy)) c = edge;
-                    else if (InQuad(outer, fx, fy)) c = t.deco == 1 ? (((int)(fx + fy) / 8) % 2 == 0 ? new Color32(255, 204, 31, 255) : rim) : t.deco == 2 ? Rope(fx, fy, rim) : t.deco == 3 ? Mil(fx, fy, rim, outer) : rim;   // 창틀 무늬 — 산탄선 경고 줄무늬 · 작살선 밧줄
+                    else if (InQuad(outer, fx, fy)) c = t.deco == 1 ? (((int)(fx + fy) / 8) % 2 == 0 ? new Color32(255, 204, 31, 255) : rim) : t.deco == 2 ? Rope(fx, fy, rim) : t.deco == 3 ? Mil(fx, fy, rim, outer) : t.deco == 4 ? Chevron(fx, fy, rim) : rim;   // 창틀 무늬 — 산탄선 경고 줄무늬 · 작살선 밧줄
                     else if (fy > 336 && (fy > 384 || InQuad(new[] { new Vector2(0, 384), new Vector2(126, 336), new Vector2(834, 336), new Vector2(W, 384) }, fx, fy) || fy >= 384))
                     {
                         float k = Mathf.InverseLerp(336, H, fy);   // 조종대 — 위가 밝고 아래로 어두워진다

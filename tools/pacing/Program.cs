@@ -37,7 +37,7 @@ static class Program
     static Result Run(int seed, bool verbose)
     {
         var sim = new SweepSim(null, null, seed);
-        if (int.TryParse(Environment.GetEnvironmentVariable("SHIP"), out int forceShip)) { sim.M.shipsOwned = 15; sim.M.ship = forceShip; }   // 🚀 배 비교용 (SHIP=0 빔 · 1 산탄 · 2 작살)
+        if (int.TryParse(Environment.GetEnvironmentVariable("SHIP"), out int forceShip)) { sim.M.shipsOwned = 31; sim.M.ship = forceShip; }   // 🚀 배 비교용 (SHIP=0 빔 · 1 산탄 · 2 작살)
         var rng = new Random(seed * 31 + 1);
         double ax = 600, ay = 360, tx = 600, ty = 360, retarget = 0, shopClock = 0;
         bool hold = false;
@@ -209,6 +209,7 @@ static class Program
         var rs = new List<Result>(); for (int i = 1; i <= n; i++) rs.Add(RunQuiet(i * 7 + 1));
         string Q(IEnumerable<double> xs) { var a = xs.Where(x => x >= 0).OrderBy(x => x).ToList(); if (a.Count == 0) return "   -"; return $"{a[a.Count / 2],5:0}분 ({a[a.Count / 10],3:0}~{a[a.Count * 9 / 10],3:0}) {(a.Count < n ? a.Count + "/" + n : "")}"; }
         Console.WriteLine($"📊 밸런스 — 씨앗 {n}   (가운데값 · 10%~90%)");
+        Console.WriteLine($"  🚀 미사일 호출 {SweepSim.DbgMisCall} · 발사 {SweepSim.DbgMisF} · 명중 {SweepSim.DbgMisH} · 맞음 {SweepSim.DbgHits} · 부숨 {SweepSim.DbgKills}");
         { double tw = SweepSim.DbgCat.Sum(); Console.WriteLine("  🔫 피해 몫  " + string.Join("  ", Enumerable.Range(0, SweepSim.DmgCatN).Select(i => SweepSim.DmgCatName[i] + " " + (SweepSim.DbgCat[i] / Math.Max(1, tw) * 100).ToString("0.0") + "%"))); }
         Console.WriteLine("  끝(빚 청산)      " + Q(rs.Select(r => r.won ? r.minutes : -1)));
         Console.WriteLine("  끝낼 때 트리 %     " + Q(rs.Where(r => r.won).Select(r => r.tree)).Replace("분", "%"));

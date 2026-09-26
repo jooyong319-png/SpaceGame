@@ -243,6 +243,7 @@ namespace SalvageRun.Orbit
             DrawJunk();
             DrawTools();
             DrawOrbs();                                                       // ⚡ 전격선 구체
+            DrawMissiles();                                                   // 🚀 미사일선
             PerfDraw = PerfDraw * 0.9 + PerfSw.Elapsed.TotalMilliseconds * 0.1; PerfSw.Restart();
             UpdateFx(dt);
             PerfUfx = PerfUfx * 0.9 + PerfSw.Elapsed.TotalMilliseconds * 0.1; PerfFxN = fx.Count;
@@ -420,6 +421,7 @@ namespace SalvageRun.Orbit
                         if (sim.Ship == 1) { ScatterFx(at, (float)e.v, e.k == 1); break; }   // 🚀 산탄선 (09-26)
                         if (sim.Ship == 2) { HarpoonFx(PxToWorld(e.x2, e.y2), (int)e.v); break; }   // 🚀 작살선
                         if (sim.Ship == 3) { TeslaFx(); break; }                                   // 🚀 전격선
+                        if (sim.Ship == 4) { if (e.k == 1) MissileLaunchFx(); break; }             // 🚀 미사일선
                         bool spot = e.v <= SweepSim.PickR + 0.1;      // 아직 좁은 빔 — 한 점
                         Beam(at, e.k == 1);
                         if (e.k == 1) RingFx(at, Amber2, spot ? 0.26f : 0.22f, (float)e.v * 2 / PxPerUnit);
@@ -610,6 +612,7 @@ namespace SalvageRun.Orbit
                     }
                     case SwEv.Beam: { var p = Add(pixel, at, 0.05f, Cyan, 3, 0.16f); p.a = at; p.b = PxToWorld(e.x2, e.y2); break; }
                     case SwEv.Ring:
+                        if (e.k == 4) { Add(glow, at, 0.5f, new Color(1f, 0.6f, 0.3f, 0.85f), 7, 0.12f); Burst(at, new Color(1f, 0.7f, 0.4f), 5, 3f); OrbitSfx.Play("tick", 0.35f, 0.08f); break; }   // 🚀 미사일이 닿았다
                         if (e.k == 3)
                         {   // ⚡ 전격선 구체가 터진다 — 파란 고리 · 불똥 · 번개 가시
                             var cy = new Color(0.55f, 0.88f, 1f); float rw = (float)e.v / PxPerUnit;
@@ -785,6 +788,25 @@ namespace SalvageRun.Orbit
             Add(glow, muzzle, 0.9f, new Color(0.6f, 0.9f, 1f, 0.9f), 7, 0.12f);
             Star(muzzle, new Color(0.75f, 0.95f, 1f), 0.5f, 6, 0.1f);
             OrbitSfx.PlayPitch("launch", 0.3f, 1.8f);
+        }
+        // 🚀 미사일선 — 발사 연기 · 날아가는 미사일(빨간 머리 + 꼬리 연기) · 닿으면 작은 폭발 (09-27)
+        void MissileLaunchFx()
+        {
+            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);
+            Add(glow, muzzle, 0.55f, new Color(1f, 0.7f, 0.45f, 0.8f), 7, 0.08f);
+            for (int i = 0; i < 3; i++) { var sm = Add(glow, muzzle, 0.3f, new Color(0.7f, 0.7f, 0.75f, 0.5f), 0, 0.5f); sm.v = new Vector3(Random.Range(-1.2f, 1.2f), Random.Range(-0.6f, 0.2f), 0); }
+            OrbitSfx.PlayPitch("launch", 0.18f, 2.2f);
+        }
+        void DrawMissiles()
+        {
+            if (sim.R == null) return;
+            foreach (var m in sim.R.missiles)
+            {
+                var p = PxToWorld(m.x, m.y);
+                Add(glow, p, 0.2f, new Color(1f, 0.35f, 0.3f, 0.95f), 7, 0.03f);
+                Add(glow, p, 0.42f, new Color(1f, 0.55f, 0.35f, 0.35f), 7, 0.03f);
+                if (Random.value < 0.6f) Add(glow, p, 0.16f, new Color(0.85f, 0.85f, 0.9f, 0.45f), 0, 0.35f);   // 꼬리 연기
+            }
         }
         void DrawOrbs()
         {
@@ -1191,7 +1213,7 @@ namespace SalvageRun.Orbit
         static Sprite hullSpr, turClawSpr, dronePx;
         static int turClawShip = -1;
         static readonly Sprite[] shipTur = new Sprite[8]; static readonly bool[] shipTurTried = new bool[8];
-        static readonly string[] ShipTurName = { "claw", "scatter", "harpoon", "tesla" };
+        static readonly string[] ShipTurName = { "claw", "scatter", "harpoon", "tesla", "missile" };
         static Sprite ShipTur(int s) { if (s < 0 || s >= ShipTurName.Length) return null; if (!shipTurTried[s]) { shipTurTried[s] = true; shipTur[s] = Resources.Load<Sprite>("ship/turret_" + ShipTurName[s]); } return shipTur[s] ?? TurSprite(0); }                                             // 🚀 포탑 그림을 불러온 배 (09-26)
         static readonly Sprite[][] planetFrames = new Sprite[12][]; static readonly bool[] planetTried = new bool[12];
         static Sprite[] PlanetFrames(int pi)

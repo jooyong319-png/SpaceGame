@@ -12,9 +12,9 @@ namespace SalvageRun.Orbit
         int hangarTab;
         int hangarPick = -1;
         static Texture2D[] upTex, shipHullTex;
-        static readonly string[] HullName = { "ship/hull", "ship/hull_scatter", "ship/hull_harpoon", "ship/hull_tesla" };
-        static readonly Color[] ShipCol = { new Color(0.91f, 0.53f, 0.23f), new Color(1f, 0.77f, 0.23f), new Color(0.3f, 0.82f, 0.78f), new Color(0.35f, 0.78f, 1f) };
-        static readonly int[][] ShipStat = { new[] { 3, 2, 2 }, new[] { 2, 4, 4 }, new[] { 3, 3, 2 }, new[] { 3, 4, 3 } };   // 한 방 · 넓이 · 연쇄 (5칸)
+        static readonly string[] HullName = { "ship/hull", "ship/hull_scatter", "ship/hull_harpoon", "ship/hull_tesla", "ship/hull_missile" };
+        static readonly Color[] ShipCol = { new Color(0.91f, 0.53f, 0.23f), new Color(1f, 0.77f, 0.23f), new Color(0.3f, 0.82f, 0.78f), new Color(0.35f, 0.78f, 1f), new Color(1f, 0.42f, 0.4f) };
+        static readonly int[][] ShipStat = { new[] { 3, 2, 2 }, new[] { 2, 4, 4 }, new[] { 3, 3, 2 }, new[] { 3, 4, 3 }, new[] { 2, 3, 2 } };   // 한 방 · 넓이 · 연쇄 (5칸)
 
         Texture2D UpTex(int i) { if (upTex == null) upTex = new Texture2D[SweepSim.UpCount]; if (upTex[i] == null) upTex[i] = Resources.Load<Texture2D>("hangar/up_" + i); return upTex[i]; }
         Texture2D HullTex(int i) { if (shipHullTex == null) shipHullTex = new Texture2D[HullName.Length]; if (shipHullTex[i] == null) shipHullTex[i] = Resources.Load<Texture2D>(HullName[i]); return shipHullTex[i]; }
@@ -74,18 +74,19 @@ namespace SalvageRun.Orbit
             for (int i = 0; i < SweepSim.Ships.Length; i++)
             {
                 var d = SweepSim.Ships[i]; bool own = sim.ShipOwned(i), on = hangarPick == i;
-                var r = new Rect(L.x, L.y + i * 76, L.width, 68);
+                float pitch = Mathf.Min(76, (L.height - 4) / SweepSim.Ships.Length), rh = pitch - 6;   // 배가 늘면 칸을 줄인다 (다섯 척부터 넘쳤다)
+                var r = new Rect(L.x, L.y + i * pitch, L.width, rh);
                 GUI.color = on ? new Color(0.1f, 0.13f, 0.2f) : new Color(0.08f, 0.1f, 0.16f); GUI.DrawTexture(r, white);
                 Frame(r, on ? ShipCol[i] : new Color(0.15f, 0.18f, 0.26f), on ? 2 : 1);
-                var th = new Rect(r.x + 6, r.y + 6, 90, 56);
+                var th = new Rect(r.x + 6, r.y + 4, 90 * (rh - 8) / 56, rh - 8);
                 GUI.color = new Color(0.03f, 0.04f, 0.07f); GUI.DrawTexture(th, white);
                 var ht = HullTex(i); if (ht != null) { GUI.color = own ? Color.white : new Color(0.35f, 0.35f, 0.38f); GUI.DrawTexture(th, ht, ScaleMode.ScaleToFit); }
                 GUI.color = Color.white;
-                GUI.Label(new Rect(r.x + 104, r.y + 8, r.width - 108, 20), "<size=14><b>" + d.name + "</b></size>", label);
-                GUI.Label(new Rect(r.x + 104, r.y + 32, r.width - 108, 20), "<size=11><color=#8d99b8>" + d.weapon + " · </color>" + (own ? (sim.Ship == i ? "<color=#6fe3a0>타는 중</color>" : "<color=#8d99b8>보유</color>") : "<color=#ffdf95>신용 " + d.price + "</color>") + "</size>", label);
+                GUI.Label(new Rect(r.x + 104, r.y + rh / 2 - 22, r.width - 108, 20), "<size=14><b>" + d.name + "</b></size>", label);
+                GUI.Label(new Rect(r.x + 104, r.y + rh / 2, r.width - 108, 20), "<size=11><color=#8d99b8>" + d.weapon + " · </color>" + (own ? (sim.Ship == i ? "<color=#6fe3a0>타는 중</color>" : "<color=#8d99b8>보유</color>") : "<color=#ffdf95>신용 " + d.price + "</color>") + "</size>", label);
                 if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { hangarPick = i; OrbitSfx.Play("tick", 0.5f); }
             }
-            GUI.Label(new Rect(L.x, L.y + SweepSim.Ships.Length * 76 + 6, L.width, 60), "<size=11><color=#5a6475>드론 모함 · 폭뢰선은\n차례로 들어온다</color></size>", label);
+            if (SweepSim.Ships.Length < 5) GUI.Label(new Rect(L.x, L.y + SweepSim.Ships.Length * 76 + 6, L.width, 60), "<size=11><color=#5a6475>무기고 무기 배(냉동 · 분열탄 · 자석 …)는\n차례로 들어온다</color></size>", label);
 
             // 오른쪽 — 고른 배
             var sd = SweepSim.Ships[hangarPick]; bool mine = sim.ShipOwned(hangarPick);

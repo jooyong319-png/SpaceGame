@@ -77,6 +77,7 @@ namespace SalvageRun.Orbit.Sim
 
     public class Blast { public double x, y, t, R; public bool w; public int wid = -1; }   // wid = 피해를 세어 줄 곳 (DmgCat) — 기뢰 · 분열탄처럼 늦게 터져도 제 무기로     // w = 무기가 낸 폭발 (이것만 또 번진다 — 09-24 사장님 「연쇄 반응도 무기 특성으로」)
     public class Drone { public double a, cd, x, y; }
+    public class Missile { public double x, y, vx, vy, life; public Junk tg; }   // 🚀 미사일선 (09-27)
     public class Orb { public double x, y, tx, ty, vx, vy, t, zap; public bool there; }   // ⚡ 전격선 구체 (09-27)
     public class Pod { public int kind; public double t, x, y, a, rr; public bool up, got; }     // 지구 보급 — kind 0 연료 · 1 폭탄
 
@@ -100,6 +101,7 @@ namespace SalvageRun.Orbit.Sim
         public readonly List<Drone> drones = new List<Drone>();
         public readonly List<Pod> pods = new List<Pod>();
         public readonly List<Orb> orbs = new List<Orb>();                        // ⚡ 전격선 구체
+        public readonly List<Missile> missiles = new List<Missile>();            // 🚀 미사일선
         public double sigT, spotA, gustT, gustA, gustLeft; public bool roverUp; public int grpId, spotEaten; public Junk comet;   // 🪐 행성 특성
         public readonly List<SigKill> sigKills = new List<SigKill>();
         public double Earned => earnClaw + earnDrone + earnBlast;
@@ -542,6 +544,7 @@ namespace SalvageRun.Orbit.Sim
             new ShipDef { id = "scatter", name = "산탄선",      weapon = "산탄", trait = "연쇄", price = 10, desc = "넓게 퍼지는 산탄. 가까울수록 세고 멀수록 약하다 — 몰린 잔해를 한 번에 터뜨려 연쇄를 연다" },
             new ShipDef { id = "harpoon", name = "작살선",      weapon = "작살", trait = "꿰뚫기", price = 16, desc = "작살이 조준 방향으로 한 줄을 꿰뚫는다 — 줄 위의 잔해를 모두 맞히고, 뚫을 때마다 약해진다. 줄지어 선 잔해에 강하다" },
             new ShipDef { id = "tesla",   name = "전격선",      weapon = "전기 구체", trait = "지지기", price = 24, desc = "조준점으로 전기 구체를 던진다 — 날아가며 둘레 잔해에 번개를 튀기고, 닿으면 잠깐 머물다 펑 터진다" },   // 09-27 사장님 「레일건 말고 전기로 무언가 — 전기 구체를 범위로 던진다든가」
+            new ShipDef { id = "missile", name = "미사일선",    weapon = "유도 미사일", trait = "쫓기", price = 20, desc = "누르고 있으면 작은 미사일이 줄줄이 나가 조준점 둘레의 잔해를 스스로 골라 쫓는다 — 빗나가지 않지만 한 발은 작다" },   // 09-27 사장님 「유도 미사일이 그나마 낫네」 (시안 X4byMmYEwkfh7u9rat8pML)
         };
         public int Ship => M.ship >= 0 && M.ship < Ships.Length && ShipOwned(M.ship) ? M.ship : 0;
         public bool ShipOwned(int i) => i == 0 || (M.shipsOwned & (1 << i)) != 0;
@@ -560,16 +563,22 @@ namespace SalvageRun.Orbit.Sim
             { "c_rad", new[] { "작살 관통", "한 번에 꿰뚫는 수 +1 · 30 더 멀리 (단계마다) — 처음 3개" } },
             { "c_spd", new[] { "작살 증폭", "작살 화력 +8% (단계마다)" } },
         };
+        static readonly System.Collections.Generic.Dictionary<string, string[]> MissileNode = new System.Collections.Generic.Dictionary<string, string[]>
+        {
+            { "c_pow", new[] { "미사일 위력", "미사일 한 발 피해 +1 (단계마다)" } },
+            { "c_rad", new[] { "탐지 범위", "조준점 둘레 고르는 범위 +10 (단계마다) — 세 단계마다 한 번에 한 발 더" } },
+            { "c_spd", new[] { "미사일 증폭", "미사일 화력 +8% (단계마다)" } },
+        };
         static readonly System.Collections.Generic.Dictionary<string, string[]> TeslaNode = new System.Collections.Generic.Dictionary<string, string[]>
         {
             { "c_pow", new[] { "전기 위력", "번개 · 터지는 피해 +1 (단계마다)" } },
             { "c_rad", new[] { "구체 크기", "번개가 닿는 범위 +10 · 터지는 범위 +8 (단계마다) — 두 단계마다 번개 한 줄 더" } },
             { "c_spd", new[] { "전기 증폭", "전기 화력 +8% (단계마다)" } },
         };
-        System.Collections.Generic.Dictionary<string, string[]> ShipNode => Ship == 1 ? ScatterNode : Ship == 2 ? HarpoonNode : Ship == 3 ? TeslaNode : null;
+        System.Collections.Generic.Dictionary<string, string[]> ShipNode => Ship == 1 ? ScatterNode : Ship == 2 ? HarpoonNode : Ship == 3 ? TeslaNode : Ship == 4 ? MissileNode : null;
         public string NodeName(int i) => ShipNode != null && ShipNode.TryGetValue(Nodes[i].id, out var a) ? a[0] : Nodes[i].name;
         public string NodeDesc(int i) => ShipNode != null && ShipNode.TryGetValue(Nodes[i].id, out var a) ? a[1] : Nodes[i].desc;
-        public double ShipGateK => Ship == 1 ? 0.6 : Ship == 2 ? 1.0 : Ship == 3 ? 2.0 : 1;   // 전격 한 발 ≈ 빔 × 2 (번개 여럿 + 펑)         // 🛰 관문 체력은 배 무기가 한 방에 주는 만큼으로 (산탄 한 알은 약하다)
+        public double ShipGateK => Ship == 1 ? 0.6 : Ship == 2 ? 1.0 : Ship == 3 ? 2.0 : Ship == 4 ? 0.4 : 1;   // 미사일은 날아가는 사이 흩어져 관문엔 덜 박힌다 · 전격 한 발 ≈ 빔 × 2 (번개 여럿 + 펑) · 미사일 한 발 = 빔 × MissileK         // 🛰 관문 체력은 배 무기가 한 방에 주는 만큼으로 (산탄 한 알은 약하다)
         public double ScatterR => (38 + 6 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));   // 산탄 — 처음부터 넓다
 
         // ───────────────────────── 의뢰 (§4-4) — kind: 0 금고 1 연료통 2 조각 3 위성 4 연쇄 5 탱크 6 압축 7 큰 잔해 8 압류
@@ -835,7 +844,7 @@ namespace SalvageRun.Orbit.Sim
         public const double FuelTankPct = 0.03;   // ⛽ 09-26 사장님 「30초도 김」 — 한 판은 20초 남짓으로 묶는다
         public const double FuelCap = 22;
         double FuelRaw => Math.Max(12, 20.0 * (1 + 0.2 * Cr(0)) * (Lv("k_claw") > 0 ? 0.85 : 1)) * (1 + 0.25 * Lv("m_fuel"));   // ⚠ 트리 연료 칸은 상한에 막혀 거의 안 듣는다 — 트리 압축 때 다른 효과로
-        public double Gap => Ship == 3 ? TeslaGap : 0.5;                        // 🚀 레일건선은 느리게 (09-27)                                              // 연사 속도는 없앴다 — 수동 공격 (09-26). 빔 증폭(c_spd)은 화력으로
+        public double Gap => Ship == 3 ? TeslaGap : Ship == 4 ? MissileGap : 0.5;                        // 🚀 레일건선은 느리게 (09-27)                                              // 연사 속도는 없앴다 — 수동 공격 (09-26). 빔 증폭(c_spd)은 화력으로
         public double ClawR => Lv("c_rad") > 0 ? (20 + 5 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2)) : 0;   // 0 = 하나씩 · 09-26 사장님 「범위가 너무 커진다」 — 최대 102 → 60 (단계 수는 그대로)
         public bool AutoClaw => true;        // 🔴 자동이 기본 (사장님 09-23: "클릭은 빼자 오토는 기본으로")
         public const double PickR = 30;      // 범위 강화 전 — 커서 밑 하나를 잡는 거리
@@ -1568,6 +1577,7 @@ namespace SalvageRun.Orbit.Sim
             if (r.magHole > 0) { r.magHole -= dt; if (r.magHole <= 0 && !r.holding && r.fuel > 0) { r.holding = true; r.holdT = 0; r.chain = 0; r.tier = 0; r.hx = r.magX; r.hy = r.magY; r.shots++; Emit(SwEv.SkillReady, r.hx, r.hy, 1); } }   // 자석 각성 — 모인 자리에 블랙홀                           // 블랙홀이 열려 있어도 빔은 계속
             Drones(dt);
             if (r.orbs.Count > 0) OrbTick(dt);                                  // ⚡ 전격선
+            if (r.missiles.Count > 0) MissileTick(dt);                          // 🚀 미사일선
 
             // 💥 연쇄
             for (int i = 0; i < r.pend.Count; i++) r.pend[i].t -= dt;
@@ -2130,6 +2140,7 @@ namespace SalvageRun.Orbit.Sim
             if (Ship == 1) { Scatter(); return; }
             if (Ship == 2) { Harpoon(); return; }
             if (Ship == 3) { Tesla(); return; }
+            if (Ship == 4) { MissileFire(); return; }
             if (ClawR <= 0)
             {
                 // 범위가 없으면 커서 밑의 하나만
@@ -2225,6 +2236,55 @@ namespace SalvageRun.Orbit.Sim
             if (len < 1) return;
             r.orbs.Add(new Orb { x = sx, y = sy, tx = r.ax, ty = r.ay, vx = dx / len * OrbSpeed, vy = dy / len * OrbSpeed, zap = 0.05 });
             Emit(SwEv.Strike, r.ax, r.ay, 0, 1);
+        }
+        /// <summary>🚀 미사일선 — 조준점 둘레 잔해를 골라 쫓는 작은 미사일 (09-27)</summary>
+        public const double MissileGap = 0.25, MissileK = 0.8, MissileSpeed = 620;
+        public double LockR => (140 + 10 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));
+        public int MissileN => 1 + Lv("c_rad") / 3;
+        Junk LockOn(double x, double y, double rad)
+        {
+            var c = new List<(double dd, Junk d)>();
+            foreach (var d in R.junk) { if (d.dead) continue; double ex = d.x - x, ey = d.y - y, dd = ex * ex + ey * ey; if (dd < rad * rad) c.Add((dd, d)); }
+            if (c.Count == 0) return null;
+            c.Sort((a, b) => a.dd.CompareTo(b.dd));
+            foreach (var q in c) if (q.d.sig == GateSig && GateReady && q.dd < 90 * 90) return q.d;   // 🛰 조준점 가까이 관문이 있으면 관문부터 (흩어져서 관문이 안 깨졌다)
+            return c[rng.Next(Math.Min(4, c.Count))].d;
+        }
+        public static long DbgMisF, DbgMisH, DbgMisCall;
+        void MissileFire()
+        {
+            var r = R; bool any = false; DbgMisCall++;
+            for (int k = 0; k < MissileN; k++)
+            {
+                var tg = LockOn(r.ax, r.ay, LockR); if (tg == null) break;
+                DbgMisF++; r.missiles.Add(new Missile { x = ShipX, y = ShipY, vx = Rnd(-150, 150) + (k - MissileN / 2.0) * 80, vy = -260, tg = tg, life = 3 });
+                any = true;
+            }
+            Emit(SwEv.Strike, r.ax, r.ay, 0, any ? 1 : 0);
+        }
+        void MissileTick(double dt)
+        {
+            var r = R;
+            for (int i = r.missiles.Count - 1; i >= 0; i--)
+            {
+                var m = r.missiles[i]; m.life -= dt;
+                if (m.tg == null || m.tg.dead) m.tg = LockOn(m.x, m.y, 160);                 // 과녁이 먼저 부서지면 가까운 걸로
+                if (m.tg == null || m.life <= 0) { r.missiles.RemoveAt(i); continue; }
+                double dx = m.tg.x - m.x, dy = m.tg.y - m.y, L = Math.Sqrt(dx * dx + dy * dy) + 1e-6;
+                if (L < 12 + Types[m.tg.k].r * 0.6)
+                {
+                    bool crit = Rnd() < Crit;
+                    DbgMisH++; Hit(m.tg, Math.Max(1, RoundP(Pow * MissileK * (crit ? CritX : 1))), 0, true);
+                    Emit(SwEv.Ring, m.x, m.y, 14, 4);
+                    if (crit) Emit(SwEv.Crit, m.x, m.y - 16);
+                    OnHit(0.25);
+                    r.missiles.RemoveAt(i); continue;
+                }
+                double wx = dx / L * MissileSpeed, wy = dy / L * MissileSpeed;       // 과녁 쪽으로 방향을 부드럽게 튼다 — 가속만 주면 과녁 둘레를 빙빙 돌다 수명이 끝났다 (22%만 맞음)
+                if (L < 70) { m.vx = wx; m.vy = wy; }
+                else { double k = 1 - Math.Exp(-7 * dt); m.vx += (wx - m.vx) * k; m.vy += (wy - m.vy) * k; }
+                m.x += m.vx * dt; m.y += m.vy * dt;
+            }
         }
         void OrbTick(double dt)
         {
