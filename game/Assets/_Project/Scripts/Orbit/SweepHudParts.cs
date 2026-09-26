@@ -200,7 +200,7 @@ namespace SalvageRun.Orbit
         {
             { "dmg", new[] { "화력", "%" } }, { "spd", new[] { "연사", "%" } }, { "rad", new[] { "크기", "%" } }, { "fuel", new[] { "연료", "초" } }, { "crit", new[] { "치명", "%" } },
             { "dbl", new[] { "한 발 더", "%" } }, { "drone", new[] { "드론 몫", "%" } }, { "val", new[] { "모든 값", "%" } }, { "vault", new[] { "금고 위성", "%" } }, { "att", new[] { "부착물", "%" } },
-            { "cut", new[] { "상환 몫", "%p" } }, { "fee0", new[] { "수수료 0", "" } }, { "div", new[] { "배당", "%" } }, { "combo", new[] { "연쇄 상한", "" } }, { "hole", new[] { "블랙홀", "%" } },
+            { "cut", new[] { "빚 갚는 몫", "%" } }, { "fee0", new[] { "수수료 0", "" } }, { "div", new[] { "배당", "%" } }, { "combo", new[] { "연쇄 상한", "" } }, { "hole", new[] { "블랙홀", "%" } },
         };
         /// <summary>진열 부품을 끼우면 — 지금 부품이 빠지고 무엇이 오르고 내리나</summary>
         string PartCompare(int id)

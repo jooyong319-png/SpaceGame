@@ -46,7 +46,7 @@ namespace SalvageRun.Orbit.Sim
                 case "att": return "부착물 +" + Pc(v) + "%";
                 case "hole": return "블랙홀 확률 +" + Pc(v) + "%";
                 case "combo": return "연쇄 보너스 상한 +" + System.Math.Round(v);
-                case "cut": return "빚 상환 몫 −" + Pc(v) + "%p";
+                case "cut": return "빚 갚는 몫 −" + Pc(v) + "%";
                 case "fee0": return "주식 수수료 0";
                 case "div": return "배당 +" + System.Math.Round(v * 100, 3) + "%";
             }
@@ -77,7 +77,7 @@ namespace SalvageRun.Orbit.Sim
             P(3, 0, "부착물 레이더", "부착물 +40%", "att", 0.4),
             P(3, 1, "고철 감정기", "모든 값 +12%", "val", 0.12),
             P(3, 3, "심우주 레이더", "모든 값 +20% · 금고 위성 +50%", "val", 0.20, "vault", 0.5),
-            P(4, 1, "케슬러의 금니", "빚 상환으로 떼는 몫 −10%p", "cut", 0.10),
+            P(4, 1, "케슬러의 금니", "판 벌이에서 빚 갚는 데 떼 가는 몫 −10%", "cut", 0.10),
             P(4, 0, "행운 동전", "치명 +4% · 연쇄 보너스 상한 +30", "crit", 0.04, "combo", 30),
             P(4, 1, "증권사 배지", "주식 수수료 0 · 배당 +0.05%", "fee0", 1, "div", 0.0005),
             P(4, 1, "연쇄 부적", "연쇄 보너스 상한 +100 (최대 ×2.5)", "combo", 100),
