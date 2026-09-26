@@ -1383,7 +1383,7 @@ namespace SalvageRun.Orbit.Sim
         int Alive() { int n = 0; foreach (var d in R.junk) if (!d.dead) n++; return n; }
 
         // 🛰 쓰레기 종 — 행동은 종류(k)가 정하고, 모습 · 등급은 종이 정한다 (09-24 사장님 「쓰레기를 더 다양하게 · 하위는 없어지게」)
-        // 등급 = 행성 순위(지구 0 … 카이퍼 8). 지금 순위 ±1 이 주로 나오고, 두 단계 아래는 드물게, 그보다 아래는 안 나온다
+        // 등급 = 행성 순위(지구 0 … 카이퍼 8 · 오르트 9 · 태양권 계면 10 · 성간 11). 지금 순위 ±1 이 주로 나오고, 두 단계 아래는 드물게, 그보다 아래는 안 나온다
         public struct Species { public string name, art; public int kind, tier; }
         public static readonly Species[] Spc =
         {
@@ -1424,11 +1424,27 @@ namespace SalvageRun.Orbit.Sim
             new Species { name = "월면 금고",        art = "junk_sig_moonvault", kind = Vault, tier = 99 },
             new Species { name = "광맥 소행성",      art = "junk_sig_ore",      kind = Big,    tier = 99 },
             new Species { name = "고리 얼음 덩이",   art = "junk_sig_ice",      kind = Rocket, tier = 99 },
+            // 🪐 09-27 사장님 「어느 순간부터 쓰레기 종류가 고정」 — 등급이 카이퍼(8)까지뿐이라 새 행성 셋에선 카이퍼 잔해만 나왔다 (픽셀랩)
+            new Species { name = "혜성 얼음 조각",   art = "junk_oort_chip",    kind = Chip,   tier = 9 },
+            new Species { name = "얼어붙은 관측 위성", art = "junk_oort_sat",   kind = Sat,    tier = 9 },
+            new Species { name = "혜성 포획 로켓",   art = "junk_oort_rocket",  kind = Rocket, tier = 9 },
+            new Species { name = "얼음 속 금고",     art = "junk_oort_vault",   kind = Vault,  tier = 9 },
+            new Species { name = "혜성 채굴선",      art = "junk_oort_big",     kind = Big,    tier = 9 },
+            new Species { name = "플라스마 결정",    art = "junk_helio_chip",   kind = Chip,   tier = 10 },
+            new Species { name = "태양풍 측정기",    art = "junk_helio_sat",    kind = Sat,    tier = 10 },
+            new Species { name = "빛돛 로켓",        art = "junk_helio_rocket", kind = Rocket, tier = 10 },
+            new Species { name = "자기장 금고",      art = "junk_helio_vault",  kind = Vault,  tier = 10 },
+            new Species { name = "태양 돛 잔해",     art = "junk_helio_big",    kind = Big,    tier = 10 },
+            new Species { name = "암흑 물질 조각",   art = "junk_inter_chip",   kind = Chip,   tier = 11 },
+            new Species { name = "성간 신호탑",      art = "junk_inter_sat",    kind = Sat,    tier = 11 },
+            new Species { name = "세대선 엔진",      art = "junk_inter_rocket", kind = Rocket, tier = 11 },
+            new Species { name = "외계 보물 상자",   art = "junk_inter_vault",  kind = Vault,  tier = 11 },
+            new Species { name = "외계 모선 파편",   art = "junk_inter_big",    kind = Big,    tier = 11 },
         };
         public int Rank => Math.Max(0, Array.IndexOf(OrbitOrder, S.orbit));      // 가까운 → 먼 순위
         int PickSpecies(int k)
         {
-            int rk = R != null && R.clean ? 8 : Rank, best = -1; double sum = 0; var w = new double[Spc.Length];
+            int rk = R != null && R.clean ? OrbitOrder.Length - 1 : Rank, best = -1; double sum = 0; var w = new double[Spc.Length];
             for (int i = 0; i < Spc.Length; i++)
             {
                 if (Spc[i].kind != k) continue;
