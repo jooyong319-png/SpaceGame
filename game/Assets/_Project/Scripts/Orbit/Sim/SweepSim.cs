@@ -186,7 +186,7 @@ namespace SalvageRun.Orbit.Sim
             N("d_reach", "drone", "드론 거리", "드론이 잔해를 찾는 거리 80에서 +15 (단계마다)", new[] { "d_n" }, 3, 660, 1.6, 5, 1, 3),
             N("d_mag", "drone", "드론 수거", "드론이 부순 잔해 값 +25% (단계마다)", new[] { "d_spd" }, 3, 900, 1.6, 5, 2, 0),
             N("d_sig", "drone", "신호 증폭", "신호기 부착물을 부수면 드론이 몰려드는 시간 3초에서 +2초 (단계마다)", new[] { "d_spd", "d_reach" }, 3, 700, 1.7, 3, 2, 2),
-            N("d_grade", "drone", "드론 등급", "드론 한 방 피해 +1 (단계마다)", new[] { "d_reach" }, 5, 4500, 2.0, 3, 2, 4),
+            N("d_grade", "drone", "드론 등급", "드론이 더 큰 잔해도 한 방에 줍는다 — 조각 → 죽은 위성 → 금고 위성 → 로켓 동체", new[] { "d_reach" }, 5, 4500, 2.0, 3, 2, 4),
             N("d_fix", "drone", "수리 드론", "연료 +1초 (단계마다)", new[] { "d_mag" }, 4, 2000, 1.8, 3, 3, 1),
             N("d_pair", "drone", "편대", "드론이 한 번에 두 개씩 친다", new[] { "d_mag", "d_grade" }, 6, 18000, 1, 1, 3, 3),
             N("d_fact", "drone", "드론 공장", "드론 +1대 (단계마다)", new[] { "d_pair" }, 6, 30000, 2.5, 2, 4, 2),
@@ -865,7 +865,9 @@ namespace SalvageRun.Orbit.Sim
         public double DroneCd => Math.Max(0.4, 1 - 0.1 * Lv("d_spd")) * (Lv("x_drone_bh") > 0 && R != null && R.holding ? 0.5 : 1);
         public double Reach => 80 + 15 * Lv("d_reach");
         public int Grade => 1 + Lv("d_grade");
+        public int DroneDmg => (int)Math.Ceiling(2 * Grade * HpMul) * (Lv("x_arm_drone") > 0 ? 2 : 1);   // 🛸 09-27 드론 한 방도 잔해 단단함을 따라 — 등급 1 조각 · 2 죽은 위성 · 3 금고 · 4 로켓 (예전엔 1~4 고정이라 화성부터 칠 게 없었다)
         public double DroneMag => (1 + 0.25 * Lv("d_mag")) * (1 + Part("drone")) * (Lv("k_drone") > 0 ? 0.75 : 1) * (1 + 0.10 * Lv("i_drone")) * Math.Pow(1.5, Lv("m_drone"));
+        public static double DroneValK = 0.4;                                     // 🛸 09-27 드론이 부순 값 몫 — 드론이 다시 일하게 되면서 난이도를 지키려고 (봇 끝 시간 맞춤)
         public int Bombs => BombsOn ? Math.Min(6, 2 + Lv("b_n") + (S.bill >= 7 ? 1 : 0) + Cr(4)) : 0;
         public double PullR => (260 + 30 * Lv("b_pr")) * (1 + 0.15 * Lv("m_bh"));                // 🌀 09-26 밤 「뭐든지 다 빨아들이게」 → 「범위가 너무 넓어」 — 260 + 30×칸 (예전 90 + 14 · 한때 화면 전체)
         public double PullBase => 500;                                                         // 원 가장자리에서도 끌려오는 기본 힘
@@ -2370,7 +2372,7 @@ namespace SalvageRun.Orbit.Sim
         {
             var r = R; var o = Orbits[S.orbit];
             if (r.rushT > 0) r.rushT -= dt;
-            double mid = (o.bi + Bo) / 2, reach = Reach, cd = DroneCd; int grade = Grade, per = Lv("d_pair") > 0 ? 2 : 1;
+            double mid = (o.bi + Bo) / 2, reach = Reach, cd = DroneCd; int grade = DroneDmg, per = Lv("d_pair") > 0 ? 2 : 1;
             foreach (var dr in r.drones)
             {
                 dr.a += dt * 0.45;
@@ -2391,7 +2393,7 @@ namespace SalvageRun.Orbit.Sim
                     }
                     if (best == null) break;
                     Emit(SwEv.Beam, dr.x, dr.y, 0, 0, null, best.x, best.y);
-                    Hit(best, grade * (Lv("x_arm_drone") > 0 ? 2 : 1), 1, false);
+                    Hit(best, grade, 1, false);
                     if (Lv("x_arm_drone") > 0) OnHit(0.3);
                 }
             }
@@ -2450,7 +2452,7 @@ namespace SalvageRun.Orbit.Sim
                 else { double cash = ShopBase * 0.4; S.cash += cash; Emit(SwEv.Pop, d.x, d.y - 14, 0, 4, "돈 뭉치 +" + Math.Round(cash).ToString("N0")); }
             }
             if (d.att == Att.Pouch) v *= 2;
-            if (src == 1) v *= DroneMag;
+            if (src == 1) v *= DroneMag * DroneValK;
             v *= 1 + Math.Min(r.chain, 200 + Part("combo")) / 200.0;                    // 잇달아 부수면 값이 더 붙는다 (최대 ×2 · 어떤 무기든 — 연쇄 폭발을 무기 특성으로 옮긴 만큼)
             Pay(d, src, v, d.x, d.y, true);
             Emit(SwEv.Broke, d.x, d.y, 0, d.k * 100 + (int)d.att);
