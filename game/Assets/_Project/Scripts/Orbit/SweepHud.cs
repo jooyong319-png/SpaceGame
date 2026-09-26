@@ -1585,7 +1585,7 @@ namespace SalvageRun.Orbit
                 }
             }
             // ⭐ 추천 한 칸 — 모르면 이것만 사도 된다 (09-24 설계서 「무거워도 자연스럽게」)
-            int recK = -1; { double best = double.MaxValue; for (int k = 0; k < nT; k++) { var t = gtiles[k]; if (t.stat < 0 || st[k] != 2 || sim.State(t.stat) != NodeSt.Can) continue; double c = sim.TileCost(t.stat) * (SweepSim.Nodes[t.stat].branch == lastBuyBranch ? 0.6 : 1); if (c < best) { best = c; recK = k; } } }
+            int recK = -1;                                                   // 추천 표시는 뺐다 (09-26 사장님 「추천은 하지 말자」)
             // 칸
             int hover = -1;
             bool shift = Keyboard.current != null && Keyboard.current.shiftKey.isPressed;
@@ -1813,7 +1813,7 @@ namespace SalvageRun.Orbit
                 case "a_read": return new[] { "없음", "다음 속보까지 시간", "+ 업종", "+ 제목까지" }[Mathf.Min(3, l)];
                 case "a_ins": return l == 0 ? "없음" : "나쁜 속보 피하기 " + new[] { 0, 60, 70, 80 }[Mathf.Min(3, l)] + "%";
                 case "a_big": return "수수료 " + new[] { "1", "0.6", "0.3", "0" }[Mathf.Min(3, l)] + "% · 배당 +" + (0.03f * l).ToString("0.00") + "%";
-                case "c_fuel": return (30 + 3 * l) + "초";
+                case "c_fuel": return "+" + Mathf.RoundToInt((float)(SweepSim.FuelTankPct * l * 100)) + "%";
                 case "c_crit": return (5 * l) + "%";
                 case "c_double": return (10 * l) + "%";
                 case "c_magnet": return l > 0 ? "반경 +" + (40 + 20 * l) : "없음";

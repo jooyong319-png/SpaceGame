@@ -166,7 +166,7 @@ namespace SalvageRun.Orbit.Sim
             N("c_pow", "claw", "빔 위력", "한 방이 세진다", new string[0], 1, 3, 1.6, 12, 0, 2),
             N("c_rad", "claw", "빔 범위", "한 번에 여러 개", new[] { "c_pow" }, 1, 9, 1.7, 8, 1, 3),
             N("c_spd", "claw", "빔 연사", "쏘는 간격이 짧아진다", new[] { "c_pow" }, 2, 40, 1.6, 7, 1, 1),
-            N("c_fuel", "claw", "연료 탱크", "출동이 길어진다", new[] { "c_rad" }, 1, 20, 1.6, 10, 2, 4),
+            N("c_fuel", "claw", "연료 탱크", "연료 용량 +6% (단계마다) — 쏠 수 있는 양 · 판 길이가 늘어난다", new[] { "c_rad" }, 1, 20, 1.6, 10, 2, 4),
             N("c_crit", "claw", "치명타", "가끔 세 배로 쏜다", new[] { "c_spd" }, 3, 600, 1.6, 6, 3, 0),
             N("c_double", "claw", "연사", "한 번 더 쏠 확률", new[] { "c_spd" }, 3, 900, 1.7, 5, 3, 2),
             N("c_magnet", "claw", "견인 빔", "주변 조각을 끌어온다", new[] { "c_rad", "c_fuel" }, 3, 1200, 1.8, 3, 3, 4),
@@ -727,9 +727,10 @@ namespace SalvageRun.Orbit.Sim
             S.orbit = i; RollContract(); Preview();
             if (Mk != null && StockOpen) { string[] sec = { "", "달", "화성", "목성", "관광", "화성", "목성", "관광", "관광" }; Mk.GameEvent("민간 청소선 " + Orbits[i].name + " 진출", "궤도 청소부가 " + Orbits[i].name + " 청소 허가를 땄다. 관련 업계가 들썩인다.", new[] { sec[i], "ship" }, null, 0.14f); }
         }
-        public double FuelMax => Math.Max(10, Math.Min(FuelCap, FuelRaw) + Part("fuel"));   // ⛽ 09-26 사장님 「30초도 김」 — 한 판은 20초 남짓으로 묶는다
+        public double FuelMax => Math.Max(10, Math.Min(FuelCap, FuelRaw) * (1 + FuelTankPct * Lv("c_fuel")) + Part("fuel"));   // ⛽ 연료 탱크 = 용량 +6% (상한 위에 곱한다 — 09-26 사장님 「용량이 몇 퍼센트 늘었다가 맞을 듯」)
+        public const double FuelTankPct = 0.06;   // ⛽ 09-26 사장님 「30초도 김」 — 한 판은 20초 남짓으로 묶는다
         public const double FuelCap = 22;
-        double FuelRaw => Math.Max(12, (20 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.2 * Cr(0)) * (Lv("k_claw") > 0 ? 0.85 : 1)) * (1 + 0.25 * Lv("m_fuel"));   // ⚠ 트리 연료 칸은 상한에 막혀 거의 안 듣는다 — 트리 압축 때 다른 효과로
+        double FuelRaw => Math.Max(12, (20 + 2 * Lv("d_fix")) * (1 + 0.2 * Cr(0)) * (Lv("k_claw") > 0 ? 0.85 : 1)) * (1 + 0.25 * Lv("m_fuel"));   // ⚠ 트리 연료 칸은 상한에 막혀 거의 안 듣는다 — 트리 압축 때 다른 효과로
         public double Gap => Math.Max(0.3, 0.6 - 0.045 * Lv("c_spd")) / (1 + Part("spd"));
         public double ClawR => Lv("c_rad") > 0 ? (22 + 10 * Lv("c_rad")) * (1 + Part("rad")) : 0;   // 0 = 하나씩
         public bool AutoClaw => true;        // 🔴 자동이 기본 (사장님 09-23: "클릭은 빼자 오토는 기본으로")
