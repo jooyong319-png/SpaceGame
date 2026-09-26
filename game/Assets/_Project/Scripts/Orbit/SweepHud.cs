@@ -473,6 +473,20 @@ namespace SalvageRun.Orbit
                 Item("무한 궤도", "<color=#d8ccff>" + sim.M.depth + "층</color>  <color=#8a93a3>최고 " + sim.M.bestDepth + "층</color>", label);   // 빚은 끝났다 — 청구서 대신 층
             else if (S.bill < SweepSim.Bills.Length)
                 Item("청구서", KNum.Fmt(sim.BillAmount) + " · " + S.billDue + "판" + (S.debt > 0 ? " <color=#ee7766>빚 상환 " + Mathf.RoundToInt((float)sim.Cut * 100) + "%</color>" : ""), label);
+            // 🛰 관문 체력 — 위 가운데 (09-26)
+            {
+                var gj = sim.GateJunk;
+                if (gj != null)
+                {
+                    var gr = new Rect(vw / 2 - 170, 58, 340, 30);
+                    GUI.color = new Color(0.05f, 0.04f, 0.04f, 0.85f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.6f, 0.4f, 0.8f), 1);
+                    float gk = Mathf.Clamp01((float)gj.hp / Mathf.Max(1, gj.max));
+                    GUI.color = new Color(0.2f, 0.12f, 0.1f); GUI.DrawTexture(new Rect(gr.x + 6, gr.yMax - 9, gr.width - 12, 5), white);
+                    GUI.color = new Color(1f, 0.55f, 0.35f); GUI.DrawTexture(new Rect(gr.x + 6, gr.yMax - 9, (gr.width - 12) * gk, 5), white); GUI.color = Color.white;
+                    GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), "<size=11><color=#ffb36b>🛰 " + sim.GateName + "</color> <color=#8a93a3>관문 · 겨눠 쳐야 깎인다 → " + sim.NextName + "</color></size>", label);
+                    GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), "<size=11>" + Mathf.CeilToInt(gk * 100) + "%</size>", cost);
+                }
+            }
             // 💰 이번 판 계산대 — 계기판 위, 포구 오른쪽. 금화가 여기로 날아와 한 숫자로 (시안 DbsvFEEy1K5ddbZsM61B2y)
             {
                 var tr = new Rect(vw - 312, RefH - 50, 170, 38);                      // 🟩 계기판 속 액정 (09-24 10 · 28번)
@@ -1651,10 +1665,11 @@ namespace SalvageRun.Orbit
             {   // 🪐 구역 진행 — 지금 구역 칸을 다 찍으면 다음 항로 (09-24 6·21번)
                 int zo = sim.ZoneOpen, zl = sim.ZoneLeft(zo), zt = 0; for (int i = 0; i < SweepSim.Nodes.Length; i++) if (SweepSim.Zone[i] == zo && SweepSim.ZoneNeed(i)) zt++;
                 bool last = zo + 1 >= SweepSim.OrbitOrder.Length;
-                var zr = new Rect(zb.xMax + 58, zb.y + 3, 320, 24);                  // 확대 단추 줄 옆 — 트리 칸과 안 겹치게
+                var zr = new Rect(zb.xMax + 58, zb.y + 3, 470, 24);                  // 확대 단추 줄 옆 — 트리 칸과 안 겹치게
                 GUI.color = new Color(0.04f, 0.05f, 0.07f, 0.9f); GUI.DrawTexture(zr, white); GUI.color = Color.white;
-                string nx = last ? "" : SweepSim.Orbits[SweepSim.OrbitOrder[zo + 1]].name;
-                GUI.Label(new Rect(zr.x + 8, zr.y + 3, zr.width - 16, 18), "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color>" + (zt == 0 ? " <color=#8a93a3>— 마지막 항로</color>" : " 구역 " + (zt - zl) + "/" + zt) + (last || zt == 0 ? "" : zl > 0 ? " <color=#8a93a3>— 다 찍으면 " + nx + " 항로</color>" : " <color=#6fcf97>— " + nx + " 항로를 살 수 있다</color>") + "</size>", label);
+                GUI.Label(new Rect(zr.x + 8, zr.y + 3, zr.width - 16, 18), sim.HasGate
+                    ? "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> 한 줄 " + sim.TileCap + "칸까지 · <color=#ffb36b>🛰 " + sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + "%</color> <color=#8a93a3>부수면 " + sim.NextName + "</color></size>"
+                    : "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> <color=#8a93a3>— 마지막 항로 · 한도 없음</color></size>", label);   // 🛰 09-26 구역 칸 개수 → 관문
             }
             if (testTip >= 0) { for (int k = 0; k < nT; k++) if (gtiles[k].stat >= 0 && SweepSim.Nodes[gtiles[k].stat].id == testTipId) hover = k; }   // 에디터 시험용
             treeHover = hover;
@@ -1717,7 +1732,8 @@ namespace SalvageRun.Orbit
             string foot;
             if (vis == 3 && SweepSim.Infinite(t.stat)) foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>  <color=#ffdf95>∞ " + sim.S.lv[t.stat] + "번 삼 · 계속 살 수 있다</color>";   // 누적 칸 — 다음 가격 (09-24 친구들 「가격이 안 보인다」)
             else if (vis == 3) foot = "<color=#6fcf97>샀다</color>";
-            else if (ns == NodeSt.Locked && n.id.StartsWith("p_") && sim.ZoneLeft(SweepSim.Zone[t.stat]) > 0) foot = "<color=#ff9b8f>" + SweepSim.ZoneName[SweepSim.Zone[t.stat]] + " 칸 " + sim.ZoneLeft(SweepSim.Zone[t.stat]) + "개 더 찍으면 열린다</color>";   // 🪐 구역
+            else if (ns == NodeSt.Locked && n.id.StartsWith("p_")) foot = "<color=#ffb36b>🛰 " + (sim.HasGate ? sim.GateName + " 관문을 부수면 열린다" : "앞 항로부터") + "</color>";   // 🛰 항로 = 관문
+            else if (ns == NodeSt.Locked && sim.CapLocked(t.stat)) foot = "<color=#ffb36b>행성 한도 — " + sim.GateName + "을(를) 부수면 한 칸 더</color>";
             else if (ns == NodeSt.Locked && SweepSim.Zone[t.stat] > sim.ZoneOpen) foot = "<color=#ff9b8f>" + SweepSim.ZoneName[SweepSim.Zone[t.stat]] + " 항로를 열면 열린다</color>";
             else if (ns == NodeSt.Locked) foot = SweepSim.Ring4(n.id) ? "<color=#ff9b8f>목성 항로를 열면 — 외행성 면허</color>" : "<color=#ff9b8f>청구서 " + SweepSim.BranchNeed[b] + "을 갚으면 열린다</color>";
             else if (ns == NodeSt.Hidden) { int bk = BlockTile(k); foot = "<color=#ff9b8f>" + (bk >= 0 ? "「" + TileName(bk) + "」 먼저 사야 열린다" : "앞 칸을 먼저 사야 한다") + "</color>"; }   // 어느 칸인지 콕 집어 — 「앞 칸」만으론 이미 산 칸을 또 눌러야 하나 헷갈렸다 (09-25 사장님)

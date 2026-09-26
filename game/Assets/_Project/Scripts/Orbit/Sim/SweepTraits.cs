@@ -85,7 +85,7 @@ namespace SalvageRun.Orbit.Sim
                         double da = Math.Atan2(Math.Sin(r.spotA - d.a), Math.Cos(r.spotA - d.a));
                         d.a += Math.Sign(da) * Math.Min(Math.Abs(da), 0.22 * dt);
                         d.rr += (srr - d.rr) * Math.Min(1, 0.9 * dt);
-                        if (dd < 11 * 11) { d.dead = true; r.spotEaten++; }                     // 빨려 들어가 사라진다 (돈 없음)
+                        if (dd < 11 * 11 && d.sig != GateSig) { d.dead = true; r.spotEaten++; }                     // 빨려 들어가 사라진다 (돈 없음)
                     }
                     break;
                 }

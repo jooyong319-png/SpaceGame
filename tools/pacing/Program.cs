@@ -114,13 +114,16 @@ static class Program
             int seg = Math.Min(8, sim.S.bill + 1);
             sim.StartRun();
             var R = sim.R;
+            bool gateRun = sim.GateJunk != null && !sim.S.overdue && sim.S.billDue >= 2 && CappedOut(sim);   // 🛰 사람처럼 — 트리에서 한도까지 다 샀고 청구서가 급하지 않으면 관문만 노린다
             long h0 = SweepSim.DbgHits, o0 = SweepSim.DbgOneShot, k0 = SweepSim.DbgKills;
             long ticks = 0;
             while (!R.over)
             {
                 if (++ticks > 20000) { if (!quiet) Console.WriteLine($"  ⚠ 판이 안 끝난다: 연료 {R.fuel:0.0} 붙잡음 {R.holding} 연쇄대기 {R.pend.Count} 잔해 {R.junk.Count}"); break; }
                 retarget -= Dt;
-                if (!hold && sim.ClawR <= 0)
+                var gj = gateRun ? sim.GateJunk : null;
+                if (gj != null) { tx = gj.x; ty = gj.y; double kg = Math.Min(1, Dt * 8); ax += (tx - ax) * kg; ay += (ty - ay) * kg; }
+                else if (!hold && sim.ClawR <= 0)
                 {
                     // 범위가 없을 땐 가까운 것 하나에 커서를 올려 둔다 (집게는 저절로 친다)
                     if (retarget <= 0) { retarget = 0.4; Nearest(sim, ax, ay, ref tx, ref ty); }
@@ -167,6 +170,11 @@ static class Program
         return res;
     }
 
+    static bool CappedOut(SweepSim sim)
+    {   // 한도 안에서 더 살 칸이 없다 (항로 · 가게 · 열쇠 칸 제외)
+        for (int i = 0; i < SweepSim.NodeCount; i++) { var id = SweepSim.Nodes[i].id; if (id.StartsWith("p_") || id == "e_shop") continue; var st = sim.State(i); if (st == NodeSt.Can || st == NodeSt.Poor && !SweepSim.KeyNodes.Contains(id)) return false; }
+        return true;
+    }
     // 💰 경제 진단 (09-26 사장님 「돈이 전혀 안 모자라 · 스킬이 너무 싸 · 한 판이 너무 길어」)
     static bool econOn; static int eb; static double eCanMin, eCanSum;
     static double[,] E = new double[12, 9], H = new double[12, 3];   // H: 맞은 수 · 한 방 · 부서진 수   // 0 가게 수 · 1 살 게 없음 · 2 트리 보유율 · 3 판 수 · 4 판 길이 합 · 5 수입 합 · 6 싼 칸/판 수입 합 · 7 그 수 · 8 열린 칸 전부/판 수입 합
@@ -195,7 +203,7 @@ static class Program
         Console.WriteLine($"  파산 수 평균     {rs.Average(r => r.bankrupt):0.0}  · 첫 파산 " + Q(rs.Select(r => r.bankAt.Count > 0 ? r.bankAt[0] : -1)) + " · 둘째 " + Q(rs.Select(r => r.bankAt.Count > 1 ? r.bankAt[1] : -1)));
         for (int c = 0; c < 3; c++) { var bb = rs.Where(r => r.bankBill.Count > c).Select(r => r.bankBill[c]).OrderBy(x => x).ToList(); if (bb.Count > 0) Console.WriteLine($"  {c + 1}대 파산 — 갚은 청구서 가운데 {bb[bb.Count / 2]}장 ({bb[0]}~{bb[bb.Count - 1]}) · {bb.Count}/{n}판"); }
         for (int k = 1; k <= 12; k++) Console.WriteLine($"  청구서 {k,2}장 갚음 {Q(rs.Select(r => r.billAt[k]))}   {SweepSim.Bills[k - 1].t} {SweepSim.Bills[k - 1].m:0}");
-        foreach (int pi in SweepSim.OrbitOrder) if (pi > 0) Console.WriteLine($"  🪐 {SweepSim.Orbits[pi].name,-6} {Q(rs.Select(r => r.planetAt[pi]))}   허가 {SweepSim.PermitCost(pi):0}");
+        foreach (int pi in SweepSim.OrbitOrder) if (pi > 0) Console.WriteLine($"  🪐 {SweepSim.Orbits[pi].name,-6} {Q(rs.Select(r => r.planetAt[pi]))}   관문 {SweepSim.GateNames[Math.Max(0, Array.IndexOf(SweepSim.OrbitOrder, pi) - 1)]}");
     }
 
     static string Pct(double a, double t) => t <= 0 ? "-" : Math.Round(a / t * 100).ToString();
@@ -205,7 +213,7 @@ static class Program
         double bd = double.MaxValue;
         foreach (var o in sim.R.junk)
         {
-            if (o.dead || o.fade < 0.5) continue;
+            if (o.dead || o.fade < 0.5 || o.sig == SweepSim.GateSig) continue;
             double d = (o.x - ax) * (o.x - ax) + (o.y - ay) * (o.y - ay) - SweepSim.Types[o.k].val * 400;
             if (d < bd) { bd = d; tx = o.x; ty = o.y; }
         }
@@ -217,7 +225,7 @@ static class Program
         double bs = -1;
         for (int i = 0; i < 30; i++)
         {
-            var c = list[rng.Next(list.Count)]; if (c.dead) continue;
+            var c = list[rng.Next(list.Count)]; if (c.dead || c.sig == SweepSim.GateSig) continue;
             double s = 0;
             foreach (var o in list) if (!o.dead && Math.Abs(o.x - c.x) < 60 && Math.Abs(o.y - c.y) < 60) s += 1 + SweepSim.Types[o.k].val / 8 + (o.k == SweepSim.Tank ? 2 : 0);
             if (s > bs) { bs = s; tx = c.x; ty = c.y; }

@@ -23,7 +23,7 @@ static class Tests
         Section("1. 봇이 끝까지 간다", () => Bots(n));
         Section("2. 무작위 손 (퍼징)", () => Fuzz(n));
         Section("3. 밀린 저장 옮기기", Migration);
-        Section("4. 행성 구역 규칙", Zones);
+        Section("4. 행성 관문 · 한도", Zones);
         Section("5. 무한 궤도", Endless);
         Section("6. 파산만 거듭하기 · 다시 불러오기", () => Bankrupts(Math.Max(3, n / 4)));
         Section("7. 무한 궤도 60층", DeepEndless);
@@ -64,6 +64,7 @@ static class Tests
     }
 
     // 한 판 — 조준은 가까운 쓰레기 · 가끔 수동 사격 · 블랙홀
+    static void EndRunNow(SweepSim sim) { var R = sim.R; long t = 0; R.fuel = 0; while (!R.over && ++t < 20000) { sim.Tick(0.05, 480, 300, false, false); while (sim.Events.Count > 0) sim.Events.Dequeue(); } }
     static void PlayRun(SweepSim sim, Random rng, bool clicks)
     {
         sim.StartRun(); var R = sim.R; double ax = 480, ay = 300; long ticks = 0;
@@ -175,23 +176,35 @@ static class Tests
 
     static void Zones()
     {
-        var sim = new SweepSim(null, null, 5);
+        // 🛰 09-26 — 항로는 돈으로 못 산다 · 관문을 부숴야 열린다 · 행성 한도 너머는 못 찍는다
+        var sim = new SweepSim(null, null, 5); var rng = new Random(5);
         int moon = Ix("p_moon");
-        if (sim.State(moon) == NodeSt.Can) Fail("지구 구역을 안 찍었는데 달 항로를 살 수 있음");
-        sim.S.cash = 1e12;
-        for (int guard = 0; guard < 2000 && sim.ZoneLeft(0) > 0; guard++)
-            if (!BuyCheapest(sim, 0)) { Fail($"지구 구역에 살 수 없는 칸이 남음 ({sim.ZoneLeft(0)}개: {Left(sim, 0)})"); break; }
-        if (sim.State(moon) != NodeSt.Can) Fail($"지구 구역을 다 찍었는데 달 항로 {sim.State(moon)}");
-        // 모든 구역이 차례로 열리는가 (돈 무한 · 열쇠 무한)
-        sim.S.keys = 999;
+        sim.S.cash = 1e12; sim.S.keys = 999;
+        if (sim.State(moon) == NodeSt.Can) Fail("돈이 있어도 달 항로를 살 수 있음 (관문을 부숴야 한다)");
+        for (int guard = 0; guard < 4000; guard++) if (!BuyCheapest(sim, 0)) break;
+        for (int i = 0; i < SweepSim.NodeCount; i++)
+            if (!SweepSim.Infinite(i) && SweepSim.Tiles(i) > 1 && sim.S.lv[i] > SweepSim.TileLv(i, Math.Min(SweepSim.Tiles(i), sim.TileCap))) { Fail($"{SweepSim.Nodes[i].id} 가 지구 한도({sim.TileCap}칸)를 넘음"); break; }
+        if (sim.Open(1)) Fail("관문을 안 부쉈는데 달이 열림");
+        // 관문 체력은 판을 넘어 남는다
+        sim.SetOrbit(0); sim.StartRun();
+        var g = sim.GateJunk; if (g == null) { Fail("지구 판에 관문이 없음"); return; }
+        g.hp = g.max / 2; EndRunNow(sim);
+        if (Math.Abs(sim.S.gateFrac - 0.5) > 0.05) Fail($"관문 체력이 안 남음 ({sim.S.gateFrac:0.00})");
+        sim.StartRun(); g = sim.GateJunk;
+        if (g == null || Math.Abs((double)g.hp / g.max - 0.5) > 0.05) Fail("다음 판 관문 체력이 반이 아님"); EndRunNow(sim);
+        // 관문을 차례로 부수면 끝까지 열린다
         for (int z = 0; z + 1 < SweepSim.OrbitOrder.Length; z++)
         {
-            for (int guard = 0; guard < 4000 && sim.ZoneLeft(sim.ZoneOpen) > 0; guard++) if (!BuyCheapest(sim, sim.ZoneOpen)) break;
-            if (sim.ZoneLeft(sim.ZoneOpen) > 0) { Fail($"{SweepSim.ZoneName[sim.ZoneOpen]} 구역 칸 {sim.ZoneLeft(sim.ZoneOpen)}개를 끝내 못 산다: {Left(sim, sim.ZoneOpen)}"); break; }
+            sim.SetOrbit(SweepSim.OrbitOrder[sim.Frontier]); sim.StartRun();
+            if (!sim.DebugBreakGate()) { Fail($"{SweepSim.ZoneName[sim.Frontier]} 판에 관문이 없음"); break; }
+            EndRunNow(sim);
             int next = SweepSim.OrbitOrder[z + 1];
-            if (!sim.BuyPermit(next)) { Fail($"{SweepSim.Orbits[next].name} 항로를 못 산다 ({sim.State(Ix(SweepSim.PlanetNode[next]))})"); break; }
+            if (!sim.Open(next)) { Fail($"관문을 부쉈는데 {SweepSim.Orbits[next].name} 가 안 열림"); break; }
+            Check(sim, "관문 " + z);
         }
-        Console.WriteLine($"   열린 구역 {SweepSim.ZoneName[sim.ZoneOpen]}");
+        if (sim.HasGate) Fail("카이퍼 벨트에도 관문이 있음");
+        if (sim.S.keys < 999) Fail("관문 보상 열쇠가 안 늘어남");
+        Console.WriteLine($"   관문 {SweepSim.OrbitOrder.Length - 1}개 → 열린 곳 {SweepSim.ZoneName[sim.ZoneOpen]} · 지구 한도 3칸 · 체력은 판을 넘어 남음");
     }
 
     static void Endless()

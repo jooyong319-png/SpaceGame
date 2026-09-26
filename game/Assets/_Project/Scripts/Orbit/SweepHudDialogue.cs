@@ -65,6 +65,11 @@ namespace SalvageRun.Orbit
                     { "ev2", new[] { "anc|*파편 폭풍*은 왼쪽에서 고철이 줄줄이 쏟아지는 거예요.", "anc|크기가 큰 무기로 길목을 막고 서 있으면 저절로 쓸려 들어와요." } },
                     { "ev3", new[] { "anc|*금고 호송대*가 지나갔어요. 금고 위성 여러 대가 줄지어 돌아요.", "anc|놓치기 전에 부수면 큰돈이에요. 금고는 값이 여러 배거든요." } },
                     { "ev4", new[] { "anc|방금 건 *대충돌*이에요! 파편 예순 개에 폭탄 달린 위성까지.", "anc|폭탄 위성이 터지면 주변이 한꺼번에 날아가요. 연쇄 대박 기회예요." } },
+                    { "gate", new[] {
+                        "yoon|궤도에 떠 있는 커다란 거 봤어? 저게 *관문*이야. 저게 버티고 있는 동안은 다음 행성 항로가 막혀 있어.",
+                        "yoon|*직접 겨눠서* 쳐야 깎여. 연쇄나 폭발, 드론으로는 조금밖에 안 들어가.",
+                        "yoon|체력은 판이 끝나도 그대로 남아. 여러 판에 걸쳐 부수면 돼. 치다 보면 비싼 파편도 떨어지고.",
+                        "yoon|부수면 다음 행성 항로가 열리고, 열쇠 하나랑 두둑한 보너스. 정비고도 *한 줄에 한 칸씩 더* 찍을 수 있게 돼." } },
                     { "chain", new[] {
                         "yoon|연쇄 봤어? 부서진 조각이 옆 잔해를 또 부수는 거야.",
                         "yoon|연쇄가 길수록 값에 *배수*가 붙어. 30 · 80 · 200을 넘을 때 화면이 번쩍이는 게 그거야.",
@@ -165,6 +170,7 @@ namespace SalvageRun.Orbit
             if (sim.M.won) return;
             if (flow == 2 && dlgQueue.Count > 0) { var q = dlgQueue[0]; dlgQueue.RemoveAt(0); DlgStart(q); return; }
             if (flow == 2 && sim.S.runs > 0) DlgStart("fuel");
+            if (dlgId == null && flow == 2 && sim.S.runs > 0 && sim.HasGate) DlgStart("gate");
             if (dlgId != null) return;
             if (flow == 4 && sim.StockOpen) DlgStart("stock");
             else if (flow == 5 && sim.ShopOpen) DlgStart("shop");

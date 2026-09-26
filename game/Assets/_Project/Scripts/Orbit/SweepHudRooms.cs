@@ -647,7 +647,9 @@ namespace SalvageRun.Orbit
             // 아래 — 열린 행성이면 의뢰 · 다음 행성이면 항로 사러
             if (!open)
             {
-                if (HoloBtn(new Rect(p.x + 10, p.y + 170, p.width - 20, 22), "<size=11>정비고에서 항로 사기 ▸</size>", Holo, true, fl)) GoFlow(3);
+                bool nextUp = sim.HasGate && show == SweepSim.OrbitOrder[sim.Frontier + 1];
+                GUI.color = new Color(1, 1, 1, fl);
+                GUI.Label(new Rect(p.x + 10, p.y + 170, p.width - 20, 22), nextUp ? "<size=11><color=#ffb36b>🛰 " + sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + "% — 부수면 열린다</color></size>" : "<size=11><color=#8a93a3>앞 행성 관문부터</color></size>", center);   // 🛰 09-26 허가증 대신 관문
             }
             else
             {
@@ -857,7 +859,8 @@ namespace SalvageRun.Orbit
 
         // 🎬 막 전환 카드 — 화면 가운데 3.5초 (09-24 레벨 설계: 목성 = 2막 · 해왕성 = 3막)
         int actN; float actT;
-        public void ShowAct(int n) { actN = n; actT = 3.5f; }
+        string actSub;
+        public void ShowAct(int n, string sub = null) { actN = n; actT = 3.5f; actSub = sub; }
         void ActCard()
         {
             if (actT <= 0) return;
@@ -865,15 +868,16 @@ namespace SalvageRun.Orbit
             float k = Mathf.Clamp01((3.5f - actT) / 0.35f) * Mathf.Clamp01(actT / 0.6f);      // 들어오고 · 사라지고
             float cy = RefH * 0.42f, h = 150 * k;
             GUI.color = new Color(0, 0, 0, 0.72f * k); GUI.DrawTexture(new Rect(0, cy - h / 2, vw, h), white);
-            Color ac = actN == 2 ? new Color(1f, 0.76f, 0.35f) : new Color(0.55f, 0.75f, 1f);
+            Color ac = actN == 1 ? new Color(1f, 0.6f, 0.4f) : actN == 2 ? new Color(1f, 0.76f, 0.35f) : new Color(0.55f, 0.75f, 1f);
             GUI.color = new Color(ac.r, ac.g, ac.b, k); GUI.DrawTexture(new Rect(0, cy - h / 2, vw, 2), white); GUI.DrawTexture(new Rect(0, cy + h / 2 - 2, vw, 2), white);
             float sweep = (3.5f - actT) * 900 % (vw + 400) - 200;                                  // 지나가는 빛줄기
             GUI.color = new Color(ac.r, ac.g, ac.b, 0.25f * k); GUI.DrawTexture(new Rect(sweep, cy - h / 2, 120, h), white);
             GUI.color = new Color(1, 1, 1, k);
             string hex = ColorUtility.ToHtmlStringRGB(ac);
-            string t1 = actN == 2 ? "2막 · 외행성" : "3막 · 심우주";
+            string t1 = actN == 1 ? "🛰 관문 붕괴" : actN == 2 ? "2막 · 외행성" : "3막 · 심우주";
             string t2 = actN == 2 ? "외행성 면허 — 정비고 바깥 고리 16칸이 열렸다 · 곱하기 칸 · 무기 3단계" : "심우주 — 해왕성 너머 카이퍼 벨트까지 · 마지막 청구서가 기다린다";
             GUI.Label(new Rect(0, cy - 48, vw, 60), "<size=40><b><color=#" + hex + ">" + t1 + "</color></b></size>", center);
+            if (actN == 1) t2 = (actSub ?? "") + " · 열쇠 +1 · 정비고 한 칸씩 더";
             GUI.Label(new Rect(0, cy + 16, vw, 26), "<size=15><color=#dfe6ef>" + t2 + "</color></size>", center);
             GUI.color = Color.white;
         }
@@ -1000,7 +1004,8 @@ namespace SalvageRun.Orbit
         public string WhyNot(int i)
         {
             var n = SweepSim.Nodes[i]; var st = sim.State(i); int z = SweepSim.Zone[i];
-            if (st == NodeSt.Locked && n.id.StartsWith("p_") && sim.ZoneLeft(z) > 0) return SweepSim.ZoneName[z] + " 칸 " + sim.ZoneLeft(z) + "개 더";
+            if (st == NodeSt.Locked && n.id.StartsWith("p_")) return sim.HasGate ? "🛰 " + sim.GateName + " 관문을 부수면" : "항로 먼저";
+            if (st == NodeSt.Locked && sim.CapLocked(i)) return "행성 한도 — " + sim.GateName + " 부수면 한 칸 더";
             if (st == NodeSt.Locked && SweepSim.Ring4(n.id) && sim.Lv("p_jup") <= 0) return "목성 항로 먼저";
             if (st == NodeSt.Locked && z > sim.ZoneOpen) return SweepSim.ZoneName[z] + " 항로 먼저";
             if (st == NodeSt.Hidden) return "앞 칸 먼저";

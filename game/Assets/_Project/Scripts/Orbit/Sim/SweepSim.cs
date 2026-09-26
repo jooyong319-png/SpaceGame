@@ -40,7 +40,8 @@ namespace SalvageRun.Orbit.Sim
         public int[] parts = { -1, -1, -1, -1, -1 };                           // 🔩 부품 칸 다섯
         public List<int> shop = new List<int>();
         public int shopSale = -1, nFuel, nDmg, nVal; public bool freeRoll = true;
-        public double runAvg; public int rolls;                                   // 💰 최근 판당 수입(가게 값 기준) · 이번 판 새로고침 횟수 (09-26)
+        public double runAvg; public int rolls;
+        public double gateFrac = 1, gateMax, dmgAvg; public int gateNext;   // gateMax = 이 관문 체력(처음 뜰 때 정한다) · dmgAvg = 판당 준 피해 평균                           // 🛰 관문 — 남은 체력(판을 넘어 남는다) · 부순 판이 끝나면 열 행성 (09-26)                                   // 💰 최근 판당 수입(가게 값 기준) · 이번 판 새로고침 횟수 (09-26)
         public int layout;                                               // 칸 배치 판 — 2 = 새 칸 12개가 맨 뒤 (09-25). 0 이면 옮겨 준다   // 🔩 가게 v2 — 오늘의 반값 칸 · 판마다 공짜 새로고침 · 🧃 소모품(다음 판)                             // 가게 진열 (Parts.Key = 열쇠)                                                   // ⚔ 장착한 무기 (0 집게 빔 · 1 레이저 · 2 번개)
         public double cash, billAmount = -1, creditPending, startedAt, debt;   // debt = 갚아야 할 빚 (대출 × 배수)
         public int runs, orbit, bill, billDue = 5, overRuns, contract = -1;
@@ -88,7 +89,7 @@ namespace SalvageRun.Orbit.Sim
         public double earnClaw, earnDrone, earnBlast, cut, toBill, bonus, interest;
         public string contractText; public int contractProg, contractTarget;     // 지난 판 의뢰 — 결산에 성공/실패를 보여 준다
         public int cVault, cFuel, cChip, cSat, cTank, cBig, cTag;
-        public int cleanKills, cleanGoal = 1;
+        public int cleanKills, cleanGoal = 1; public double dmgDone;
         public readonly List<Junk> junk = new List<Junk>();
         public readonly List<Junk> packed = new List<Junk>();
         public readonly List<Blast> pend = new List<Blast>();
@@ -669,7 +670,47 @@ namespace SalvageRun.Orbit.Sim
         public bool BigsOn => S.orbit >= 2;                              // 큰 잔해는 화성부터 (행성의 성격)
         public int MaxOrbit { get { int m = 0; foreach (int i in OrbitOrder) if (Open(i)) m = i; return m; } }   // 가장 먼 (순위)
         public bool Open(int i) => i == 0 || (S.planets & (1 << i)) != 0 || Lv(PlanetNode[i]) > 0;
-        public bool OnSale(int i) { if (Open(i)) return false; var st = State(NodeIx[PlanetNode[i]]); return st == NodeSt.Can || st == NodeSt.Poor; }   // 정비고 항로 칸이 다음 차례
+        public bool OnSale(int i) => false;                                      // 🛰 허가증은 없앴다 — 관문을 부숴야 열린다
+        // ───────────────────────── 🛰 행성 관문 (09-26 사장님 「엄청 안 부서지는 무언가를 두고 그걸 레벨 디자인으로」 · 시안 HTSncyfVCbLX9kZiSBaGwo)
+        public static readonly string[] GateNames = { "폐우주정거장", "달 착륙선 잔해", "궤도 엘리베이터", "소행성 채굴기", "두 동강 난 화물선", "얼음 요새", "탐사 모선", "폭풍 관측소" };   // 항로 순위 0~7 (카이퍼는 끝)
+        public const int GateSig = 100;                                          // 관문 잔해 표시 (Junk.sig)
+        public const double GateK = 10;                                          // 관문 체력 = 큰 잔해 × 60 (봇으로 맞춤)
+        public int Frontier => ZoneOpen;                                         // 가장 먼 열린 행성의 순위
+        public bool HasGate => Frontier + 1 < OrbitOrder.Length && !M.endless;  // 카이퍼 · 무한 궤도는 관문 없음
+        public string GateName => HasGate ? GateNames[Frontier] : "";
+        public string NextName => HasGate ? Orbits[OrbitOrder[Frontier + 1]].name : "";
+        public int GateMax { get { if (S.gateMax <= 0) S.gateMax = Math.Max(Types[Big].hp * HpMul * GateK, S.dmgAvg * GateRuns); return (int)Math.Min(2e9, Math.Round(S.gateMax)); } }   // 🛰 처음 뜰 때 「지금 한 판 피해 × 6」으로 정한다 — 화력이 불어나도 늘 몇 판 공들여야
+        public const double GateRuns = 1.5;
+        public Junk GateJunk { get { if (R == null) return null; foreach (var d in R.junk) if (d.sig == GateSig && !d.dead) return d; return null; } }
+        public double GateLeft { get { var g = GateJunk; return g != null ? Math.Max(0, (double)g.hp / Math.Max(1, g.max)) : S.gateFrac; } }
+        public int TileCap => 3 + ZoneOpen;                                      // 🛰 행성 한도 — 지구 한 줄 세 칸, 관문 하나마다 한 칸 더
+        public bool CapLocked(int i)
+        {
+            var n = Nodes[i]; if (n.id.StartsWith("p_") || M.endless) return false;
+            if (Infinite(i)) return S.lv[i] >= 3 * (1 + ZoneOpen);
+            return Tiles(i) > 1 && NextTile(i) > TileCap;
+        }
+        void SpawnGate()
+        {
+            if (!HasGate || R.clean || S.orbit != OrbitOrder[Frontier]) return;
+            var o = Orbits[S.orbit];
+            var g = Spawn(Big, Rnd(0, Math.PI * 2), (o.bi + Bo) / 2, Att.None, false, 0.35);
+            g.sig = GateSig; g.fade = 1; g.max = Math.Max(1, GateMax); g.hp = Math.Max(1, (int)Math.Round(g.max * Math.Max(0.02, S.gateFrac)));
+        }
+        public bool DebugBreakGate() { var g = GateJunk; if (g == null) return false; g.hp = 0; Kill(g, 0, 1); return true; }   // 시험용
+        void GateHit(Junk d)
+        {   // 칠 때마다 가끔 비싼 파편이 떨어진다 — 관문을 치는 판도 손해만은 아니게
+            if (Rnd() < 0.25) SpawnFree(Rnd() < 0.75 ? Chip : Rnd() < 0.7 ? Sat : Vault, d.x, d.y, Rnd(-120, 120), Rnd(-90, 90), 2.4);
+        }
+        void GateBroken(Junk d)
+        {
+            int next = OrbitOrder[Frontier + 1];
+            S.gateNext = next; S.gateFrac = 1; S.gateMax = 0; S.keys++;
+            double bonus = Math.Max(S.runAvg * 3, BillAmount * 0.3); S.cash += bonus;
+            Emit(SwEv.Pop, d.x, d.y - 30, 0, 3, "🛰 관문 붕괴! " + Orbits[next].name + " 항로 · 열쇠 +1 · +" + Math.Round(bonus));
+            Emit(SwEv.Act, 0, 0, 1, 0, GateName + " 붕괴 — " + Orbits[next].name + " 항로");
+            AddNews(null, GateName + " 붕괴 — 민간 청소선이 해냈다", Orbits[S.orbit].name + " 궤도를 막고 있던 " + GateName + "이(가) 부서졌다. " + Orbits[next].name + " 항로가 열렸다.");
+        }
         public static double PermitCost(int orbit) => orbit <= 0 ? 0 : Nodes[NodeIx[PlanetNode[orbit]]].first;   // 항로 값은 트리 칸 값 하나 — Orbits.permit 은 표시에 섞여 실제 값과 달랐다 (09-25 밸런스)
         public bool BuyPermit(int i)
         {
@@ -1032,7 +1073,8 @@ namespace SalvageRun.Orbit.Sim
             if (S.lv[i] >= n.max) return NodeSt.Max;
             if (Ring4(n.id) && Lv("p_jup") <= 0) return NodeSt.Locked;           // ✦ 외행성 면허 = 목성 항로
             if (Zone[i] > ZoneOpen) return NodeSt.Locked;                          // 🪐 그 행성 항로를 사야 열린다
-            if (n.id.StartsWith("p_") && ZoneLeft(Zone[i]) > 0) return NodeSt.Locked; // 🪐 지금 구역 칸을 다 찍어야 다음 항로
+            if (n.id.StartsWith("p_")) return NodeSt.Locked;                     // 🛰 항로는 관문을 부숴야 열린다 (09-26 — 구역 칸 개수 · 허가증 돈은 없앴다)
+            if (CapLocked(i)) return NodeSt.Locked;                             // 🛰 행성 한도 — 이 행성에선 여기까지
             foreach (var p in n.par) if (S.lv[NodeIx[p]] <= 0) return NodeSt.Hidden;
             var pl = Layout[n.id];
             if (pl.par != "R" && S.lv[NodeIx[pl.par]] < TileLv(NodeIx[pl.par], pl.tile)) return NodeSt.Hidden;
@@ -1202,6 +1244,7 @@ namespace SalvageRun.Orbit.Sim
             while (Alive() < target) Spawn(-1, -1, -1, null, false);
             foreach (var d in r.junk) d.fade = 1;
             for (int i = 0; i < DroneCount; i++) r.drones.Add(new Drone { a = i * Math.PI * 2 / Math.Max(1, DroneCount), cd = Rnd() });
+            if (!clean && !M.endless) SpawnGate();                            // 🛰 관문 — 가장 먼 행성에서만
             if (Lv("q_rock") > 0 && !clean && Rnd() < 0.35) r.rockT = Rnd(5, 12);
             // 사건 — 10~14초, 22~26초 (연료 40 넘을 때만)
             var ev = o.events;
@@ -1509,6 +1552,7 @@ namespace SalvageRun.Orbit.Sim
             foreach (var d in R.junk)
             {
                 if (d.dead) continue;
+                if (d.sig == GateSig && d.free) { d.free = false; d.vx = d.vy = 0; d.capT = 0; }   // 🛰 관문은 늘 궤도에 — 자석 · 청소기 · 돌풍에 안 끌려 나온다
                 d.fade = Math.Min(1, d.fade + dt * 1.4); d.hit = Math.Max(0, d.hit - dt); d.rot += d.vr * dt; if (d.sigCd > 0) d.sigCd -= dt;
                 if (d.frz > 0) d.frz -= dt;
                 if (d.free)
@@ -1544,7 +1588,7 @@ namespace SalvageRun.Orbit.Sim
             {
                 if (d.dead || Types[d.k].big || d.att == Att.Armor) continue;
                 double dx = r.hx - d.x, dy = r.hy - d.y, dist = Math.Sqrt(dx * dx + dy * dy) + 1;
-                if (dist > pr) continue;
+                if (dist > pr || d.sig == GateSig) continue;               // 🛰 관문은 안 끌려온다
                 if (!d.free) { d.free = true; d.vx = d.vy = 0; }
                 d.capT = 0;
                 double f = 26000 * pf / (dist + 40) / (Types[d.k].heavy ? 2.5 : 1);
@@ -1993,6 +2037,8 @@ namespace SalvageRun.Orbit.Sim
             if (d.dead) return;
             if (d.att == Att.Armor && src == 0 && !pierce) dmg = Math.Min(dmg, 1);
             if (d.frz > 0) dmg = (int)Math.Round(dmg * FrzMul);                        // 언 것은 두 배
+            if (d.sig == GateSig) { if (src != 0) dmg = Math.Max(1, dmg / 3); GateHit(d); }   // 🛰 연쇄 · 드론 · 폭발은 조금만
+            if (d.sig != GateSig) R.dmgDone += Math.Min(dmg, Math.Max(0, d.hp));   // 📊 판당 준 피해 (관문 체력 기준)
             bool fresh = d.hp >= d.max; d.hp -= dmg; d.hit = 0.12; DbgHits++; if (fresh && d.hp <= 0) DbgOneShot++;   // 📊 봇 진단 — 단단함
             TraitOnHit(d);                                                      // 🪐 광맥 소행성
             if (d.att == Att.Ice && d.hp <= d.max - 2)
@@ -2055,6 +2101,7 @@ namespace SalvageRun.Orbit.Sim
         bool blastW; int shatterDepth;
         void Kill(Junk d, int src, double mult)
         {
+            if (d.sig == GateSig) { if (d.hp > 0) return; GateBroken(d); }   // 🛰 관문은 빨려 들거나 휩쓸려 사라지지 않는다
             DbgKills++;
             if (d.dead) return;
             d.dead = true;
@@ -2169,6 +2216,9 @@ namespace SalvageRun.Orbit.Sim
             S.lastContract = r.contractText == null ? 0 : r.contractOk ? 1 : 2;
             LottoDraw();                                                // 🎱 추첨 날이면
             if (!R.clean && R.Earned > 0) S.runAvg = S.runAvg <= 0 ? R.Earned : S.runAvg * 0.6 + R.Earned * 0.4;   // 💰 가게 값 기준
+            if (!R.clean && R.dmgDone > 0) S.dmgAvg = S.dmgAvg <= 0 ? R.dmgDone : S.dmgAvg * 0.6 + R.dmgDone * 0.4;
+            { var g = GateJunk; if (g != null) S.gateFrac = Math.Max(0.02, (double)g.hp / Math.Max(1, g.max)); }   // 🛰 관문 체력은 다음 판으로
+            if (S.gateNext > 0) { int nx = S.gateNext; S.gateNext = 0; int pn = NodeIx[PlanetNode[nx]]; if (S.lv[pn] <= 0) S.lv[pn] = 1; PlanetBought(nx); }
             S.rolls = 0;
             if (ShopOpen) { RollShop(); S.freeRoll = true; }                  // 🔩 가게 진열이 바뀐다 · 공짜 새로고침 한 번
             if (Lv("q_front") > 0 && Mk != null && StockOpen) { S.front1 = rng.Next(Market.NewsBook.Length); do S.front2 = rng.Next(Market.NewsBook.Length); while (S.front2 == S.front1); }

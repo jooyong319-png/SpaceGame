@@ -608,7 +608,7 @@ namespace SalvageRun.Orbit
                     case SwEv.Collector: hud.Banner(e.text, -2, 3f); CollectorShip(); OrbitSfx.Play("warn", 1f); break;
                     case SwEv.RunEnd: Save(); hud.OnRunEnd(); break;
                     case SwEv.Overdue: OrbitSfx.Play("warn", 1f); hud.RadioOverdue(sim.S.bill); break;
-                    case SwEv.Act: hud.ShowAct((int)e.v); flash = Mathf.Max(flash, 0.8f); shake = Mathf.Max(shake, 0.25f); OrbitSfx.Play("ending", 1f); OrbitSfx.Play("launch", 0.8f); Save(); break;
+                    case SwEv.Act: hud.ShowAct((int)e.v, e.text); flash = Mathf.Max(flash, 0.8f); shake = Mathf.Max(shake, 0.25f); OrbitSfx.Play("ending", 1f); OrbitSfx.Play("launch", 0.8f); Save(); break;
                     case SwEv.BillPaid: hud.OnBillPaid(e.text, (int)e.v); hud.RadioPaid((int)e.v); OrbitSfx.Play("unit", 1f); OrbitSfx.Play("buy", 1f, 0.01f); Save(); break;
                     case SwEv.Bankrupt: OrbitSfx.Play("lock", 1f); hud.RadioBankrupt(); Save(); break;
                     case SwEv.News: hud.OnNews(e.text, e.k == 1); break;
@@ -667,6 +667,12 @@ namespace SalvageRun.Orbit
             for (int i = 0; i < 6; i++) Add(pixel, at, Random.Range(0.08f, 0.14f), new Color(1f, Random.Range(0.5f, 0.85f), 0.25f), 0, Random.Range(0.4f, 0.7f)).v = (Vector3)(Random.insideUnitCircle.normalized * Random.Range(2f, 5f) * R);
         }
 
+        static readonly Dictionary<int, Sprite> gatePx = new Dictionary<int, Sprite>();
+        static Sprite GatePx(int n)
+        {   // 🛰 관문 잔해 — 픽셀랩 Resources/gate/gate_0~7 (항로 순위)
+            if (gatePx.TryGetValue(n, out var s) && s != null) return s;
+            s = Resources.Load<Sprite>("gate/gate_" + Mathf.Clamp(n, 0, 7)); gatePx[n] = s; return s;
+        }
         void OnTier(int tier)
         {
             // 🔴 도파민 사다리 — 연쇄 10 · 30 · 80 · 200
@@ -847,7 +853,7 @@ namespace SalvageRun.Orbit
                 var pos = PxToWorld(d.x, d.y);
                 v.transform.position = pos;
                 Sprite s; Color c = Color.white;
-                var px = d.sp >= 0 ? SpeciesPx(d.sp) : null; if (px == null) px = JunkPx(d.k, d.id);   // 종 그림 먼저                                                // 🛰 픽셀랩 쓰레기 그림이 있으면 그걸로
+                var px = d.sig == SweepSim.GateSig ? GatePx(sim.Frontier) : d.sp >= 0 ? SpeciesPx(d.sp) : null; if (px == null) px = JunkPx(d.k, d.id);   // 🛰 관문은 전용 그림   // 종 그림 먼저                                                // 🛰 픽셀랩 쓰레기 그림이 있으면 그걸로
                 if (px != null) { s = px; if (d.k == SweepSim.Vault) c = Color.Lerp(Color.white, new Color(1f, 0.95f, 0.75f), 0.5f + 0.5f * Mathf.Sin(t * 6)); }
                 else switch (d.k)
                 {
@@ -867,7 +873,7 @@ namespace SalvageRun.Orbit
                 c.a = (float)d.fade;
                 v.color = c;
                 float r = (float)SweepSim.Types[d.k].r;
-                float size = r * 2.6f / PxPerUnit * (d.hit > 0 ? 1.25f : 1f) * (px != null ? 1.3f : d.k == SweepSim.Fuel ? 0.6f : 1f) * (d.sig == 2 ? 1.9f : d.sig == 3 ? 1.5f : d.sig == 6 ? 1.5f : d.sig == 9 ? 0.7f : 1f);   // 🪐 월면 금고 · 탐사차 · 얼음 덩이는 크게, 혜성 머리는 작게   // 그림은 둘레가 비어 있어 1.3배
+                float size = r * 2.6f / PxPerUnit * (d.hit > 0 ? 1.25f : 1f) * (px != null ? 1.3f : d.k == SweepSim.Fuel ? 0.6f : 1f) * (d.sig == 2 ? 1.9f : d.sig == 3 ? 1.5f : d.sig == 6 ? 1.5f : d.sig == 9 ? 0.7f : d.sig == SweepSim.GateSig ? 1.7f : 1f);   // 🪐 월면 금고 · 탐사차 · 얼음 덩이는 크게, 혜성 머리는 작게 · 🛰 관문은 큰 잔해의 세 배 남짓   // 그림은 둘레가 비어 있어 1.3배
                 v.transform.localScale = new Vector3(size / Mathf.Max(0.01f, s.bounds.size.x), size / Mathf.Max(0.01f, s.bounds.size.x) * (px == null && d.k == SweepSim.Fuel ? 1.6f : 1f), 1);
                 v.transform.rotation = Quaternion.Euler(0, 0, (float)d.rot * Mathf.Rad2Deg);
                 int order = 10 + Mathf.Clamp((int)(d.y / 6), 0, 99);
