@@ -66,7 +66,7 @@ namespace SalvageRun.Orbit
                 {
                     if (!sim.ShopOpen) continue;
                     ShopRoom();
-                    if (flow == 5) GuideOnce("shop", "소모품은 다음 판에만 · 부품은 칸에 끼운다 · 한 칸은 반값 · 새로고침은 판마다 한 번 공짜");
+                    if (flow == 5) GuideOnce("shop", "소모품은 다음 출동 한 번용 · 부품은 칸에 끼운다 · 한 칸은 반값 · 새로고침은 판마다 한 번 공짜");
                     if (NavTab(false, "정비고", "", SweepGame.Amber)) GoFlow(3);
                     if (NavTab(true, "조종실로", "", SweepGame.Amber)) GoFlow(2);
                 }

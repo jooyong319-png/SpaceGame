@@ -131,6 +131,7 @@ namespace SalvageRun.Orbit
                 Color rc = key ? KeyCol : cn ? new Color(0.44f, 0.81f, 0.59f) : RarCol[Parts.Defs[id].rar];
                 bool ov = r.Contains(Event.current.mousePosition);
                 if (ov && slot >= 0) shopHot = slot;
+                if (ov || k == testShopTip) { tipK = k; tipR = r; }
                 GUI.color = new Color(rc.r * 0.07f + 0.02f, rc.g * 0.07f + 0.025f, rc.b * 0.08f + 0.035f, 1); GUI.DrawTexture(r, white);
                 Frame(r, sale ? new Color(1f, 0.36f, 0.3f) : rc, ov ? 3 : 2);
                 if (key || !cn && Parts.Defs[id].rar == 2) { GUI.color = new Color(rc.r, rc.g, rc.b, 0.06f + 0.05f * Mathf.Sin(Time.unscaledTime * 4)); GUI.DrawTexture(new Rect(r.x + 3, r.y + 3, r.width - 6, r.height - 6), white); }
@@ -155,7 +156,7 @@ namespace SalvageRun.Orbit
                 double price = sim.ShelfPrice(k); bool can = S.cash >= price;
                 var bb = new Rect(r.x + 10, r.yMax - 40, r.width - 20, 30);
                 string ptxt = KNum.Fmt(price) + (sale ? " <color=#ffb0a0>(반값)</color>" : "");   // 원래 값은 카드 위 「오늘의 반값」 띠가 말해 준다 — 단추가 좁다
-                if (GUI.Button(bb, can ? "<size=" + (sale ? 13 : 14) + ">사기 · " + ptxt + "</size>" : "<size=12><color=#ff9b8f>" + ptxt + " — 돈 모자람</color></size>", can ? btn : btnOff) && can)
+                if (GUI.Button(bb, can ? "<size=" + (sale ? 13 : 14) + ">구입 · " + ptxt + "</size>" : "<size=12><color=#ff9b8f>" + ptxt + " — 돈 모자람</color></size>", can ? btn : btnOff) && can)
                 {
                     var to = key ? new Rect(w.xMax - 120, w.y + 6, 110, 24) : cn ? consRect : slotRects[slot];
                     string fl = key ? "열쇠 +1" : nm;
@@ -166,6 +167,8 @@ namespace SalvageRun.Orbit
                     }
                 }
             }
+            if (tipK >= 0 && S.shop != null && tipK < S.shop.Count) ShopTip(S.shop[tipK], tipR);
+            tipK = -1;
             // 새로고침 — 판마다 한 번 공짜
             {
                 var rb = new Rect(RR.x + RR.width / 2 - 120, w.yMax - 36, 240, 32);
@@ -218,5 +221,35 @@ namespace SalvageRun.Orbit
             string head = cur >= 0 ? "<color=#8a9bb3>지금 <color=#8a7f99>" + Parts.Defs[cur].name + "</color> 빠짐</color>\n" : "<color=#8a9bb3>빈 칸에 끼움</color>\n";
             return head + (outp.Count > 0 ? string.Join(" · ", outp) : "<color=#8a9bb3>달라지는 것 없음</color>");
         }
+    
+        // 📖 가게 카드 자세히 — 올리면 옆에 (09-26 사장님 「설명이 더 자세했으면」)
+        int tipK = -1; Rect tipR; public int testShopTip = -1;          // 에디터 시험용
+        void ShopTip(int id, Rect card)
+        {
+            var sb = new System.Text.StringBuilder();
+            if (id == Parts.Key) sb.Append("<color=#d8ccff>양자 열쇠</color>" + "\n\n" + "정비고에서 보라 테두리 ◆ 핵심 칸을 하나 연다. 핵심 칸은 돈만으로는 못 산다." + "\n" + "가진 열쇠 " + sim.S.keys + "개");
+            else if (SweepSim.IsCons(id)) sb.Append("<color=#9ff0bf>" + SweepSim.ConsName[id - SweepSim.Cons0] + "</color>  <color=#8a93a3>다음 출동 한 번용</color>" + "\n\n" + SweepSim.ConsHelp[id - SweepSim.Cons0] + "\n\n" + "<color=#8a93a3>칸에 끼우지 않는다. 사 두면 다음 출동을 시작할 때 저절로 쓰이고 사라진다.</color>");
+            else
+            {
+                var d = Parts.Defs[id];
+                sb.Append("<color=#" + ColorUtility.ToHtmlStringRGB(RarCol[d.rar]) + ">" + d.name + "</color>  <color=#8a93a3>" + Parts.RarName[d.rar] + " · " + Parts.SlotName[d.slot] + " 칸</color>" + "\n\n");
+                for (int i = 0; i < d.k.Length; i++)
+                {
+                    string v = d.k[i] == "fuel" ? (d.v[i] > 0 ? "+" : "") + d.v[i] + "초" : d.k[i] == "fee0" ? "" : d.k[i] == "combo" ? "+" + d.v[i] : (d.v[i] > 0 ? "+" : "") + (d.v[i] * 100).ToString(d.v[i] < 0.01 ? "0.0" : "0") + "%";
+                    string h = Parts.Help.TryGetValue(d.k[i], out var hh) ? hh : d.k[i];
+                    if (d.k[i] == "crit") h += " (지금 ×" + sim.CritX + ")";
+                    sb.Append("<color=#ffdf95>" + v + "</color>  " + h + "\n");
+                }
+                sb.Append("\n" + "<color=#8a93a3>" + Parts.SlotName[d.slot] + " 칸에 하나만 끼운다. 이미 끼운 게 있으면 바뀐다 — 빠지는 것은 사라진다.</color>");
+            }
+            if (tipStyle == null) tipStyle = new GUIStyle(small) { wordWrap = true, richText = true, fontSize = 12 };
+            float tw = 300, th = tipStyle.CalcHeight(new GUIContent(sb.ToString()), tw - 24) + 22;
+            var tr = new Rect(card.xMax + 8, card.y, tw, th);
+            if (tr.xMax > vw - 8) tr.x = card.x - tw - 8;
+            tr.y = Mathf.Min(tr.y, RefH - th - 8);
+            GUI.color = new Color(0.03f, 0.04f, 0.06f, 0.97f); GUI.DrawTexture(tr, white); Frame(tr, new Color(0.45f, 0.5f, 0.6f), 1); GUI.color = Color.white;
+            GUI.Label(new Rect(tr.x + 12, tr.y + 11, tw - 24, th - 16), sb.ToString(), tipStyle);
+        }
+        GUIStyle tipStyle;
     }
 }

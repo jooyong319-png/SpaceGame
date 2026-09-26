@@ -40,6 +40,7 @@ namespace SalvageRun.Orbit.Sim
         public int[] parts = { -1, -1, -1, -1, -1 };                           // 🔩 부품 칸 다섯
         public List<int> shop = new List<int>();
         public int shopSale = -1, nFuel, nDmg, nVal; public bool freeRoll = true;
+        public double runAvg; public int rolls;                                   // 💰 최근 판당 수입(가게 값 기준) · 이번 판 새로고침 횟수 (09-26)
         public int layout;                                               // 칸 배치 판 — 2 = 새 칸 12개가 맨 뒤 (09-25). 0 이면 옮겨 준다   // 🔩 가게 v2 — 오늘의 반값 칸 · 판마다 공짜 새로고침 · 🧃 소모품(다음 판)                             // 가게 진열 (Parts.Key = 열쇠)                                                   // ⚔ 장착한 무기 (0 집게 빔 · 1 레이저 · 2 번개)
         public double cash, billAmount = -1, creditPending, startedAt, debt;   // debt = 갚아야 할 빚 (대출 × 배수)
         public int runs, orbit, bill, billDue = 5, overRuns, contract = -1;
@@ -862,11 +863,12 @@ namespace SalvageRun.Orbit.Sim
             AddNews(null, "오늘 1면 — " + h, "궤도일보 1면. (편집장은 청소선에서 온 제보라고만 했다)");
         }
         // 🔩 가게 v2 (09-24 사장님 24번 「너무 비싸기만 하다 · 판마다 바뀌고 · 돈으로 바꾸고 · 가격 다양하게」)
-        public double ShopBase => Math.Max(80, Math.Round(BillAmount * 0.15 / 10) * 10);
+        public double ShopBase => Math.Max(80, Math.Round((S.runAvg > 0 ? S.runAvg : BillAmount * 0.15) / 10) * 10);   // 💰 09-26 사장님 「전설이 너무 싸」 — 청구서가 아니라 한 판 벌이에 묶는다
         public const int Cons0 = 200;
         public static readonly string[] ConsName = { "연료 캔", "복권 묶음", "과부하 탄창", "감정 할인권" };
         public static readonly string[] ConsDesc = { "다음 판 연료 +10초", "즉석 복권 +3장", "다음 판 화력 +20%", "다음 판 모든 값 +15%" };
         static readonly double[] ConsPrice = { 0.25, 0.2, 0.45, 0.5 };
+        public static readonly string[] ConsHelp = { "다음 출동 한 판만 연료가 10초 늘어난다. 끝나면 사라진다", "즉석 복권 세 장을 바로 받는다. 조종실 복권기에서 긁는다", "다음 출동 한 판 동안 모든 무기 화력이 20% 세진다", "다음 출동 한 판 동안 부순 것 값이 전부 15% 더 붙는다" };   // 📖 가게 카드 자세히
         public static bool IsCons(int id) => id >= Cons0 && id < Cons0 + ConsName.Length;
         public double PartPrice(int id)
         {
@@ -875,7 +877,7 @@ namespace SalvageRun.Orbit.Sim
             return Math.Max(10, Math.Round(p * jit / 10) * 10);
         }
         public double ShelfPrice(int k) => S.shop == null || k < 0 || k >= S.shop.Count ? 0 : Math.Max(10, Math.Round(PartPrice(S.shop[k]) * (k == S.shopSale ? 0.5 : 1) / 10) * 10);
-        public double RerollPrice => S.freeRoll ? 0 : Math.Round(ShopBase * 0.25);
+        public double RerollPrice => S.freeRoll ? 0 : Math.Round(ShopBase * 0.3 * Math.Pow(2, S.rolls) / 10) * 10;   // 누를수록 두 배 · 출동하면 처음부터 (09-26)
         public void RollShop()
         {
             if (S.shop == null) S.shop = new List<int>();
@@ -919,7 +921,7 @@ namespace SalvageRun.Orbit.Sim
             S.parts[Parts.Defs[id].slot] = id;
             return true;
         }
-        public bool RerollShop() { if (!R.over || !ShopOpen || S.cash < RerollPrice) return false; S.cash -= RerollPrice; S.freeRoll = false; RollShop(); return true; }
+        public bool RerollShop() { if (!R.over || !ShopOpen || S.cash < RerollPrice) return false; S.cash -= RerollPrice; if (!S.freeRoll) S.rolls++; S.freeRoll = false; RollShop(); return true; }
         public int TotalLv { get { int n = 0; foreach (var l in S.lv) n += l; return n; } }
         public double Widen => 1 + 0.1 * Lv("o_wide");      // 🔴 정비소에서 산다 (사장님 09-23: "맵 크기도 여기서 늘리게")
         public double Bo => Orbits[S.orbit].bi + (Orbits[S.orbit].bo - Orbits[S.orbit].bi) * Widen;
@@ -2150,6 +2152,8 @@ namespace SalvageRun.Orbit.Sim
             S.lastClaw = r.earnClaw; S.lastDrone = r.earnDrone; S.lastBlast = r.earnBlast; S.runEarn.Add(r.earnClaw + r.earnDrone + r.earnBlast); if (S.runEarn.Count > 6) S.runEarn.RemoveAt(0); S.lastBroke = r.broke; S.lastChain = r.chainBest;
             S.lastContract = r.contractText == null ? 0 : r.contractOk ? 1 : 2;
             LottoDraw();                                                // 🎱 추첨 날이면
+            if (!R.clean && R.Earned > 0) S.runAvg = S.runAvg <= 0 ? R.Earned : S.runAvg * 0.6 + R.Earned * 0.4;   // 💰 가게 값 기준
+            S.rolls = 0;
             if (ShopOpen) { RollShop(); S.freeRoll = true; }                  // 🔩 가게 진열이 바뀐다 · 공짜 새로고침 한 번
             if (Lv("q_front") > 0 && Mk != null && StockOpen) { S.front1 = rng.Next(Market.NewsBook.Length); do S.front2 = rng.Next(Market.NewsBook.Length); while (S.front2 == S.front1); }
             CheckClean();                                               // 판 수입에서 떼어 빚을 다 갚았을 수도

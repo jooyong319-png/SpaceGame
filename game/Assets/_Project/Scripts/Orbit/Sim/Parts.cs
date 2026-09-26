@@ -12,7 +12,7 @@ namespace SalvageRun.Orbit.Sim
         public const int Key = 100;                                          // 가게에 올라오는 열쇠
         public static readonly string[] SlotName = { "엔진", "사출기", "선체", "레이더", "부적" };
         public static readonly string[] RarName = { "일반", "희귀", "전설" };
-        public static readonly double[] RarPrice = { 1, 2.5, 6 };
+        public static readonly double[] RarPrice = { 1, 3, 8 };   // 판 벌이 배수 — 전설 ≈ 여덟 판 (09-26)
         static PartDef P(int slot, int rar, string name, string desc, params object[] kv)
         {
             var k = new string[kv.Length / 2]; var v = new double[kv.Length / 2];
@@ -43,6 +43,25 @@ namespace SalvageRun.Orbit.Sim
             P(4, 1, "증권사 배지", "주식 수수료 0 · 배당 +0.05%", "fee0", 1, "div", 0.0005),
             P(4, 1, "연쇄 부적", "연쇄 보너스 상한 +100 (최대 ×2.5)", "combo", 100),
             P(4, 2, "황금 나사", "모든 값 +15% · 화력 +10%", "val", 0.15, "dmg", 0.10),
+        };
+        // 📖 효과마다 판에서 무슨 뜻인지 (09-26 사장님 「가게 아이템 설명이 더 자세했으면」) — 카드에 올리면 옆 창에
+        public static readonly System.Collections.Generic.Dictionary<string, string> Help = new System.Collections.Generic.Dictionary<string, string>
+        {
+            { "dmg",   "화력 — 한 방에 깎는 체력. 큰 잔해 · 장갑판을 덜 쳐도 부순다" },
+            { "spd",   "연사 — 주 무기가 더 자주 쏜다. 같은 시간에 더 많이 부순다" },
+            { "rad",   "크기 — 한 방이 덮는 넓이 (집게 원 · 레이저 굵기 · 번개 거리). 뭉친 잔해를 한 번에" },
+            { "fuel",  "연료 — 한 판에 쓸 수 있는 연료. 늘면 판이 길어지고, 줄면 짧아진다" },
+            { "crit",  "치명 — 이 확률로 한 방이 몇 배로 들어간다" },
+            { "dbl",   "한 발 더 — 쏠 때마다 이 확률로 같은 자리에 한 번 더" },
+            { "drone", "드론 몫 — 드론이 부순 잔해 값이 이만큼 더 붙는다" },
+            { "val",   "모든 값 — 무엇을 부수든 받는 돈이 이만큼 더" },
+            { "vault", "금고 위성 — 노란 금고 위성을 부술 때 받는 돈이 더" },
+            { "att",   "부착물 — 잔해에 붙은 금 · 연료통 같은 부착물이 더 자주 · 더 비싸게" },
+            { "cut",   "빚 상환 몫 — 빚이 있을 때 판 수입에서 떼 가는 비율이 줄어든다 (빚이 없으면 효과 없음)" },
+            { "fee0",  "수수료 0 — 증권에서 사고팔 때 수수료가 안 붙는다" },
+            { "div",   "배당 — 가진 주식 값의 이만큼을 판마다 돈으로 받는다" },
+            { "combo", "연쇄 보너스 상한 — 연쇄가 길수록 붙는 값 배수의 천장이 올라간다" },
+            { "hole",  "블랙홀 — 칠 때마다 이 확률로 블랙홀이 저절로 열려 주변을 빨아들인다" },
         };
         public static double Sum(int[] equipped, string key)
         {
