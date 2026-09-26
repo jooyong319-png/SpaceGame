@@ -20,6 +20,7 @@ static class Program
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         if (double.TryParse(Environment.GetEnvironmentVariable("LOANMULT"), out double lm)) SweepSim.LoanMult = lm;
         if (args.Length > 0 && args[0] == "zones") { for (int z = 0; z < 6; z++) { double sum = 0; var ids = new List<string>(); for (int i = 0; i < SweepSim.NodeCount; i++) if (SweepSim.Zone[i] == z && SweepSim.ZoneNeed(i)) { sum += SweepSim.Nodes[i].first; ids.Add(SweepSim.Nodes[i].id + ":" + SweepSim.Nodes[i].first); } Console.WriteLine($"구역 {z} {SweepSim.ZoneName[z]} 칸 {ids.Count} 합 {sum:0}"); Console.WriteLine("   " + string.Join(" ", ids)); } return; }
+        if (args.Length > 0 && args[0] == "econ") { Econ(args.Length > 1 && int.TryParse(args[1], out int en) ? en : 10); return; }   // 💰 경제 진단 — 돈이 남는지 · 칸이 싼지 · 판 길이
         if (args.Length > 0 && args[0] == "bal") { Balance(args.Length > 1 && int.TryParse(args[1], out int bn) ? bn : 20); return; }   // 📊 밸런스 보고서
         if (args.Length > 0 && args[0] == "test") { Environment.ExitCode = Tests.RunAll(args.Length > 1 && int.TryParse(args[1], out int tn) ? tn : 12); return; }   // 🧪 헤드리스 테스트
         var seeds = args.Length > 0 && int.TryParse(args[0], out int one) ? new[] { one } : new[] { 3, 7, 11 };
@@ -94,6 +95,18 @@ static class Program
                     sim.Buy(best);
                 }
             }
+            if (econOn)
+            {   // 💰 가게를 나설 때 — 열린 칸(항로 제외)이 얼마나 남았고 얼마인가
+                int cn = 0; double cmin = double.MaxValue, csum = 0, own = 0;
+                for (int i = 0; i < SweepSim.NodeCount; i++)
+                {
+                    if (sim.S.lv[i] > 0) own++;
+                    if (SweepSim.Nodes[i].id.StartsWith("p_") || SweepSim.Nodes[i].id == "e_shop" || sim.State(i) != NodeSt.Can) continue;
+                    double c = sim.TileCost(i); cn++; csum += c; if (c < cmin) cmin = c;
+                }
+                eb = Math.Min(11, sim.S.bill); eCanMin = cn > 0 ? cmin : -1; eCanSum = csum;
+                E[eb, 0] += 1; E[eb, 1] += cn == 0 ? 1 : 0; E[eb, 2] += own / SweepSim.NodeCount;
+            }
             shopClock += ShopSec;
             if (Environment.GetEnvironmentVariable("DBG") == "2" && Min() > 90) Console.WriteLine($"  {Min(),5:0.0}분 돈 {sim.S.cash,12:0} 청구서 {sim.S.bill}({sim.BillAmount:0}) 기한 {sim.S.billDue}{(sim.S.overdue ? " 연체" : "")} 구역 {sim.ZoneOpen} 남음 {sim.ZoneLeft(sim.ZoneOpen)} 해왕성 {sim.State(Array.FindIndex(SweepSim.Nodes, x => x.id == "p_nep"))} 빚 {sim.S.debt:0} 궤도 {SweepSim.Orbits[sim.S.orbit].name}");
 
@@ -126,6 +139,12 @@ static class Program
             hold = false;
             if (R.clean) { log.Add($"{Min(),6:0.0}분  ✨ 청산 출동 끝 — 빚 청산"); break; }
             segEarn[seg] += R.Earned; segRuns[seg]++;
+            if (econOn && R.Earned > 0)
+            {
+                E[eb, 3] += 1; E[eb, 4] += R.t; E[eb, 5] += R.Earned;
+                if (eCanMin > 0) { E[eb, 6] += eCanMin / R.Earned; E[eb, 7] += 1; }
+                E[eb, 8] += eCanSum / R.Earned;
+            }
             segSplit[seg, 0] += R.earnClaw; segSplit[seg, 1] += R.earnDrone; segSplit[seg, 2] += R.earnBlast;
             if (verbose) Console.WriteLine($"{Min(),6:0.0}분    출동 {sim.S.runs,2}  구간 {seg}  {SweepSim.Orbits[sim.S.orbit].name}  +{R.Earned,8:0}  연쇄 {R.chainBest,3}  압축 {R.packBest,3}  돈 {sim.S.cash,8:0}  청구서 {sim.BillAmount,7:0}{(sim.S.overdue ? " 연체" : " 기한 " + sim.S.billDue)}");
         }
@@ -144,6 +163,24 @@ static class Program
         }
         Console.WriteLine();
         return res;
+    }
+
+    // 💰 경제 진단 (09-26 사장님 「돈이 전혀 안 모자라 · 스킬이 너무 싸 · 한 판이 너무 길어」)
+    static bool econOn; static int eb; static double eCanMin, eCanSum;
+    static double[,] E = new double[12, 9];   // 0 가게 수 · 1 살 게 없음 · 2 트리 보유율 · 3 판 수 · 4 판 길이 합 · 5 수입 합 · 6 싼 칸/판 수입 합 · 7 그 수 · 8 열린 칸 전부/판 수입 합
+    static void Econ(int n)
+    {
+        econOn = true; E = new double[12, 9];
+        for (int i = 1; i <= n; i++) RunQuiet(i * 7 + 1);
+        econOn = false;
+        Console.WriteLine($"💰 경제 — 씨앗 {n} · 청구서 구간별 평균 (판 길이 = 시뮬 초)");
+        Console.WriteLine("  구간 청구서             판수  판길이   판당수입   싼칸=판  열린칸전부=판  살게없음  트리보유");
+        for (int b = 0; b < 12; b++)
+        {
+            if (E[b, 3] == 0) continue;
+            double shops = Math.Max(1, E[b, 0]), runs = E[b, 3];
+            Console.WriteLine($"  {b + 1,2}  {SweepSim.Bills[b].t,-12} {runs / n,5:0.0}  {E[b, 4] / runs,5:0}초  {E[b, 5] / runs,10:0}  {(E[b, 7] > 0 ? E[b, 6] / E[b, 7] : -1),6:0.00}  {E[b, 8] / runs,10:0.0}  {E[b, 1] / shops * 100,6:0}%  {E[b, 2] / shops * 100,6:0}%");
+        }
     }
 
     // 📊 씨앗 n개 — 청구서 k장 첫 도달 · 행성 첫 도달 · 파산 시각 · 끝, 가운데값(과 10% · 90%)

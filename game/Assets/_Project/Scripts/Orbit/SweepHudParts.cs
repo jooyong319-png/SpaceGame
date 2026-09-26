@@ -111,7 +111,7 @@ namespace SalvageRun.Orbit
             string cons = (S.nFuel > 0 ? "연료 +" + S.nFuel + "초  " : "") + (S.nDmg > 0 ? "화력 +" + S.nDmg + "%  " : "") + (S.nVal > 0 ? "값 +" + S.nVal + "%" : "");
             var tray = new Rect(L.x, L.yMax + 8 + 5 * 43 + 2, L.width, 26); consRect = tray;
             DashFrame(tray, new Color(0.2f, 0.24f, 0.3f));
-            GUI.Label(new Rect(tray.x + 8, tray.y + 4, tray.width - 12, 18), "<size=11><color=#8a9bb3>다음 판에 쓰는 것</color>  " + (cons.Length > 0 ? "<color=#9ff0bf><b>" + cons + "</b></color>" : "<color=#3f4652>없음</color>") + "</size>", label);
+            GUI.Label(new Rect(tray.x + 8, tray.y + 4, tray.width - 12, 18), "<size=11><color=#8a9bb3>다음 출동 때 쓰일 것</color>  " + (cons.Length > 0 ? "<color=#9ff0bf><b>" + cons + "</b></color>" : "<color=#3f4652>없음</color>") + "</size>", label);
 
             // 진열 여섯 — 3 × 2, 오른쪽
             var RR = new Rect(w.x + 266, w.y + 60, w.width - 266, 0);
@@ -136,7 +136,7 @@ namespace SalvageRun.Orbit
                 if (key || !cn && Parts.Defs[id].rar == 2) { GUI.color = new Color(rc.r, rc.g, rc.b, 0.06f + 0.05f * Mathf.Sin(Time.unscaledTime * 4)); GUI.DrawTexture(new Rect(r.x + 3, r.y + 3, r.width - 6, r.height - 6), white); }
                 // 어디로 가나 — 칸 색 띠
                 Color dc = slot >= 0 ? SlotCol[slot] : rc;
-                string dt = key ? "열쇠 +1 · 핵심 칸 하나" : cn ? "다음 판에 한 번" : SlotMark[slot] + " " + Parts.SlotName[slot] + "에 끼움";
+                string dt = key ? "열쇠 +1 · 핵심 칸 하나" : cn ? "다음 출동 한 번용" : SlotMark[slot] + " " + Parts.SlotName[slot] + "에 끼움";
                 var db = new Rect(r.x + 8, r.y + 8, 0, 20); db.width = Mathf.Min(r.width - 16, label.CalcSize(new GUIContent("<size=12><b>" + dt + "</b></size>")).x + 14);
                 GUI.color = new Color(dc.r, dc.g, dc.b, 0.2f); GUI.DrawTexture(db, white); Frame(db, dc, 1);
                 GUI.color = Color.white; GUI.Label(new Rect(db.x + 7, db.y + 1, db.width, 18), "<size=12><b><color=#" + ColorUtility.ToHtmlStringRGB(dc) + ">" + dt + "</color></b></size>", label);
@@ -150,7 +150,7 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(r.x + 62, r.y + 66, r.width - 68, 42), "<size=11><color=#c8d0dc>" + desc + "</color></size>", small);
                 // 지금 것 → 바뀌는 것
                 GUI.color = new Color(0.2f, 0.23f, 0.29f); GUI.DrawTexture(new Rect(r.x + 10, r.y + 112, r.width - 20, 1), white); GUI.color = Color.white;
-                string cmp = key ? "<color=#8a9bb3>정비고 ◆ 칸에 쓴다 · 가진 열쇠 " + S.keys + "</color>" : cn ? "<color=#8a9bb3>끼우지 않는다 — 다음 출동에만</color>" : PartCompare(id);
+                string cmp = key ? "<color=#8a9bb3>정비고 ◆ 칸에 쓴다 · 가진 열쇠 " + S.keys + "</color>" : cn ? "<color=#8a9bb3>사 두면 <color=#9ff0bf>다음 출동 때 저절로</color> 쓰인다 · 한 번 쓰면 끝</color>" : PartCompare(id);
                 GUI.Label(new Rect(r.x + 10, r.y + 116, r.width - 20, 58), "<size=11>" + cmp + "</size>", small);
                 double price = sim.ShelfPrice(k); bool can = S.cash >= price;
                 var bb = new Rect(r.x + 10, r.yMax - 40, r.width - 20, 30);
