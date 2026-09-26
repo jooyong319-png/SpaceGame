@@ -38,6 +38,7 @@ namespace SalvageRun.Orbit
         bool castPending;
         public Vector2 aimPx;
         public static bool TestAim, TestHold;
+        public static double PerfSim, PerfFx, PerfDraw, PerfUfx; public static int PerfFxN; static readonly System.Diagnostics.Stopwatch PerfSw = new System.Diagnostics.Stopwatch();   // ⏱ 렉 재기 (에디터 계측 · 09-26)
         public static Vector2 TestPx;
 
         // 도파민 사다리 (§5)
@@ -231,14 +232,19 @@ namespace SalvageRun.Orbit
                 else if (hitStop > 0) { hitStop -= dt; sdt = 0; }
                 else if (slowMo > 0) { slowMo -= dt; sdt *= 0.4f; }
                 int steps = Mathf.Max(1, Mathf.CeilToInt(sdt / 0.03f));
+                PerfSw.Restart();
                 if (sdt > 0) { for (int i = 0; i < steps; i++) sim.Tick(sdt / steps, aimPx.x, aimPx.y, aimOn, holdOn || castPending); castPending = false; }   // 히트스톱 중에 누른 것도 멈춤이 풀리면 열린다
             }
             else { sim.IdleTick(dt); castPending = false; }             // 조종실 창밖 — 궤도는 계속 돈다
+            PerfSim = PerfSim * 0.9 + PerfSw.Elapsed.TotalMilliseconds * 0.1; PerfSw.Restart();
             Consume();
+            PerfFx = PerfFx * 0.9 + PerfSw.Elapsed.TotalMilliseconds * 0.1; PerfSw.Restart();
             DrawWorld();
             DrawJunk();
             DrawTools();
+            PerfDraw = PerfDraw * 0.9 + PerfSw.Elapsed.TotalMilliseconds * 0.1; PerfSw.Restart();
             UpdateFx(dt);
+            PerfUfx = PerfUfx * 0.9 + PerfSw.Elapsed.TotalMilliseconds * 0.1; PerfFxN = fx.Count;
             creditPulse = Mathf.MoveTowards(creditPulse, 0, dt * 3f); tallyPulse = Mathf.MoveTowards(tallyPulse, 0, dt * 3f);
             shake = Mathf.MoveTowards(shake, 0, dt * 0.9f);
             flash = Mathf.MoveTowards(flash, 0, dt * 1.5f);
@@ -301,7 +307,7 @@ namespace SalvageRun.Orbit
         Vector2 lastMouse, autoTarget; float idleT, autoRetarget, autoDwell, autoBanT; int autoHp; Junk autoJunk, autoBan, prevAuto;
         public bool autoAiming, autoMode;
         public static float ShakeMul = 1f, FlashMul = 1f;               // ⚙ 설정 — 흔들림 · 번쩍임
-        float brokeWinT; int brokeWinN;                                   // 💥 최근 0.25초 부서진 수 — 적을 때만 굵은 연출
+        float brokeWinT, brokeStopT; int brokeWinN;                                   // 💥 최근 0.25초 부서진 수 — 적을 때만 굵은 연출
         public void ToggleAuto() { autoMode = !autoMode; PlayerPrefs.SetInt("orbit.auto", autoMode ? 1 : 0); PlayerPrefs.Save(); OrbitSfx.Play("tick", 0.7f); }
         void AutoAim(int al)
         {
@@ -432,7 +438,8 @@ namespace SalvageRun.Orbit
                         {
                             Add(glow, at, 0.6f * cam.orthographicSize / 6f, new Color(1f, 0.93f, 0.75f, 0.9f), 7, 0.09f).sr.sortingOrder = 120;
                             Burst(at, Color.Lerp(JunkColor(k), Color.white, 0.3f), 6, 4f);
-                            hitStop = Mathf.Max(hitStop, 0.03f); shake = Mathf.Max(shake, 0.07f);
+                            if (brokeWinN == 1 && Time.time - brokeStopT > 0.5f && (sim.R == null || sim.R.volleyT <= 0)) { brokeStopT = Time.time; hitStop = Mathf.Max(hitStop, 0.015f); }   // 🐢 09-26 사장님 「해왕성 · 전탄 발사 랙」 — 멈칫이 연달아 걸려 끊겨 보였다 → 0.5초에 한 번 · 절반 · 전탄 중엔 없음
+                            shake = Mathf.Max(shake, 0.07f);
                             OrbitSfx.Play("clank", 0.55f, 0.08f, 0.02f);
                         }
                         Burst(at, JunkColor(k), k == SweepSim.Big ? 30 : k == SweepSim.Vault ? 10 : k == SweepSim.Chip ? 1 : 3, k == SweepSim.Big ? 6f : 3f);
@@ -529,7 +536,7 @@ namespace SalvageRun.Orbit
                         break;
                     case SwEv.Volley:
                     {   // 🚀 전탄 발사 — 멈칫 · 번쩍 · 흔들림 · 큰 글자
-                        hitStop = Mathf.Max(hitStop, 0.22f); flash = Mathf.Max(flash, 0.55f); shake = Mathf.Max(shake, 0.35f);
+                        hitStop = Mathf.Max(hitStop, 0.08f); flash = Mathf.Max(flash, 0.55f); shake = Mathf.Max(shake, 0.35f);   // 멈춤 0.22 → 0.08 (09-26 「전탄 발사 랙」)
                         if (hud != null) hud.Big("전탄 발사!", 1f, 34, new Color(1f, 0.87f, 0.58f));
                         OrbitSfx.Play("launch", 1f); OrbitSfx.Play("blast", 0.8f, 0.1f);
                         break;
