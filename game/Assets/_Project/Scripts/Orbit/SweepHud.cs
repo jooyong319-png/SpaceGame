@@ -60,7 +60,7 @@ namespace SalvageRun.Orbit
         public void Go()
         {
             if (sim.S.overdue && !sim.M.cleanReady) { dueNag = 1.6f; OrbitSfx.Play("tick", 0.6f, 0.6f, 0.05f); return; }   // 납부일 — 갚기 · 대출 · 파산 중 하나를 먼저
-            bayOpen = false; flow = 0; lobby = false;
+            bayOpen = false; flow = 0; lobby = false; charmKick = 1.2f;
             prevBestChain = sim.M.bestChain; prevBestPack = sim.M.bestPack; runNewsFrom = sim.M.news.Count;
             showResult = false; bankruptArmed = false;
             if (sim.Mk != null) { var ms = sim.Mk.M.st; runStockSh = new double[ms.Count]; runStockPx = new double[ms.Count]; for (int i = 0; i < ms.Count; i++) { runStockSh[i] = ms[i].shares; runStockPx[i] = ms[i].price; } }   // 📈 이번 판 주식 통계용
@@ -377,7 +377,7 @@ namespace SalvageRun.Orbit
                 float a = 1 - k / 0.55f, sc = 1 + k * 3.2f;
                 var m = GUI.matrix;
                 GUIUtility.ScaleAroundPivot(new Vector2(sc, sc), new Vector2(ox + 480, 190));
-                GUI.color = new Color(1, 1, 1, a); GUI.DrawTexture(new Rect(ox, 0, 960, 600), hullTex); GUI.color = Color.white;
+                GUI.color = new Color(1, 1, 1, a); GUI.DrawTexture(new Rect(ox, 0, 960, 600), CockTex(sim.Ship) ?? hullTex); GUI.color = Color.white;
                 GUI.matrix = m;
             }
             // 도착 제목
@@ -836,11 +836,16 @@ namespace SalvageRun.Orbit
             if (hullTex == null || hullShip != sim.Ship) { hullShip = sim.Ship; BuildHull(Th); }
             // 선체 — 가운데 960 밖(넓은 화면)은 바탕색
             GUI.color = (Color)Th.bg; GUI.DrawTexture(new Rect(0, 0, ox + 1, RefH), white); GUI.DrawTexture(new Rect(ox + 959, 0, vw - ox - 959, RefH), white); GUI.color = Color.white;
-            GUI.DrawTexture(new Rect(ox, 0, 960, 600), hullTex);
-            GUI.color = Th.rivet;                                             // 리벳
-            for (int i = 0; i <= 12; i++) GUI.DrawTexture(new Rect(ox + 198 + 564 * i / 12f - 2, 30, 4, 4), texDisc);
-            for (int i = 0; i <= 18; i++) { float x = 36 + i * 49; GUI.DrawTexture(new Rect(ox + x - 2, 365 + (x < 126 || x > 834 ? 12 : 0), 4, 4), texDisc); }
-            GUI.color = Color.white;
+            var cockArt = CockTex(sim.Ship);
+            if (cockArt != null) { GUI.DrawTexture(new Rect(ox, 0, 960, 600), cockArt); CockDeco(sim.Ship); }   // 🎨 배마다 도트 조종실 · 흔들리는 소품 (09-26 사장님 「색놀이만 하면 별로 · 키링 같은 거」)
+            else
+            {
+                GUI.DrawTexture(new Rect(ox, 0, 960, 600), hullTex);
+                GUI.color = Th.rivet;                                             // 리벳
+                for (int i = 0; i <= 12; i++) GUI.DrawTexture(new Rect(ox + 198 + 564 * i / 12f - 2, 30, 4, 4), texDisc);
+                for (int i = 0; i <= 18; i++) { float x = 36 + i * 49; GUI.DrawTexture(new Rect(ox + x - 2, 365 + (x < 126 || x > 834 ? 12 : 0), 4, 4), texDisc); }
+                GUI.color = Color.white;
+            }
 
             // 위 — 돈 (창 위 가운데)
             big.fontSize = 22;   // 도트 글꼴 11의 배수 (정돈 5)

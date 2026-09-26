@@ -42,6 +42,61 @@ namespace SalvageRun.Orbit
         ShipTheme Th => Themes[sim != null ? Mathf.Clamp(sim.Ship, 0, Themes.Length - 1) : 0];
         static int hullShip = -1;
 
+        // ───────── 🎨 도트 조종실 (Resources/cockpit/cock_{배}) · 소품 — 없으면 예전 코드 그림(BuildHull)
+        static readonly Texture2D[] cockTex = new Texture2D[8]; static readonly bool[] cockTried = new bool[8];
+        static readonly System.Collections.Generic.Dictionary<string, Texture2D> propTex = new System.Collections.Generic.Dictionary<string, Texture2D>();
+        static Texture2D CockTex(int s) { if (s < 0 || s >= 8) return null; if (!cockTried[s]) { cockTried[s] = true; cockTex[s] = Resources.Load<Texture2D>("cockpit/cock_" + s); } return cockTex[s]; }
+        static Texture2D Prop(string n) { if (!propTex.TryGetValue(n, out var t)) { t = Resources.Load<Texture2D>("cockpit/" + n); propTex[n] = t; } return t; }
+        float charmKick; int decoFlow = -1;
+
+        /// <summary>그림을 pivot 둘레로 돌려 그린다 (GUI.matrix 가 배율을 들고 있어서 직접 곱한다)</summary>
+        void DrawRot(Rect r, Texture2D t, Vector2 pivot, float deg)
+        {
+            var m = GUI.matrix;
+            GUI.matrix = m * Matrix4x4.TRS(pivot, Quaternion.Euler(0, 0, deg), Vector3.one) * Matrix4x4.TRS(-pivot, Quaternion.identity, Vector3.one);
+            GUI.DrawTexture(r, t);
+            GUI.matrix = m;
+        }
+
+        void CockDeco(int s)
+        {
+            if (s != 1) return;
+            float t = Time.unscaledTime, dt = Time.unscaledDeltaTime;
+            if (decoFlow != flow) { if (decoFlow == 0 || decoFlow == 1) charmKick = 1.4f; decoFlow = flow; }   // 출동에서 돌아오면 덜컹
+            var ev = Event.current;
+            if (ev.type == EventType.MouseDown && new Rect(ox + 100, 90, 760, 320).Contains(ev.mousePosition)) charmKick = Mathf.Max(charmKick, 0.9f);   // 창을 누르면 흔들린다
+            if (ev.type == EventType.Repaint) charmKick = Mathf.Max(0, charmKick - dt * 0.6f);
+
+            // 🔦 작업등 — 계기판 양쪽 둥근 등이 가끔 깜빡
+            float fl = (Mathf.Repeat(t, 3.2f) > 1.45f && Mathf.Repeat(t, 3.2f) < 1.55f) || (Mathf.Repeat(t, 5.3f) > 3.9f && Mathf.Repeat(t, 5.3f) < 3.96f) ? 0.25f : 1f;
+            GUI.color = new Color(1f, 0.62f, 0.2f, 0.28f * fl); foreach (float lx in new[] { 168f, 792f }) GUI.DrawTexture(new Rect(ox + lx - 46, 446, 92, 92), texDisc);
+            // 🌫 먼지 — 느리게 떠다니는 알갱이
+            for (int i = 0; i < 22; i++)
+            {
+                float sx = Mathf.Repeat(i * 173.7f + t * (6 + i % 5 * 2), 960), sy = Mathf.Repeat(i * 97.3f - t * (4 + i % 3 * 3), 600);
+                GUI.color = new Color(1f, 0.85f, 0.55f, 0.18f + 0.12f * Mathf.Sin(t * 1.3f + i)); GUI.DrawTexture(new Rect(ox + sx, sy, i % 4 == 0 ? 3 : 2, i % 4 == 0 ? 3 : 2), white);
+            }
+            GUI.color = Color.white;
+            // 🧨 산탄 탄띠 선반 — 왼쪽 아래 벽
+            var sh = Prop("shells_1"); if (sh != null) GUI.DrawTexture(new Rect(ox + 6, 506, 132, 66), sh);
+            // ⛏ 곡괭이 행운 장식 — 창 위에 매달려 흔들린다
+            var ch = Prop("charm_1");
+            if (ch != null)
+            {
+                float ang = Mathf.Sin(t * 2.3f) * 9f + charmKick * Mathf.Sin(t * 8.5f) * 22f;
+                var piv = new Vector2(ox + 612, 96);
+                DrawRot(new Rect(piv.x - 32, piv.y, 64, 128), ch, piv, ang);
+            }
+            // 👷 광부 흔들 인형 — 계기판 위
+            var bo = Prop("bobble_1");
+            if (bo != null)
+            {
+                float ang = Mathf.Sin(t * 4.6f) * (4f + 10f * charmKick);
+                var piv = new Vector2(ox + 578, 414);
+                DrawRot(new Rect(piv.x - 27, piv.y - 72, 54, 72), bo, piv, ang);
+            }
+        }
+
         /// <summary>경고 줄무늬 띠 — 산탄선 방 테두리 · 조종대 가장자리</summary>
         static Texture2D hazardTex;
         void Hazard(Rect r, float a = 1f)
