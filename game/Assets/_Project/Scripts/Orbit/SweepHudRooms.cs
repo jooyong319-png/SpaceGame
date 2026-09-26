@@ -293,7 +293,8 @@ namespace SalvageRun.Orbit
             float ny = ls.y + 24 + 8 * 38 + 6;
             GUI.color = LineC; GUI.DrawTexture(new Rect(ls.x + 6, ny, ls.width - 12, 1), white); GUI.color = Color.white;
             L(ls.x + 8, ny + 4, 120, "<size=11><b><color=#ff8a7a>속보</color></b></size>");
-            for (int k = 0; k < 5 && k < MS.news.Count; k++)
+            int nShow = sim.Lv("a_read") > 0 && open ? 4 : 5;                    // 내부자 줄이 있으면 넷만 — 다섯째가 겹쳤다
+            for (int k = 0; k < nShow && k < MS.news.Count; k++)
             {
                 var nw = MS.news[MS.news.Count - 1 - k];
                 float yy = ny + 24 + k * 30;
@@ -382,8 +383,8 @@ namespace SalvageRun.Orbit
             // 최고 · 최저 표시
             if (n > 0)
             {
-                GUI.Label(new Rect(Cx(iHi) - 40, Yp(hi2) - 16, 80, 16), "<size=9><color=" + UpHex + ">최고 " + Px(hi2) + "</color></size>", center);
-                GUI.Label(new Rect(Cx(iLo) - 40, Yp(lo2) + 1, 80, 16), "<size=9><color=" + DnHex + ">최저 " + Px(lo2) + "</color></size>", center);
+                GUI.Label(new Rect(Mathf.Clamp(Cx(iHi) - 40, g.x, g.xMax - 80), Yp(hi2) - 16, 80, 16), "<size=10><color=" + UpHex + ">최고 " + Px(hi2) + "</color></size>", center);
+                GUI.Label(new Rect(Mathf.Clamp(Cx(iLo) - 40, g.x, g.xMax - 80), Yp(lo2) + 1, 80, 16), "<size=10><color=" + DnHex + ">최저 " + Px(lo2) + "</color></size>", center);
             }
             // 내 평균가 점선 · 현재가 꼬리표
             if (ss.shares > 0)
@@ -397,9 +398,9 @@ namespace SalvageRun.Orbit
             GUI.color = Color.white;
             GUI.Label(new Rect(g.xMax + 2, py - 8, 54, 16), "<size=10><b>" + Px(ss.price) + "</b></size>", center);
             float mins = n * tf * Market.CandleSec / 60f;
-            GUI.Label(new Rect(vr.x, vr.yMax + 2, 120, 16), "<size=9><color=#5f6878>" + (mins >= 1 ? Mathf.RoundToInt(mins) + "분 전" : Mathf.RoundToInt(mins * 60) + "초 전") + "</color></size>", label);
-            GUI.Label(new Rect(vr.x, vr.yMax + 2, vr.width, 16), "<size=9><color=#5f6878>지금</color></size>", rR);
-            GUI.Label(new Rect(vr.xMax + 4, vr.y - 2, 54, 16), "<size=9><color=#5f6878>거래량</color></size>", label);
+            GUI.Label(new Rect(vr.x, vr.yMax, 120, 22), "<size=10><color=#7a8494>" + (mins >= 1 ? Mathf.RoundToInt(mins) + "분 전" : Mathf.RoundToInt(mins * 60) + "초 전") + "</color></size>", label);
+            GUI.Label(new Rect(vr.x, vr.yMax, vr.width, 22), "<size=10><color=#7a8494>지금</color></size>", rR);
+            GUI.Label(new Rect(vr.xMax + 4, vr.y + 6, 54, 22), "<size=10><color=#7a8494>거래량</color></size>", label);
 
             // ── 오른쪽 — 호가 · 주문
             var ob = new Rect(X0 + 726, 54, 226, 380); Box(ob);

@@ -61,7 +61,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(1f, 0.76f, 0.35f, 0.04f); for (float yy = 0; yy < RefH; yy += 4) GUI.DrawTexture(new Rect(0, yy, vw, 1), white);
             GUI.color = Color.white;
             var w = new Rect(ox + 50, 14, 860, 572);
-            GUI.Label(new Rect(w.x, w.y, 400, 34), "<size=24><b><color=#ffdf95>부품 가게</color></b></size>  <size=12><color=#8a9bb3>진열은 출동하고 오면 바뀐다</color></size>", label);
+            GUI.Label(new Rect(w.x, w.y, 900, 34), "<size=24><b><color=#ffdf95>부품 가게</color></b></size>  <size=12><color=#8a9bb3>진열은 출동하고 오면 바뀐다 · 카드에 올리면 끼울 자리가 깜빡인다</color></size>", label);
             GUI.Label(new Rect(w.x, w.y + 6, w.width, 24), "<size=14><color=#8a9bb3>돈</color> <color=#ffdf95>" + KNum.Fmt(S.cash) + "</color>   <color=#d8ccff>열쇠 " + S.keys + "</color></size>", cost);
             // 🚀 내 청소선 — 그림 위에 부품 칸 다섯 (09-25 사장님 「어디에 들어가는지 이해가 어렵다」 · 시안 https://claude.ai/artifact/6bRbq2eUNE6dXqsSgqvHND)
             if (shipTex == null) shipTex = Resources.Load<Texture2D>("ship/hull");
@@ -86,6 +86,7 @@ namespace SalvageRun.Orbit
                     GUI.color = Color.white; GUI.Label(sr, "<size=" + (hot ? 15 : 12) + "><b><color=#" + ColorUtility.ToHtmlStringRGB(c) + ">" + SlotMark[i] + "</color></b></size>", center);
                 }
                 var tp = new Vector2(hr.x + hr.width * SlotTag[i].x, hr.y + hr.height * SlotTag[i].y);
+                GUI.color = new Color(0.03f, 0.04f, 0.06f, 0.82f); GUI.DrawTexture(new Rect(tp.x - Parts.SlotName[i].Length * 6 - 5, tp.y - 8, Parts.SlotName[i].Length * 12 + 10, 16), white); GUI.color = Color.white;   // 배 그림 위에서도 읽히게
                 GUI.Label(new Rect(tp.x - 40, tp.y - 8, 80, 16), "<size=10><b><color=#" + ColorUtility.ToHtmlStringRGB(c) + ">" + Parts.SlotName[i] + "</color></b></size>", center);
             }
             // 칸 목록 — 색 띠 · 모양 · 지금 끼운 것
@@ -114,7 +115,7 @@ namespace SalvageRun.Orbit
 
             // 진열 여섯 — 3 × 2, 오른쪽
             var RR = new Rect(w.x + 266, w.y + 60, w.width - 266, 0);
-            GUI.Label(new Rect(RR.x, RR.y - 22, RR.width, 20), "<size=11><color=#8a9bb3>오늘의 진열 · 출동하고 오면 바뀐다 · 카드에 올리면 끼울 자리가 깜빡인다</color></size>", label);
+            GUI.Label(new Rect(RR.x, RR.y - 22, RR.width, 20), "<size=11><color=#8a9bb3>오늘의 진열</color></size>", label);   // 설명은 제목 줄로 — 「오늘의 반값」 띠에 가려졌다
             float cw = (RR.width - 2 * 12) / 3, ch2 = 222;
             for (int k = 0; k < 6; k++)
             {
