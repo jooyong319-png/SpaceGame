@@ -1840,8 +1840,8 @@ namespace SalvageRun.Orbit
                 case "b_n": return "공격마다 +" + (0.2f * l).ToString("0.#") + "%";
                 case "c_find": return "판마다 " + l + "번";
                 case "s_speed": return "공격마다 " + (1.2f + 0.25f * l).ToString("0.##") + "%";
-                case "b_pr": return "반경 " + (150 + 20 * l);
-                case "b_cap": return (18 + 8 * l) + "개";
+                case "b_pr": return "흡입 +" + 20 * l + "%";
+                case "b_cap": return (40 + 15 * l) + "개";
                 case "b_pf": return "×" + (1 + 0.25f * l).ToString("0.00");
                 case "b_br": return "+" + (15 * l) + "%";
                 case "b_chain": return (25 + 7 * l) + "%";

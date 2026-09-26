@@ -12,8 +12,46 @@ namespace SalvageRun.Orbit.Sim
         public const int Key = 100;                                          // 가게에 올라오는 열쇠
         public static readonly string[] SlotName = { "엔진", "사출기", "선체", "레이더", "부적" };
         public static readonly string[] RarName = { "일반", "희귀", "영웅", "전설" };   // 09-26 사장님 「영웅 등급은 없나?」 — 희귀와 전설 사이
-        public static readonly double[] RarPrice = { 1.5, 6, 12, 25 };  // 판 벌이 배수 — 전설은 1억 바닥까지 (SweepSim.PartPrice · 09-26 사장님 「전설은 정말 나중에야」)
-        public static readonly double[] RarFloor = { 0, 1000000, 10000000, 100000000 };   // 등급 바닥 — 희귀 100만 · 영웅 1천만 · 전설 1억 (09-26 사장님 「등급별로 정말 비싸지게」)
+        public static readonly double[] RarPrice = { 0.4, 2, 6, 18 };   // 09-26 밤 사장님 「등급별로 가격 차이를 많이 둬 · 성능 차이도」   // 09-26 밤 사장님 「가게가 너무 비싸서 절대 못 사겠다」 — 판 벌이의 0.5 · 1.5 · 4 · 10배 (예전 1.5 · 6 · 12 · 25)  // 판 벌이 배수 — 전설은 1억 바닥까지 (SweepSim.PartPrice · 09-26 사장님 「전설은 정말 나중에야」)
+        public static readonly double[] RarFloor = { 0, 10000, 1000000, 100000000 };   // 희귀 1만 · 영웅 100만 · 전설 1억 (전설은 그대로 늦게)   // 등급 바닥 — 희귀 100만 · 영웅 1천만 · 전설 1억 (09-26 사장님 「등급별로 정말 비싸지게」)
+        public static readonly double[] RarBoost = { 1, 1.5, 2.5, 4.5 };      // 등급 성능 배수 — 부품 효과에 곱한다 (음수 · 켜짐/꺼짐은 그대로)
+
+        static Parts()
+        {
+            for (int i = 0; i < Defs.Length; i++)
+            {
+                var d = Defs[i]; var parts = new System.Collections.Generic.List<string>();
+                for (int j = 0; j < d.k.Length; j++)
+                {
+                    if (d.v[j] > 0 && d.k[j] != "fee0") d.v[j] *= RarBoost[d.rar];
+                    if (d.k[j] == "dbl") d.v[j] = System.Math.Min(1, d.v[j]);
+                    parts.Add(Say(d.k[j], d.v[j]));
+                }
+                Defs[i].desc = string.Join(" · ", parts);                           // 설명은 실제 값으로 (등급 배수를 곱한 뒤)
+            }
+        }
+        static string Pc(double v) => System.Math.Round(v * 100, v * 100 < 10 ? 1 : 0).ToString();
+        static string Say(string k, double v)
+        {
+            switch (k)
+            {
+                case "dmg": case "spd": return "화력 +" + Pc(v) + "%";
+                case "rad": return "크기 +" + Pc(v) + "%";
+                case "fuel": return "연료 " + (v >= 0 ? "+" : "−") + System.Math.Round(System.Math.Abs(v), 1) + "초";
+                case "crit": return "치명 +" + Pc(v) + "%";
+                case "dbl": return Pc(v) + "% 확률로 한 발 더";
+                case "drone": return "드론 몫 +" + Pc(v) + "%";
+                case "val": return "모든 값 +" + Pc(v) + "%";
+                case "vault": return "금고 위성 +" + Pc(v) + "%";
+                case "att": return "부착물 +" + Pc(v) + "%";
+                case "hole": return "블랙홀 확률 +" + Pc(v) + "%";
+                case "combo": return "연쇄 보너스 상한 +" + System.Math.Round(v);
+                case "cut": return "빚 상환 몫 −" + Pc(v) + "%p";
+                case "fee0": return "주식 수수료 0";
+                case "div": return "배당 +" + System.Math.Round(v * 100, 3) + "%";
+            }
+            return k + " +" + v;
+        }
         static PartDef P(int slot, int rar, string name, string desc, params object[] kv)
         {
             var k = new string[kv.Length / 2]; var v = new double[kv.Length / 2];
@@ -45,8 +83,8 @@ namespace SalvageRun.Orbit.Sim
             P(4, 1, "연쇄 부적", "연쇄 보너스 상한 +100 (최대 ×2.5)", "combo", 100),
             P(4, 3, "황금 나사", "모든 값 +15% · 화력 +10%", "val", 0.15, "dmg", 0.10),
             // 👑 영웅 (09-26) — 효과 둘, 전설 바로 아래. 새 번호는 맨 뒤에만
-            P(0, 2, "이온 추진기", "화력 +25%", "dmg", 0.15, "spd", 0.10),
-            P(1, 2, "산탄 사출구", "45% 확률로 한 발 더 · 크기 +15%", "dbl", 0.45, "rad", 0.15),
+            P(0, 2, "이온 추진기", "화력 +25%", "dmg", 0.25),
+            P(1, 2, "산탄 사출구", "45% 확률로 한 발 더 · 크기 +15%", "dbl", 0.30, "rad", 0.15),
             P(2, 2, "공명 선체", "드론 몫 +40% · 블랙홀 확률 +0.8%", "drone", 0.40, "hole", 0.008),
             P(3, 2, "금맥 탐지기", "모든 값 +15% · 부착물 +50%", "val", 0.15, "att", 0.5),
             P(4, 2, "연쇄 목걸이", "연쇄 보너스 상한 +150 · 치명 +6%", "combo", 150, "crit", 0.06),

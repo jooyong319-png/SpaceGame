@@ -185,8 +185,8 @@ namespace SalvageRun.Orbit.Sim
             N("b_n", "bh", "블랙홀", "집게로 칠 때 블랙홀이 저절로 열린다 — 단계마다 더 자주", new string[0], 1, 400, 2.6, 4, 0, 1),
             N("c_find", "bh", "연료 보급", "판마다 연료 보급선이 궤도를 돌며 나간다 (단계마다 +1) — 조준점을 대면 연료 +4초, 놓치면 사라진다", new string[0], 3, 240, 1.8, 5, 0, 3),
             N("s_speed", "bh", "재충전", "블랙홀 확률 +0.25%p (단계마다)", new[] { "b_n" }, 3, 500, 1.6, 4, 1, 2),
-            N("b_pr", "bh", "흡입 반경", "블랙홀이 빨아들이는 범위 90에서 +14 (단계마다)", new[] { "b_n" }, 3, 600, 1.6, 6, 1, 0),
-            N("b_cap", "bh", "붕괴 한계", "블랙홀이 터지기 전 삼키는 수 22개에서 +9 (단계마다)", new[] { "b_n" }, 3, 660, 1.6, 6, 2, 1),
+            N("b_pr", "bh", "흡입 속도", "멀리 있는 것도 더 빨리 끌려온다 +20% (단계마다) — 블랙홀은 화면 전체를 빨아들인다", new[] { "b_n" }, 3, 600, 1.6, 6, 1, 0),
+            N("b_cap", "bh", "붕괴 한계", "블랙홀이 터지기 전 삼키는 수 40개에서 +15 (단계마다)", new[] { "b_n" }, 3, 660, 1.6, 6, 2, 1),
             N("b_pf", "bh", "흡입 세기", "빨아들이는 힘 +25% (단계마다)", new[] { "b_pr" }, 4, 1800, 1.6, 5, 2, 0),
             N("b_br", "bh", "폭발 반경", "폭발 범위 +15% (단계마다)", new[] { "b_cap" }, 4, 1800, 1.6, 6, 3, 1),
             N("b_chain", "bh", "폭발 연쇄", "폭발형 무기(번개 각성 …)의 폭발이 또 터질 확률 · 연쇄 한계 +15", new[] { "b_br" }, 4, 2700, 1.6, 8, 3, 3),
@@ -819,9 +819,10 @@ namespace SalvageRun.Orbit.Sim
         public int Grade => 1 + Lv("d_grade");
         public double DroneMag => (1 + 0.25 * Lv("d_mag")) * (1 + Part("drone")) * (Lv("k_drone") > 0 ? 0.75 : 1) * (1 + 0.10 * Lv("i_drone")) * Math.Pow(1.5, Lv("m_drone"));
         public int Bombs => BombsOn ? Math.Min(6, 2 + Lv("b_n") + (S.bill >= 7 ? 1 : 0) + Cr(4)) : 0;
-        public double PullR => (90 + 14 * Lv("b_pr")) * (1 + 0.15 * Lv("m_bh"));                // 09-24 사장님 「블랙홀 크기 많이 줄이고」 150+20 → 90+14
+        public double PullR => 99999;                                                          // 🌀 09-26 밤 사장님 「블랙홀 상향 — 뭐든지 다 빨아들이게」 — 화면 전체 (예전 90 + 14×칸)
+        public double PullBase => 700 * (1 + 0.2 * Lv("b_pr")) * (1 + 0.15 * Lv("m_bh"));    // 멀리 있는 것도 끌려오는 기본 힘 — 「흡입 속도」 칸
         public double PullF => 1 + 0.25 * Lv("b_pf");
-        public int Cap => 22 + 9 * Lv("b_cap");
+        public int Cap => 40 + 15 * Lv("b_cap");
         public double BlastK => (1 + 0.15 * Lv("b_br")) * (1 + 0.06 * Up(10));
         public double ChainP => Math.Min(0.85, 0.3 + 0.07 * Lv("b_chain"));    // 무기 폭발이 또 번질 확률
         public double HoleCd => 16 - 1.5 * Lv("s_speed");     // (옛 시간 충전 — 이제 안 쓴다)
@@ -989,7 +990,7 @@ namespace SalvageRun.Orbit.Sim
         public const int Cons0 = 200;
         public static readonly string[] ConsName = { "연료 캔", "복권 묶음", "과부하 탄창", "감정 할인권" };
         public static readonly string[] ConsDesc = { "다음 판 연료 +10초", "즉석 복권 +3장", "다음 판 화력 +20%", "다음 판 모든 값 +15%" };
-        static readonly double[] ConsPrice = { 0.25, 0.2, 0.45, 0.5 };
+        static readonly double[] ConsPrice = { 0.12, 0.1, 0.22, 0.25 };   // 09-26 밤 절반으로
         public static readonly string[] ConsHelp = { "다음 출동 한 판만 연료가 10초 늘어난다. 끝나면 사라진다", "즉석 복권 세 장을 바로 받는다. 조종실 복권기에서 긁는다", "다음 출동 한 판 동안 모든 무기 화력이 20% 세진다", "다음 출동 한 판 동안 부순 것 값이 전부 15% 더 붙는다" };   // 📖 가게 카드 자세히
         public static bool IsCons(int id) => id >= Cons0 && id < Cons0 + ConsName.Length;
         public double PartPrice(int id)
@@ -1000,7 +1001,7 @@ namespace SalvageRun.Orbit.Sim
             return Math.Max(10, Math.Round(p * jit * (1 - 0.05 * Up(8)) / 10) * 10);
         }
         public double ShelfPrice(int k) => S.shop == null || k < 0 || k >= S.shop.Count ? 0 : Math.Max(10, Math.Round(PartPrice(S.shop[k]) * (k == S.shopSale ? 0.5 : 1) / 10) * 10);
-        public double RerollPrice => S.freeRoll ? 0 : Math.Round(ShopBase * 0.3 * Math.Pow(2, S.rolls) / 10) * 10;   // 누를수록 두 배 · 출동하면 처음부터 (09-26)
+        public double RerollPrice => S.freeRoll ? 0 : Math.Round(ShopBase * 0.15 * Math.Pow(2, S.rolls) / 10) * 10;   // 누를수록 두 배 · 출동하면 처음부터 (09-26)
         public void RollShop()
         {
             if (S.shop == null) S.shop = new List<int>();
@@ -1668,12 +1669,12 @@ namespace SalvageRun.Orbit.Sim
             double pr = PullR, pf = PullF;
             foreach (var d in r.junk)
             {
-                if (d.dead || Types[d.k].big || d.att == Att.Armor) continue;
+                if (d.dead) continue;                                               // 큰 잔해 · 장갑판도 끌려 든다 (09-26 밤)
                 double dx = r.hx - d.x, dy = r.hy - d.y, dist = Math.Sqrt(dx * dx + dy * dy) + 1;
                 if (dist > pr || d.sig == GateSig) continue;               // 🛰 관문은 안 끌려온다
                 if (!d.free) { d.free = true; d.vx = d.vy = 0; }
                 d.capT = 0;
-                double f = 26000 * pf / (dist + 40) / (Types[d.k].heavy ? 2.5 : 1);
+                double f = (26000 * pf / (dist + 40) + PullBase * pf) / (Types[d.k].heavy || Types[d.k].big ? 2.5 : 1);
                 d.vx += (dx / dist * f - dy / dist * f * 0.35) * dt;
                 d.vy += (dy / dist * f + dx / dist * f * 0.35) * dt;
                 d.vx *= 1 - 1.6 * dt; d.vy *= 1 - 1.6 * dt;              // 끌려 드는 동안 감겨 들어간다 (빙빙 돌기만 하지 않게)
