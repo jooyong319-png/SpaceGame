@@ -28,7 +28,7 @@ static class Program
         foreach (var s in seeds) Run(s, verbose);
     }
 
-    public class Result { public bool won; public double minutes; public int bankrupt, bill; public double[] billAt = new double[13], planetAt = new double[9]; public List<double> bankAt = new List<double>(); public double earn50; }
+    public class Result { public bool won; public double minutes; public int bankrupt, bill; public double[] billAt = new double[13], planetAt = new double[9]; public List<double> bankAt = new List<double>(); public List<int> bankBill = new List<int>(); public double earn50; }
     static bool quiet;
     public static Result RunQuiet(int seed) { quiet = true; try { return Run(seed, false); } finally { quiet = false; } }
 
@@ -66,7 +66,7 @@ static class Program
                 if (sim.CanBankrupt && sim.S.overdue)
                 {
                     log.Add($"{Min(),6:0.0}분  {sim.M.company}대  💥 파산 (청구서 {sim.S.bill} · 출동 {sim.S.runs} · 신용 +{sim.S.creditPending})");
-                    rec.bankAt.Add(Min());
+                    rec.bankAt.Add(Min()); rec.bankBill.Add(sim.S.bill);
                     sim.Bankrupt();
                     continue;
                 }
@@ -191,6 +191,7 @@ static class Program
         Console.WriteLine($"📊 밸런스 — 씨앗 {n}   (가운데값 · 10%~90%)");
         Console.WriteLine("  끝(빚 청산)      " + Q(rs.Select(r => r.won ? r.minutes : -1)));
         Console.WriteLine($"  파산 수 평균     {rs.Average(r => r.bankrupt):0.0}  · 첫 파산 " + Q(rs.Select(r => r.bankAt.Count > 0 ? r.bankAt[0] : -1)) + " · 둘째 " + Q(rs.Select(r => r.bankAt.Count > 1 ? r.bankAt[1] : -1)));
+        for (int c = 0; c < 3; c++) { var bb = rs.Where(r => r.bankBill.Count > c).Select(r => r.bankBill[c]).OrderBy(x => x).ToList(); if (bb.Count > 0) Console.WriteLine($"  {c + 1}대 파산 — 갚은 청구서 가운데 {bb[bb.Count / 2]}장 ({bb[0]}~{bb[bb.Count - 1]}) · {bb.Count}/{n}판"); }
         for (int k = 1; k <= 12; k++) Console.WriteLine($"  청구서 {k,2}장 갚음 {Q(rs.Select(r => r.billAt[k]))}   {SweepSim.Bills[k - 1].t} {SweepSim.Bills[k - 1].m:0}");
         foreach (int pi in SweepSim.OrbitOrder) if (pi > 0) Console.WriteLine($"  🪐 {SweepSim.Orbits[pi].name,-6} {Q(rs.Select(r => r.planetAt[pi]))}   허가 {SweepSim.PermitCost(pi):0}");
     }
