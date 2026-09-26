@@ -786,12 +786,12 @@ namespace SalvageRun.Orbit
             return inside;
         }
         static Vector2[] Grow(Vector2[] q, float d) => new[] { q[0] + new Vector2(-d * 1.1f, -d), q[1] + new Vector2(d * 1.1f, -d), q[2] + new Vector2(d * 1.1f, d), q[3] + new Vector2(-d * 1.1f, d) };
-        static void BuildHull()
+        static void BuildHull(ShipTheme t)
         {
             const int W = 960, H = 600;
             hullTex = new Texture2D(W, H, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
             var px = new Color32[W * H];
-            Color32 bg = new Color32(7, 11, 17, 255), plate = new Color32(12, 19, 28, 255), rim = new Color32(42, 59, 82, 255), edge = new Color32(59, 81, 112, 255);
+            Color32 bg = t.bg, plate = t.plate, rim = t.rim, edge = t.edge;   // 🎨 배 테마 (09-26)
             Vector2[] outer = Grow(WinPoly, 8), inner = Grow(WinPoly, 1.4f);
             var leftPlate = new[] { new Vector2(0, 0), new Vector2(198, 42), new Vector2(126, 336), new Vector2(0, 384) };
             var rightPlate = new[] { new Vector2(W, 0), new Vector2(762, 42), new Vector2(834, 336), new Vector2(W, 384) };
@@ -802,11 +802,11 @@ namespace SalvageRun.Orbit
                     Color32 c;
                     if (InQuad(WinPoly, fx, fy)) c = new Color32(0, 0, 0, 0);
                     else if (InQuad(inner, fx, fy)) c = edge;
-                    else if (InQuad(outer, fx, fy)) c = rim;
+                    else if (InQuad(outer, fx, fy)) c = t.deco == 1 && ((int)(fx + fy) / 8) % 2 == 0 ? new Color32(255, 204, 31, 255) : rim;   // 산탄선 — 창틀 경고 줄무늬
                     else if (fy > 336 && (fy > 384 || InQuad(new[] { new Vector2(0, 384), new Vector2(126, 336), new Vector2(834, 336), new Vector2(W, 384) }, fx, fy) || fy >= 384))
                     {
                         float k = Mathf.InverseLerp(336, H, fy);   // 조종대 — 위가 밝고 아래로 어두워진다
-                        c = Color32.Lerp(new Color32(18, 28, 41, 255), new Color32(10, 16, 25, 255), k);
+                        c = t.deco == 1 && fy < 346 && ((int)(fx + fy) / 8) % 2 == 0 ? new Color32(255, 204, 31, 255) : Color32.Lerp(t.deskTop, t.deskBot, k);   // 산탄선 — 조종대 가장자리 줄무늬
                     }
                     else if (InQuad(leftPlate, fx, fy) || InQuad(rightPlate, fx, fy)) c = plate;
                     else c = bg;
@@ -816,7 +816,7 @@ namespace SalvageRun.Orbit
         }
 
         // 계기판 — 테두리(베젤) · 제목줄 · 안쪽 어두운 화면
-        static readonly Color PlateCol = new Color(0.075f, 0.11f, 0.16f), Bezel = new Color(0.15f, 0.21f, 0.29f), ScreenCol = new Color(0.03f, 0.05f, 0.075f);
+        Color PlateCol => Th.plateCol; Color Bezel => Th.bezel; Color ScreenCol => Th.screen;   // 🎨 배 테마
         bool Plate(Rect r, string cap, string right, Color hot, bool clickable)
         {
             bool hover = clickable && r.Contains(Event.current.mousePosition);
@@ -833,11 +833,11 @@ namespace SalvageRun.Orbit
         void Cockpit()
         {
             var S = sim.S; var M = sim.M;
-            if (hullTex == null) BuildHull();
+            if (hullTex == null || hullShip != sim.Ship) { hullShip = sim.Ship; BuildHull(Th); }
             // 선체 — 가운데 960 밖(넓은 화면)은 바탕색
-            GUI.color = new Color(7 / 255f, 11 / 255f, 17 / 255f); GUI.DrawTexture(new Rect(0, 0, ox + 1, RefH), white); GUI.DrawTexture(new Rect(ox + 959, 0, vw - ox - 959, RefH), white); GUI.color = Color.white;
+            GUI.color = (Color)Th.bg; GUI.DrawTexture(new Rect(0, 0, ox + 1, RefH), white); GUI.DrawTexture(new Rect(ox + 959, 0, vw - ox - 959, RefH), white); GUI.color = Color.white;
             GUI.DrawTexture(new Rect(ox, 0, 960, 600), hullTex);
-            GUI.color = new Color(0.2f, 0.27f, 0.36f);                       // 리벳
+            GUI.color = Th.rivet;                                             // 리벳
             for (int i = 0; i <= 12; i++) GUI.DrawTexture(new Rect(ox + 198 + 564 * i / 12f - 2, 30, 4, 4), texDisc);
             for (int i = 0; i <= 18; i++) { float x = 36 + i * 49; GUI.DrawTexture(new Rect(ox + x - 2, 365 + (x < 126 || x > 834 ? 12 : 0), 4, 4), texDisc); }
             GUI.color = Color.white;
@@ -883,10 +883,10 @@ namespace SalvageRun.Orbit
                 bool press = hover && Mouse.current != null && Mouse.current.leftButton.isPressed;
                 float dip = press ? 10 : 0;                                   // 누르면 몸통이 받침 속으로
                 float glow = due ? 0 : 0.5f + 0.5f * Mathf.Sin(Time.time * 2.4f);
-                Color face = due ? new Color(0.32f, 0.3f, 0.28f) : hover ? new Color(1f, 0.8f, 0.36f) : new Color(0.95f, 0.72f, 0.26f);
-                Color wall = due ? new Color(0.18f, 0.17f, 0.16f) : new Color(0.55f, 0.36f, 0.08f);
+                Color face = due ? new Color(0.32f, 0.3f, 0.28f) : hover ? Th.btnHover : Th.btnFace;
+                Color wall = due ? new Color(0.18f, 0.17f, 0.16f) : Th.btnWall;
                 // 빛 번짐
-                GUI.color = new Color(0.95f, 0.76f, 0.31f, due ? 0 : 0.10f + 0.10f * glow + (hover ? 0.08f : 0)); GUI.DrawTexture(new Rect(cxm - 120, fy0 - 26, 240, 150), texDisc);
+                GUI.color = new Color(Th.btnGlow.r, Th.btnGlow.g, Th.btnGlow.b, due ? 0 : 0.10f + 0.10f * glow + (hover ? 0.08f : 0)); GUI.DrawTexture(new Rect(cxm - 120, fy0 - 26, 240, 150), texDisc);
                 // 받침 (어두운 테 + 그림자)
                 GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(cxm - 92, fy0 + 24, 184, 76), texDisc);
                 GUI.color = new Color(0.1f, 0.13f, 0.18f); GUI.DrawTexture(new Rect(cxm - 88, fy0 + 16, 176, 76), texDisc);
@@ -902,7 +902,7 @@ namespace SalvageRun.Orbit
                 GUI.color = Color.white;
                 // 윗면 글자
                 string word = due ? "납부일" : M.cleanReady ? "청산" : "출동";
-                GUI.Label(new Rect(cxm - fw / 2, fy + 2, fw, fh - 4), "<size=" + (due ? 20 : 28) + "><b><color=" + (due ? "#6a655e" : "#3a2306") + ">" + word + "</color></b></size>", center);
+                GUI.Label(new Rect(cxm - fw / 2, fy + 2, fw, fh - 4), "<size=" + (due ? 20 : 28) + "><b><color=" + (due ? "#6a655e" : Th.btnInk) + ">" + word + "</color></b></size>", center);
                 if (GUI.Button(hit, GUIContent.none, GUIStyle.none) && paidT < 2.4f) Go();
             }
 
@@ -1261,7 +1261,7 @@ namespace SalvageRun.Orbit
             foreach (var x in t.xpar) if (GTileState(x) != 3) return x;
             return -1;
         }
-        string TileName(int k) { var t = gtiles[k]; if (t.stat < 0) return "청소선"; return SweepSim.Nodes[t.stat].name + (SweepSim.Tiles(t.stat) > 1 ? " " + Roman[t.j] : ""); }
+        string TileName(int k) { var t = gtiles[k]; if (t.stat < 0) return "청소선"; return sim.NodeName(t.stat) + (SweepSim.Tiles(t.stat) > 1 ? " " + Roman[t.j] : ""); }
         int GTileState(int k)   // 0 안 보임 · 1 실루엣 · 2 다음 칸 · 3 산 것 (한 번 그릴 때 한 번만 계산 — 부모를 거슬러 가는 재귀가 겹치면 기하급수로 느려진다)
         {
             if (gmemo[k] >= 0) return gmemo[k];
@@ -1506,6 +1506,8 @@ namespace SalvageRun.Orbit
             if (gtiles == null) BuildGraph();
             var S = sim.S;
             GUI.DrawTexture(new Rect(0, 0, vw, RefH), texDim);
+            if (Th.bayTint.a > 0) { GUI.color = Th.bayTint; GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white; }   // 🎨 배 테마
+            if (Th.deco == 1) { Hazard(new Rect(0, 0, vw, 6), 0.9f); Hazard(new Rect(0, RefH - 6, vw, 6), 0.9f); }
             void BayHead()
             {
             // 머리 — 돈 · 청구서 · 궤도일보
@@ -1715,7 +1717,7 @@ namespace SalvageRun.Orbit
             // 설명 길이에 맞춰 키가 자란다 (09-24 글자 잘림 점검 — 긴 설명이 한 줄 칸에서 잘렸다)
             if (tipWrap == null) tipWrap = new GUIStyle(center) { wordWrap = true, fontSize = 13 };
             const float TipW = 340;
-            float dh = vis == 1 ? 22 : Mathf.Max(22, tipWrap.CalcHeight(new GUIContent(n.desc), TipW - 24));
+            float dh = vis == 1 ? 22 : Mathf.Max(22, tipWrap.CalcHeight(new GUIContent(sim.NodeDesc(t.stat)), TipW - 24));
             bool keyNote = vis != 3 && vis != 1 && SweepSim.KeyNodes.Contains(n.id) && sim.State(t.stat) != NodeSt.Locked && sim.State(t.stat) != NodeSt.Hidden;
             var r = new Rect(at.x + tile / 2 + 14, at.y - 70, TipW, vis == 1 ? 96 : 138 + dh + (keyNote ? 18 : 0));
             if (r.xMax > vw - 8) r.x = at.x - tile / 2 - 14 - r.width;
@@ -1731,9 +1733,9 @@ namespace SalvageRun.Orbit
                 { int bk = BlockTile(k); GUI.Label(new Rect(r.x, r.y + 52, r.width, 20), bk >= 0 ? "「" + TileName(bk) + "」 사면 무엇인지 보인다" : "앞 칸을 사면 무엇인지 보인다", center); }
                 return;
             }
-            string nm = n.name + (SweepSim.Tiles(t.stat) > 1 ? " " + Roman[t.j] : "");
+            string nm = sim.NodeName(t.stat) + (SweepSim.Tiles(t.stat) > 1 ? " " + Roman[t.j] : "");
             GUI.Label(new Rect(r.x, r.y + 4, r.width, 28), "<color=#d9b98a>" + nm + "</color>", title);
-            GUI.Label(new Rect(r.x + 12, r.y + 42, r.width - 24, dh), n.desc, tipWrap);
+            GUI.Label(new Rect(r.x + 12, r.y + 42, r.width - 24, dh), sim.NodeDesc(t.stat), tipWrap);
             float oy = dh - 22;                                          // 설명이 길어진 만큼 아래 줄을 내린다
             GUI.color = new Color(0.3f, 0.28f, 0.24f); GUI.DrawTexture(new Rect(r.x + 24, r.y + 70 + oy, r.width - 48, 1), white); GUI.DrawTexture(new Rect(r.x + 24, r.y + 98 + oy, r.width - 48, 1), white); GUI.color = Color.white;
             int from = t.j == 1 ? 0 : SweepSim.TileLv(t.stat, t.j - 1), to = SweepSim.TileLv(t.stat, t.j);

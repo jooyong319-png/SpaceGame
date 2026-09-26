@@ -532,6 +532,15 @@ namespace SalvageRun.Orbit.Sim
         public bool ShipOwned(int i) => i == 0 || (M.shipsOwned & (1 << i)) != 0;
         public bool BuyShip(int i) { if (i <= 0 || i >= Ships.Length || ShipOwned(i) || M.credit < Ships[i].price) return false; M.credit -= Ships[i].price; M.shipsOwned |= 1 << i; M.ship = i; return true; }
         public void SelectShip(int i) { if (i >= 0 && i < Ships.Length && ShipOwned(i)) M.ship = i; }
+        // 🎨 트리 칸 이름 · 설명 — 배마다 (산탄선이면 빔 칸이 산탄 칸으로 읽힌다 · 09-26)
+        static readonly System.Collections.Generic.Dictionary<string, string[]> ScatterNode = new System.Collections.Generic.Dictionary<string, string[]>
+        {
+            { "c_pow", new[] { "산탄 위력", "알 하나 피해 +1 (단계마다) — 가까이 쏠수록 더 세다" } },
+            { "c_rad", new[] { "산탄 퍼짐", "퍼지는 원 반지름 +6 (단계마다) — 처음부터 38" } },
+            { "c_spd", new[] { "산탄 증폭", "산탄 화력 +8% (단계마다)" } },
+        };
+        public string NodeName(int i) => Ship == 1 && ScatterNode.TryGetValue(Nodes[i].id, out var a) ? a[0] : Nodes[i].name;
+        public string NodeDesc(int i) => Ship == 1 && ScatterNode.TryGetValue(Nodes[i].id, out var a) ? a[1] : Nodes[i].desc;
         public double ScatterR => (38 + 6 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));   // 산탄 — 처음부터 넓다
 
         // ───────────────────────── 의뢰 (§4-4) — kind: 0 금고 1 연료통 2 조각 3 위성 4 연쇄 5 탱크 6 압축 7 큰 잔해 8 압류
