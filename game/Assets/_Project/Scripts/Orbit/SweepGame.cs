@@ -150,6 +150,22 @@ namespace SalvageRun.Orbit
             sim = new SweepSim(s, m);
         }
 
+        // 📝 09-26 사장님 「내 기준으로 청구서를 맞추자」 — 판이 끝날 때마다 한 줄 (에디터에서만 · SalvageRun/playlog.tsv)
+        void PlayLog()
+        {
+#if UNITY_EDITOR
+            try
+            {
+                var S = sim.S; var R = sim.R; var g = sim.GateJunk;
+                double h = 0, m = 0; for (int i = 0; i < SweepSim.NodeCount; i++) { var nd = SweepSim.Nodes[i]; if (nd.id.StartsWith("p_")) continue; h += System.Math.Min(S.lv[i], nd.max); m += nd.max; }
+                string path = Application.dataPath + "/../../playlog.tsv";
+                if (!System.IO.File.Exists(path)) System.IO.File.AppendAllText(path, "시각\t분\t회사\t판\t청구서\t금액\t기한\t연체\t돈\t벌이\t빚\t궤도\t관문수\t관문체력\t트리%\t연쇄" + "\n");
+                System.IO.File.AppendAllText(path, System.DateTime.Now.ToString("MM-dd HH:mm") + "\t" + (sim.M.playSeconds / 60).ToString("0.0") + "\t" + sim.M.company + "\t" + S.runs + "\t" + S.bill + "\t" + System.Math.Round(sim.BillAmount) + "\t" + S.billDue + "\t" + (S.overdue ? 1 : 0) + "\t" + System.Math.Round(S.cash) + "\t" + System.Math.Round(R != null ? R.Earned : 0) + "\t" + System.Math.Round(S.debt) + "\t" + SweepSim.Orbits[S.orbit].name + "\t" + sim.ZoneOpen + "\t" + (g != null ? g.hp + "/" + g.max : "-") + "\t" + (m > 0 ? h / m * 100 : 0).ToString("0") + "\t" + (R != null ? R.chainBest : 0) + "\n");
+            }
+            catch (System.Exception e) { Debug.LogWarning("playlog " + e.Message); }
+#endif
+        }
+
         public void Save()
         {
             if (sim == null) return;
@@ -609,7 +625,7 @@ namespace SalvageRun.Orbit
                     case SwEv.Warn: hud.Banner(e.text, e.k, 2.2f); OrbitSfx.Play("warn", 0.8f); break;
                     case SwEv.EventGo: hud.Banner(e.text, -1, 1.6f); hud.SawEvent(e.k); break;
                     case SwEv.Collector: hud.Banner(e.text, -2, 3f); CollectorShip(); OrbitSfx.Play("warn", 1f); break;
-                    case SwEv.RunEnd: Save(); hud.OnRunEnd(); break;
+                    case SwEv.RunEnd: Save(); hud.OnRunEnd(); PlayLog(); break;
                     case SwEv.Overdue: OrbitSfx.Play("warn", 1f); hud.RadioOverdue(sim.S.bill); break;
                     case SwEv.Act: hud.ShowAct((int)e.v, e.text); flash = Mathf.Max(flash, 0.8f); shake = Mathf.Max(shake, 0.25f); OrbitSfx.Play("ending", 1f); OrbitSfx.Play("launch", 0.8f); Save(); break;
                     case SwEv.BillPaid: hud.OnBillPaid(e.text, (int)e.v); hud.RadioPaid((int)e.v); OrbitSfx.Play("unit", 1f); OrbitSfx.Play("buy", 1f, 0.01f); Save(); break;

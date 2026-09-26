@@ -91,7 +91,7 @@ static class Tests
         if (mins.Count == 0) return;
         mins.Sort();
         Console.WriteLine($"   끝 {mins.Count}/{n} · 분 최소 {mins[0]:0} · 가운데 {mins[mins.Count / 2]:0} · 최대 {mins[^1]:0} · 파산 평균 {banks.Average():0.0} (최대 {banks.Max()})");
-        if (mins[^1] > 300) Fail($"너무 긴 판 {mins[^1]:0}분");
+        if (mins[^1] > 360) Fail($"너무 긴 판 {mins[^1]:0}분");   // 09-26 사장님 「파산을 강요 · 간신히」 — 300 → 360
     }
 
     static void Fuzz(int n)

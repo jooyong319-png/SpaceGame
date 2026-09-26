@@ -206,14 +206,14 @@ namespace SalvageRun.Orbit.Sim
             N("a_ins", "eco", "행운의 부적", "내 종목에 걸릴 나쁜 속보를 피해 간다 (60 · 70 · 80%)", new[] { "a_read" }, 3, 4000, 2.5, 3, 1, 1),
             N("a_big", "eco", "큰손 계좌", "수수료가 줄고 배당이 붙는다", new[] { "a_ins" }, 4, 20000, 3, 3, 1, 1),
             // 🪐 항로 (09-24 사장님 「청구서로 늘리는 방식 말고 정비고에서 통일」) — 옛 허가증. 값은 허가증 값 그대로
-            N("p_moon", "route", "달 항로", "달 궤도에 갈 수 있다 — 값 ×1.5 · 느린 궤도 · 금고 위성이 많다", new string[0], 1, 800, 1, 1, 0, 0),
-            N("p_mars", "route", "화성 항로", "화성 궤도 — 값 ×2.2 · 모래 폭풍 · 얼음 껍질 · 큰 잔해", new[] { "p_moon" }, 1, 15000, 1, 1, 0, 0),
-            N("p_jup", "route", "목성 항로", "목성 궤도 — 값 ×4.5 · 중력이 안쪽으로 모은다 · 장갑판", new[] { "p_belt" }, 1, 2000000, 1, 1, 0, 0),
-            N("p_sat", "route", "토성 항로", "토성 궤도 — 값 ×6.5 · 두 겹 고리 · 케이블 망", new[] { "p_jup" }, 1, 6000000, 1, 1, 0, 0),
-            N("p_belt", "route", "소행성대 항로", "화성과 목성 사이 소행성대 — 값 ×3.2 · 단단한 암석 · 광석", new[] { "p_mars" }, 1, 200000, 1, 1, 0, 0),
-            N("p_ura", "route", "천왕성 항로", "천왕성 궤도 — 값 ×10 · 옆으로 누운 궤도 · 얼음 결정", new[] { "p_sat" }, 1, 15000000, 1, 1, 0, 0),
-            N("p_nep", "route", "해왕성 항로", "해왕성 궤도 — 값 ×15 · 초속 폭풍 · 무거운 잔해", new[] { "p_ura" }, 1, 30000000, 1, 1, 0, 0),
-            N("p_kui", "route", "카이퍼 벨트 항로", "태양계 끝 카이퍼 벨트 — 값 ×24 · 고대 탐사선 · 혜성", new[] { "p_nep" }, 1, 60000000, 1, 1, 0, 0),
+            N("p_moon", "route", "달 항로", "달 궤도에 갈 수 있다 — 값 ×3 · 느린 궤도 · 금고 위성이 많다", new string[0], 1, 800, 1, 1, 0, 0),
+            N("p_mars", "route", "화성 항로", "화성 궤도 — 값 ×9 · 모래 폭풍 · 얼음 껍질 · 큰 잔해", new[] { "p_moon" }, 1, 15000, 1, 1, 0, 0),
+            N("p_jup", "route", "목성 항로", "목성 궤도 — 값 ×81 · 중력이 안쪽으로 모은다 · 장갑판", new[] { "p_belt" }, 1, 2000000, 1, 1, 0, 0),
+            N("p_sat", "route", "토성 항로", "토성 궤도 — 값 ×243 · 두 겹 고리 · 케이블 망", new[] { "p_jup" }, 1, 6000000, 1, 1, 0, 0),
+            N("p_belt", "route", "소행성대 항로", "화성과 목성 사이 소행성대 — 값 ×27 · 단단한 암석 · 광석", new[] { "p_mars" }, 1, 200000, 1, 1, 0, 0),
+            N("p_ura", "route", "천왕성 항로", "천왕성 궤도 — 값 ×729 · 옆으로 누운 궤도 · 얼음 결정", new[] { "p_sat" }, 1, 15000000, 1, 1, 0, 0),
+            N("p_nep", "route", "해왕성 항로", "해왕성 궤도 — 값 ×2187 · 초속 폭풍 · 무거운 잔해", new[] { "p_ura" }, 1, 30000000, 1, 1, 0, 0),
+            N("p_kui", "route", "카이퍼 벨트 항로", "태양계 끝 카이퍼 벨트 — 값 ×6561 · 고대 탐사선 · 혜성", new[] { "p_nep" }, 1, 60000000, 1, 1, 0, 0),
             // ✦ 네 번째 고리 — 곱하기 · 무기 3단계. 목성 항로를 사야 열린다 (09-24 레벨 설계 2막 「외행성 면허」)
             N("m_claw", "claw", "✦ 과충전 포신", "화력 ×1.5 (단계마다 곱한다) — 외행성 면허", new[] { "k_claw" }, 1, 10000000, 6, 3, 0, 0),
             N("m_crit", "claw", "✦ 정밀 조준", "치명타 배수 +1 — 외행성 면허", new[] { "k_claw" }, 1, 16000000, 6, 2, 0, 0),
@@ -676,7 +676,7 @@ namespace SalvageRun.Orbit.Sim
         // ───────────────────────── 🛰 행성 관문 (09-26 사장님 「엄청 안 부서지는 무언가를 두고 그걸 레벨 디자인으로」 · 시안 HTSncyfVCbLX9kZiSBaGwo)
         public static readonly string[] GateNames = { "폐우주정거장", "달 착륙선 잔해", "궤도 엘리베이터", "소행성 채굴기", "두 동강 난 화물선", "얼음 요새", "탐사 모선", "폭풍 관측소" };   // 항로 순위 0~7 (카이퍼는 끝)
         public const int GateSig = 100;                                          // 관문 잔해 표시 (Junk.sig)
-        public const double GateK = 6;                                          // 관문 체력 = 큰 잔해 × 60 (봇으로 맞춤)
+        public const double GateK = 10;                                          // 관문 체력 = 큰 잔해 × 60 (봇으로 맞춤)
         public int Frontier => ZoneOpen;                                         // 가장 먼 열린 행성의 순위
         public bool HasGate => Frontier + 1 < OrbitOrder.Length && !M.endless;  // 카이퍼 · 무한 궤도는 관문 없음
         public string GateName => HasGate ? GateNames[Frontier] : "";
@@ -727,7 +727,7 @@ namespace SalvageRun.Orbit.Sim
             // 🎬 막 전환 (09-24 레벨 설계) — 목성 = 2막 외행성 · 해왕성 = 3막 심우주
             if (i == 3) { Emit(SwEv.Act, 0, 0, 2, 0, "2막 · 외행성"); AddNews(null, "외행성 면허 발급 — 청소선, 목성 너머로", "궤도청이 외행성 청소 면허를 내줬다. 정비고 바깥 고리가 열렸다는 소문이다."); }
             if (i == 7) { Emit(SwEv.Act, 0, 0, 3, 0, "3막 · 심우주"); AddNews(null, "심우주 진입 — 해왕성 궤도에 민간 청소선", "태양이 점처럼 보이는 곳까지 왔다. 마지막 청구서가 기다린다."); }
-            AddNews(null, Orbits[i].name + " 청소 허가 — 민간 청소선 첫 진입", "케슬러 금융이 " + Orbits[i].name + " 궤도 청소 허가증을 내줬다. " + Orbits[i].desc + ". 값은 지구의 " + Orbits[i].mult + "배라고 한다.");
+            AddNews(null, Orbits[i].name + " 청소 허가 — 민간 청소선 첫 진입", "케슬러 금융이 " + Orbits[i].name + " 궤도 청소 허가증을 내줬다. " + Orbits[i].desc + ". 값은 지구의 " + PlanetMulOf(i).ToString("N0") + "배라고 한다.");
             S.orbit = i; RollContract(); Preview();
             if (Mk != null && StockOpen) { string[] sec = { "", "달", "화성", "목성", "관광", "화성", "목성", "관광", "관광" }; Mk.GameEvent("민간 청소선 " + Orbits[i].name + " 진출", "궤도 청소부가 " + Orbits[i].name + " 청소 허가를 땄다. 관련 업계가 들썩인다.", new[] { sec[i], "ship" }, null, 0.14f); }
         }
@@ -989,7 +989,8 @@ namespace SalvageRun.Orbit.Sim
         public double Bo => Orbits[S.orbit].bi + (Orbits[S.orbit].bo - Orbits[S.orbit].bi) * Widen;
         public double BillAmount => S.bill < Bills.Length ? (S.billAmount >= 0 ? S.billAmount : Math.Round(Bills[S.bill].m * BillMul * BillK[S.bill])) * (Lv("k_eco") > 0 ? 1.1 : 1) : 0;
         public static double[] BillK = { 1, 1, 2, 1, 1.2, 1.3, 1.4, 5, 150, 800, 1400, 2000 };   // 📈 09-26 사장님 「모든 청구서가 봇에게 간신히」 — 청구서마다 더 곱하는 수 (봇 「남긴 판」이 0~1 이 되게 맞춤)
-        public const double BillMul = 1.7;                                   // 🧾 09-26 사장님 「청구서 아직 쉬움」 — 청구서 전체 배수 (봇으로 맞춤)
+        public static double BotEarn = 1;                                    // 🤖 봇 전용 — 사장님만큼 연쇄를 못 터뜨리니 벌이를 곱해 준다 (게임에선 늘 1)
+        public const double BillMul = 5.1;                                   // 🧾 09-26 사장님 기록(첫 청구서 5판에 400 · 판당 150) 기준 — 봇의 약 3배로 올림                                   // 🧾 09-26 사장님 「청구서 아직 쉬움」 — 청구서 전체 배수 (봇으로 맞춤)
         void ApplyPerm() { foreach (var kid in M.perm) if (NodeIx.TryGetValue(kid, out int ki) && S.lv[ki] < Nodes[ki].max) S.lv[ki] = Nodes[ki].max; if (S.lv[NodeIx["w_hub"]] < 1) S.lv[NodeIx["w_hub"]] = 1; }   // ⚔ 무기고는 사지 않는다 — 처음부터 열려 있다 (09-26 사장님 「왜 필요한지 모르겠음」)
         public int BankruptKeys => 2 + S.bill / 2;                                // 청구서 7장째 = 열쇠 5
         public bool CanBankrupt => !M.cleanReady && S.bill < Bills.Length && (S.bill >= 3 || S.overdue && S.bill >= 1);
@@ -1009,7 +1010,7 @@ namespace SalvageRun.Orbit.Sim
 
         // ───────────────────────── 트리
         public double Cost(int i) => CostAt(i, S.lv[i]);
-        public const double CostMul = 1.5;                                   // 💰 09-26 사장님 「아직도 너무 싸」 — 칸 값 전체 배수 (봇으로 맞춤)
+        public const double CostMul = 4.5;                                   // 💰 09-26 사장님 「아직도 너무 싸」 — 칸 값 전체 배수 (봇으로 맞춤)
         double CostAt(int i, int l) { var n = Nodes[i]; return Math.Ceiling(CostMul * Math.Pow(ZoneCostBase, ZoneOpen) * n.first * Math.Pow(n.mult, l) * (1 - 0.15 * Cr(2)) * (1 - 0.05 * Lv("e_used"))); }
 
         // 🔴 칸 = 한 번 사기 (사장님 09-23: "한 칸에 1/3 이런식 말고 무조건 다음칸으로 넘어가지는 방식")
@@ -2189,6 +2190,7 @@ namespace SalvageRun.Orbit.Sim
         {
             var r = R;
             if (v <= 0) return;
+            v *= BotEarn;
             if (d.att == Att.Tag && S.bill < Bills.Length)
             {
                 double toBill = v * 1.5;
