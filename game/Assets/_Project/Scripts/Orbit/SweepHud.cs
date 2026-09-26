@@ -575,6 +575,12 @@ namespace SalvageRun.Orbit
             char c = w[w.Length - 1]; if (c < 0xAC00 || c > 0xD7A3) return "로";
             int jong = (c - 0xAC00) % 28; return jong == 0 || jong == 8 ? "로" : "으로";
         }
+        static string Eul(string w)  // 받침이 있으면 「을」
+        {
+            if (string.IsNullOrEmpty(w)) return "를";
+            char c = w[w.Length - 1]; if (c < 0xAC00 || c > 0xD7A3) return "를";
+            return (c - 0xAC00) % 28 == 0 ? "를" : "을";
+        }
         GUIStyle kwrapSt;
         string KWrap(string s, int size, float w)
         {
@@ -1739,7 +1745,7 @@ namespace SalvageRun.Orbit
                 int zo = sim.ZoneOpen, zl = sim.ZoneLeft(zo), zt = 0; for (int i = 0; i < SweepSim.Nodes.Length; i++) if (SweepSim.Zone[i] == zo && SweepSim.ZoneNeed(i)) zt++;
                 bool last = zo + 1 >= SweepSim.OrbitOrder.Length;
                 string zs = sim.HasGate && !sim.GateReady
-                    ? "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> 한 줄 " + sim.TileCap + "칸까지 · <color=#ffb36b>🛰 청구서 " + sim.GateBill + "장을 갚으면 " + sim.GateName + " 관문이 나타난다</color></size>"
+                    ? "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> 한 줄 " + sim.TileCap + "칸까지 · <color=#ffb36b>🛰 청구서 " + sim.GateBill + "장을 갚으면 " + sim.GateName + " 방어막이 풀린다</color></size>"
                     : sim.HasGate
                     ? "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> 한 줄 " + sim.TileCap + "칸까지 · <color=#ffb36b>🛰 " + sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + "%</color> <color=#8a93a3>부수면 " + sim.NextName + "</color></size>"
                     : "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> <color=#8a93a3>— 마지막 항로 · 한도 없음</color></size>";
@@ -1810,7 +1816,7 @@ namespace SalvageRun.Orbit
             if (vis == 3 && SweepSim.Infinite(t.stat)) foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>  <color=#ffdf95>∞ " + sim.S.lv[t.stat] + "번 삼 · 계속 살 수 있다</color>";   // 누적 칸 — 다음 가격 (09-24 친구들 「가격이 안 보인다」)
             else if (vis == 3) foot = "<color=#6fcf97>샀다</color>";
             else if (ns == NodeSt.Locked && n.id.StartsWith("p_")) foot = "<color=#ffb36b>🛰 " + (sim.HasGate ? (sim.GateReady ? "" : "청구서 " + sim.GateBill + "장을 갚으면 나타나는 ") + sim.GateName + " 관문을 부수면 열린다" : "앞 항로부터") + "</color>";   // 🛰 항로 = 관문
-            else if (ns == NodeSt.Locked && sim.CapLocked(t.stat)) foot = "<color=#ffb36b>행성 한도 — " + sim.GateName + "을(를) 부수면 한 칸 더</color>";
+            else if (ns == NodeSt.Locked && sim.CapLocked(t.stat)) foot = "<color=#ffb36b>행성 한도 — " + sim.GateName + Eul(sim.GateName) + " 부수면 한 칸 더</color>";
             else if (ns == NodeSt.Locked && SweepSim.Zone[t.stat] > sim.ZoneOpen) foot = "<color=#ff9b8f>" + SweepSim.ZoneName[SweepSim.Zone[t.stat]] + " 항로를 열면 열린다</color>";
             else if (ns == NodeSt.Locked) foot = SweepSim.Ring4(n.id) ? "<color=#ff9b8f>목성 항로를 열면 — 외행성 면허</color>" : "<color=#ff9b8f>청구서 " + SweepSim.BranchNeed[b] + "을 갚으면 열린다</color>";
             else if (ns == NodeSt.Hidden) { int bk = BlockTile(k); foot = "<color=#ff9b8f>" + (bk >= 0 ? "「" + TileName(bk) + "」 먼저 사야 열린다" : "앞 칸을 먼저 사야 한다") + "</color>"; }   // 어느 칸인지 콕 집어 — 「앞 칸」만으론 이미 산 칸을 또 눌러야 하나 헷갈렸다 (09-25 사장님)

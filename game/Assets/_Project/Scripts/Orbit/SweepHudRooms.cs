@@ -649,7 +649,7 @@ namespace SalvageRun.Orbit
             {
                 bool nextUp = sim.HasGate && show == SweepSim.OrbitOrder[sim.Frontier + 1];
                 GUI.color = new Color(1, 1, 1, fl);
-                GUI.Label(new Rect(p.x + 10, p.y + 170, p.width - 20, 22), nextUp ? "<size=11><color=#ffb36b>🛰 " + (sim.GateReady ? sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + "% — 부수면 열린다" : "청구서 " + sim.GateBill + "장을 갚으면 관문이 나타난다") + "</color></size>" : "<size=11><color=#8a93a3>앞 행성 관문부터</color></size>", center);   // 🛰 09-26 허가증 대신 관문
+                GUI.Label(new Rect(p.x + 10, p.y + 170, p.width - 20, 22), nextUp ? "<size=11><color=#ffb36b>🛰 " + (sim.GateReady ? sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + "% — 부수면 열린다" : "청구서 " + sim.GateBill + "장을 갚으면 관문 방어막이 풀린다") + "</color></size>" : "<size=11><color=#8a93a3>앞 행성 관문부터</color></size>", center);   // 🛰 09-26 허가증 대신 관문
             }
             else
             {
