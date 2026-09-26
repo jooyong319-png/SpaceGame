@@ -858,7 +858,8 @@ namespace SalvageRun.Orbit.Sim
         public double Pow => ClawDmg * DmgMul * clickMul;                                  // 무기 화력 (소수는 확률로)
         int RoundP(double v) => (int)v + (Rnd() < v - (int)v ? 1 : 0);
         public double HpMul => ((1 + 0.35 * S.bill) * Orbits[S.orbit].hp) * (Lv("k_route") > 0 ? 1.2 : 1) * (M.endless ? Math.Pow(1.15, M.depth) : 1);   // 잔해 체력 배율 — 청구서 한 장마다 +35% (09-26 사장님 「너무 쉽게 부서진다」 — 한 방 비율 80~97% 였다)
-        public int BlastDmg => 2 + 2 * ClawDmg;                    // 폭발은 즉사가 아니라 피해
+        public int BlastDmg => 2 + (int)Math.Round(2 * ClawDmg * Math.Pow(DmgMul, BlastPowK));   // 폭발은 즉사가 아니라 피해 · 09-27 화력 배율도 따른다 (예전엔 집게 위력만 — 뒤 행성에서 기뢰 · 분열탄 · 자석이 거의 못 깎았다)
+        public static double BlastPowK = 1;
         public double Crit => 0.03 * Up(4) + 0.05 * Lv("c_crit") + Part("crit") + (Lv("x_claw_arm") > 0 ? 0.1 : 0);
         public int CritX => (Lv("x_claw_arm") > 0 ? 4 : 3) + Lv("m_crit");
         public int DroneCount => DronesOn ? 1 + Lv("d_n") + Lv("d_fact") + Cr(3) + (Lv("k_drone") > 0 ? 4 : 0) + 2 * Lv("m_dcount") : 0;   // 격납고 첫 칸 = 두 대

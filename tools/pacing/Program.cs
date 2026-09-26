@@ -19,6 +19,7 @@ static class Program
     {
         SweepSim.BotEarn = double.TryParse(Environment.GetEnvironmentVariable("EARN"), out double be) ? be : 3;   // 🤖 사장님은 연쇄로 봇의 약 3배를 번다 (09-26 첫 청구서 기록)
         if (double.TryParse(Environment.GetEnvironmentVariable("DVAL"), out double dv)) SweepSim.DroneValK = dv;   // 🛸 드론 값 몫 맞춤용
+        if (double.TryParse(Environment.GetEnvironmentVariable("BPOW"), out double bp)) SweepSim.BlastPowK = bp;   // 💥 폭발이 화력 배율을 얼마나 따르나
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         if (double.TryParse(Environment.GetEnvironmentVariable("LOANMULT"), out double lm)) SweepSim.LoanMult = lm;
         if (args.Length > 0 && args[0] == "zones") { for (int z = 0; z < 6; z++) { double sum = 0; var ids = new List<string>(); for (int i = 0; i < SweepSim.NodeCount; i++) if (SweepSim.Zone[i] == z && SweepSim.ZoneNeed(i)) { sum += SweepSim.Nodes[i].first; ids.Add(SweepSim.Nodes[i].id + ":" + SweepSim.Nodes[i].first); } Console.WriteLine($"구역 {z} {SweepSim.ZoneName[z]} 칸 {ids.Count} 합 {sum:0}"); Console.WriteLine("   " + string.Join(" ", ids)); } return; }
