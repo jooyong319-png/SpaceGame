@@ -27,13 +27,17 @@ namespace SalvageRun.Orbit
         string radioLine; float radioT; bool radioPending;
 
         public void Radio(string line) { radioLine = line; radioPending = true; }
-        public void RadioPaid(int paid) => Radio(RadioLines[Mathf.Clamp(paid, 0, RadioLines.Length - 1)]);
+        public void RadioPaid(int paid)
+        {   // 💬 청구서를 갚으면 한 줄 무전 대신 대화 장면 — 조종실로 돌아오면 뜬다 (SweepHudDialogue.cs)
+            if (paid > 0 && Scenes.ContainsKey("b" + paid)) { dlgPend = "b" + paid; dlgPendT = 1.2f; return; }
+            Radio(RadioLines[Mathf.Clamp(paid, 0, RadioLines.Length - 1)]);
+        }
         public void RadioOverdue(int bill) => Radio(bill < 5 ? "기한 지났다? 납부든 대출이든 오늘 정해." : "기한이 지났습니다. 창구는 열려 있어요, 대표님.");
         public void RadioBankrupt() => Radio("…파산 접수했어. 다음 회사도 우리가 빌려줄게. 그게 우리 일이니까.");
 
         void RadioBox()
         {
-            if (!sim.M.flags.Contains("g:yoon0") && sim.S.bill == 0 && flow == 2 && sim.R.over && !lobby) { sim.M.flags.Add("g:yoon0"); RadioPaid(0); }   // 첫 인사
+            if (!sim.M.flags.Contains("g:yoon0") && sim.S.bill == 0 && flow == 2 && sim.R.over && !lobby) { sim.M.flags.Add("g:yoon0"); DlgStart("pro", true); }   // 첫 인사 — 대화 장면으로
             if (radioPending && flow == 2 && sim.R.over && !lobby && radioT <= 0) { radioPending = false; radioT = 7f; OrbitSfx.Play("tick", 0.6f, 0.02f, 0f); }
             if (radioT <= 0 || radioLine == null) return;
             if (flow != 2) { radioT = 0; return; }

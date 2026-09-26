@@ -114,6 +114,8 @@ namespace SalvageRun.Orbit
             dueNag = Mathf.Max(0, dueNag - dt);
             if (launchT > 0) { launchT -= dt; if (launchT <= 0) OrbitSfx.Play("tick", 0.7f); }
             var kb = Keyboard.current;
+            DlgTriggers();                                                     // 💬 대화창 — 떠 있으면 입력을 다 가져간다
+            if (DlgUpdate(kb)) return;
             if (lobby && sim.R.over && !sim.M.won)
             {
                 if (kb != null && kb.escapeKey.wasPressedThisFrame) { settingsOpen = false; wipeAsk = false; }
@@ -134,6 +136,7 @@ namespace SalvageRun.Orbit
             Styles();
             scale = Screen.height / RefH; vw = Screen.width / scale; ox = Mathf.Max(0, (vw - 960) / 2);
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1));
+            if (dlgId != null && (Event.current.isMouse || Event.current.isKey || Event.current.type == EventType.ScrollWheel)) Event.current.Use();   // 대화 중엔 뒤 단추가 눌리지 않게
             Effects();
             if (lobby && sim.R.over && !sim.M.won)
             {   // 🚪 로비 — 켜면 여기부터
@@ -164,6 +167,7 @@ namespace SalvageRun.Orbit
             GuideBar();
             if (sim.R.over && !sim.M.won) RadioBox();                      // 📻 윤 대리
             VolumeButton();
+            DlgDraw();                                                         // 💬 맨 위
         }
 
         SweepRun cardRun; bool cardOk; float cardFlash;
@@ -280,6 +284,7 @@ namespace SalvageRun.Orbit
                 else Screen.SetResolution(Mathf.RoundToInt(Display.main.systemWidth * 0.75f), Mathf.RoundToInt(Display.main.systemHeight * 0.75f), FullScreenMode.Windowed);
             }
             GUI.Label(new Rect(w.x + 24, w.yMax - 30, w.width - 48, 20), "<size=11><color=#8a93a3>저장은 자동 · M = 소리 끄기 · Esc = 닫기</color></size>", label);
+            if (!lobby && sim.R.over && GUI.Button(new Rect(w.x + 24, w.yMax - 66, 130, 26), "<size=12>설명 다시 보기</size>", btnOffC)) { sim.M.flags.Remove("dlg:stock"); sim.M.flags.Remove("dlg:shop"); sim.M.flags.Remove("dlg:news"); settingsOpen = false; OrbitSfx.Play("tick", 0.6f); }   // 💬 증권 · 가게 · 신문 설명을 다시 — 그 방에 다시 들어가면 뜬다
             if (!lobby && sim.R.over && GUI.Button(new Rect(w.xMax - 134, w.yMax - 36, 118, 26), "<size=12>로비로 나가기</size>", btnOff)) { game.Save(); settingsOpen = false; lobby = true; lobbyT = 0; }
             if (changed) SaveSettings();
         }
