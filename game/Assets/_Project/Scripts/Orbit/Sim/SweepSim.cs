@@ -983,7 +983,8 @@ namespace SalvageRun.Orbit.Sim
         public int TotalLv { get { int n = 0; foreach (var l in S.lv) n += l; return n; } }
         public double Widen => 1 + 0.1 * Lv("o_wide");      // 🔴 정비소에서 산다 (사장님 09-23: "맵 크기도 여기서 늘리게")
         public double Bo => Orbits[S.orbit].bi + (Orbits[S.orbit].bo - Orbits[S.orbit].bi) * Widen;
-        public double BillAmount => S.bill < Bills.Length ? (S.billAmount >= 0 ? S.billAmount : Bills[S.bill].m) * (Lv("k_eco") > 0 ? 1.1 : 1) : 0;
+        public double BillAmount => S.bill < Bills.Length ? (S.billAmount >= 0 ? S.billAmount : Math.Round(Bills[S.bill].m * BillMul)) * (Lv("k_eco") > 0 ? 1.1 : 1) : 0;
+        public const double BillMul = 1.7;                                   // 🧾 09-26 사장님 「청구서 아직 쉬움」 — 청구서 전체 배수 (봇으로 맞춤)
         void ApplyPerm() { foreach (var kid in M.perm) if (NodeIx.TryGetValue(kid, out int ki) && S.lv[ki] < Nodes[ki].max) S.lv[ki] = Nodes[ki].max; if (S.lv[NodeIx["w_hub"]] < 1) S.lv[NodeIx["w_hub"]] = 1; }   // ⚔ 무기고는 사지 않는다 — 처음부터 열려 있다 (09-26 사장님 「왜 필요한지 모르겠음」)
         public int BankruptKeys => 2 + S.bill / 2;                                // 청구서 7장째 = 열쇠 5
         public bool CanBankrupt => !M.cleanReady && S.bill < Bills.Length && (S.bill >= 3 || S.overdue && S.bill >= 1);

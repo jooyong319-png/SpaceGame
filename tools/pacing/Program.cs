@@ -203,7 +203,7 @@ static class Program
         Console.WriteLine("  끝(빚 청산)      " + Q(rs.Select(r => r.won ? r.minutes : -1)));
         Console.WriteLine($"  파산 수 평균     {rs.Average(r => r.bankrupt):0.0}  · 첫 파산 " + Q(rs.Select(r => r.bankAt.Count > 0 ? r.bankAt[0] : -1)) + " · 둘째 " + Q(rs.Select(r => r.bankAt.Count > 1 ? r.bankAt[1] : -1)));
         for (int c = 0; c < 3; c++) { var bb = rs.Where(r => r.bankBill.Count > c).Select(r => r.bankBill[c]).OrderBy(x => x).ToList(); if (bb.Count > 0) Console.WriteLine($"  {c + 1}대 파산 — 갚은 청구서 가운데 {bb[bb.Count / 2]}장 ({bb[0]}~{bb[bb.Count - 1]}) · {bb.Count}/{n}판"); }
-        for (int k = 1; k <= 12; k++) Console.WriteLine($"  청구서 {k,2}장 갚음 {Q(rs.Select(r => r.billAt[k]))}   {SweepSim.Bills[k - 1].t} {SweepSim.Bills[k - 1].m:0}");
+        for (int k = 1; k <= 12; k++) Console.WriteLine($"  청구서 {k,2}장 갚음 {Q(rs.Select(r => r.billAt[k]))}   {SweepSim.Bills[k - 1].t} {Math.Round(SweepSim.Bills[k - 1].m * SweepSim.BillMul):0}");
         foreach (int pi in SweepSim.OrbitOrder) if (pi > 0) Console.WriteLine($"  🪐 {SweepSim.Orbits[pi].name,-6} {Q(rs.Select(r => r.planetAt[pi]))}   관문 {SweepSim.GateNames[Math.Max(0, Array.IndexOf(SweepSim.OrbitOrder, pi) - 1)]}");
     }
 
