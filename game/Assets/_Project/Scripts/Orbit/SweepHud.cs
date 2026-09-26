@@ -1765,7 +1765,7 @@ namespace SalvageRun.Orbit
             switch (id)
             {
                 case "c_pow": return "한 방 " + (1 + l);
-                case "c_rad": return l > 0 ? "반지름 " + (22 + 10 * l) : "한 점";
+                case "c_rad": return l > 0 ? "반지름 " + (20 + 5 * l) : "한 점";
                 case "c_spd": return Mathf.Max(0.3f, 0.6f - 0.045f * l).ToString("0.00") + "초";
                 case "a_open": return l > 0 ? "열림" : "잠김";
                 case "w_hub": return l > 0 ? "무기 효과 열림" : "잠김";
