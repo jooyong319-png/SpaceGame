@@ -230,6 +230,7 @@ namespace SalvageRun.Orbit
         void VolumeButton()                                                     // 이름은 그대로 — 이제 ⚙ 설정 단추
         {
             if (vol < 0) LoadSettings();
+            if (lobby) { if (settingsOpen) SettingsWin(); return; }            // 로비엔 메뉴에 설정이 있다 — 구석 단추는 숨김
             var r = new Rect(vw - 58, 8, 50, 22);
             bool ov = r.Contains(Event.current.mousePosition);
             GUI.color = settingsOpen || ov ? new Color(0.24f, 0.19f, 0.08f, 0.95f) : new Color(0.08f, 0.1f, 0.13f, 0.85f); GUI.DrawTexture(r, white);

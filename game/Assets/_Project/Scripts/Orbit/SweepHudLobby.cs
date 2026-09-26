@@ -23,7 +23,7 @@ namespace SalvageRun.Orbit
             for (int i = 0; i < 24; i++)
             {
                 float k = i / 23f;
-                GUI.color = new Color(0.02f, 0.03f, 0.05f, 0.9f * (1 - k * k) * a);
+                GUI.color = new Color(0.02f, 0.03f, 0.05f, 0.92f * (1 - Mathf.SmoothStep(0f, 1f, (k - 0.42f) / 0.58f)) * a);   // 이름 · 단추 뒤는 진하게, 오른쪽으로 옅게
                 GUI.DrawTexture(new Rect(i * vw * 0.025f, 0, vw * 0.025f + 1, RefH), white);
             }
             GUI.color = new Color(1, 1, 1, a);
@@ -51,7 +51,7 @@ namespace SalvageRun.Orbit
             if (HasProgress)
             {
                 int min = Mathf.RoundToInt((float)sim.M.playSeconds / 60f);
-                string info = "(" + sim.M.company + "대) · 청구서 " + Mathf.Min(sim.S.bill + 1, SweepSim.Bills.Length) + "/" + SweepSim.Bills.Length + " · " + (min >= 60 ? min / 60 + "시간 " + min % 60 + "분" : min + "분");
+                string info = "궤도 청소부 " + sim.M.company + "대 · 청구서 " + Mathf.Min(sim.S.bill + 1, SweepSim.Bills.Length) + "/" + SweepSim.Bills.Length + " · " + (min >= 60 ? min / 60 + "시간 " + min % 60 + "분" : min + "분");
                 if (Btn("이어하기", info, true)) LobbyContinue();
                 if (Btn("새로 시작", "처음부터 — 지금 회사와 기록이 지워진다", false)) { wipeAsk = true; OrbitSfx.Play("tick", 0.7f); }
             }
@@ -75,8 +75,10 @@ namespace SalvageRun.Orbit
             GUI.Label(new Rect(w.x + 30, w.y + 60, w.width - 60, 20), "<size=13>아래가 모두 지워지고 되돌릴 수 없다</size>", center);
             string lost = "주식회사 궤도 청소부 (" + M.company + "대) · 청구서 " + Mathf.Min(sim.S.bill + 1, SweepSim.Bills.Length) + "/" + SweepSim.Bills.Length + "\n모은 기사 " + M.news.Count + " · 특종 " + M.scoops + (M.legend > 0 ? " · ★ " + M.legend : "") + (M.bestDepth > 0 ? " · 무한 궤도 " + M.bestDepth + "층" : "") + "\n최고 연쇄 " + M.bestChain;
             GUI.Label(new Rect(w.x + 30, w.y + 88, w.width - 60, 70), "<size=13><color=#c8d0dc>" + lost + "</color></size>", center);
+            var al = btn.alignment; btn.alignment = TextAnchor.MiddleCenter;
             if (GUI.Button(new Rect(w.x + 30, w.yMax - 62, 190, 40), "<size=14><color=#ffb3a8>지우고 새로 시작</color></size>", btn)) { game.WipeAll(); wipeAsk = false; LobbyContinue(); }
             if (GUI.Button(new Rect(w.xMax - 220, w.yMax - 62, 190, 40), "<size=14>취소</size>", btn)) { wipeAsk = false; OrbitSfx.Play("tick", 0.6f); }
+            btn.alignment = al;
         }
     }
 }
