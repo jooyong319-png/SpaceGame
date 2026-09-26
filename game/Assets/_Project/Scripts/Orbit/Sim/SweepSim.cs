@@ -883,6 +883,7 @@ namespace SalvageRun.Orbit.Sim
         public double PartPrice(int id)
         {
             double b = ShopBase, p = id == Parts.Key ? b * 2.5 : IsCons(id) ? b * ConsPrice[id - Cons0] : b * Parts.RarPrice[Parts.Defs[id].rar];
+            if (!IsCons(id) && id != Parts.Key) p = Math.Max(Parts.RarFloor[Parts.Defs[id].rar], p);   // 👑 등급 바닥 — 희귀 100만 · 전설 1억
             double jit = 1 + 0.15 * Math.Sin(id * 12.9898 + S.runs * 78.233);          // 판마다 조금씩 다른 값
             return Math.Max(10, Math.Round(p * jit / 10) * 10);
         }
@@ -900,7 +901,7 @@ namespace SalvageRun.Orbit.Sim
                 if (!key && Rnd() < 0.18) { S.shop.Add(Parts.Key); key = true; continue; }
                 for (int t = 0; t < 30; t++)
                 {
-                    double u = Rnd(); int rar = u < 0.68 ? 0 : u < 0.94 ? 1 : 2;
+                    double u = Rnd(); int rar = u < 0.68 ? 0 : u < 0.94 || S.bill < Parts.LegendBill ? 1 : 2;   // 전설은 할부 2회부터
                     int id = rng.Next(Parts.Defs.Length);
                     if (Parts.Defs[id].rar != rar || used.Contains(id) || S.shop.Contains(id)) continue;
                     S.shop.Add(id); break;

@@ -12,7 +12,9 @@ namespace SalvageRun.Orbit.Sim
         public const int Key = 100;                                          // 가게에 올라오는 열쇠
         public static readonly string[] SlotName = { "엔진", "사출기", "선체", "레이더", "부적" };
         public static readonly string[] RarName = { "일반", "희귀", "전설" };
-        public static readonly double[] RarPrice = { 1, 3, 8 };   // 판 벌이 배수 — 전설 ≈ 여덟 판 (09-26)
+        public static readonly double[] RarPrice = { 1.5, 6, 25 };  // 판 벌이 배수 — 전설은 1억 바닥까지 (SweepSim.PartPrice · 09-26 사장님 「전설은 정말 나중에야」)
+        public static readonly double[] RarFloor = { 0, 1000000, 100000000 };   // 등급 바닥 — 희귀 100만 · 전설 1억 (09-26 사장님 「등급별로 정말 비싸지게」)
+        public const int LegendBill = 5;                          // 청구서 5장을 갚기 전엔 전설이 진열에 안 나온다 (S.bill >= 5 = 할부 2회부터)
         static PartDef P(int slot, int rar, string name, string desc, params object[] kv)
         {
             var k = new string[kv.Length / 2]; var v = new double[kv.Length / 2];
