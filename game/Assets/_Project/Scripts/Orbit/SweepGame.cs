@@ -604,7 +604,7 @@ namespace SalvageRun.Orbit
                         break;
                     case SwEv.Shatter: RingFx(at, Ice, 0.3f, 0.6f); OrbitSfx.Play("pick", 0.7f); break;
                     case SwEv.Warn: hud.Banner(e.text, e.k, 2.2f); OrbitSfx.Play("warn", 0.8f); break;
-                    case SwEv.EventGo: hud.Banner(e.text, -1, 1.6f); break;
+                    case SwEv.EventGo: hud.Banner(e.text, -1, 1.6f); hud.SawEvent(e.k); break;
                     case SwEv.Collector: hud.Banner(e.text, -2, 3f); CollectorShip(); OrbitSfx.Play("warn", 1f); break;
                     case SwEv.RunEnd: Save(); hud.OnRunEnd(); break;
                     case SwEv.Overdue: OrbitSfx.Play("warn", 1f); hud.RadioOverdue(sim.S.bill); break;
@@ -674,7 +674,7 @@ namespace SalvageRun.Orbit
             switch (tier)
             {
                 case 1: shake = Mathf.Max(shake, 0.06f); break;
-                case 2: if (!calm) hitStop = 0.07f; edgeGlow = Mathf.Max(edgeGlow, 0.7f); OrbitSfx.Play("collide", 0.8f); break;
+                case 2: hud?.SawChain(); if (!calm) hitStop = 0.07f; edgeGlow = Mathf.Max(edgeGlow, 0.7f); OrbitSfx.Play("collide", 0.8f); break;
                 case 3: if (!calm) slowMo = 0.8f; edgeGlow = 1f; bandLit = 1f; kessT = 1.4f; kessText = "케슬러!"; OrbitSfx.Play("cine", 1f); break;
                 case 4: if (!calm) flash = 1f; bandLit = 1f; rimLit = 1f; kessT = 2.4f; kessText = "케슬러 연쇄"; OrbitSfx.Play("ending", 0.9f); break;
             }

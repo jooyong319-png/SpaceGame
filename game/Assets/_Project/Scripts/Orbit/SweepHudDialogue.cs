@@ -55,6 +55,20 @@ namespace SalvageRun.Orbit
                         "anc|대표님이 한 일은 전부 기사가 돼요. 조종실 오른쪽 위 모니터를 누르면 지난 기사를 볼 수 있어요.",
                         "anc|「*내일 1면 고르기*」를 누르면 다음 출동 때 어느 기사가 1면에 실릴지 정하실 수 있어요. 1면 소식은 시세를 더 크게 흔들어요.",
                         "anc|…사실 제보 하나를 받았는데요. 케슬러 발사 위성이 *수명보다 훨씬 일찍* 부서진대요. 확인되면 꼭 1면에 싣고 싶어요." } },
+                    { "fuel", new[] {
+                        "yoon|아, 하나 알려 줄게. 이제 청소선은 *쏠 때마다 연료*를 먹어.",
+                        "yoon|빈 데를 겨누면 안 쏘고, 연료도 안 닳아. 가만히 있어도 조금씩은 닳지만.",
+                        "yoon|그러니까 *뭉친 데*를 골라서 쏴. 같은 연료로 더 많이 부수는 게 실력이야.",
+                        "yoon|클릭으로 쏘면 세게 나가는 대신 연료를 더 먹고, 전탄 발사는 한 번에 크게 먹어." } },
+                    { "ev0", new[] { "anc|방금 왼쪽에서 흘러온 건 *연료 보급선*이에요.", "anc|연료통을 부수면 연료가 차요. 판이 그만큼 길어지죠." } },
+                    { "ev1", new[] { "anc|오른쪽 위 *충돌 사고* 보셨죠? 위성끼리 부딪쳐 파편 서른 개가 한꺼번에 쏟아져요.", "anc|흩어지기 전에 뭉친 데를 치면 한 방에 여럿 — *연쇄*가 붙어요." } },
+                    { "ev2", new[] { "anc|*파편 폭풍*은 왼쪽에서 고철이 줄줄이 쏟아지는 거예요.", "anc|크기가 큰 무기로 길목을 막고 서 있으면 저절로 쓸려 들어와요." } },
+                    { "ev3", new[] { "anc|*금고 호송대*가 지나갔어요. 금고 위성 여러 대가 줄지어 돌아요.", "anc|놓치기 전에 부수면 큰돈이에요. 금고는 값이 여러 배거든요." } },
+                    { "ev4", new[] { "anc|방금 건 *대충돌*이에요! 파편 예순 개에 폭탄 달린 위성까지.", "anc|폭탄 위성이 터지면 주변이 한꺼번에 날아가요. 연쇄 대박 기회예요." } },
+                    { "chain", new[] {
+                        "yoon|연쇄 봤어? 부서진 조각이 옆 잔해를 또 부수는 거야.",
+                        "yoon|연쇄가 길수록 값에 *배수*가 붙어. 30 · 80 · 200을 넘을 때 화면이 번쩍이는 게 그거야.",
+                        "yoon|뭉친 데를 노려. 한 방이 수십 방 값을 한다." } },
                     { "b1", new[] { Y(1),
                         "yoon|첫 청구서를 제때 갚는 사람, 생각보다 적어.",
                         "yoon|다음은 *할부 1회*. 이제부터가 진짜 빚이야." } },
@@ -103,6 +117,9 @@ namespace SalvageRun.Orbit
             }
         }
 
+        readonly List<string> dlgQueue = new List<string>();                   // 조종실로 돌아오면 차례로
+        public void SawEvent(int k) { string id = "ev" + k; if (!sim.M.flags.Contains("dlg:" + id) && !dlgQueue.Contains(id)) dlgQueue.Add(id); }
+        public void SawChain() { if (!sim.M.flags.Contains("dlg:chain") && !dlgQueue.Contains("chain")) dlgQueue.Add("chain"); }
         string dlgId, dlgPend; int dlgI; float dlgShown, dlgHold, dlgRep, dlgAge, dlgPendT; bool dlgLog;
         Rect dlgSkipR, dlgLogR; GUIStyle dlgText;
         public bool DlgOn => dlgId != null;
@@ -146,6 +163,9 @@ namespace SalvageRun.Orbit
                 return;
             }
             if (sim.M.won) return;
+            if (flow == 2 && dlgQueue.Count > 0) { var q = dlgQueue[0]; dlgQueue.RemoveAt(0); DlgStart(q); return; }
+            if (flow == 2 && sim.S.runs > 0) DlgStart("fuel");
+            if (dlgId != null) return;
             if (flow == 4 && sim.StockOpen) DlgStart("stock");
             else if (flow == 5 && sim.ShopOpen) DlgStart("shop");
             else if (newsOpen) DlgStart("news");

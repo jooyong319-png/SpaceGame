@@ -148,6 +148,14 @@ namespace SalvageRun.Orbit.Sim
         };
         public static readonly string[] FormNames = { "무리", "탱크 사슬", "케이블 망", "호송대", "난파 구역" };
         public static readonly string[] EventNames = { "연료 보급선", "충돌 사고", "파편 폭풍", "금고 호송대", "대충돌" };
+        public static readonly string[] EventHint = { "왼쪽에서 연료통 다섯 · 부수면 연료가 찬다", "오른쪽 위에 파편 서른 · 뭉쳤을 때 쓸면 연쇄", "왼쪽에서 고철이 쏟아진다 · 길목을 막아라", "금고 위성 줄이 지나간다 · 놓치기 전에", "오른쪽 위에 파편 예순 · 폭탄 위성도 섞였다" };   // 09-26 사장님 「뭐가 되는 건데?」
+        public const double FuelIdle = 0.5, ShotFuel = 0.5, ClickFuel = 0.4, VolleyFuel = 2;   // ⛽ 연료 — 가만히 · 쏠 때(간격 비례) · 클릭 한 방 · 전탄
+        bool TargetNear(double x, double y)
+        {   // 조준점 근처에 부술 잔해가 있나 — 없으면 주 무기가 쉰다
+            double lim = Math.Max(Math.Max(ClawR, PickR), 30) + 24;
+            foreach (var d in R.junk) { if (d.dead || d.fade < 0.3) continue; double dx = d.x - x, dy = d.y - y; if (dx * dx + dy * dy < lim * lim) return true; }
+            return false;
+        }
 
         // ───────────────────────── 트리 스물네 칸 (§8-2)
         public struct Node { public string id, branch, name, desc; public string[] par; public int seg, max; public double first, mult; public int depth, lane; }
@@ -618,7 +626,7 @@ namespace SalvageRun.Orbit.Sim
         public bool FireVolley()
         {
             if (!VolleyReady) return false;
-            var r = R; r.volley = 0; r.volleyT = VolleyDur[VolleyLv]; r.volleyNext = 0.3; Emit(SwEv.Volley, r.ax, r.ay, OwnedWeapons, 0, "전탄 발사!");
+            var r = R; r.fuel = Math.Max(0, r.fuel - VolleyFuel); r.volley = 0; r.volleyT = VolleyDur[VolleyLv]; r.volleyNext = 0.3; Emit(SwEv.Volley, r.ax, r.ay, OwnedWeapons, 0, "전탄 발사!");
             return true;
         }
         void VolleyTick(double dt)
@@ -678,7 +686,9 @@ namespace SalvageRun.Orbit.Sim
             S.orbit = i; RollContract(); Preview();
             if (Mk != null && StockOpen) { string[] sec = { "", "달", "화성", "목성", "관광", "화성", "목성", "관광", "관광" }; Mk.GameEvent("민간 청소선 " + Orbits[i].name + " 진출", "궤도 청소부가 " + Orbits[i].name + " 청소 허가를 땄다. 관련 업계가 들썩인다.", new[] { sec[i], "ship" }, null, 0.14f); }
         }
-        public double FuelMax => Math.Max(12, ((30 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.2 * Cr(0)) + Part("fuel")) * (Lv("k_claw") > 0 ? 0.85 : 1)) * (1 + 0.25 * Lv("m_fuel"));
+        public double FuelMax => Math.Min(FuelCap, FuelRaw);   // ⛽ 09-26 사장님 「30초도 김」 — 한 판은 20초 남짓으로 묶는다
+        public const double FuelCap = 22;
+        double FuelRaw => Math.Max(12, ((20 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.2 * Cr(0)) + Part("fuel")) * (Lv("k_claw") > 0 ? 0.85 : 1)) * (1 + 0.25 * Lv("m_fuel"));
         public double Gap => Math.Max(0.3, 0.6 - 0.045 * Lv("c_spd")) / (1 + Part("spd"));
         public double ClawR => Lv("c_rad") > 0 ? (22 + 10 * Lv("c_rad")) * (1 + Part("rad")) : 0;   // 0 = 하나씩
         public bool AutoClaw => true;        // 🔴 자동이 기본 (사장님 09-23: "클릭은 빼자 오토는 기본으로")
@@ -1194,10 +1204,10 @@ namespace SalvageRun.Orbit.Sim
             if (Lv("q_rock") > 0 && !clean && Rnd() < 0.35) r.rockT = Rnd(12, 26);
             // 사건 — 10~14초, 22~26초 (연료 40 넘을 때만)
             var ev = o.events;
-            if (S.runs >= 2 || clean)                                     // 판 중 사건 — 세 번째 출동부터 (청구서와 상관없이)
+            if (S.bill >= 1 || clean)                                     // 판 중 사건 — 첫 청구서를 갚은 뒤부터 (09-26 조작부터 익히게)
             {
-                r.ev1 = ev[rng.Next(ev.Length)]; r.ev1T = Rnd(10, 14);
-                if (r.max >= 40) { r.ev2 = ev[rng.Next(ev.Length)]; r.ev2T = Rnd(22, 26); }
+                r.ev1 = ev[rng.Next(ev.Length)]; r.ev1T = Rnd(6, 9);
+                if (r.max >= 30) { r.ev2 = ev[rng.Next(ev.Length)]; r.ev2T = Rnd(15, 18); }
             }
             r.collector = false;                                        // 추심선은 대출로 바뀌며 쉰다
             // 블랙박스 — 청구서 2 뒤 · 판마다 25%
@@ -1362,7 +1372,7 @@ namespace SalvageRun.Orbit.Sim
             // ★ 떠돌이 소행성
             if (r.rockT > 0 && r.t >= r.rockT) { r.rockT = -1; var o = Orbits[S.orbit]; var rk = Spawn(Big, Rnd(0, 6.28), (o.bi + Bo) / 2, Att.Rock, false, 0.7); rk.hp = rk.max = (int)Math.Round(rk.max * 2.5); Emit(SwEv.Warn, 0, 0, 0, 1, "떠돌이 소행성이 궤도에 끼어들었다!"); }
             if (aim) { r.ax = ax; r.ay = ay; }
-            if (r.fuel > 0) r.fuel -= dt;
+            if (r.fuel > 0) r.fuel -= dt * FuelIdle;                       // ⛽ 가만히 있어도 조금씩 — 쏠 때 더 닳는다 (09-26 사장님 「공격에 연료를 닳게」)
 
             // 🌀 블랙홀 스킬 — 누르면 그 자리에 열려 3초 빨아들이고 저절로 터진다. 칸은 시간 따라 찬다
             r.holeCd = 0;                                               // 시간으로는 안 찬다 — Strike 에서 확률로
@@ -1412,7 +1422,7 @@ namespace SalvageRun.Orbit.Sim
             void Check(ref double t, ref bool warned, int ev)
             {
                 if (t < 0 || ev < 0) return;
-                if (!warned && r.t >= t - 2) { warned = true; Emit(SwEv.Warn, 0, 0, ev, ev == 2 ? 0 : 1, "⚠ " + EventNames[ev] + (ev == 2 ? " — 왼쪽" : ev == 4 || ev == 1 ? " — 오른쪽 위" : "")); }
+                if (!warned && r.t >= t - 2) { warned = true; Emit(SwEv.Warn, 0, 0, ev, ev == 2 ? 0 : 1, "⚠ " + EventNames[ev] + " — " + EventHint[ev]); }
                 if (r.t >= t) { t = -1; FireEvent(ev); }
             }
             Check(ref r.ev1T, ref r.ev1Warn, r.ev1);
@@ -1809,8 +1819,10 @@ namespace SalvageRun.Orbit.Sim
                 if (r.chan[cw] > 0) { r.chan[cw] -= dt; r.chanNext[cw] -= dt; if (r.chanNext[cw] <= 0) { r.chanNext[cw] = Gap * 0.25; Emit(SwEv.Proc, r.chanX[cw], r.chanY[cw], cw, 2); FireAt(cw, r.chanX[cw], r.chanY[cw]); } }   // kk 2 = 이어 쏘기 (포대만)
             VolleyTick(dt);
             if (r.next > 0) return;
+            if (!TargetNear(r.ax, r.ay)) { r.next = 0.05; return; }         // ⛽ 조준점 근처에 잔해가 없으면 쉰다 — 연료도 안 닳는다
             double over = Lv("c_over") > 0 && r.fuel < 5 ? 0.5 : 1;
             r.next = Gap * over * Rate(0);                                    // 기본 공격 간격
+            r.fuel = Math.Max(0, r.fuel - ShotFuel * r.next);                 // ⛽ 쏠 때마다 — 간격에 비례해서 연사가 빨라도 초당 몫은 같다
             Fire(0); Procs();
             if (Rnd() < 0.1 * Lv("c_double") + Part("dbl")) { Fire(0); Procs(); }
         }
@@ -1819,6 +1831,7 @@ namespace SalvageRun.Orbit.Sim
         {
             var r = R; if (r == null || r.over || r.clickCd > 0 || r.fuel <= 0) return false;
             r.clickCd = 0.3; double ox = r.ax, oy = r.ay; r.ax = x; r.ay = y;
+            r.fuel = Math.Max(0, r.fuel - ClickFuel);                         // ⛽ 손으로 쏘면 한 방에 더
             clickMul = 1.3; Fire(0); clickMul = 1; Procs();
             r.ax = ox; r.ay = oy;
             return true;
@@ -2097,7 +2110,7 @@ namespace SalvageRun.Orbit.Sim
         }
 
         // 연료는 탱크를 넘지 않고, 한 판에 되찾는 양도 탱크의 60%까지 — 판이 끝없이 길어지지 않게
-        double AddFuel(double s) { var r = R; double room = Math.Max(0, r.max * 0.6 - r.fuelGot); s = Math.Min(s, Math.Min(room, r.max - r.fuel)); if (s <= 0) return 0; r.fuelGot += s; r.fuel += s; return s; }
+        double AddFuel(double s) { var r = R; double room = Math.Max(0, r.max * 0.25 - r.fuelGot); s = Math.Min(s, Math.Min(room, r.max - r.fuel)); if (s <= 0) return 0; r.fuelGot += s; r.fuel += s; return s; }
 
         void Pay(Junk d, int src, double v, double x, double y, bool coin)
         {
