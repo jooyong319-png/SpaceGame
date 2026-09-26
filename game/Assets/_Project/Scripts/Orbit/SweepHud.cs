@@ -21,7 +21,7 @@ namespace SalvageRun.Orbit
         public bool Blocking => sim != null && (sim.R.over || sim.M.careerOpen || sim.M.won || newsOpen || bayOpen);
 
         // 결산
-        bool showResult, bankruptArmed; public bool newsOpen;
+        bool showResult, bankruptArmed; public bool newsOpen, manualFire = true;
         float dueNag; public bool loanOpen; public float launchT; const float LaunchLen = 1.3f; int permitArmed = -1;
         int prevBestChain, prevBestPack, runNewsFrom;
         SweepRun last;
@@ -218,6 +218,7 @@ namespace SalvageRun.Orbit
         {
             vol = PlayerPrefs.GetFloat("orbit.vol", 0.7f); sfxVol = PlayerPrefs.GetFloat("orbit.sfx", 1f);
             shakeLv = PlayerPrefs.GetInt("orbit.shake", 0); flashLv = PlayerPrefs.GetInt("orbit.flash", 0);
+            manualFire = PlayerPrefs.GetInt("orbit.manual", 1) == 1;          // 👆 해 보시라고 수동이 기본 (09-26)
             ApplySettings();
         }
         void ApplySettings()
@@ -229,7 +230,7 @@ namespace SalvageRun.Orbit
         void SaveSettings()
         {
             PlayerPrefs.SetFloat("orbit.vol", vol); PlayerPrefs.SetFloat("orbit.sfx", sfxVol); PlayerPrefs.SetFloat("orbit.bgm", OrbitMusic.Vol);
-            PlayerPrefs.SetInt("orbit.shake", shakeLv); PlayerPrefs.SetInt("orbit.flash", flashLv); PlayerPrefs.Save();
+            PlayerPrefs.SetInt("orbit.shake", shakeLv); PlayerPrefs.SetInt("orbit.flash", flashLv); PlayerPrefs.SetInt("orbit.manual", manualFire ? 1 : 0); PlayerPrefs.Save();
             ApplySettings();
         }
         void VolumeButton()                                                     // 이름은 그대로 — 이제 ⚙ 설정 단추
@@ -247,7 +248,7 @@ namespace SalvageRun.Orbit
         void SettingsWin()
         {
             GUI.color = new Color(0, 0, 0, 0.55f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
-            var w = new Rect(vw / 2 - 250, 100, 500, 370);
+            var w = new Rect(vw / 2 - 250, 80, 500, 420);
             GUI.color = new Color(0.043f, 0.063f, 0.09f, 0.98f); GUI.DrawTexture(w, white); Frame(w, SweepGame.Amber, 2); GUI.color = Color.white;
             GUI.Label(new Rect(w.x + 22, w.y + 14, 200, 30), "<size=20><b><color=#ffdf95>설정</color></b></size>", label);
             if (GUI.Button(new Rect(w.xMax - 104, w.y + 14, 88, 26), "<size=12>닫기 Esc</size>", btn)) settingsOpen = false;
@@ -274,6 +275,7 @@ namespace SalvageRun.Orbit
             Slider("전체 소리", ref vol);
             Slider("효과음", ref sfxVol);
             Slider("배경음", ref OrbitMusic.Vol);
+            manualFire = Pick("공격", manualFire ? 1 : 0, new[] { "자동", "수동" }) == 1;   // 👆 수동 = 왼쪽 단추를 누르고 있는 동안만 쏜다
             shakeLv = Pick("화면 흔들림", shakeLv, new[] { "켬", "줄임", "끔" });
             flashLv = Pick("번쩍임", flashLv, new[] { "켬", "줄임" });
             int fs = Screen.fullScreenMode == FullScreenMode.Windowed ? 1 : 0;
@@ -538,7 +540,7 @@ namespace SalvageRun.Orbit
             // 첫 5분 — 새 장난감마다 한 줄씩만 (§10)
             string hint = null;
             if (R.clean) hint = null; else
-            if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = "궤도 위에 커서를 대면 청소선이 빔을 쏜다 — 처음엔 한 점씩";
+            if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = manualFire ? "왼쪽 단추를 누르고 있는 동안 청소선이 쏜다 — 잔해 위를 겨누자" : "궤도 위에 커서를 대면 청소선이 빔을 쏜다 — 처음엔 한 점씩";
             else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "블랙홀이 열렸다 — 집게로 칠 때 가끔 저절로 열려 빨아들인다";
             else if (sim.DronesOn && !sim.M.flags.Contains("hint_drone") && R.t < 8) hint = "드론은 알아서 줍는다 — 한 방에 부서지는 것만";
             else if (sim.S.orbit > 0 && !sim.M.flags.Contains("hint_p" + sim.S.orbit) && R.t < 8) hint = PlanetHint[sim.S.orbit];   // 새 행성 첫 판

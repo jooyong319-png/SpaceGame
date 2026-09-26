@@ -1865,6 +1865,7 @@ namespace SalvageRun.Orbit.Sim
                 if (r.chan[cw] > 0) { r.chan[cw] -= dt; r.chanNext[cw] -= dt; if (r.chanNext[cw] <= 0) { r.chanNext[cw] = Gap * 0.25; Emit(SwEv.Proc, r.chanX[cw], r.chanY[cw], cw, 2); FireAt(cw, r.chanX[cw], r.chanY[cw]); } }   // kk 2 = 이어 쏘기 (포대만)
             VolleyTick(dt);
             if (r.next > 0) return;
+            if (ManualFire && !FireHeld) return;                               // 👆 수동 공격 — 누르고 있는 동안만 (09-26 사장님 「공격을 수동으로 바꿔 봐」)
             if (!TargetNear(r.ax, r.ay)) { r.next = 0.05; return; }         // ⛽ 조준점 근처에 잔해가 없으면 쉰다 — 연료도 안 닳는다
             double over = Lv("c_over") > 0 && r.fuel < 5 ? 0.5 : 1;
             r.next = Gap * over * Rate(0);                                    // 기본 공격 간격
@@ -1873,9 +1874,10 @@ namespace SalvageRun.Orbit.Sim
             if (Rnd() < 0.1 * Lv("c_double") + Part("dbl")) { Fire(0); Procs(); }
         }
         // 👆 수동 사격 — 누를 때마다 조준점에 한 방 더 (위력 ×1.5 · 0.2초 간격). 무기 발동 · 전탄 게이지도 굴러간다 (09-24 사장님 37번 「클릭에 요소」)
+        public bool ManualFire, FireHeld = true;                               // 👆 수동 공격 (설정) · 지금 누르고 있나 — 게임이 매 프레임 넣는다. 봇 · 시험은 자동
         public bool ClickShot(double x, double y)
         {
-            var r = R; if (r == null || r.over || r.clickCd > 0 || r.fuel <= 0) return false;
+            var r = R; if (r == null || r.over || r.clickCd > 0 || r.fuel <= 0 || ManualFire) return false;   // 수동 공격일 땐 누르는 게 곧 사격 — 따로 한 방은 없다
             r.clickCd = 0.3; double ox = r.ax, oy = r.ay; r.ax = x; r.ay = y;
             r.fuel = Math.Max(0, r.fuel - ClickFuel);                         // ⛽ 손으로 쏘면 한 방에 더
             clickMul = 1.3; Fire(0); clickMul = 1; Procs();

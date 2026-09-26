@@ -261,7 +261,8 @@ namespace SalvageRun.Orbit
             if (autoMode && sim.VolleyReady) sim.FireVolley();
             if ((SweepHud.VolleyReq || kb != null && kb.spaceKey.wasPressedThisFrame) && hud != null && !hud.Blocking) sim.FireVolley();
             SweepHud.VolleyReq = false;
-            if (TestAim && hud != null && !hud.Blocking) { aimPx = TestPx; aimOn = true; holdOn = TestHold; return; }   // 에디터 시험용 (MCP 자동 플레이)
+            sim.ManualFire = hud != null && hud.manualFire; sim.FireHeld = false;   // 👆 수동 공격 — 아래에서 누르고 있으면 켠다
+            if (TestAim && hud != null && !hud.Blocking) { aimPx = TestPx; aimOn = true; holdOn = TestHold; sim.FireHeld = true; return; }   // 에디터 시험용 (MCP 자동 플레이)
             if (mouse == null || hud == null || hud.Blocking) return;
             Vector2 sp = mouse.position.ReadValue();
             bool inside = !(sp.x < 0 || sp.y < 0 || sp.x > Screen.width || sp.y > Screen.height);
@@ -270,6 +271,7 @@ namespace SalvageRun.Orbit
             bool manual = inside && !hud.overSkill && !hud.overAuto && !hud.overStock && !hud.overVolley && mouse.leftButton.isPressed;
             if ((manual || !autoMode) && !sim.R.over) sim.R.idleT = 0;          // ★ 게으름 보너스 — 손을 대면 처음부터
             autoAiming = autoMode && !sim.R.over && !manual;
+            sim.FireHeld = autoAiming || manual;                               // AUTO 는 알아서 쏜다 · 수동은 누르고 있는 동안
             if (autoAiming) { AutoAim(3); return; }
             if (!inside) return;
             Vector3 w = ScreenToWorld(sp);
