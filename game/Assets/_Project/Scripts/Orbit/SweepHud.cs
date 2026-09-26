@@ -1399,7 +1399,7 @@ namespace SalvageRun.Orbit
             }
             if (newsBanner <= 0 || bannerNews == null) return;
             newsBanner -= Time.unscaledDeltaTime;
-            if (!sim.R.over) return;                                         // 출동 중엔 앵커가 읽는다 — 위 띠가 의뢰 카드를 가렸다 (09-25 점검)
+            if (!sim.R.over || flow == 1) return;                         // 결산 화면도 앵커가 읽는다 — 띠가 「연료 바닥!」 제목을 덮었다 · 출동 중엔 앵커가 읽는다 — 위 띠가 의뢰 카드를 가렸다 (09-25 점검)
             float a = Mathf.Clamp01(newsBanner / 0.5f) * Mathf.Clamp01((5.5f - newsBanner) / 0.25f);
             var b = new Rect(vw / 2 - 300, 50, 600, 46);
             GUI.color = new Color(0.55f, 0.08f, 0.06f, 0.92f * a); GUI.DrawTexture(new Rect(b.x, b.y, 74, b.height), white);

@@ -162,7 +162,7 @@ namespace SalvageRun.Orbit
             if (t < 0 || t > 3.4f || anchorHead == null) return;
             float a = Mathf.Clamp01(t / 0.2f) * Mathf.Clamp01((3.4f - t) / 0.4f);
             float slide = (1 - Mathf.Clamp01(t / 0.25f)) * -300;
-            var r = new Rect(12 + slide, 100, 300, 58);
+            var r = new Rect(12 + slide, flow == 1 ? RefH - 96 : 100, 300, 58);   // 결산 화면에선 왼쪽 아래 빈자리 — 위에선 결산 판을 가렸다
             GUI.color = new Color(0.07f, 0.09f, 0.13f, 0.92f * a); GUI.DrawTexture(r, white);
             Frame(r, new Color(0.7f, 0.09f, 0.06f, a), 1);
             var face = new Rect(r.x + 2, r.y + 2, 54, r.height - 4);
