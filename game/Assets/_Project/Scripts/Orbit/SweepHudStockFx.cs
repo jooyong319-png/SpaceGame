@@ -213,7 +213,7 @@ namespace SalvageRun.Orbit
             }
             if (n == 0) GUI.Label(new Rect(r.x + 9, r.y + 26, r.width - 18, 18), "<size=11><color=#7a6a55>보유 종목 없음</color></size>", label);
             if (myIdx.Count > 3) GUI.Label(new Rect(r.x + 9, r.yMax - 21, r.width - 18, 16), "<size=9><color=#7a6a55>외 " + (myIdx.Count - 3) + "</color></size>", label);
-            GUI.Label(new Rect(r.x + 9, r.yMax - 21, r.width - 18, 16), "<size=9><color=" + (ov ? "#ffdf95" : "#7a6a55") + ">증권 ›</color></size>", ledR ?? cost);
+            GUI.Label(new Rect(r.x + 9, r.yMax - 21, r.width - 18, 16), "<size=11><color=" + (ov ? "#ffdf95" : "#9a8a70") + ">증권 가기 ›</color></size>", ledR ?? cost);
             if (GUI.Button(r, GUIContent.none, GUIStyle.none)) GoFlow(4);
         }
 

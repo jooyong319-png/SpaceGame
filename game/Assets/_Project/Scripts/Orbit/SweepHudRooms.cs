@@ -89,7 +89,7 @@ namespace SalvageRun.Orbit
             var sb = new System.Text.StringBuilder();
             foreach (char ch in word) sb.Append(ch == ' ' ? "\n" : ch + "\n");
             GUI.Label(new Rect(r.x, r.y + 48, w, 180), "<size=14><b><color=#" + hex + ">" + sb.ToString().TrimEnd('\n') + "</color></b></size>", center);
-            if (!string.IsNullOrEmpty(sub)) GUI.Label(new Rect(Mathf.Clamp(r.x - 14, 0, vw - w - 28), r.yMax - 26, w + 28, 22), "<size=10>" + sub + "</size>", center);
+            if (!string.IsNullOrEmpty(sub)) GUI.Label(new Rect(r.x, r.yMax - 38, w, 34), "<size=10>" + sub.Replace(" ", "\n") + "</size>", center);   // 탭 안에 두 줄 — 밖으로 삐져나오지 않게
             return GUI.Button(r, GUIContent.none, GUIStyle.none);
         }
 
