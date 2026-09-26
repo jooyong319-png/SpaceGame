@@ -114,6 +114,7 @@ static class Program
             int seg = Math.Min(8, sim.S.bill + 1);
             sim.StartRun();
             var R = sim.R;
+            long h0 = SweepSim.DbgHits, o0 = SweepSim.DbgOneShot, k0 = SweepSim.DbgKills;
             long ticks = 0;
             while (!R.over)
             {
@@ -142,6 +143,7 @@ static class Program
             if (econOn && R.Earned > 0)
             {
                 E[eb, 3] += 1; E[eb, 4] += R.t; E[eb, 5] += R.Earned;
+                H[eb, 0] += SweepSim.DbgHits - h0; H[eb, 1] += SweepSim.DbgOneShot - o0; H[eb, 2] += SweepSim.DbgKills - k0;
                 if (eCanMin > 0) { E[eb, 6] += eCanMin / R.Earned; E[eb, 7] += 1; }
                 E[eb, 8] += eCanSum / R.Earned;
             }
@@ -167,19 +169,19 @@ static class Program
 
     // 💰 경제 진단 (09-26 사장님 「돈이 전혀 안 모자라 · 스킬이 너무 싸 · 한 판이 너무 길어」)
     static bool econOn; static int eb; static double eCanMin, eCanSum;
-    static double[,] E = new double[12, 9];   // 0 가게 수 · 1 살 게 없음 · 2 트리 보유율 · 3 판 수 · 4 판 길이 합 · 5 수입 합 · 6 싼 칸/판 수입 합 · 7 그 수 · 8 열린 칸 전부/판 수입 합
+    static double[,] E = new double[12, 9], H = new double[12, 3];   // H: 맞은 수 · 한 방 · 부서진 수   // 0 가게 수 · 1 살 게 없음 · 2 트리 보유율 · 3 판 수 · 4 판 길이 합 · 5 수입 합 · 6 싼 칸/판 수입 합 · 7 그 수 · 8 열린 칸 전부/판 수입 합
     static void Econ(int n)
     {
-        econOn = true; E = new double[12, 9];
+        econOn = true; E = new double[12, 9]; H = new double[12, 3];
         for (int i = 1; i <= n; i++) RunQuiet(i * 7 + 1);
         econOn = false;
         Console.WriteLine($"💰 경제 — 씨앗 {n} · 청구서 구간별 평균 (판 길이 = 시뮬 초)");
-        Console.WriteLine("  구간 청구서             판수  판길이   판당수입   싼칸=판  열린칸전부=판  살게없음  트리보유");
+        Console.WriteLine("  구간 청구서             판수  판길이   판당수입   싼칸=판  열린칸전부=판  살게없음  트리보유  한방비율  부서짐당맞음");
         for (int b = 0; b < 12; b++)
         {
             if (E[b, 3] == 0) continue;
             double shops = Math.Max(1, E[b, 0]), runs = E[b, 3];
-            Console.WriteLine($"  {b + 1,2}  {SweepSim.Bills[b].t,-12} {runs / n,5:0.0}  {E[b, 4] / runs,5:0}초  {E[b, 5] / runs,10:0}  {(E[b, 7] > 0 ? E[b, 6] / E[b, 7] : -1),6:0.00}  {E[b, 8] / runs,10:0.0}  {E[b, 1] / shops * 100,6:0}%  {E[b, 2] / shops * 100,6:0}%");
+            Console.WriteLine($"  {b + 1,2}  {SweepSim.Bills[b].t,-12} {runs / n,5:0.0}  {E[b, 4] / runs,5:0}초  {E[b, 5] / runs,10:0}  {(E[b, 7] > 0 ? E[b, 6] / E[b, 7] : -1),6:0.00}  {E[b, 8] / runs,10:0.0}  {E[b, 1] / shops * 100,6:0}%  {E[b, 2] / shops * 100,6:0}%  {(H[b, 0] > 0 ? H[b, 1] / Math.Max(1, H[b, 2]) * 100 : 0),6:0}%  {(H[b, 2] > 0 ? H[b, 0] / H[b, 2] : 0),8:0.00}");
         }
     }
 

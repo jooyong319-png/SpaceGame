@@ -1455,7 +1455,7 @@ namespace SalvageRun.Orbit
             if (GUI.Button(r, GUIContent.none, GUIStyle.none) && ready) CastReq = true;
         }
 
-        static readonly string[] PlanetHint = { "", "달 — 궤도가 느리다 · 금고 위성이 많으니 노려 보자", "화성 — 22초마다 모래 폭풍이 온다 · 얼음 껍질은 먼저 깨 두자", "목성 — 중력이 잔해를 안쪽으로 모은다 · 안쪽 가장자리에 블랙홀을", "토성 — 고리가 두 겹 · 가운데 틈은 비어 있다" , "소행성대 — 단단한 암석과 광석이 많다", "천왕성 — 옆으로 누운 궤도 · 얼음 결정", "해왕성 — 초속 폭풍이 잔해를 흩는다", "카이퍼 벨트 — 태양계 끝 · 고대 탐사선과 혜성" };
+        static readonly string[] PlanetHint = { "", "달 — 궤도가 느리다 · 금고 위성이 많으니 노려 보자", "화성 — 판 중간에 모래 폭풍이 온다 · 얼음 껍질은 먼저 깨 두자", "목성 — 중력이 잔해를 안쪽으로 모은다 · 안쪽 가장자리에 블랙홀을", "토성 — 고리가 두 겹 · 가운데 틈은 비어 있다" , "소행성대 — 단단한 암석과 광석이 많다", "천왕성 — 옆으로 누운 궤도 · 얼음 결정", "해왕성 — 초속 폭풍이 잔해를 흩는다", "카이퍼 벨트 — 태양계 끝 · 고대 탐사선과 혜성" };
         static Texture2D iconTex;
         void DrawIcon(Rect r, string id)
         {

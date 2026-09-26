@@ -45,7 +45,7 @@ namespace SalvageRun.Orbit.Sim
 
         void TraitStart()
         {
-            var r = R; r.sigT = 7; r.spotA = Rnd(0, Math.PI * 2); r.gustT = 12;
+            var r = R; r.sigT = 5; r.spotA = Rnd(0, Math.PI * 2); r.gustT = 8;   // 09-26 판이 짧아져 앞당김
         }
 
         void TraitTick(double dt)
@@ -62,7 +62,7 @@ namespace SalvageRun.Orbit.Sim
             }
             // 나타나기
             r.sigT -= dt;
-            if (r.sigT <= 0 && tr != 3 && tr != 5 && tr != 8) { r.sigT = Rnd(17, 23); SpawnTrait(tr); }
+            if (r.sigT <= 0 && tr != 3 && tr != 5 && tr != 8) { r.sigT = Rnd(9, 12); SpawnTrait(tr); }
             switch (tr)
             {
                 case 3:   // 화성 — 폭풍 동안만
@@ -102,7 +102,7 @@ namespace SalvageRun.Orbit.Sim
                     }
                     else if ((r.gustT -= dt) <= 0)
                     {
-                        r.gustT = Rnd(16, 22); r.gustLeft = 3.5; r.gustA = Rnd(0, Math.PI * 2);
+                        r.gustT = Rnd(9, 12); r.gustLeft = 3.5; r.gustA = Rnd(0, Math.PI * 2);
                         Emit(SwEv.Pop, EX, EY, 0, 3, "★ 돌풍 — 잔해가 한쪽으로 쏠린다");
                         Emit(SwEv.TraitFx, EX + Math.Cos(r.gustA) * SpotRr, EY + Math.Sin(r.gustA) * SpotRr * Tilt, r.gustA, 8);
                     }

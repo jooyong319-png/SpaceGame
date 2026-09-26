@@ -119,13 +119,13 @@ namespace SalvageRun.Orbit.Sim
         public struct DType { public string name; public int hp; public double val, r; public bool heavy, big; }
         public static readonly DType[] Types =
         {
-            new DType { name = "조각",      hp = 1,  val = 1,   r = 4 },
-            new DType { name = "죽은 위성", hp = 3,  val = 6,   r = 7 },
-            new DType { name = "로켓 동체", hp = 5,  val = 14,  r = 9,  heavy = true },
-            new DType { name = "금고 위성", hp = 4,  val = 40,  r = 8 },
+            new DType { name = "조각",      hp = 2,  val = 1,   r = 4 },
+            new DType { name = "죽은 위성", hp = 4,  val = 6,   r = 7 },
+            new DType { name = "로켓 동체", hp = 7,  val = 14,  r = 9,  heavy = true },
+            new DType { name = "금고 위성", hp = 6,  val = 40,  r = 8 },
             new DType { name = "연료통",    hp = 1,  val = 0,   r = 6 },
             new DType { name = "폭발 탱크", hp = 1,  val = 2,   r = 6 },
-            new DType { name = "큰 잔해",   hp = 20, val = 180, r = 17, big = true },
+            new DType { name = "큰 잔해",   hp = 30, val = 180, r = 17, big = true },
         };
         public const int Chip = 0, Sat = 1, Rocket = 2, Vault = 3, Fuel = 4, Tank = 5, Big = 6;
         static bool IsHost(int k) => k == Sat || k == Rocket || k == Vault || k == Big;
@@ -256,7 +256,7 @@ namespace SalvageRun.Orbit.Sim
             N("q_tour", "route", "★ 관광 명소", "한 판에 연쇄 100을 넘기면 관광객이 몰린다 — 토성 고리 관광 주가 ↑", new[] { "p_sat" }, 1, 3000000, 1, 1, 0, 0),
             N("q_rock", "route", "★ 떠돌이 소행성", "가끔 소행성이 궤도에 끼어든다 — 부수면 열쇠(40%) 또는 돈 뭉치", new[] { "p_jup" }, 1, 500000, 1, 1, 0, 0),
             N("q_gold", "hull", "★ 황금 잔해", "가끔 금빛 잔해가 섞인다 — 값 ×3 · 부수면 즉석 복권 (한 판 2장까지)", new[] { "o_wide" }, 1, 40000, 1, 1, 0, 0),
-            N("q_lazy", "drone", "★ 게으름 보너스", "AUTO로 30초 넘게 손을 안 대면 그 판 드론이 한 대 더 나온다", new[] { "d_fix" }, 1, 80000, 1, 1, 0, 0),
+            N("q_lazy", "drone", "★ 게으름 보너스", "AUTO로 12초 넘게 손을 안 대면 그 판 드론이 한 대 더 나온다", new[] { "d_fix" }, 1, 80000, 1, 1, 0, 0),
             // ⚔ 무기 여섯 더 (09-24 설계서 4단계)
             N("w_vac", "arm", "진공 청소기", "공격 때 8% — 조준점에 소용돌이, 0.7초 동안 빨아들인다 · 삼킨 것은 값 +30%", new[] { "w_chain" }, 1, 12000, 1, 1, 0, 0),
             N("w_vac_u", "arm", "진공 청소기 강화", "1단계 확률 ×1.5 · 소용돌이 +30% · 2단계 삼킨 것 값 +60%", new[] { "w_vac" }, 1, 24000, 4, 2, 0, 0),
@@ -686,9 +686,9 @@ namespace SalvageRun.Orbit.Sim
             S.orbit = i; RollContract(); Preview();
             if (Mk != null && StockOpen) { string[] sec = { "", "달", "화성", "목성", "관광", "화성", "목성", "관광", "관광" }; Mk.GameEvent("민간 청소선 " + Orbits[i].name + " 진출", "궤도 청소부가 " + Orbits[i].name + " 청소 허가를 땄다. 관련 업계가 들썩인다.", new[] { sec[i], "ship" }, null, 0.14f); }
         }
-        public double FuelMax => Math.Min(FuelCap, FuelRaw);   // ⛽ 09-26 사장님 「30초도 김」 — 한 판은 20초 남짓으로 묶는다
+        public double FuelMax => Math.Max(10, Math.Min(FuelCap, FuelRaw) + Part("fuel"));   // ⛽ 09-26 사장님 「30초도 김」 — 한 판은 20초 남짓으로 묶는다
         public const double FuelCap = 22;
-        double FuelRaw => Math.Max(12, ((20 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.2 * Cr(0)) + Part("fuel")) * (Lv("k_claw") > 0 ? 0.85 : 1)) * (1 + 0.25 * Lv("m_fuel"));
+        double FuelRaw => Math.Max(12, (20 + 3 * Lv("c_fuel") + 2 * Lv("d_fix")) * (1 + 0.2 * Cr(0)) * (Lv("k_claw") > 0 ? 0.85 : 1)) * (1 + 0.25 * Lv("m_fuel"));   // ⚠ 트리 연료 칸은 상한에 막혀 거의 안 듣는다 — 트리 압축 때 다른 효과로
         public double Gap => Math.Max(0.3, 0.6 - 0.045 * Lv("c_spd")) / (1 + Part("spd"));
         public double ClawR => Lv("c_rad") > 0 ? (22 + 10 * Lv("c_rad")) * (1 + Part("rad")) : 0;   // 0 = 하나씩
         public bool AutoClaw => true;        // 🔴 자동이 기본 (사장님 09-23: "클릭은 빼자 오토는 기본으로")
@@ -702,7 +702,7 @@ namespace SalvageRun.Orbit.Sim
         public double Grit => Lv("q_debt") > 0 && S.debt > 0 ? Math.Min(0.15, S.debt / Math.Max(1, BillAmount) * 0.1) : 0;   // ★ 빚쟁이의 근성
         public double Pow => ClawDmg * DmgMul * clickMul;                                  // 무기 화력 (소수는 확률로)
         int RoundP(double v) => (int)v + (Rnd() < v - (int)v ? 1 : 0);
-        public double HpMul => ((1 + 0.45 * Math.Max(0, S.bill - 2)) * Orbits[S.orbit].hp) * (Lv("k_route") > 0 ? 1.2 : 1) * (M.endless ? Math.Pow(1.15, M.depth) : 1);   // 잔해 체력 배율 — 청구서 3장째부터 한 장마다 +45% (초반은 가볍게)
+        public double HpMul => ((1 + 0.35 * S.bill) * Orbits[S.orbit].hp) * (Lv("k_route") > 0 ? 1.2 : 1) * (M.endless ? Math.Pow(1.15, M.depth) : 1);   // 잔해 체력 배율 — 청구서 한 장마다 +35% (09-26 사장님 「너무 쉽게 부서진다」 — 한 방 비율 80~97% 였다)
         public int BlastDmg => 2 + 2 * ClawDmg;                    // 폭발은 즉사가 아니라 피해
         public double Crit => 0.05 * Lv("c_crit") + Part("crit") + (Lv("x_claw_arm") > 0 ? 0.1 : 0);
         public int CritX => (Lv("x_claw_arm") > 0 ? 4 : 3) + Lv("m_crit");
@@ -724,7 +724,7 @@ namespace SalvageRun.Orbit.Sim
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
         public int ChainMax => R.clean ? 5000 : 40 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 15 * Lv("b_chain");
         // 🌪 모래 폭풍 (화성 · 해왕성) — 22초마다 4.5초. 값 ×1.5 · 왼쪽에서 고철이 몰려온다 (09-24 사장님 36번 「무의미함」)
-        public bool StormOn => R != null && !R.over && !R.clean && Orbits[S.orbit].storm && R.t % 22.0 >= 15 && R.t % 22.0 < 19.5;
+        public bool StormOn => R != null && !R.over && !R.clean && Orbits[S.orbit].storm && R.t % 13.0 >= 6 && R.t % 13.0 < 10.5;   // 09-26 판이 20초 남짓 — 판 중간에 한 번
         public double ValMult => (1 + 0.1 * M.legend) * (M.endless ? Math.Pow(1.15, M.depth) : 1) * (StormOn ? 1.5 : 1) * (R != null ? 1 + R.consVal / 100.0 : 1) * Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (Orbits[S.orbit].mult + (Lv("k_route") > 0 && S.orbit > 0 ? 0.5 : 0) + (S.orbit > 0 ? 0.05 * Lv("i_route") : 0)) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1) * (1 + 0.04 * Lv("i_eco")) * PlanetStockBonus * Math.Pow(1.5, Lv("m_val")) * Math.Pow(1.25, Lv("m_route"));
         public double PlanetStockBonus { get { if (Lv("x_eco_route") <= 0 || Mk == null || S.orbit == 0) return 1; string[] ids = { "", "moon", "mars", "jup", "sat", "", "", "", "" }; if (ids[S.orbit] == "") return 1; for (int i = 0; i < Market.Defs.Length && i < Mk.M.st.Count; i++) if (Market.Defs[i].id == ids[S.orbit] && Mk.M.st[i].shares > 0) return 1.2; return 1; } }   // 새 행성은 종목이 없다
         public double Cut => S.debt > 0 ? Math.Max(0.1, (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) - Part("cut")) : 0;   // 빚이 있으면 판 수입에서 떼어 상환
@@ -1191,7 +1191,7 @@ namespace SalvageRun.Orbit.Sim
             r.consDmg = S.nDmg; r.consVal = S.nVal; S.nFuel = S.nDmg = S.nVal = 0;   // 🧃 가게 소모품 — 이번 판
             r.maxShots = clean ? 6 : Bombs; r.shots = 0;   // 블랙홀은 스킬 — 한 칸 들고 나가서 시간 따라 찬다
             int nfuel = clean ? 0 : Lv("c_find");
-            for (int i = 0; i < nfuel; i++) r.pods.Add(new Pod { kind = 0, t = 9 + i * 7 });
+            for (int i = 0; i < nfuel; i++) r.pods.Add(new Pod { kind = 0, t = 5 + i * 5 });
             R = r; TraitStart();
             var o = Orbits[S.orbit];
             var forms = o.forms;
@@ -1202,13 +1202,13 @@ namespace SalvageRun.Orbit.Sim
             while (Alive() < target) Spawn(-1, -1, -1, null, false);
             foreach (var d in r.junk) d.fade = 1;
             for (int i = 0; i < DroneCount; i++) r.drones.Add(new Drone { a = i * Math.PI * 2 / Math.Max(1, DroneCount), cd = Rnd() });
-            if (Lv("q_rock") > 0 && !clean && Rnd() < 0.35) r.rockT = Rnd(12, 26);
+            if (Lv("q_rock") > 0 && !clean && Rnd() < 0.35) r.rockT = Rnd(5, 12);
             // 사건 — 10~14초, 22~26초 (연료 40 넘을 때만)
             var ev = o.events;
             if (S.bill >= 1 || clean)                                     // 판 중 사건 — 첫 청구서를 갚은 뒤부터 (09-26 조작부터 익히게)
             {
                 r.ev1 = ev[rng.Next(ev.Length)]; r.ev1T = Rnd(6, 9);
-                if (r.max >= 30) { r.ev2 = ev[rng.Next(ev.Length)]; r.ev2T = Rnd(15, 18); }
+                if (r.max >= 24) { r.ev2 = ev[rng.Next(ev.Length)]; r.ev2T = Rnd(13, 16); }
             }
             r.collector = false;                                        // 추심선은 대출로 바뀌며 쉰다
             // 블랙박스 — 청구서 2 뒤 · 판마다 25%
@@ -1369,7 +1369,7 @@ namespace SalvageRun.Orbit.Sim
             M.playSeconds += dt; r.t += dt;
             // ★ 게으름 보너스 — AUTO로 30초 손을 안 대면 드론 두 대 (idleT 는 게임이 손을 대면 0으로)
             r.idleT += dt;
-            if (Lv("q_lazy") > 0 && !r.lazyDone && r.idleT > 30 && DronesOn) { r.lazyDone = true; r.drones.Add(new Drone { a = Rnd(0, 6.28), cd = Rnd() }); Emit(SwEv.Pop, ShipX, ShipY - 20, 0, 1, "게으름 보너스 — 드론 +1"); }
+            if (Lv("q_lazy") > 0 && !r.lazyDone && r.idleT > 12 && DronesOn) { r.lazyDone = true; r.drones.Add(new Drone { a = Rnd(0, 6.28), cd = Rnd() }); Emit(SwEv.Pop, ShipX, ShipY - 20, 0, 1, "게으름 보너스 — 드론 +1"); }
             // ★ 떠돌이 소행성
             if (r.rockT > 0 && r.t >= r.rockT) { r.rockT = -1; var o = Orbits[S.orbit]; var rk = Spawn(Big, Rnd(0, 6.28), (o.bi + Bo) / 2, Att.Rock, false, 0.7); rk.hp = rk.max = (int)Math.Round(rk.max * 2.5); Emit(SwEv.Warn, 0, 0, 0, 1, "떠돌이 소행성이 궤도에 끼어들었다!"); }
             if (aim) { r.ax = ax; r.ay = ay; }
@@ -1987,12 +1987,13 @@ namespace SalvageRun.Orbit.Sim
             Emit(SwEv.SkillReady, r.ax, r.ay, 1);
         }
 
+        public static long DbgHits, DbgOneShot, DbgKills;                      // 📊 봇 진단 (tools/pacing econ) — 맞은 수 · 한 방 · 부서진 수
         void Hit(Junk d, int dmg, int src, bool spread)
         {
             if (d.dead) return;
             if (d.att == Att.Armor && src == 0 && !pierce) dmg = Math.Min(dmg, 1);
             if (d.frz > 0) dmg = (int)Math.Round(dmg * FrzMul);                        // 언 것은 두 배
-            d.hp -= dmg; d.hit = 0.12;
+            bool fresh = d.hp >= d.max; d.hp -= dmg; d.hit = 0.12; DbgHits++; if (fresh && d.hp <= 0) DbgOneShot++;   // 📊 봇 진단 — 단단함
             TraitOnHit(d);                                                      // 🪐 광맥 소행성
             if (d.att == Att.Ice && d.hp <= d.max - 2)
             {
@@ -2054,6 +2055,7 @@ namespace SalvageRun.Orbit.Sim
         bool blastW; int shatterDepth;
         void Kill(Junk d, int src, double mult)
         {
+            DbgKills++;
             if (d.dead) return;
             d.dead = true;
             if (d.frz > 0 && Lv("w_frz") > 0 && shatterDepth < 40) { shatterDepth++; Shatter(d); shatterDepth--; }
