@@ -1590,7 +1590,7 @@ namespace SalvageRun.Orbit
                 else DrawIcon(new Rect(pc.x - isz / 2, pc.y - isz / 2, isz, isz), isRoot ? "R" : n.id);
                 if (!isRoot && SweepSim.KeyNodes.Contains(n.id)) { float kp = sim.S.keys > 0 && next ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3 + k) : 0.3f; GUI.color = new Color(0.71f, 0.61f, 1f, owned ? 0.9f : 0.35f + 0.3f * kp); Frame(new Rect(r.x - 3 * zz, r.y - 3 * zz, r.width + 6 * zz, r.height + 6 * zz), GUI.color, 2f); GUI.color = Color.white; }   // 「열쇠」 글자는 툴팁에서 · 열쇠가 있을 때만 깜빡 (09-26 정돈 14)
                 if (!isRoot && n.max == 1 && System.Array.IndexOf(SweepSim.WeaponNode, n.id) == sim.Weapon && owned) { GUI.color = new Color(1f, 0.55f, 0.5f); GUI.Label(new Rect(pc.x - 40, r.yMax + 2 * zz, 80, 16), "<size=10><b>장착 중</b></size>", center); GUI.color = Color.white; }
-                if (k == recK) { float rp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 4); GUI.color = new Color(1f, 0.87f, 0.4f, 0.55f + 0.45f * rp); Frame(new Rect(r.x - 5 * zz, r.y - 5 * zz, r.width + 10 * zz, r.height + 10 * zz), GUI.color, 2.5f); GUI.color = Color.white; GUI.Label(new Rect(pc.x - 40, r.yMax + 2 * zz, 80, 16), "<size=10><b><color=#ffdf95>추천</color></b></size>", center); }
+                if (k == recK) { float rp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 4); GUI.color = new Color(1f, 0.87f, 0.4f, 0.55f + 0.45f * rp); Frame(new Rect(r.x - 5 * zz, r.y - 5 * zz, r.width + 10 * zz, r.height + 10 * zz), GUI.color, 2.5f); GUI.color = Color.white; recLbl = new Rect(pc.x - 17, r.yMax + 1 * zz, 34, 15); }
                 if (lockedTile && next) { GUI.color = new Color(1f, 0.6f, 0.55f); GUI.Label(new Rect(r.xMax - 14, r.y - 4, 18, 18), "<size=11>잠</size>", center); }
                 GUI.color = Color.white;
                 if (inArea && r.Contains(ev.mousePosition)) hover = k;
@@ -1622,6 +1622,12 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(0.04f, 0.05f, 0.07f, 0.9f); GUI.DrawTexture(zr, white); GUI.color = Color.white;
                 GUI.Label(zr, "<size=11><color=#8a93a3>" + Mathf.RoundToInt(userZ * 100) + "%</color></size>", center);
             }
+            if (recLbl.width > 0)
+            {   // ⭐ 추천 글자 — 칸을 다 그린 뒤 맨 위에, 어두운 바탕으로 (아래 칸에 깔려 안 읽혔다)
+                GUI.color = new Color(0.1f, 0.08f, 0.03f, 0.95f); GUI.DrawTexture(recLbl, white); Frame(recLbl, new Color(1f, 0.8f, 0.4f, 0.8f), 1); GUI.color = Color.white;
+                GUI.Label(recLbl, "<size=10><b><color=#ffdf95>추천</color></b></size>", center);
+                recLbl = default;
+            }
             PartsButton(new Rect(zb.x, zb.yMax + 8, 230, 30));             // 무기 효과판 뺌 (09-24 23번)
             {   // 🪐 구역 진행 — 지금 구역 칸을 다 찍으면 다음 항로 (09-24 6·21번)
                 int zo = sim.ZoneOpen, zl = sim.ZoneLeft(zo), zt = 0; for (int i = 0; i < SweepSim.Nodes.Length; i++) if (SweepSim.Zone[i] == zo && SweepSim.ZoneNeed(i)) zt++;
@@ -1629,7 +1635,7 @@ namespace SalvageRun.Orbit
                 var zr = new Rect(zb.xMax + 58, zb.y + 3, 320, 24);                  // 확대 단추 줄 옆 — 트리 칸과 안 겹치게
                 GUI.color = new Color(0.04f, 0.05f, 0.07f, 0.9f); GUI.DrawTexture(zr, white); GUI.color = Color.white;
                 string nx = last ? "" : SweepSim.Orbits[SweepSim.OrbitOrder[zo + 1]].name;
-                GUI.Label(new Rect(zr.x + 8, zr.y + 3, zr.width - 16, 18), "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> 구역 " + (zt - zl) + "/" + zt + (last ? "" : zl > 0 ? " <color=#8a93a3>— 다 찍으면 " + nx + " 항로</color>" : " <color=#6fcf97>— " + nx + " 항로를 살 수 있다</color>") + "</size>", label);
+                GUI.Label(new Rect(zr.x + 8, zr.y + 3, zr.width - 16, 18), "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color>" + (zt == 0 ? " <color=#8a93a3>— 마지막 항로</color>" : " 구역 " + (zt - zl) + "/" + zt) + (last || zt == 0 ? "" : zl > 0 ? " <color=#8a93a3>— 다 찍으면 " + nx + " 항로</color>" : " <color=#6fcf97>— " + nx + " 항로를 살 수 있다</color>") + "</size>", label);
             }
             if (testTip >= 0) { for (int k = 0; k < nT; k++) if (gtiles[k].stat >= 0 && SweepSim.Nodes[gtiles[k].stat].id == testTipId) hover = k; }   // 에디터 시험용
             treeHover = hover;
@@ -1647,7 +1653,7 @@ namespace SalvageRun.Orbit
             else GUI.Label(new Rect(ox, area.yMax + 2, 750, 16), "<size=11>칸에 마우스를 올리면 무엇인지 보인다 · 빛나는 칸을 누르면 산다 · 휠 = 확대 · 끌기 = 이동</size>", center);
         }
 
-        GUIStyle tipWrap;
+        GUIStyle tipWrap; Rect recLbl;
         public int testTip = -1; public string testTipId;                  // 에디터 시험용 — 툴팁 강제로 띄우기
         void Tip(int k, Vector2 at, int vis, float tile)
         {
@@ -1687,7 +1693,8 @@ namespace SalvageRun.Orbit
             float oy = dh - 22;                                          // 설명이 길어진 만큼 아래 줄을 내린다
             GUI.color = new Color(0.3f, 0.28f, 0.24f); GUI.DrawTexture(new Rect(r.x + 24, r.y + 70 + oy, r.width - 48, 1), white); GUI.DrawTexture(new Rect(r.x + 24, r.y + 98 + oy, r.width - 48, 1), white); GUI.color = Color.white;
             int from = t.j == 1 ? 0 : SweepSim.TileLv(t.stat, t.j - 1), to = SweepSim.TileLv(t.stat, t.j);
-            GUI.Label(new Rect(r.x + 10, r.y + 74 + oy, r.width - 20, 20), Val(n.id, from) + "  <color=#d9b98a>▸</color>  <color=#ffdf95>" + Val(n.id, to) + "</color>", center);
+            if (vis == 3 && !SweepSim.Infinite(t.stat)) GUI.Label(new Rect(r.x + 10, r.y + 74 + oy, r.width - 20, 20), "<color=#8a93a3>지금</color>  <color=#ffdf95>" + Val(n.id, to) + "</color>", center);   // 산 칸은 「0 ▸ 1」 대신 지금 값만
+            else GUI.Label(new Rect(r.x + 10, r.y + 74 + oy, r.width - 20, 20), Val(n.id, from) + "  <color=#d9b98a>▸</color>  <color=#ffdf95>" + Val(n.id, to) + "</color>", center);
             string foot;
             if (vis == 3 && SweepSim.Infinite(t.stat)) foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>  <color=#ffdf95>∞ " + sim.S.lv[t.stat] + "번 삼 · 계속 살 수 있다</color>";   // 누적 칸 — 다음 가격 (09-24 친구들 「가격이 안 보인다」)
             else if (vis == 3) foot = "<color=#6fcf97>샀다</color>";
