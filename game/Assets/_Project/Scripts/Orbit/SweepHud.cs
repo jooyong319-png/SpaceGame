@@ -1788,7 +1788,7 @@ namespace SalvageRun.Orbit
                 case "i_drone": return "드론 +" + 10 * l + "%";
                 case "i_bh": return "블랙홀 확률 +" + (0.2 * l).ToString("0.#") + "%";
                 case "i_eco": return "값 +" + 8 * l + "%";
-                case "i_route": return "행성 배수 +" + (0.1 * l).ToString("0.0");
+                case "i_route": return "행성 값 +" + 5 * l + "%";
                 case "w_vac": return l > 0 ? "발동 " + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : "잠김";
                 case "w_vac_u": return new[] { "없음", "1단계", "2단계" }[Mathf.Min(2, l)];
                 case "w_vac_a": return l > 0 ? "각성!" : "잠김";

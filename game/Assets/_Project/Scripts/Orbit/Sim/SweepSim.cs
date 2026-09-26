@@ -245,7 +245,7 @@ namespace SalvageRun.Orbit.Sim
             N("k_drone", "drone", "◆ 벌떼", "드론 +4대 — 대신 드론 몫 −25%", new[] { "d_fact" }, 1, 60000, 1, 1, 0, 0),
             N("k_bh", "bh", "◆ 쌍둥이 블랙홀", "블랙홀이 터지면 그 자리에 한 번 더 열린다 — 대신 여는 확률 −30%", new[] { "s_speed" }, 1, 40000, 1, 1, 0, 0),
             N("k_eco", "eco", "◆ 큰손", "모든 값 +25% — 대신 청구서 +10%", new[] { "e_used" }, 1, 80000, 1, 1, 0, 0),
-            N("k_route", "route", "◆ 궤도 공명", "행성 값 배수 +0.5 — 대신 잔해 체력 +20%", new[] { "p_sat" }, 1, 150000, 1, 1, 0, 0),
+            N("k_route", "route", "◆ 궤도 공명", "행성 값 +15% — 대신 잔해 체력 +20%", new[] { "p_sat" }, 1, 150000, 1, 1, 0, 0),
             N("w_slot2", "arm", "◆ 무기 공명", "모든 무기의 발동 확률 ×1.5", new[] { "w_chain" }, 1, 50000, 1, 1, 0, 0),
             // ★ 신기한 칸 (09-24 설계서 4단계) — 판 밖(주식 · 뉴스 · 행성)과 판을 잇는다
             N("q_insider", "eco", "★ 내부자 거래", "공격이 맞을 때 가끔(0.5%) 내가 산 종목 하나가 +1% — 「누군가 청소선을 보고 샀다」", new[] { "a_read" }, 1, 30000, 1, 1, 0, 0),
@@ -288,7 +288,7 @@ namespace SalvageRun.Orbit.Sim
             N("i_drone", "drone", "✦ 드론 증폭", "드론 몫 +10% (단계마다 · 5단계)", new[] { "k_drone" }, 1, 2000000, 2.0, 5, 0, 0),
             N("i_bh", "bh", "✦ 블랙홀 증폭", "블랙홀 확률 +0.2%p (단계마다 · 5단계)", new[] { "k_bh" }, 1, 2000000, 2.0, 5, 0, 0),
             N("i_eco", "eco", "✦ 시세 증폭", "모든 값 +8% (단계마다 · 5단계)", new[] { "k_eco" }, 1, 2000000, 2.0, 5, 0, 0),
-            N("i_route", "route", "✦ 궤도 증폭", "행성 값 배수 +0.1 (단계마다 · 5단계)", new[] { "k_route" }, 1, 2000000, 2.0, 5, 0, 0),
+            N("i_route", "route", "✦ 궤도 증폭", "행성 값 +5% (단계마다 · 5단계)", new[] { "k_route" }, 1, 2000000, 2.0, 5, 0, 0),
             // ⚠️ 새 칸은 늘 맨 뒤에 — 저장은 칸 번호로 레벨을 들고 있다 (09-25 중간에 끼웠다가 옛 저장이 밀린 일)
             // ◇ 무기 특화 — 단계마다 효과가 커진다 (09-24 사장님 38번 「강화가 너무 적다 · 효과가 추가」)
             N("w_laser_e", "arm", "레이저 특화", "태우는 점 +20% · 위력 +15% — 3단계: 태운 자리가 가끔 터진다", new[] { "w_laser_a" }, 1, 18000, 4, 3, 0, 0),
@@ -771,8 +771,12 @@ namespace SalvageRun.Orbit.Sim
         public int ChainMax => R.clean ? 5000 : 40 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 15 * Lv("b_chain");
         // 🌪 모래 폭풍 (화성 · 해왕성) — 22초마다 4.5초. 값 ×1.5 · 왼쪽에서 고철이 몰려온다 (09-24 사장님 36번 「무의미함」)
         public bool StormOn => R != null && !R.over && !R.clean && Orbits[S.orbit].storm && R.t % 13.0 >= 6 && R.t % 13.0 < 10.5;   // 09-26 판이 20초 남짓 — 판 중간에 한 번
-        public const double ValBase = 1.8;                                   // 💰 09-26 고철 시세 묶음 · 의뢰 폐지로 줄어든 벌이를 되돌린다 (봇으로 맞춤)
-        public double ValMult => ValBase * (1 + 0.1 * M.legend) * (M.endless ? Math.Pow(1.15, M.depth) : 1) * (StormOn ? 1.5 : 1) * (R != null ? 1 + R.consVal / 100.0 : 1) * Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (Orbits[S.orbit].mult + (Lv("k_route") > 0 && S.orbit > 0 ? 0.5 : 0) + (S.orbit > 0 ? 0.10 * Lv("i_route") : 0)) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1) * (1 + 0.08 * Lv("i_eco")) * PlanetStockBonus * Math.Pow(1.5, Lv("m_val")) * Math.Pow(1.25, Lv("m_route"));
+        public const double ValBase = 1.8;
+        // 📈 09-26 사장님 「행성을 넘어갈수록 벌이를 기하급수로 · 스킬도 넘어갈 때 기하급수로 올려 막는다」
+        public const double PlanetBase = 3, ZoneCostBase = 2.3;                   // 행성 한 칸 = 벌이 ×3 · 관문을 부술 때마다 아직 안 산 칸 값 ×3 (봇으로 맞춤)
+        public static double PlanetMul(int rank) => Math.Pow(PlanetBase, rank);
+        public static double PlanetMulOf(int orbit) => PlanetMul(Math.Max(0, Array.IndexOf(OrbitOrder, orbit)));                                   // 💰 09-26 고철 시세 묶음 · 의뢰 폐지로 줄어든 벌이를 되돌린다 (봇으로 맞춤)
+        public double ValMult => ValBase * (1 + 0.1 * M.legend) * (M.endless ? Math.Pow(1.15, M.depth) : 1) * (StormOn ? 1.5 : 1) * (R != null ? 1 + R.consVal / 100.0 : 1) * Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (PlanetMul(Rank) * (1 + (Lv("k_route") > 0 && S.orbit > 0 ? 0.15 : 0) + (S.orbit > 0 ? 0.05 * Lv("i_route") : 0))) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1) * (1 + 0.08 * Lv("i_eco")) * PlanetStockBonus * Math.Pow(1.5, Lv("m_val")) * Math.Pow(1.25, Lv("m_route"));
         public double PlanetStockBonus { get { if (Lv("x_eco_route") <= 0 || Mk == null || S.orbit == 0) return 1; string[] ids = { "", "moon", "mars", "jup", "sat", "", "", "", "" }; if (ids[S.orbit] == "") return 1; for (int i = 0; i < Market.Defs.Length && i < Mk.M.st.Count; i++) if (Market.Defs[i].id == ids[S.orbit] && Mk.M.st[i].shares > 0) return 1.2; return 1; } }   // 새 행성은 종목이 없다
         public double Cut => S.debt > 0 ? Math.Max(0.1, (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) - Part("cut")) : 0;   // 빚이 있으면 판 수입에서 떼어 상환
         // ── 대출 (연체 대신) — 언제든 받을 수 있다. 받은 돈 × 배수를 판 수입에서 조금씩 갚는다
@@ -1005,7 +1009,7 @@ namespace SalvageRun.Orbit.Sim
         // ───────────────────────── 트리
         public double Cost(int i) => CostAt(i, S.lv[i]);
         public const double CostMul = 1.5;                                   // 💰 09-26 사장님 「아직도 너무 싸」 — 칸 값 전체 배수 (봇으로 맞춤)
-        double CostAt(int i, int l) { var n = Nodes[i]; return Math.Ceiling(CostMul * n.first * Math.Pow(n.mult, l) * (1 - 0.15 * Cr(2)) * (1 - 0.05 * Lv("e_used"))); }
+        double CostAt(int i, int l) { var n = Nodes[i]; return Math.Ceiling(CostMul * Math.Pow(ZoneCostBase, ZoneOpen) * n.first * Math.Pow(n.mult, l) * (1 - 0.15 * Cr(2)) * (1 - 0.05 * Lv("e_used"))); }
 
         // 🔴 칸 = 한 번 사기 (사장님 09-23: "한 칸에 1/3 이런식 말고 무조건 다음칸으로 넘어가지는 방식")
         //    레벨이 여럿인 칸은 많아야 셋으로 나눈다 — 한 칸이 여러 레벨을 한꺼번에 올리고, 가격은 그 레벨들 값을 합친 것

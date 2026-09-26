@@ -623,7 +623,7 @@ namespace SalvageRun.Orbit
             {
                 var chips = new List<(string, Color)>();
                 int trt = SweepSim.TraitOf(show); if (trt > 0) chips.Add(("★ " + SweepSim.TraitName[trt], new Color(1f, 0.87f, 0.58f)));   // 🪐 행성 특성
-                chips.Add(("값 ×" + so.mult, new Color(0.62f, 0.94f, 0.75f)));
+                chips.Add(("값 ×" + KNum.Fmt(SweepSim.PlanetMulOf(show)), new Color(0.62f, 0.94f, 0.75f)));   // 📈 행성 한 칸 = ×3
                 chips.Add(("체력 ×" + so.hp, new Color(1f, 0.7f, 0.66f)));
                 if (so.storm) chips.Add(("폭풍", new Color(0.62f, 0.94f, 0.75f)));
                 if (so.pull > 0) chips.Add(("중력", new Color(0.75f, 0.96f, 1f)));
