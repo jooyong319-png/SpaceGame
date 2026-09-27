@@ -1093,7 +1093,7 @@ namespace SalvageRun.Orbit
                     if (pspr != null)
                     {
                         pv.sprite = pspr; pv.color = Color.white;
-                        pv.transform.localScale = Vector3.one * 0.5f / FullW(pspr);
+                        pv.transform.localScale = Vector3.one * 0.75f / FullW(pspr);   // 09-27 0.5 → 0.75 (잔해 사이에서 안 보였다)
                         pv.transform.rotation = Quaternion.Euler(0, 0, Mathf.Sin(Time.time * 3f + pn) * 12f);   // 살짝 흔들 — 방향대로 돌리면 눕거나 뒤집혔다
                     }
                     else
@@ -1103,6 +1103,9 @@ namespace SalvageRun.Orbit
                         pv.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(to.y, to.x) * Mathf.Rad2Deg - 90);
                     }
                     if (Random.value < 0.7f) Add(pixel, pp - to.normalized * 0.15f, 0.07f, p.kind == 1 ? Violet : Green, 0, 0.4f);   // 꼬리
+                    { float pul = 0.5f + 0.5f * Mathf.Sin(Time.time * 8f); var pc = p.kind == 1 ? Violet : Green;   // 📦 09-27 보급 — 숨 쉬는 빛 + 퍼지는 고리 (잔해 사이에서 보이게)
+                      Add(glow, pp, 1.1f + 0.3f * pul, new Color(pc.r, pc.g, pc.b, 0.28f + 0.2f * pul), 7, 0.03f);
+                      if (Time.time - podRingT > 0.35f) { podRingT = Time.time; Add(ring, pp, 0.3f, new Color(pc.r, pc.g, pc.b, 0.7f), 5, 0.45f, 1.4f); } }
                 }
             for (int i = pn; i < podViews.Count; i++) podViews[i].enabled = false;
 
@@ -1305,7 +1308,7 @@ namespace SalvageRun.Orbit
         class LateBolt { public Vector3 p0, p1; public Color c; public float delay; public int hop; }
         readonly List<LateBolt> lateBolts = new List<LateBolt>();
         // 🛰 소품 도트 (09-26 사장님 「도트 필요한 부분 ㄱㄱ」) — 보급 캡슐 둘 · 관광 셔틀 · 운석 돌 (픽셀랩), 기뢰는 코드 그림
-        static Sprite podFuelSpr, podRareSpr, touristSpr, meteorSpr;
+        static Sprite podFuelSpr, podRareSpr, touristSpr, meteorSpr; float podRingT;
         static Sprite Prop(ref Sprite s, string n) { if (s == null) s = Resources.Load<Sprite>("ship/" + n); return s; }
         class Meteor { public SpriteRenderer sr; public Vector3 a, b; public float t; }
         readonly List<Meteor> meteors = new List<Meteor>();

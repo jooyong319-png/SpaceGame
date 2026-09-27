@@ -1731,11 +1731,11 @@ namespace SalvageRun.Orbit.Sim
                     continue;
                 }
                 // ⛽ 09-26 사장님 「궤도 따라 쭉 움직이면서 밖으로 — 안 먹으면 없어진다 · 빠르게」 — 조준점을 대야 먹는다
-                p.a += (2.2 + 0.3 * Lv("s_speed")) * dt; p.rr += (Bo + 90 - Orbits[S.orbit].bi * 0.8) / 3.6 * dt;
+                p.a += (1.4 + 0.3 * Lv("s_speed")) * dt; p.rr += (Bo + 90 - Orbits[S.orbit].bi * 0.8) / 5.0 * dt;   // 09-27 사장님 「연료 보급 가시성이 안 좋다」 — 2.2 · 3.6초 → 1.4 · 5초
                 p.x = EX + Math.Cos(p.a) * p.rr; p.y = EY + Math.Sin(p.a) * p.rr * Tilt;
                 if (p.rr > Bo + 90) { p.got = true; Emit(SwEv.Pop, p.x, p.y, 0, 1, "보급을 놓쳤다"); continue; }
                 double dx = r.ax - p.x, dy = r.ay - p.y, d = Math.Sqrt(dx * dx + dy * dy);
-                if (d <= 30)
+                if (d <= 40)
                 {
                     p.got = true;
                     if (p.kind == 1) { Emit(SwEv.SupplyGet, r.ax, r.ay - 18, 0, 1, "블랙홀!"); OpenHole(); }
