@@ -1178,7 +1178,8 @@ namespace SalvageRun.Orbit.Sim
         // ───────────────────────── 트리
         public double Cost(int i) => CostAt(i, S.lv[i]);
         public const double CostMul = 4.5;                                   // 💰 09-26 사장님 「아직도 너무 싸」 — 칸 값 전체 배수 (봇으로 맞춤)
-        double CostAt(int i, int l) { var n = Nodes[i]; return Math.Ceiling(CostMul * ZoneCostK[Math.Min(ZoneOpen, ZoneCostK.Length - 1)] * n.first * Math.Pow(n.mult, l) * (1 - 0.15 * Cr(2)) * (1 - 0.05 * Lv("e_used"))); }
+        double CostAt(int i, int l) { var n = Nodes[i]; return Math.Ceiling(CostMul * ZoneCostK[Math.Min(ZoneOpen, ZoneCostK.Length - 1)] * n.first * Math.Pow(n.mult, l) * (1 - 0.15 * Cr(2)) * (1 - 0.05 * Lv("e_used")) * (n.id == "c_pow" && l < 3 ? PowEarlyK : 1)); }
+        public static double PowEarlyK = 0.3;                                    // 🔰 09-27 사장님 「완전 처음이 어렵다 — 빔 위력 1 · 2 칸을 싸게」 (17 · 68 → 6 · 21)
 
         // 🔴 칸 = 한 번 사기 (사장님 09-23: "한 칸에 1/3 이런식 말고 무조건 다음칸으로 넘어가지는 방식")
         //    레벨이 여럿인 칸은 많아야 셋으로 나눈다 — 한 칸이 여러 레벨을 한꺼번에 올리고, 가격은 그 레벨들 값을 합친 것
