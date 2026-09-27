@@ -76,7 +76,7 @@ namespace SalvageRun.Orbit.Sim
         public List<PastCompany> history = new List<PastCompany>();
     }
 
-    public class Blast { public double x, y, t, R, dk; public bool w, red; public int wid = -1; }   // wid = 피해를 세어 줄 곳 (DmgCat) — 기뢰 · 분열탄처럼 늦게 터져도 제 무기로     // w = 무기가 낸 폭발 (이것만 또 번진다 — 09-24 사장님 「연쇄 반응도 무기 특성으로」)
+    public class Blast { public double x, y, t, R, dk; public bool w, red; public int gen; public int wid = -1; }   // wid = 피해를 세어 줄 곳 (DmgCat) — 기뢰 · 분열탄처럼 늦게 터져도 제 무기로     // w = 무기가 낸 폭발 (이것만 또 번진다 — 09-24 사장님 「연쇄 반응도 무기 특성으로」)
     public class Drone { public double a, cd, x, y; }
     public class Missile { public double x, y, vx, vy, life; public Junk tg; }   // 🚀 미사일선 (09-27)
     public class Orb { public double x, y, tx, ty, vx, vy, t, zap; public bool there; }   // ⚡ 전격선 구체 (09-27)
@@ -898,7 +898,8 @@ namespace SalvageRun.Orbit.Sim
         public const double HoleDur = 3;                           // 열려 있는 시간 — 끝나면 저절로 터진다
         public double PackK => 0.02 + 0.012 * Lv("b_pack");
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
-        public static double TankR = 75, DetR = 65;                              // 💥 폭발 탱크 · 기폭 장치 반경 (09-27 58 · 50 에서 넓힘)
+        public static double TankR = 58, DetR = 50;                              // 💥 폭발 탱크 · 기폭 장치 반경 (09-27 75 · 65 로 넓혔다가 「너무 터진다」 — 되돌림)
+        public const int RedGenMax = 3;                                         // 빨간 폭발이 옆 폭탄을 터뜨리는 대 — 직접 부순 것 1 · 그 폭발로 2 · 한 번 더 3 (09-27 「너무 터진다 · 말이 안 된다」)
         public const int PendCap = 80;
         public static double RedBlastVal = 1.5;
         public static double PouchK = 2.5;                                      // 봇 24판: ×4 는 82분 · 파산 2.1, ×2.5 는 137분 · 3.1
@@ -1649,7 +1650,7 @@ namespace SalvageRun.Orbit.Sim
                 if (p.t > 0) continue;
                 r.pend.RemoveAt(i);
                 if (p.dk > 0) { ShellBurst(p.x, p.y, p.R, p.dk); continue; }        // 🎆 분열탄선 포탄 · 파편
-                blastW = p.w; redBlast = p.red; dmgCat = p.wid; DoBlast(p.x, p.y, p.R * BlastK); dmgCat = -1; blastW = false; redBlast = false;
+                blastW = p.w; redBlast = p.red; redGen = p.gen; dmgCat = p.wid; DoBlast(p.x, p.y, p.R * BlastK); dmgCat = -1; blastW = false; redBlast = false; redGen = 0;
             }
             r.chainT -= dt;
             if (r.chainT <= 0 && r.pend.Count == 0 && !r.holding) { r.chain = 0; r.tier = 0; }
@@ -2538,7 +2539,7 @@ namespace SalvageRun.Orbit.Sim
             }
         }
 
-        bool blastW, redBlast; int shatterDepth;                                // redBlast = 폭발 탱크 · 기폭 장치 (휩쓸린 것 값 ×2)
+        bool blastW, redBlast; int shatterDepth, redGen;                                // redBlast = 폭발 탱크 · 기폭 장치 (휩쓸린 것 값 ×2)
         void Kill(Junk d, int src, double mult)
         {
             if (d.sig == GateSig) { if (!GateReady) { d.hp = d.max; return; } if (d.hp > 0) return; GateBroken(d); }
@@ -2582,11 +2583,11 @@ namespace SalvageRun.Orbit.Sim
             if (d.att == Att.Pouch && v * BotEarn >= 1) Emit(SwEv.Pop, d.x, d.y - 14, 0, 0, "돈 주머니 +" + KFmt(v));
             Emit(SwEv.Broke, d.x, d.y, 0, d.k * 100 + (int)d.att);
             if (d.k == Fuel && AddFuel(3) > 0) Emit(SwEv.Pop, d.x, d.y, 0, 1, "연료 +3초");
-            if (d.k == Tank && r.pend.Count < PendCap) r.pend.Add(new Blast { x = d.x, y = d.y, t = 0.05, R = TankR, red = true });   // 💥 09-27 사장님 「빨간 폭탄 안 터지는 것도 있나?」 — 연쇄 한도(지구 40)를 넘으면 조용히 안 터졌다. 이제 늘 (렉 막는 건 대기 폭발 수로)
+            if (d.k == Tank && r.pend.Count < PendCap && (!redBlast || redGen < RedGenMax)) r.pend.Add(new Blast { x = d.x, y = d.y, t = 0.05, R = TankR, red = true, gen = redBlast ? redGen + 1 : 1 });   // 💥 09-27 사장님 「빨간 폭탄 안 터지는 것도 있나?」 — 연쇄 한도(지구 40)를 넘으면 조용히 안 터졌다. 이제 늘 (렉 막는 건 대기 폭발 수로)
             switch (d.att)
             {
                 case Att.FuelPod: if (AddFuel(2) > 0) Emit(SwEv.Pop, d.x, d.y - 10, 0, 1, "연료 +2초"); break;
-                case Att.Det: if (r.pend.Count < PendCap) r.pend.Add(new Blast { x = d.x, y = d.y, t = 0.07, R = DetR, red = true }); break;
+                case Att.Det: if (r.pend.Count < PendCap && (!redBlast || redGen < RedGenMax)) r.pend.Add(new Blast { x = d.x, y = d.y, t = 0.07, R = DetR, red = true, gen = redBlast ? redGen + 1 : 1 }); break;
                 case Att.Ice: for (int i = 0; i < 4; i++) SpawnFree(Chip, d.x, d.y, Rnd(-90, 90), Rnd(-90, 90), 1.2); break;
                 case Att.Magnet:
                     Emit(SwEv.Ring, d.x, d.y, 90, 2);
