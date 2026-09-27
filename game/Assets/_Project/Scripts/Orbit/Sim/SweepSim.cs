@@ -910,7 +910,8 @@ namespace SalvageRun.Orbit.Sim
         public const double ValBase = 1.8;
         // 📈 09-26 사장님 「행성을 넘어갈수록 벌이를 기하급수로 · 스킬도 넘어갈 때 기하급수로 올려 막는다」
         public const double PlanetBase = 3, ZoneCostBase = 2.3;
-        public static readonly double[] ZoneCostK = { 1.2, 1.7, 7.4, 16, 100, 175, 400, 3400, 3600, 3700, 4000, 6000 };   // 💰 09-27 칸 값 배수 — 열린 관문 수마다 (봇으로 「가장 싼 칸 ≈ 판 벌이 0.6판」에 맞춤 · 예전 2.3^관문)                   // 행성 한 칸 = 벌이 ×3 · 관문을 부술 때마다 아직 안 산 칸 값 ×3 (봇으로 맞춤)
+        public static readonly double[] ZoneCostK = { 1.2, 1.7, 7.4, 51, 100, 175, 400, 3400, 22560, 76500, 139000, 199000 };   // 🪜 09-27 밤 사장님 「싸지는 구간」 — 소행성대 16→51 (목성 앞에서 확 싸졌다) · 카이퍼부터 3600~6000 → 2.3만~20만 (벌이는 행성마다 열 배 넘게 느는데 배수는 거의 그대로라 트리가 공짜처럼). 봇 24판 128분 · 파산 4.3 · 트리 97%
+          // 💰 09-27 칸 값 배수 — 열린 관문 수마다 (봇으로 「가장 싼 칸 ≈ 판 벌이 0.6판」에 맞춤 · 예전 2.3^관문)                   // 행성 한 칸 = 벌이 ×3 · 관문을 부술 때마다 아직 안 산 칸 값 ×3 (봇으로 맞춤)
         public static double PlanetMul(int rank) => Math.Pow(PlanetBase, rank);
         public static double PlanetMulOf(int orbit) => PlanetMul(Math.Max(0, Array.IndexOf(OrbitOrder, orbit)));                                   // 💰 09-26 고철 시세 묶음 · 의뢰 폐지로 줄어든 벌이를 되돌린다 (봇으로 맞춤)
         public double ValMult => ValBase * (1 + 0.06 * Up(5)) * (1 + 0.1 * M.legend) * (M.endless ? Math.Pow(1.15, M.depth) : 1) * (StormOn ? 1.5 : 1) * (R != null ? 1 + R.consVal / 100.0 : 1) * Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (PlanetMul(Rank) * (1 + (Lv("k_route") > 0 && S.orbit > 0 ? 0.15 : 0) + (S.orbit > 0 ? 0.05 * Lv("i_route") : 0))) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1) * (1 + 0.08 * Lv("i_eco")) * PlanetStockBonus * Math.Pow(1.5, Lv("m_val")) * Math.Pow(1.25, Lv("m_route"));

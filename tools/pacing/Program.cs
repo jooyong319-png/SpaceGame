@@ -26,6 +26,7 @@ static class Program
         if (double.TryParse(Environment.GetEnvironmentVariable("DETR"), out double dr)) SweepSim.DetR = dr;
         if (double.TryParse(Environment.GetEnvironmentVariable("REDV"), out double rv)) SweepSim.RedBlastVal = rv;   // 💥 빨간 폭발 값 배수
         if (double.TryParse(Environment.GetEnvironmentVariable("POUCH"), out double pk)) SweepSim.PouchK = pk;   // 💰 돈 주머니 배수
+        { var zk = Environment.GetEnvironmentVariable("ZK"); if (!string.IsNullOrEmpty(zk)) { var p = zk.Split(','); for (int i = 0; i < p.Length && i < SweepSim.ZoneCostK.Length; i++) SweepSim.ZoneCostK[i] = double.Parse(p[i]); } }   // 💰 행성 배수 맞춤 (09-27)
         if (double.TryParse(Environment.GetEnvironmentVariable("DRONEC"), out double dcc)) SweepSim.DroneCostK = dcc;   // 💰 드론 줄 칸 값
         if (double.TryParse(Environment.GetEnvironmentVariable("BHC"), out double bhc)) SweepSim.BhCostK = bhc;   // 💰 블랙홀 줄 칸 값
         Console.OutputEncoding = System.Text.Encoding.UTF8;
