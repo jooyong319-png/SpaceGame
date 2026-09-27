@@ -198,7 +198,7 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(r.x + 10, r.y + 116, r.width - 20, 58), "<size=11>" + cmp + "</size>", small);
                 double price = sim.ShelfPrice(k); bool can = S.cash >= price;
                 var bb = new Rect(r.x + 10, r.yMax - 40, r.width - 20, 30);
-                string ptxt = KNum.Fmt(price) + (sale ? " <color=#ffb0a0>(반값)</color>" : "");   // 원래 값은 카드 위 「오늘의 반값」 띠가 말해 준다 — 단추가 좁다
+                string ptxt = KNum.Short(price) + (sale ? " <color=#ffb0a0>(반값)</color>" : "");   // 원래 값은 카드 위 「오늘의 반값」 띠가 말해 준다 — 단추가 좁다
                 bool clickBtn = GUI.Button(bb, can ? "<size=" + (sale ? 13 : 14) + ">구입 · " + ptxt + "</size>" : "<size=12><color=#ff9b8f>" + ptxt + " — 돈 모자람</color></size>", can ? btn : btnOff);
                 bool clickCard = GUI.Button(r, GUIContent.none, GUIStyle.none);          // 🛒 09-27 사장님 「물건 칸 전체를 클릭하면 구입하시겠습니까?」
                 if ((clickBtn || clickCard) && buyAsk < 0)

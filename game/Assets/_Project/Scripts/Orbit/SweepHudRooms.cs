@@ -458,7 +458,7 @@ namespace SalvageRun.Orbit
             }
             oy += 28;
             L(ob.x + 10, oy, ob.width - 20, "<size=10><color=#5f6878>수수료 " + (fee * 100).ToString("0.#") + "%</color></size>");
-            Rt(ob.x, oy, ob.width - 10, "<size=10><color=#8a9bb3>" + (ordSide == 0 ? "약 " + shBuy.ToString("#,0.#") + "주" : "받을 돈 " + KNum.Fmt(got)) + "</color></size>");
+            Rt(ob.x, oy, ob.width - 10, "<size=10><color=#8a9bb3>" + (ordSide == 0 ? "약 " + (shBuy >= 10000 ? KNum.Short(shBuy) : shBuy.ToString("#,0.#")) + "주" : "받을 돈 " + KNum.Fmt(got)) + "</color></size>");
             oy += 18;
             var go = new Rect(ob.x + 8, oy, ob.width - 16, 34);
             bool can = ordSide == 0 ? money >= 1 : ss.shares > 0;

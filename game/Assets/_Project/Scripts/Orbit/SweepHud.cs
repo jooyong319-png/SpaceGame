@@ -146,7 +146,7 @@ namespace SalvageRun.Orbit
                 VolumeButton();
                 return;
             }
-            if (!sim.R.over) { Storm(); WindowEdge(); Pops(); Notices(); RunHud(); VolleyGauge(); MyStockChips(); if (launchT > 0) Launch(); }
+            if (!sim.R.over) { Storm(); WindowEdge(); if (launchT > 0) Launch(); Pops(); Notices(); RunHud(); VolleyGauge(); MyStockChips(); }   // 09-27 출발 연출(날아가는 선체)이 위쪽 돈 · 청구서 줄을 덮던 것 — 먼저 그린다
             if (sim.M.won) Ending();
             else if (sim.M.careerOpen) Hangar();
             else if (sim.R.over)
