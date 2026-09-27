@@ -114,6 +114,7 @@ namespace SalvageRun.Orbit
             dueNag = Mathf.Max(0, dueNag - dt);
             if (launchT > 0) { launchT -= dt; if (launchT <= 0) OrbitSfx.Play("tick", 0.7f); }
             var kb = Keyboard.current;
+            RoomGoTick();                                                      // 🧭 새 방을 사면 그 방으로
             DlgTriggers();                                                     // 💬 대화창 — 떠 있으면 입력을 다 가져간다
             if (DlgUpdate(kb)) return;
             if (lobby && sim.R.over && !sim.M.won)
@@ -257,6 +258,8 @@ namespace SalvageRun.Orbit
             if (settingsOpen) SettingsWin();
         }
         public void TestSettings() => settingsOpen = true;   // 에디터 캡처용
+        int roomGo; float roomGoAt;                                         // 🧭 새 방을 사면 그 방으로 (0.5초 뒤)
+        void RoomGoTick() { if (roomGoAt > 0 && Time.unscaledTime >= roomGoAt) { roomGoAt = 0; if (sim.R.over && !sim.M.careerOpen) GoFlow(roomGo); } }
         void SettingsWin()
         {
             GUI.color = new Color(0, 0, 0, 0.55f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
@@ -1750,9 +1753,9 @@ namespace SalvageRun.Orbit
                 {
                     int times = shift ? 5 : 1;
                     while (times-- > 0 && sim.State(t.stat) == NodeSt.Can) sim.BuyTile(t.stat);
-                    if (n.id == "e_shop") Guide("부품 가게가 생겼다 — 오른쪽 탭 「부품 가게」 ▸");                       // 🧭 새 방 안내 (09-24 사장님 32번)
+                    if (n.id == "e_shop") { roomGo = 5; roomGoAt = Time.unscaledTime + 0.5f; }                // 🧭 09-27 사장님 「증권 · 가게 스킬 열리면 바로 거기 가게」 — 사는 효과를 보고 그 방으로
                     else if (n.id == "v_volley" && sim.S.lv[t.stat] == 1) Guide("전탄 발사가 생겼다 — 출동 중 게이지가 차면 Space · 계기판 가운데 단추 (무기 둘부터)");
-                    else if (n.id == "a_open") Guide("증권이 열렸다 — 조종실 오른쪽 「증권 하러 가기」 ▸ · 출동 중엔 S");
+                    else if (n.id == "a_open") { roomGo = 4; roomGoAt = Time.unscaledTime + 0.5f; }
                     nodePulse[t.stat] = 1; OrbitSfx.Play("buy", 0.7f, 0.01f, 0.15f); lastBuyBranch = n.branch; BuyFx(pc, SweepSim.KeyNodes.Contains(n.id) ? new Color(0.71f, 0.61f, 1f) : bcol, n.max == 1, SweepSim.KeyNodes.Contains(n.id) ? "핵심 해금!" : "해금!");
                 }
                 else if (clicked && ns != NodeSt.Max)
