@@ -508,7 +508,8 @@ namespace SalvageRun.Orbit
                             for (int q = 0; q < 3; q++) Shot(s0, s1 + new Vector3((q - 1) * spotR * 0.35f, (q - 1) * spotR * 0.2f), new Color(0.9f, 0.97f, 1f), 0.09f, q * 0.03f, 0.08f);
                         }
                         if (spot && !ice)
-                        {   // 🔴 태우는 점 — 픽셀랩 끓는 점이 조준점에서 반복 (없으면 빛 번짐)
+                        {
+                            if (!fence && Random.value < 0.5f) for (int q = 0; q < 6; q++) Add(pixel, s1 + (Vector3)(Random.insideUnitCircle.normalized * spotR), 0.06f, new Color(1f, 0.6f, 0.35f, 0.75f), 0, 0.2f);   // 🔴 09-27 태우는 원 경계 — 불똥 알갱이   // 🔴 태우는 점 — 픽셀랩 끓는 점이 조준점에서 반복 (없으면 빛 번짐)
                             LoadAnims();
                             if (animBurn != null)
                             {
@@ -564,7 +565,7 @@ namespace SalvageRun.Orbit
                             var dv = mz - at; float L = dv.magnitude; int nd = Mathf.Min(40, Mathf.FloorToInt(L / 0.25f));
                             float ph = Mathf.Repeat(Time.time * 4f, 1f);
                             for (int q = 0; q < nd; q++) { float u = (q + ph) / Mathf.Max(1, nd); Add(pixel, at + dv * u, 0.05f, new Color(0.47f, 0.9f, 0.84f, 0.55f), 0, 0.09f); }
-                            for (int q = 0; q < 10; q++) { float aa = q * 0.628f + Time.time * 5f; Add(pixel, at + new Vector3(Mathf.Cos(aa), Mathf.Sin(aa) * 0.8f) * R * 0.9f, 0.05f, new Color(0.47f, 0.9f, 0.84f, 0.6f), 0, 0.09f); }
+                            for (int q = 0; q < 10; q++) { float aa = q * 0.628f + Time.time * 5f; Add(pixel, at + new Vector3(Mathf.Cos(aa), Mathf.Sin(aa)) * R, 0.05f, new Color(0.47f, 0.9f, 0.84f, 0.6f), 0, 0.09f); }
                             for (int q = 0; q < 2; q++) { var pp = at + (Vector3)(Random.insideUnitCircle * R * 0.7f); Add(pixel, pp, 0.08f, new Color(0.85f, 0.6f, 0.29f, 0.95f), 0, 0.3f).v = (mz - pp) / 0.3f; }
                         }
                         for (int q = 0; q < 3; q++)
@@ -626,13 +627,13 @@ namespace SalvageRun.Orbit
                         }
                         LoadAnims();
                         if (e.k == 2 && sim.WeaponOwned(7)) Shot(MuzzleOf(7), at, new Color(0.78f, 0.66f, 1f), 0.16f, 0, 0.08f);   // 🧲 보라 구슬이 쏜살같이
-                        if (e.k == 2) { var mf = OrbitFxArt.Magnet; var mg = Make(mf[0], at, (float)e.v * 1.3f / PxPerUnit, Color.white, 58); frameFx.Add(new FrameFx { sr = mg, f = mf, fps = 22 }); }   // 🧲 코드로 그린 자석 — 조여드는 고리 둘 (09-26)   // 🧲 픽셀랩 자석 — 조여든다
+                        if (e.k == 2) { var mf = OrbitFxArt.Magnet; var mg = Make(mf[0], at, (float)e.v * 2 / 0.75f / PxPerUnit, Color.white, 58); frameFx.Add(new FrameFx { sr = mg, f = mf, fps = 22 }); }   // 🧲 코드로 그린 자석 — 조여드는 고리 둘 (09-26)   // 🧲 픽셀랩 자석 — 조여든다
                         else RingFx(at, e.k == 1 ? Red : e.k == 2 ? Mag : Orange, 0.45f, (float)e.v * 2 / PxPerUnit);
                         break;
                     case SwEv.Blast:
                         RingFx(at, Orange, 0.4f, (float)e.v * 2 / PxPerUnit);
-                        if (e.k == 1) Fireball(at, (float)e.v / PxPerUnit * 1.9f, 99f);   // 🎆 분열탄선 포탄 · 파편 — 맞는 범위만큼 (09-27 「범위가 표시보다 크다」)
-                        else Fireball(at, Mathf.Clamp((float)e.v / PxPerUnit * 0.6f, 0.25f, 1.1f));
+                        if (e.k == 1) FireFill(at, (float)e.v / PxPerUnit);   // 🎆 분열탄선 포탄 · 파편 — 맞는 범위만큼 (09-27 「범위가 표시보다 크다」)
+                        else FireFill(at, (float)e.v / PxPerUnit);                             // 💥 09-27 폭발 그림 = 맞는 범위 (전엔 상한에 막혀 1/3) · 크면 여러 개
                         OrbitSfx.Play("blast", 0.5f, 0.025f, 0.12f);
                         shake = Mathf.Max(shake, 0.05f);
                         break;
@@ -703,6 +704,18 @@ namespace SalvageRun.Orbit
             int n = Mathf.Clamp(Mathf.RoundToInt(2 * Mathf.PI * ring / (sr * 1.8f)), 3, 8);
             float a0 = Random.Range(0f, Mathf.PI * 2);
             for (int k = 0; k < n; k++) { float an = a0 + k * Mathf.PI * 2 / n; Flake(c + new Vector3(Mathf.Cos(an) * ring, Mathf.Sin(an) * ring, 0), sr); }
+        }
+        // 💥 폭발 — 하나를 키우지 않고 범위를 여러 개로 채운다 (서리 눈꽃과 같은 방식 · 09-27 사장님 「커질수록 여러 개」)
+        void FireFill(Vector3 at, float R)
+        {
+            const float Fill = 0.95f;                                                  // 폭발 그림이 가장 클 때 판 폭의 95%
+            float rb = Mathf.Min(R, 0.45f);
+            Fireball(at, rb * 2 / Fill / 1.2f, 99f);
+            if (R <= rb * 1.3f) return;
+            float ring = R - rb * 0.8f, sr = rb * 0.75f;
+            int n = Mathf.Clamp(Mathf.RoundToInt(2 * Mathf.PI * ring / (sr * 1.8f)), 3, 7);
+            float a0 = Random.Range(0f, Mathf.PI * 2);
+            for (int k = 0; k < n && fireballsThisFrame < 3; k++) { float an = a0 + k * Mathf.PI * 2 / n; Fireball(at + new Vector3(Mathf.Cos(an) * ring, Mathf.Sin(an) * ring, 0), sr * 2 / Fill / 1.2f, 99f); }
         }
         void Fireball(Vector3 at, float R, float cap = 0.7f)
         {
