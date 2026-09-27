@@ -160,7 +160,7 @@ namespace SalvageRun.Orbit.Sim
         };
         public static readonly string[] FormNames = { "무리", "탱크 사슬", "케이블 망", "호송대", "난파 구역" };
         public static readonly string[] EventNames = { "연료 보급선", "충돌 사고", "파편 폭풍", "금고 호송대", "대충돌" };
-        public static readonly string[] EventHint = { "왼쪽에서 연료통 다섯 · 부수면 연료가 찬다", "오른쪽 위에 파편 서른 · 뭉쳤을 때 쓸면 연쇄", "왼쪽에서 고철이 쏟아진다 · 길목을 막아라", "금고 위성 줄이 지나간다 · 놓치기 전에", "오른쪽 위에 파편 예순 · 폭탄 위성도 섞였다" };   // 09-26 사장님 「뭐가 되는 건데?」
+        public static readonly string[] EventHint = { "왼쪽에서 연료통 하나 · 부수면 연료가 찬다", "오른쪽 위에 파편 서른 · 뭉쳤을 때 쓸면 연쇄", "왼쪽에서 고철이 쏟아진다 · 길목을 막아라", "금고 위성 줄이 지나간다 · 놓치기 전에", "오른쪽 위에 파편 예순 · 폭탄 위성도 섞였다" };   // 09-26 사장님 「뭐가 되는 건데?」
         public const double FuelIdle = 0.5, ShotFuel = 0.5, ClickFuel = 0.4, VolleyFuel = 2;   // ⛽ 연료 — 가만히 · 쏠 때(간격 비례) · 클릭 한 방 · 전탄
         bool TargetNear(double x, double y)
         {   // 조준점 근처에 부술 잔해가 있나 — 없으면 주 무기가 쉰다
@@ -897,6 +897,8 @@ namespace SalvageRun.Orbit.Sim
         public const double HoleDur = 3;                           // 열려 있는 시간 — 끝나면 저절로 터진다
         public double PackK => 0.02 + 0.012 * Lv("b_pack");
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
+        public static double TankR = 75, DetR = 65;                              // 💥 폭발 탱크 · 기폭 장치 반경 (09-27 58 · 50 에서 넓힘)
+        public const int PendCap = 80;                                          // 터질 차례를 기다리는 폭발 한도 — 렉 막기
         public int ChainMax => R.clean ? 5000 : 40 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 15 * Lv("b_chain");
         // 🌪 모래 폭풍 (화성 · 해왕성) — 22초마다 4.5초. 값 ×1.5 · 왼쪽에서 고철이 몰려온다 (09-24 사장님 36번 「무의미함」)
         public bool StormOn => R != null && !R.over && !R.clean && Orbits[S.orbit].storm && R.t % 13.0 >= 6 && R.t % 13.0 < 10.5;   // 09-26 판이 20초 남짓 — 판 중간에 한 번
@@ -1693,7 +1695,7 @@ namespace SalvageRun.Orbit.Sim
             Emit(SwEv.EventGo, 0, 0, ev, 0, EventNames[ev]);
             switch (ev)
             {
-                case 0: for (int i = 0; i < 5; i++) SpawnFree(Fuel, -10 - i * 40, EY + 40 + i * 8, 150, 0, 3.2); break;
+                case 0: SpawnFree(Fuel, -10, EY + 40, 150, 0, 3.2); break;            // ⛽ 09-27 사장님 「연료통이 한 번에 많이 날아오지 말고 하나만」 — 다섯이 와도 한 판 되찾는 한도(25%)에 막혀 한두 개만 찼다
                 case 1:
                 case 4:
                 {
@@ -2572,11 +2574,11 @@ namespace SalvageRun.Orbit.Sim
             Pay(d, src, v, d.x, d.y, true);
             Emit(SwEv.Broke, d.x, d.y, 0, d.k * 100 + (int)d.att);
             if (d.k == Fuel && AddFuel(3) > 0) Emit(SwEv.Pop, d.x, d.y, 0, 1, "연료 +3초");
-            if (d.k == Tank && r.chain < ChainMax) r.pend.Add(new Blast { x = d.x, y = d.y, t = 0.05, R = 58 });
+            if (d.k == Tank && r.pend.Count < PendCap) r.pend.Add(new Blast { x = d.x, y = d.y, t = 0.05, R = TankR });   // 💥 09-27 사장님 「빨간 폭탄 안 터지는 것도 있나?」 — 연쇄 한도(지구 40)를 넘으면 조용히 안 터졌다. 이제 늘 (렉 막는 건 대기 폭발 수로)
             switch (d.att)
             {
                 case Att.FuelPod: if (AddFuel(2) > 0) Emit(SwEv.Pop, d.x, d.y - 10, 0, 1, "연료 +2초"); break;
-                case Att.Det: if (r.chain < ChainMax) r.pend.Add(new Blast { x = d.x, y = d.y, t = 0.07, R = 50 }); break;
+                case Att.Det: if (r.pend.Count < PendCap) r.pend.Add(new Blast { x = d.x, y = d.y, t = 0.07, R = DetR }); break;
                 case Att.Ice: for (int i = 0; i < 4; i++) SpawnFree(Chip, d.x, d.y, Rnd(-90, 90), Rnd(-90, 90), 1.2); break;
                 case Att.Magnet:
                     Emit(SwEv.Ring, d.x, d.y, 90, 2);
