@@ -15,7 +15,7 @@ namespace SalvageRun.Orbit
             public Color room, scan, bayTint;                                // 방 바탕 · 주사선 · 정비고 덧칠
             public Color btnFace, btnHover, btnWall, btnGlow; public string btnInk;   // 출동 단추
             public Color accent;                                             // 테두리 · 탭 강조
-            public int deco;                                                 // 창틀 무늬 — 0 없음 · 1 경고 줄무늬 · 2 밧줄 · 3 군용 (남색에 하늘색 선) · 4 붉은 화살
+            public int deco;                                                 // 창틀 무늬 — 0 없음 · 1 경고 줄무늬 · 2 밧줄 · 3 군용 (남색에 하늘색 선) · 4 붉은 화살 · 5 성에 · 6 주황 띠
             public float rimW = 8;                                           // 창틀 두께
             public string charm;                                             // 창 위에 매달린 장식 (Resources/cockpit/…)
         }
@@ -66,6 +66,24 @@ namespace SalvageRun.Orbit
                 room = new Color(0.035f, 0.045f, 0.065f), scan = new Color(1f, 0.76f, 0.35f, 0.04f), bayTint = new Color(0, 0, 0, 0),
                 btnFace = new Color(0.95f, 0.72f, 0.26f), btnHover = new Color(1f, 0.8f, 0.36f), btnWall = new Color(0.55f, 0.36f, 0.08f), btnGlow = new Color(0.95f, 0.76f, 0.31f), btnInk = "#3a2306",
                 accent = new Color(1f, 0.42f, 0.4f), deco = 4, rimW = 12, charm = "charm_4",
+            },
+            new ShipTheme   // 냉동선 — 성에 낀 하늘색 창틀 · 눈송이 키링 (09-27)
+            {
+                bg = new Color32(7, 12, 19, 255), plate = new Color32(12, 21, 31, 255), rim = new Color32(78, 120, 150, 255), edge = new Color32(190, 235, 255, 255),
+                deskTop = new Color32(18, 30, 44, 255), deskBot = new Color32(10, 17, 27, 255),
+                rivet = new Color(0.25f, 0.35f, 0.45f), plateCol = new Color(0.075f, 0.12f, 0.17f), bezel = new Color(0.17f, 0.25f, 0.33f), screen = new Color(0.03f, 0.055f, 0.08f),
+                room = new Color(0.035f, 0.05f, 0.07f), scan = new Color(0.7f, 0.9f, 1f, 0.04f), bayTint = new Color(0, 0, 0, 0),
+                btnFace = new Color(0.95f, 0.72f, 0.26f), btnHover = new Color(1f, 0.8f, 0.36f), btnWall = new Color(0.55f, 0.36f, 0.08f), btnGlow = new Color(0.95f, 0.76f, 0.31f), btnInk = "#3a2306",
+                accent = new Color(0.56f, 0.85f, 1f), deco = 5, rimW = 12, charm = "charm_5",
+            },
+            new ShipTheme   // 분열탄선 — 올리브 창틀에 주황 띠 · 꼬마 폭탄 키링 (09-27)
+            {
+                bg = new Color32(9, 11, 10, 255), plate = new Color32(18, 22, 16, 255), rim = new Color32(72, 80, 44, 255), edge = new Color32(240, 130, 50, 255),
+                deskTop = new Color32(26, 31, 22, 255), deskBot = new Color32(15, 18, 13, 255),
+                rivet = new Color(0.3f, 0.33f, 0.22f), plateCol = new Color(0.1f, 0.12f, 0.08f), bezel = new Color(0.22f, 0.25f, 0.16f), screen = new Color(0.04f, 0.05f, 0.035f),
+                room = new Color(0.045f, 0.05f, 0.04f), scan = new Color(1f, 0.7f, 0.35f, 0.04f), bayTint = new Color(0, 0, 0, 0),
+                btnFace = new Color(0.95f, 0.72f, 0.26f), btnHover = new Color(1f, 0.8f, 0.36f), btnWall = new Color(0.55f, 0.36f, 0.08f), btnGlow = new Color(0.95f, 0.76f, 0.31f), btnInk = "#3a2306",
+                accent = new Color(1f, 0.6f, 0.25f), deco = 6, rimW = 13, charm = "charm_6",
             },
         };
         ShipTheme Th => Themes[sim != null ? Mathf.Clamp(sim.Ship, 0, Themes.Length - 1) : 0];

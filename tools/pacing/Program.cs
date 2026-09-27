@@ -19,6 +19,8 @@ static class Program
     {
         SweepSim.BotEarn = double.TryParse(Environment.GetEnvironmentVariable("EARN"), out double be) ? be : 3;   // 🤖 사장님은 연쇄로 봇의 약 3배를 번다 (09-26 첫 청구서 기록)
         if (double.TryParse(Environment.GetEnvironmentVariable("DVAL"), out double dv)) SweepSim.DroneValK = dv;   // 🛸 드론 값 몫 맞춤용
+        if (double.TryParse(Environment.GetEnvironmentVariable("FROSTK"), out double fk)) SweepSim.FrostK = fk;   // ❄ 냉동선 맞춤용
+        if (double.TryParse(Environment.GetEnvironmentVariable("FHOLD"), out double fh)) SweepSim.FrostHold = fh;
         if (double.TryParse(Environment.GetEnvironmentVariable("BPOW"), out double bp)) SweepSim.BlastPowK = bp;   // 💥 폭발이 화력 배율을 얼마나 따르나
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         if (double.TryParse(Environment.GetEnvironmentVariable("LOANMULT"), out double lm)) SweepSim.LoanMult = lm;
@@ -39,7 +41,7 @@ static class Program
     static Result Run(int seed, bool verbose)
     {
         var sim = new SweepSim(null, null, seed);
-        if (int.TryParse(Environment.GetEnvironmentVariable("SHIP"), out int forceShip)) { sim.M.shipsOwned = 31; sim.M.ship = forceShip; }   // 🚀 배 비교용 (SHIP=0 빔 · 1 산탄 · 2 작살)
+        if (int.TryParse(Environment.GetEnvironmentVariable("SHIP"), out int forceShip)) { sim.M.shipsOwned = 127; sim.M.ship = forceShip; }   // 🚀 배 비교용 (SHIP=0 빔 · 1 산탄 · 2 작살)
         var rng = new Random(seed * 31 + 1);
         double ax = 600, ay = 360, tx = 600, ty = 360, retarget = 0, shopClock = 0;
         bool hold = false;

@@ -855,6 +855,19 @@ namespace SalvageRun.Orbit
             int m = ((int)(fx + Mathf.Abs(fy % 24 - 12)) % 28);
             return m < 5 ? new Color32(210, 60, 52, 255) : rim;
         }
+        // ❄ 성에 — 하늘빛 틀에 흰 서리 알갱이가 드문드문 (냉동선)
+        static Color32 Frost(float fx, float fy, Color32 rim)
+        {
+            int h = ((int)fx * 73856093) ^ ((int)fy * 19349663);
+            int m = (h >> 3) & 63;
+            return m < 3 ? new Color32(235, 248, 255, 255) : m < 9 ? new Color32(150, 200, 230, 255) : rim;
+        }
+        // 🎆 주황 띠 — 올리브 틀에 굵은 주황 사선 띠가 드문드문 (분열탄선)
+        static Color32 Stripe(float fx, float fy, Color32 rim)
+        {
+            int m = ((int)(fx - fy)) % 44; if (m < 0) m += 44;
+            return m < 6 ? new Color32(240, 120, 40, 255) : rim;
+        }
         static void BuildHull(ShipTheme t)
         {
             const int W = 960, H = 600;
@@ -871,7 +884,7 @@ namespace SalvageRun.Orbit
                     Color32 c;
                     if (InQuad(WinPoly, fx, fy)) c = new Color32(0, 0, 0, 0);
                     else if (InQuad(inner, fx, fy)) c = edge;
-                    else if (InQuad(outer, fx, fy)) c = t.deco == 1 ? (((int)(fx + fy) / 8) % 2 == 0 ? new Color32(255, 204, 31, 255) : rim) : t.deco == 2 ? Rope(fx, fy, rim) : t.deco == 3 ? Mil(fx, fy, rim, outer) : t.deco == 4 ? Chevron(fx, fy, rim) : rim;   // 창틀 무늬 — 산탄선 경고 줄무늬 · 작살선 밧줄
+                    else if (InQuad(outer, fx, fy)) c = t.deco == 1 ? (((int)(fx + fy) / 8) % 2 == 0 ? new Color32(255, 204, 31, 255) : rim) : t.deco == 2 ? Rope(fx, fy, rim) : t.deco == 3 ? Mil(fx, fy, rim, outer) : t.deco == 4 ? Chevron(fx, fy, rim) : t.deco == 5 ? Frost(fx, fy, rim) : t.deco == 6 ? Stripe(fx, fy, rim) : rim;   // 창틀 무늬 — 산탄선 경고 줄무늬 · 작살선 밧줄
                     else if (fy > 336 && (fy > 384 || InQuad(new[] { new Vector2(0, 384), new Vector2(126, 336), new Vector2(834, 336), new Vector2(W, 384) }, fx, fy) || fy >= 384))
                     {
                         float k = Mathf.InverseLerp(336, H, fy);   // 조종대 — 위가 밝고 아래로 어두워진다

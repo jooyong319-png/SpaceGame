@@ -75,7 +75,7 @@ namespace SalvageRun.Orbit.Sim
         public List<PastCompany> history = new List<PastCompany>();
     }
 
-    public class Blast { public double x, y, t, R; public bool w; public int wid = -1; }   // wid = 피해를 세어 줄 곳 (DmgCat) — 기뢰 · 분열탄처럼 늦게 터져도 제 무기로     // w = 무기가 낸 폭발 (이것만 또 번진다 — 09-24 사장님 「연쇄 반응도 무기 특성으로」)
+    public class Blast { public double x, y, t, R, dk; public bool w; public int wid = -1; }   // wid = 피해를 세어 줄 곳 (DmgCat) — 기뢰 · 분열탄처럼 늦게 터져도 제 무기로     // w = 무기가 낸 폭발 (이것만 또 번진다 — 09-24 사장님 「연쇄 반응도 무기 특성으로」)
     public class Drone { public double a, cd, x, y; }
     public class Missile { public double x, y, vx, vy, life; public Junk tg; }   // 🚀 미사일선 (09-27)
     public class Orb { public double x, y, tx, ty, vx, vy, t, zap; public bool there; }   // ⚡ 전격선 구체 (09-27)
@@ -545,6 +545,8 @@ namespace SalvageRun.Orbit.Sim
             new ShipDef { id = "harpoon", name = "작살선",      weapon = "작살", trait = "꿰뚫기", price = 16, desc = "작살이 조준 방향으로 한 줄을 꿰뚫는다 — 줄 위의 잔해를 모두 맞히고, 뚫을 때마다 약해진다. 줄지어 선 잔해에 강하다" },
             new ShipDef { id = "tesla",   name = "전격선",      weapon = "전기 구체", trait = "지지기", price = 24, desc = "조준점으로 전기 구체를 던진다 — 날아가며 둘레 잔해에 번개를 튀기고, 닿으면 잠깐 머물다 펑 터진다" },   // 09-27 사장님 「레일건 말고 전기로 무언가 — 전기 구체를 범위로 던진다든가」
             new ShipDef { id = "missile", name = "미사일선",    weapon = "유도 미사일", trait = "쫓기", price = 20, desc = "누르고 있으면 작은 미사일이 줄줄이 나가 조준점 둘레의 잔해를 스스로 골라 쫓는다 — 빗나가지 않지만 한 발은 작다" },   // 09-27 사장님 「유도 미사일이 그나마 낫네」 (시안 X4byMmYEwkfh7u9rat8pML)
+            new ShipDef { id = "frost",   name = "냉동선",      weapon = "서리 포", trait = "얼려 깨기", price = 22, desc = "조준점에 서리 원이 터진다 — 언 잔해는 무엇에 맞든 두 배로 아프고, 언 채 부서지면 산산조각 나 옆을 친다" },   // 09-27 사장님 「냉동이랑 분열탄선은 할만할듯」 (시안 MTRmPv5Fe9bgvb1Xcq4Tii)
+            new ShipDef { id = "cluster", name = "분열탄선",    weapon = "분열 포탄", trait = "흩뿌리기", price = 24, desc = "포탄이 조준점에 떨어져 터지고 파편 넷으로 흩어진다 — 몰린 곳에 강하다. 떨어지는 사이 잔해가 움직인다" },
         };
         public int Ship => M.ship >= 0 && M.ship < Ships.Length && ShipOwned(M.ship) ? M.ship : 0;
         public bool ShipOwned(int i) => i == 0 || (M.shipsOwned & (1 << i)) != 0;
@@ -569,16 +571,28 @@ namespace SalvageRun.Orbit.Sim
             { "c_rad", new[] { "탐지 범위", "조준점 둘레 고르는 범위 +10 (단계마다) — 세 단계마다 한 번에 한 발 더" } },
             { "c_spd", new[] { "미사일 증폭", "미사일 화력 +8% (단계마다)" } },
         };
+        static readonly System.Collections.Generic.Dictionary<string, string[]> FrostNode = new System.Collections.Generic.Dictionary<string, string[]>
+        {
+            { "c_pow", new[] { "서리 위력", "서리 피해 +1 (단계마다) — 언 잔해는 두 배로 아프다" } },
+            { "c_rad", new[] { "서리 원", "서리 원 반지름 +6 (단계마다) — 처음 44" } },
+            { "c_spd", new[] { "냉기 증폭", "서리 화력 +8% (단계마다)" } },
+        };
+        static readonly System.Collections.Generic.Dictionary<string, string[]> ClusNode = new System.Collections.Generic.Dictionary<string, string[]>
+        {
+            { "c_pow", new[] { "포탄 위력", "포탄 · 파편 피해 +1 (단계마다)" } },
+            { "c_rad", new[] { "파편 수", "포탄 폭발 +5 (단계마다) — 세 단계마다 파편 하나 더 · 처음 넷" } },
+            { "c_spd", new[] { "분열 증폭", "포탄 화력 +8% (단계마다)" } },
+        };
         static readonly System.Collections.Generic.Dictionary<string, string[]> TeslaNode = new System.Collections.Generic.Dictionary<string, string[]>
         {
             { "c_pow", new[] { "전기 위력", "번개 · 터지는 피해 +1 (단계마다)" } },
             { "c_rad", new[] { "구체 크기", "번개가 닿는 범위 +10 · 터지는 범위 +8 (단계마다) — 두 단계마다 번개 한 줄 더" } },
             { "c_spd", new[] { "전기 증폭", "전기 화력 +8% (단계마다)" } },
         };
-        System.Collections.Generic.Dictionary<string, string[]> ShipNode => Ship == 1 ? ScatterNode : Ship == 2 ? HarpoonNode : Ship == 3 ? TeslaNode : Ship == 4 ? MissileNode : null;
+        System.Collections.Generic.Dictionary<string, string[]> ShipNode => Ship == 1 ? ScatterNode : Ship == 2 ? HarpoonNode : Ship == 3 ? TeslaNode : Ship == 4 ? MissileNode : Ship == 5 ? FrostNode : Ship == 6 ? ClusNode : null;
         public string NodeName(int i) => ShipNode != null && ShipNode.TryGetValue(Nodes[i].id, out var a) ? a[0] : Nodes[i].name;
         public string NodeDesc(int i) => ShipNode != null && ShipNode.TryGetValue(Nodes[i].id, out var a) ? a[1] : Nodes[i].desc;
-        public double ShipGateK => Ship == 1 ? 0.6 : Ship == 2 ? 1.0 : Ship == 3 ? 2.0 : Ship == 4 ? 0.4 : 1;   // 미사일은 날아가는 사이 흩어져 관문엔 덜 박힌다 · 전격 한 발 ≈ 빔 × 2 (번개 여럿 + 펑) · 미사일 한 발 = 빔 × MissileK         // 🛰 관문 체력은 배 무기가 한 방에 주는 만큼으로 (산탄 한 알은 약하다)
+        public double ShipGateK => Ship == 1 ? 0.6 : Ship == 2 ? 1.0 : Ship == 3 ? 2.0 : Ship == 4 ? 0.4 : Ship == 5 ? FrostGateK : Ship == 6 ? ClusGateK : 1;   // 미사일은 날아가는 사이 흩어져 관문엔 덜 박힌다 · 전격 한 발 ≈ 빔 × 2 (번개 여럿 + 펑) · 미사일 한 발 = 빔 × MissileK         // 🛰 관문 체력은 배 무기가 한 방에 주는 만큼으로 (산탄 한 알은 약하다)
         public double ScatterR => (38 + 6 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));   // 산탄 — 처음부터 넓다
 
         // ───────────────────────── 의뢰 (§4-4) — kind: 0 금고 1 연료통 2 조각 3 위성 4 연쇄 5 탱크 6 압축 7 큰 잔해 8 압류
@@ -844,7 +858,7 @@ namespace SalvageRun.Orbit.Sim
         public const double FuelTankPct = 0.03;   // ⛽ 09-26 사장님 「30초도 김」 — 한 판은 20초 남짓으로 묶는다
         public const double FuelCap = 22;
         double FuelRaw => Math.Max(12, 20.0 * (1 + 0.2 * Cr(0)) * (Lv("k_claw") > 0 ? 0.85 : 1)) * (1 + 0.25 * Lv("m_fuel"));   // ⚠ 트리 연료 칸은 상한에 막혀 거의 안 듣는다 — 트리 압축 때 다른 효과로
-        public double Gap => Ship == 3 ? TeslaGap : Ship == 4 ? MissileGap : 0.5;                        // 🚀 레일건선은 느리게 (09-27)                                              // 연사 속도는 없앴다 — 수동 공격 (09-26). 빔 증폭(c_spd)은 화력으로
+        public double Gap => Ship == 3 ? TeslaGap : Ship == 4 ? MissileGap : Ship == 5 ? FrostGap : Ship == 6 ? ClusGap : 0.5;                        // 🚀 레일건선은 느리게 (09-27)                                              // 연사 속도는 없앴다 — 수동 공격 (09-26). 빔 증폭(c_spd)은 화력으로
         public double ClawR => Lv("c_rad") > 0 ? (20 + 5 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2)) : 0;   // 0 = 하나씩 · 09-26 사장님 「범위가 너무 커진다」 — 최대 102 → 60 (단계 수는 그대로)
         public bool AutoClaw => true;        // 🔴 자동이 기본 (사장님 09-23: "클릭은 빼자 오토는 기본으로")
         public const double PickR = 30;      // 범위 강화 전 — 커서 밑 하나를 잡는 거리
@@ -1589,6 +1603,7 @@ namespace SalvageRun.Orbit.Sim
                 var p = r.pend[i];
                 if (p.t > 0) continue;
                 r.pend.RemoveAt(i);
+                if (p.dk > 0) { ShellBurst(p.x, p.y, p.R, p.dk); continue; }        // 🎆 분열탄선 포탄 · 파편
                 blastW = p.w; dmgCat = p.wid; DoBlast(p.x, p.y, p.R * BlastK); dmgCat = -1; blastW = false;
             }
             r.chainT -= dt;
@@ -1910,6 +1925,66 @@ namespace SalvageRun.Orbit.Sim
             if (any) OnHit(0.25);
         }
         public double FrzMul => Lv("w_frz_u") >= 2 ? 2.5 : 2;
+
+        // ❄ 냉동선 — 무기고 냉동 빔을 매번 쏜다. 한 방은 약하고, 냉동 빔 줄(강화 · 각성 · 특화 · 3단계)이 그대로 세게 한다 (09-27)
+        public static double FrostGap = 0.3, FrostK = 0.42, FrostGateK = 0.9, FrostHold = 1.0;
+        public double FrostR => (44 + 6 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2)) * (Lv("w_frz_u") >= 1 ? 1.3 : 1) * (1 + 0.2 * We("frz"));
+        void FrostShot()
+        {
+            var r = R; double cx = r.ax, cy = r.ay, rad = FrostR, hold = FrostHold + (Lv("w_frz_u") >= 1 ? 0.5 : 0) + 0.25 * We("frz");
+            bool crit = Rnd() < Crit, any = false; int dmg = Math.Max(1, RoundP(Pow * FrostK * (Lv("w_frz_x") > 0 ? 2 : 1) * (crit ? CritX : 1)));
+            for (int ji = 0, jn = r.junk.Count; ji < jn && ji < r.junk.Count; ji++)
+            {
+                var d = r.junk[ji]; if (d.dead) continue;
+                double dx = d.x - cx, dy = d.y - cy; if (dx * dx + dy * dy > (rad + Types[d.k].r) * (rad + Types[d.k].r)) continue;
+                any = true; Hit(d, dmg, 0, true);                                   // 치고 나서 얼린다 — 다음 방부터 두 배
+                if (!d.dead) { if (d.frz <= 0) Emit(SwEv.Shatter, d.x, d.y, 0, 1); d.frz = Math.Max(d.frz, hold); }
+            }
+            Emit(SwEv.Laser, ShipX, ShipY, rad, 32 | 64, null, cx, cy);
+            Emit(SwEv.Strike, cx, cy, rad, any ? 1 : 0);
+            if (any && crit) Emit(SwEv.Crit, cx, cy - rad - 8);
+            if (any) OnHit(1);
+        }
+
+        // 🎆 분열탄선 — 무기고 분열탄을 매번 쏜다. 포탄이 떨어져 터지고 파편 넷 (분열탄 줄이 그대로 세게 한다 · 09-27)
+        public static double ClusGap = 0.45, ClusK = 0.8, ClusFragK = 0.5, ClusGateK = 1.0;
+        public int ClusN => 4 + Lv("c_rad") / 3 + (Lv("w_clus_u") >= 1 ? 2 : 0) + We("clus");
+        void ClusShot()
+        {
+            var r = R; int u = Lv("w_clus_u"); bool awk = Lv("w_clus_a") > 0; double xk = Lv("w_clus_x") > 0 ? 2 : 1;
+            double ax = r.ax, ay = r.ay, R0 = (26 + 5 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));
+            Emit(SwEv.Shell, ShipX, ShipY, 0, 0, null, ax, ay);
+            r.pend.Add(new Blast { x = ax, y = ay, t = 0.35, R = R0, dk = ClusK * xk });
+            int n = ClusN;
+            var targets = new List<Junk>();
+            if (u >= 2) { foreach (var d in r.junk) if (!d.dead) { double dx = d.x - ax, dy = d.y - ay; if (dx * dx + dy * dy < 130 * 130) targets.Add(d); } }
+            for (int k = 0; k < n; k++)
+            {
+                double fx, fy;
+                if (u >= 2 && targets.Count > 0) { var t = targets[rng.Next(targets.Count)]; fx = t.x; fy = t.y; }
+                else { double a = k * Math.PI * 2 / n + Rnd(-0.3, 0.3), dd = Rnd(40, 85); fx = ax + Math.Cos(a) * dd; fy = ay + Math.Sin(a) * dd * Tilt; }
+                double t0 = 0.47 + k * 0.03;
+                r.pend.Add(new Blast { x = fx, y = fy, t = t0, R = 16, dk = ClusFragK * xk });
+                Emit(SwEv.Shell, ax, ay, t0, 1, null, fx, fy);
+                if (awk) for (int j = 0; j < 2; j++) r.pend.Add(new Blast { x = fx + Rnd(-28, 28), y = fy + Rnd(-20, 20), t = t0 + 0.16 + j * 0.03, R = 11, dk = ClusFragK * 0.5 * xk });
+            }
+            Emit(SwEv.Strike, ax, ay, R0, 1);
+            OnHit(0.5);
+        }
+        void ShellBurst(double x, double y, double Rb, double dk)
+        {
+            Emit(SwEv.Blast, x, y, Rb);
+            bool crit = Rnd() < Crit; int dmg = Math.Max(1, RoundP(Pow * dk * (crit ? CritX : 1)));
+            var list = R.junk;
+            for (int i = 0; i < list.Count; i++)
+            {
+                var d = list[i]; if (d.dead) continue;
+                double dx = d.x - x, dy = d.y - y, rr = Rb + Types[d.k].r;
+                if (dx * dx + dy * dy > rr * rr) continue;
+                Hit(d, dmg, 0, true);
+            }
+            if (crit) Emit(SwEv.Crit, x, y - Rb - 8);
+        }
         void Shatter(Junk d)                                                  // 언 것이 부서질 때 — 옆을 친다 (각성: 옆도 얼린다)
         {
             bool awk = Lv("w_frz_a") > 0;
@@ -2144,6 +2219,8 @@ namespace SalvageRun.Orbit.Sim
             if (Ship == 2) { Harpoon(); return; }
             if (Ship == 3) { Tesla(); return; }
             if (Ship == 4) { MissileFire(); return; }
+            if (Ship == 5) { FrostShot(); return; }
+            if (Ship == 6) { ClusShot(); return; }
             if (ClawR <= 0)
             {
                 // 범위가 없으면 커서 밑의 하나만
@@ -2424,7 +2501,7 @@ namespace SalvageRun.Orbit.Sim
             DbgKills++;
             if (d.dead) return;
             d.dead = true;
-            if (d.frz > 0 && Lv("w_frz") > 0 && shatterDepth < 40) { shatterDepth++; Shatter(d); shatterDepth--; }
+            if (d.frz > 0 && (Lv("w_frz") > 0 || Ship == 5) && shatterDepth < 40) { shatterDepth++; Shatter(d); shatterDepth--; }
             var r = R;
             r.broke++; M.broken++;
             if (r.clean) r.cleanKills++;

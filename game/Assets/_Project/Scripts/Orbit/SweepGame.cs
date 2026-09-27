@@ -422,6 +422,8 @@ namespace SalvageRun.Orbit
                         if (sim.Ship == 2) { HarpoonFx(PxToWorld(e.x2, e.y2), (int)e.v); break; }   // 🚀 작살선
                         if (sim.Ship == 3) { TeslaFx(); break; }                                   // 🚀 전격선
                         if (sim.Ship == 4) { if (e.k == 1) MissileLaunchFx(); break; }             // 🚀 미사일선
+                        if (sim.Ship == 5) { if (e.k == 1) OrbitSfx.Play("tick", 0.3f, 0.06f); break; }   // ❄ 냉동선 — 그림은 냉동 빔(Laser) 것을 쓴다
+                        if (sim.Ship == 6) break;                                                  // 🎆 분열탄선 — 그림은 분열탄(Shell) 것을 쓴다
                         bool spot = e.v <= SweepSim.PickR + 0.1;      // 아직 좁은 빔 — 한 점
                         Beam(at, e.k == 1);
                         if (e.k == 1) RingFx(at, Amber2, spot ? 0.26f : 0.22f, (float)e.v * 2 / PxPerUnit);
@@ -1213,7 +1215,7 @@ namespace SalvageRun.Orbit
         static Sprite hullSpr, turClawSpr, dronePx;
         static int turClawShip = -1;
         static readonly Sprite[] shipTur = new Sprite[8]; static readonly bool[] shipTurTried = new bool[8];
-        static readonly string[] ShipTurName = { "claw", "scatter", "harpoon", "tesla", "missile" };
+        static readonly string[] ShipTurName = { "claw", "scatter", "harpoon", "tesla", "missile", "frz", "clus" };
         static Sprite ShipTur(int s) { if (s < 0 || s >= ShipTurName.Length) return null; if (!shipTurTried[s]) { shipTurTried[s] = true; shipTur[s] = Resources.Load<Sprite>("ship/turret_" + ShipTurName[s]); } return shipTur[s] ?? TurSprite(0); }                                             // 🚀 포탑 그림을 불러온 배 (09-26)
         static readonly Sprite[][] planetFrames = new Sprite[12][]; static readonly bool[] planetTried = new bool[12];
         static Sprite[] PlanetFrames(int pi)
