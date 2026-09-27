@@ -95,6 +95,7 @@ namespace SalvageRun.Orbit.Sim
         public string contractText; public int contractProg, contractTarget;     // 지난 판 의뢰 — 결산에 성공/실패를 보여 준다
         public int cVault, cFuel, cChip, cSat, cTank, cBig, cTag;
         public int cleanKills, cleanGoal = 1; public double dmgDone, lastShot = -9;
+        public int tapCombo; public double lastPress = -9;                   // ★ 연타 장인 (09-27) — 0.3초 안에 다시 누른 수
         public readonly List<Junk> junk = new List<Junk>();
         public readonly List<Junk> packed = new List<Junk>();
         public readonly List<Blast> pend = new List<Blast>();
@@ -267,7 +268,7 @@ namespace SalvageRun.Orbit.Sim
             N("q_tour", "route", "★ 관광 명소", "한 판에 연쇄 100을 넘기면 관광객이 몰린다 — 토성 고리 관광 주가 ↑", new[] { "p_sat" }, 1, 3000000, 1, 1, 0, 0),
             N("q_rock", "route", "★ 떠돌이 소행성", "가끔 소행성이 궤도에 끼어든다 — 부수면 열쇠(40%) 또는 돈 뭉치", new[] { "p_jup" }, 1, 500000, 1, 1, 0, 0),
             N("q_gold", "hull", "★ 황금 잔해", "가끔 금빛 잔해가 섞인다 — 값 ×3 · 부수면 즉석 복권 (한 판 2장까지)", new[] { "o_wide" }, 1, 40000, 1, 1, 0, 0),
-            N("q_lazy", "drone", "★ 게으름 보너스", "AUTO로 12초 넘게 손을 안 대면 그 판 드론이 한 대 더 나온다", new[] { "d_fix" }, 1, 80000, 1, 1, 0, 0),
+            N("q_lazy", "drone", "★ 연타 장인", "0.3초 안에 다시 누를 때마다 화력 +3% (최대 +30%) · 1초 손을 떼면 식는다", new[] { "d_fix" }, 1, 80000, 1, 1, 0, 0),
             // ⚔ 무기 여섯 더 (09-24 설계서 4단계)
             N("w_vac", "arm", "진공 청소기", "공격 때 8% — 조준점에 소용돌이, 0.7초 동안 빨아들인다 · 삼킨 것은 값 +30%", new[] { "w_chain" }, 1, 12000, 1, 1, 0, 0),
             N("w_vac_u", "arm", "진공 청소기 강화", "1단계 확률 ×1.5 · 소용돌이 +30% · 2단계 삼킨 것 값 +60%", new[] { "w_vac" }, 1, 24000, 4, 2, 0, 0),
@@ -866,7 +867,8 @@ namespace SalvageRun.Orbit.Sim
         public double Part(string k) => Parts.Sum(S.parts, k);
         public double DmgMul => Math.Pow(1.5, Lv("m_claw")) * wMul * RawDmgMul * (R != null ? 1 + R.consDmg / 100.0 : 1);   // ✦ 과충전 포신 · 무기 3단계 위력
         double wMul = 1;
-        double RawDmgMul => 1 + 0.08 * Up(0) + 0.08 * Lv("c_spd") + Part("dmg") + Part("spd") + (Lv("k_claw") > 0 ? 0.4 : 0) + Rage + Grit + 0.10 * Lv("i_claw") + (Lv("x_route_claw") > 0 ? new[] { 0, 0.05, 0.1, 0.2, 0.35 }[Math.Min(4, S.orbit)] : 0);
+        double RawDmgMul => 1 + 0.08 * Up(0) + 0.08 * Lv("c_spd") + Part("dmg") + Part("spd") + (Lv("k_claw") > 0 ? 0.4 : 0) + TapBonus + Rage + Grit + 0.10 * Lv("i_claw") + (Lv("x_route_claw") > 0 ? new[] { 0, 0.05, 0.1, 0.2, 0.35 }[Math.Min(4, S.orbit)] : 0);
+        public double TapBonus => Lv("q_lazy") > 0 && R != null ? 0.03 * R.tapCombo : 0;   // ★ 연타 장인 (예전 자리 · id 는 q_lazy 그대로 — 저장 호환)
         public double Rage { get { if (Lv("q_rage") <= 0 || Mk == null) return 0; double v = 0, c = 0; foreach (var s in Mk.M.st) if (s.shares > 0) { v += s.shares * s.price; c += s.cost; } return c > 0 ? Math.Min(0.5, Math.Max(0, 1 - v / c)) : 0; } }   // ★ 물린 개미의 분노
         public double Grit => Lv("q_debt") > 0 && S.debt > 0 ? Math.Min(0.15, S.debt / Math.Max(1, BillAmount) * 0.1) : 0;   // ★ 빚쟁이의 근성
         public double Pow => ClawDmg * DmgMul * clickMul;                                  // 무기 화력 (소수는 확률로)
@@ -954,35 +956,70 @@ namespace SalvageRun.Orbit.Sim
 
         // 🎟 즉석 복권 · 🎱 궤도 로또 (09-23 사장님 「복권 두 가지 다」) — 게임 안 돈만. 평균 기대값 0.7 안팎 (복권답게 손해)
         readonly Random luck = new Random();                              // 게임 난수와 따로 — 봇 영향 없음
-        public static readonly string[] ScratchSym = { "고철", "위성", "금고", "행성", "황금" };
-        public static readonly int[] ScratchMult = { 1, 2, 5, 20, 100 };
-        public double ScratchPrice => Math.Max(10, Math.Round(BillAmount * 0.02));
+        // 🎟 09-27 사장님 「복권이 진짜 의미가 없다 · 디자인도 불편」 (시안 TxxPY6mLoewcLnW1vmNVBG) — 칸 셋 · 그림 여섯 · 판 벌이 기준 · 돈 말고도 부품 · 열쇠 · 강화
+        public static readonly string[] ScratchSym = { "고철", "위성", "금고", "열쇠", "부품", "황금" };
+        static readonly double[] ScratchOdds = { 0.12, 0.10, 0.06, 0.04, 0.03, 0.005 };   // 셋이 같을 확률 (드문 것부터 뽑는다)
+        public const double ScratchPairP = 0.25;                                   // 둘만 같으면 표값 돌려받기
+        public double ScratchPrice => Math.Max(10, Math.Round(ShopBase * 0.15 / 10) * 10);   // 한 장 = 판 벌이의 15%
         public int ScratchMax => 3 + Lv("l_more");                                  // 🎟 복권 단골
         public int ScratchLeft => S.scratchRun == S.runs ? Math.Max(0, ScratchMax - S.scratchN) : ScratchMax;
         public double ScratchCost => Lv("l_free") > 0 && (S.scratchRun != S.runs || S.scratchN <= 0) ? 0 : ScratchPrice;   // 첫 장은 공짜
-        public double ScratchPending;                                     // 긁어서 다 보이면 받는다
-        /// <summary>한 장 산다 — 돌려주는 값 = 칸 아홉의 그림 (null = 못 삼). win = 당첨 그림 (-1 꽝)</summary>
+        int scratchWin = -1; double scratchPaid;                                 // 긁어서 다 보이면 받는다
+        public string ScratchText;                                               // 받은 것 한 줄 (화면에 띄운다)
+        /// <summary>한 장 산다 — 돌려주는 값 = 칸 셋의 그림 (null = 못 삼). win = 셋이 같은 그림 (-1 꽝 · -2 둘만 같음)</summary>
         public int[] ScratchBuy(out int win)
         {
             win = -1;
             if (ScratchLeft <= 0 || S.cash < ScratchCost) return null;
             double cost = ScratchCost;
             if (S.scratchRun != S.runs) { S.scratchRun = S.runs; S.scratchN = 0; }
-            S.scratchN++; S.cash -= cost;
-            double u = luck.NextDouble() / (1 + 0.25 * Lv("l_luck"));         // 행운의 긁개
-            win = u < 0.001 ? 4 : u < 0.009 ? 3 : u < 0.044 ? 2 : u < 0.114 ? 1 : u < 0.234 ? 0 : -1;
-            var g = new int[9]; var cnt = new int[5];
-            var slots = new List<int> { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
-            if (win >= 0) for (int k = 0; k < 3; k++) { int j = luck.Next(slots.Count); g[slots[j]] = win; slots.RemoveAt(j); cnt[win]++; }
-            foreach (var j in slots)
+            S.scratchN++; S.cash -= cost; scratchPaid = cost > 0 ? cost : ScratchPrice;
+            double u = luck.NextDouble() / (1 + 0.25 * Lv("l_luck")), acc = 0;   // 행운의 긁개
+            for (int k = ScratchOdds.Length - 1; k >= 0; k--) { acc += ScratchOdds[k]; if (u < acc) { win = k; break; } }
+            int n = ScratchSym.Length;
+            if (win >= 0) { scratchWin = win; return new[] { win, win, win }; }
+            if (u < acc + ScratchPairP)
             {
-                int sym; do sym = luck.Next(5); while (sym == win || cnt[sym] >= 2);   // 꽝 칸은 같은 그림이 둘까지만
-                g[j] = sym; cnt[sym]++;
+                win = -2; scratchWin = -2;
+                int a = luck.Next(n), b; do b = luck.Next(n); while (b == a);
+                var g = new[] { a, a, b }; int j = luck.Next(3); (g[j], g[2]) = (g[2], g[j]); return g;
             }
-            ScratchPending = win >= 0 ? ScratchPrice * ScratchMult[win] * (Lv("l_jack") > 0 ? 2 : 1) : 0;   // 잭팟 ×2
-            return g;
+            scratchWin = -1;
+            var l = new List<int>(); while (l.Count < 3) { int c = luck.Next(n); if (!l.Contains(c)) l.Add(c); }
+            return l.ToArray();
         }
-        public double ScratchClaim() { double w = ScratchPending; S.cash += w; ScratchPending = 0; return w; }
+        /// <summary>다 긁으면 받는다 — 돌려주는 값 = 받은 돈 (돈 아닌 것은 ScratchText 로)</summary>
+        public double ScratchClaim()
+        {
+            int w = scratchWin; scratchWin = -1; ScratchText = null;
+            double R0 = ShopBase, jack = Lv("l_jack") > 0 ? 2 : 1, got = 0;
+            switch (w)
+            {
+                case -2: got = scratchPaid; ScratchText = "둘이 같다 — 표값 돌려받기"; break;
+                case 0: got = R0 * 0.2 * jack; ScratchText = "고철 셋 — 판 벌이 × 0.2"; break;
+                case 1: S.nDmg += 30; ScratchText = "위성 셋 — 다음 판 화력 +30%"; break;
+                case 2: got = R0 * 1 * jack; ScratchText = "금고 셋 — 판 벌이 × 1"; break;
+                case 3: S.keys++; ScratchText = "열쇠 셋 — 열쇠 1개"; break;
+                case 4: ScratchText = "부품 셋 — " + FreePart() + " 공짜"; break;
+                case 5: got = R0 * 10 * jack; ScratchText = "황금 셋! 판 벌이 × 10 + " + FreePart(); break;
+                default: return 0;
+            }
+            got = Math.Round(got); S.cash += got;
+            return got;
+        }
+        string FreePart()
+        {   // 가게 진열대 부품 하나 (없으면 일반 · 희귀 중 하나) — 제 칸에 끼운다
+            var pick = new List<int>();
+            if (S.shop != null) foreach (var id in S.shop) if (id >= 0 && id < Parts.Defs.Length) pick.Add(id);
+            bool shelf = pick.Count > 0;
+            if (!shelf) for (int i = 0; i < Parts.Defs.Length; i++) if (Parts.Defs[i].rar <= 1 && (S.parts == null || Array.IndexOf(S.parts, i) < 0)) pick.Add(i);
+            if (pick.Count == 0) return "부품";
+            int got = pick[luck.Next(pick.Count)];
+            if (shelf) { int k = S.shop.IndexOf(got); S.shop.RemoveAt(k); if (k == S.shopSale) S.shopSale = -1; else if (k < S.shopSale) S.shopSale--; }
+            if (S.parts == null || S.parts.Length != 5) S.parts = new[] { -1, -1, -1, -1, -1 };
+            S.parts[Parts.Defs[got].slot] = got;
+            return Parts.Defs[got].name;
+        }
 
         public double LottoPrice => Math.Max(20, Math.Round(BillAmount * 0.03));
         public int LottoMine => S.lotto.Count;
@@ -1572,9 +1609,9 @@ namespace SalvageRun.Orbit.Sim
         {
             var r = R; if (r.over) return;
             M.playSeconds += dt; r.t += dt;
-            // ★ 게으름 보너스 — AUTO로 30초 손을 안 대면 드론 두 대 (idleT 는 게임이 손을 대면 0으로)
+            // 손 안 댄 시간 (idleT — 게임이 손을 대면 0으로 · 예전 게으름 보너스가 썼다)
             r.idleT += dt;
-            if (Lv("q_lazy") > 0 && !r.lazyDone && r.idleT > 12 && DronesOn) { r.lazyDone = true; r.drones.Add(new Drone { a = Rnd(0, 6.28), cd = Rnd() }); Emit(SwEv.Pop, ShipX, ShipY - 20, 0, 1, "게으름 보너스 — 드론 +1"); }
+            if (r.tapCombo > 0 && r.t - r.lastPress > 1) r.tapCombo = 0;          // ★ 연타 장인 — 1초 손을 떼면 식는다 (예전 게으름 보너스 자리)
             // ★ 떠돌이 소행성
             if (r.rockT > 0 && r.t >= r.rockT) { r.rockT = -1; var o = Orbits[S.orbit]; var rk = Spawn(Big, Rnd(0, 6.28), (o.bi + Bo) / 2, Att.Rock, false, 0.7); rk.hp = rk.max = (int)Math.Round(rk.max * 2.5); Emit(SwEv.Warn, 0, 0, 0, 1, "떠돌이 소행성이 궤도에 끼어들었다!"); }
             if (aim) { r.ax = ax; r.ay = ay; }
@@ -2105,7 +2142,7 @@ namespace SalvageRun.Orbit.Sim
             if (Rnd() < 0.1 * Lv("c_double") + Part("dbl")) { Fire(0); Procs(); }
         }
         // 👆 수동 사격 — 누를 때마다 조준점에 한 방 더 (위력 ×1.5 · 0.2초 간격). 무기 발동 · 전탄 게이지도 굴러간다 (09-24 사장님 37번 「클릭에 요소」)
-        public void PressFire() { var r = R; if (r == null || r.over) return; if (r.t - r.lastShot >= 0.12) r.next = 0; }   // 👆 누르는 순간 바로 쏜다 (너무 빠른 연타는 0.12초로 막음)
+        public void PressFire() { var r = R; if (r == null || r.over) return; r.tapCombo = r.t - r.lastPress <= 0.3 ? Math.Min(10, r.tapCombo + 1) : 0; r.lastPress = r.t; if (r.t - r.lastShot >= 0.12) r.next = 0; }   // 👆 누르는 순간 바로 쏜다 (너무 빠른 연타는 0.12초로 막음)
         public bool ManualFire, FireHeld = true;                               // 👆 수동 공격 (설정) · 지금 누르고 있나 — 게임이 매 프레임 넣는다. 봇 · 시험은 자동
         public bool ClickShot(double x, double y)
         {
