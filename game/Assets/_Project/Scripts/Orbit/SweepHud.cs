@@ -571,7 +571,7 @@ namespace SalvageRun.Orbit
             if (R.clean) hint = null; else
             if (CoachBox()) hint = null; else
             if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = manualFire ? "왼쪽 단추를 누르고 있는 동안 청소선이 쏜다 — 잔해 위를 겨누자" : "궤도 위에 커서를 대면 청소선이 빔을 쏜다 — 처음엔 한 점씩";
-            else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "블랙홀이 열렸다 — 집게로 칠 때 가끔 저절로 열려 빨아들인다";
+            else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "블랙홀이 열렸다 — 쏠 때 가끔 저절로 열려 빨아들인다";
             else if (sim.DronesOn && !sim.M.flags.Contains("hint_drone") && R.t < 8) hint = "드론은 알아서 줍는다 — 한 방에 부서지는 것만";
             else if (sim.S.orbit > 0 && !sim.M.flags.Contains("hint_p" + sim.S.orbit) && R.t < 8) hint = PlanetHint[sim.S.orbit];   // 새 행성 첫 판
             if (hint != null)

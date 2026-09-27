@@ -454,6 +454,19 @@ namespace SalvageRun.Orbit
                         if (k == SweepSim.Big) shake = Mathf.Max(shake, 0.2f);
                         break;
                     }
+                    case SwEv.ChainPay:
+                    {   // 💰 09-27 연쇄가 끝나면 모은 보너스 — 큰 글씨 + 금화가 계산대로 파파팍
+                        if (e.v < 1) break;                                                  // 돈은 부술 때 이미 들어갔다 — 여기선 보여 주기만
+                        if (e.k >= 5)
+                        {
+                            PopAt(e.x, e.y - 34, "연쇄 " + e.k + " 보너스 +" + KNum.Fmt(e.v), new Color(1f, 0.87f, 0.4f), 18 + Mathf.Min(10, e.k / 20f));
+                            int coins = Mathf.Clamp(6 + e.k / 6, 6, 36);
+                            for (int i = 0; i < coins && fx.Count < 880; i++) Add(disc, at + (Vector3)(Random.insideUnitCircle * 0.4f), 0.13f, Amber, 2, 1.4f + i * 0.02f).v = (Vector3)(Random.insideUnitCircle.normalized * Random.Range(2f, 5f));
+                            OrbitSfx.Play("buy", 0.9f); OrbitSfx.Play("coin", 0.8f, 0.05f);
+                            creditPulse = 1; shake = Mathf.Max(shake, 0.05f + Mathf.Min(0.1f, e.k / 1000f));
+                        }
+                        break;
+                    }
                     case SwEv.Coin:
                     {
                         int src = e.k % 10; bool cut = e.k >= 10;
