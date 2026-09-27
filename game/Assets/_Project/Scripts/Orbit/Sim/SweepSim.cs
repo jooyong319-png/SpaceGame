@@ -1062,7 +1062,7 @@ namespace SalvageRun.Orbit.Sim
         public double PartPrice(int id)
         {
             double b = ShopBase, p = id == Parts.Key ? b * 2.5 : IsCons(id) ? b * ConsPrice[id - Cons0] : b * Parts.RarPrice[Parts.Defs[id].rar];
-            if (!IsCons(id) && id != Parts.Key) p = Math.Max(Parts.RarFloor[Parts.Defs[id].rar], p);   // 👑 등급 바닥 — 희귀 100만 · 전설 1억
+            if (!IsCons(id) && id != Parts.Key) p = Math.Max(Parts.RarFloor[Parts.Defs[id].rar], p);   // 👑 등급 바닥 — 희귀 천왕성 · 영웅 카이퍼 · 전설 오르트쯤 열린다 (Parts.RarFloor)
             double jit = 1 + 0.15 * Math.Sin(id * 12.9898 + S.runs * 78.233);          // 판마다 조금씩 다른 값
             return Math.Max(10, Math.Round(p * jit * (1 - 0.05 * Up(8)) / 10) * 10);
         }

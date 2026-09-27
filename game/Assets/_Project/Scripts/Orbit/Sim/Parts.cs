@@ -12,8 +12,8 @@ namespace SalvageRun.Orbit.Sim
         public const int Key = 100;                                          // 가게에 올라오는 열쇠
         public static readonly string[] SlotName = { "엔진", "사출기", "선체", "레이더", "부적" };
         public static readonly string[] RarName = { "일반", "희귀", "영웅", "전설" };   // 09-26 사장님 「영웅 등급은 없나?」 — 희귀와 전설 사이
-        public static readonly double[] RarPrice = { 0.4, 2, 6, 18 };   // 09-26 밤 사장님 「등급별로 가격 차이를 많이 둬 · 성능 차이도」   // 09-26 밤 사장님 「가게가 너무 비싸서 절대 못 사겠다」 — 판 벌이의 0.5 · 1.5 · 4 · 10배 (예전 1.5 · 6 · 12 · 25)  // 판 벌이 배수 — 전설은 1억 바닥까지 (SweepSim.PartPrice · 09-26 사장님 「전설은 정말 나중에야」)
-        public static readonly double[] RarFloor = { 0, 10000, 1000000, 100000000 };   // 희귀 1만 · 영웅 100만 · 전설 1억 (전설은 그대로 늦게)   // 등급 바닥 — 희귀 100만 · 영웅 1천만 · 전설 1억 (09-26 사장님 「등급별로 정말 비싸지게」)
+        public static readonly double[] RarPrice = { 0.3, 0.8, 1, 2 };   // 판 벌이 배수 — 09-27 사장님 「일반은 가게 열 때 살 수 있게 · 전설은 마지막 전~전전 행성쯤」: 등급 차이는 바닥값(열리는 행성)이 맡고, 열린 뒤엔 몇 판치 (예전 0.4 · 2 · 6 · 18 이라 전설이 끝까지 18판치)
+        public static readonly double[] RarFloor = { 0, 1e7, 3e9, 8e10 };   // 등급 바닥 = 처음 살 만해지는 행성 (사장님 기록 기준) — 희귀 1천만 천왕성 · 영웅 30억 카이퍼 · 전설 800억 오르트
         public static readonly double[] RarBoost = { 1, 1.5, 2.5, 4.5 };      // 등급 성능 배수 — 부품 효과에 곱한다 (음수 · 켜짐/꺼짐은 그대로)
 
         static Parts()
