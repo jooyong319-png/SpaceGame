@@ -189,7 +189,7 @@ namespace SalvageRun.Orbit
             bool adv = false;
             if (kb != null)
             {
-                if (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame) adv = true;
+                if (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame && !kb.altKey.isPressed) adv = true;
                 if (kb.escapeKey.wasPressedThisFrame && dlgLog) dlgLog = false;
             }
             var ms = Mouse.current;

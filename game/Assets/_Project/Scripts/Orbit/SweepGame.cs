@@ -81,9 +81,9 @@ namespace SalvageRun.Orbit
             autoMode = PlayerPrefs.GetInt("orbit.auto", 0) == 1;
             Application.targetFrameRate = 60;
             OrbitMusic.Ensure();                                             // 🎵 배경음 (09-25)
-            if (!Application.isEditor)                                                  // 🖥 빌드는 늘 모니터 전체 화면으로 시작 (09-24 사장님 「전체 화면으로」) — Alt+Enter 로 창 모드
+            if (!Application.isEditor)                                                  // 🖥 빌드는 전체 화면으로 시작 (09-24) — 창 모드 · 창 크기는 설정에서 (09-27, Alt+Enter 끔)
             {
-                var d = Screen.currentResolution; Screen.SetResolution(d.width, d.height, FullScreenMode.FullScreenWindow);
+                SweepHud.ApplyScreen();                                                 // 🖥 09-27 설정에 저장한 화면 · 창 크기로 (처음엔 전체 화면)
             }
             Load();
             cam = Camera.main;

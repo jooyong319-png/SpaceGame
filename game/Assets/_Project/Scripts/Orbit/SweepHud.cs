@@ -119,7 +119,7 @@ namespace SalvageRun.Orbit
             if (lobby && sim.R.over && !sim.M.won)
             {
                 if (kb != null && kb.escapeKey.wasPressedThisFrame) { settingsOpen = false; wipeAsk = false; }
-                else if (kb != null && (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame) && !settingsOpen && !wipeAsk) LobbyContinue();
+                else if (kb != null && (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame && !kb.altKey.isPressed) && !settingsOpen && !wipeAsk) LobbyContinue();   // 09-27 Alt+Enter 가 출발로 먹었다
                 return;
             }
             if (kb != null && kb.spaceKey.wasPressedThisFrame && sim.R.over && !sim.M.careerOpen && !sim.M.won && !newsOpen && paidT < 2.4f)
@@ -227,6 +227,17 @@ namespace SalvageRun.Orbit
             SweepGame.ShakeMul = ShakeLvMul[Mathf.Clamp(shakeLv, 0, 2)]; SweepGame.FlashMul = FlashLvMul[Mathf.Clamp(flashLv, 0, 1)];
             reduceMotion = shakeLv == 2;
         }
+        // 🖥 화면 — 저장한 대로 (0 전체 화면 · 1 창). 창 크기는 모니터보다 크면 들어가는 가장 큰 것으로. Alt+Enter 는 껐다 (09-27)
+        static readonly int[] WinW = { 1280, 1600, 1920 }, WinH = { 720, 900, 1080 };
+        public static void ApplyScreen()
+        {
+            if (Application.isEditor) return;
+            int sw = Display.main.systemWidth, sh = Display.main.systemHeight;
+            if (PlayerPrefs.GetInt("orbit.screen", 0) == 0) { Screen.SetResolution(sw, sh, FullScreenMode.FullScreenWindow); return; }
+            int k = Mathf.Clamp(PlayerPrefs.GetInt("orbit.win", 1), 0, WinW.Length - 1);
+            while (k > 0 && (WinW[k] > sw || WinH[k] > sh - 60)) k--;
+            Screen.SetResolution(WinW[k], WinH[k], FullScreenMode.Windowed);
+        }
         void SaveSettings()
         {
             PlayerPrefs.SetFloat("orbit.vol", vol); PlayerPrefs.SetFloat("orbit.sfx", sfxVol); PlayerPrefs.SetFloat("orbit.bgm", OrbitMusic.Vol);
@@ -245,10 +256,11 @@ namespace SalvageRun.Orbit
             if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { settingsOpen = !settingsOpen; OrbitSfx.Play("tick", 0.8f); }
             if (settingsOpen) SettingsWin();
         }
+        public void TestSettings() => settingsOpen = true;   // 에디터 캡처용
         void SettingsWin()
         {
             GUI.color = new Color(0, 0, 0, 0.55f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
-            var w = new Rect(vw / 2 - 250, 80, 500, 420);
+            var w = new Rect(vw / 2 - 250, 70, 500, 460);
             GUI.color = new Color(0.043f, 0.063f, 0.09f, 0.98f); GUI.DrawTexture(w, white); Frame(w, SweepGame.Amber, 2); GUI.color = Color.white;
             GUI.Label(new Rect(w.x + 22, w.y + 14, 200, 30), "<size=20><b><color=#ffdf95>설정</color></b></size>", label);
             if (GUI.Button(new Rect(w.xMax - 104, w.y + 14, 88, 26), "<size=12>닫기 Esc</size>", btn)) settingsOpen = false;
@@ -277,12 +289,14 @@ namespace SalvageRun.Orbit
             Slider("배경음", ref OrbitMusic.Vol);
             shakeLv = Pick("화면 흔들림", shakeLv, new[] { "켬", "줄임", "끔" });
             flashLv = Pick("번쩍임", flashLv, new[] { "켬", "줄임" });
-            int fs = Screen.fullScreenMode == FullScreenMode.Windowed ? 1 : 0;
+            int fs = PlayerPrefs.GetInt("orbit.screen", 0);
             int nf = Pick("화면", fs, new[] { "전체 화면", "창" });
-            if (nf != fs && !Application.isEditor)
-            {
-                if (nf == 0) Screen.SetResolution(Display.main.systemWidth, Display.main.systemHeight, FullScreenMode.FullScreenWindow);
-                else Screen.SetResolution(Mathf.RoundToInt(Display.main.systemWidth * 0.75f), Mathf.RoundToInt(Display.main.systemHeight * 0.75f), FullScreenMode.Windowed);
+            if (nf != fs) { PlayerPrefs.SetInt("orbit.screen", nf); PlayerPrefs.Save(); ApplyScreen(); }
+            if (nf == 1)
+            {   // 🖥 창 크기 (09-27 사장님 「창 크기 조절 · 알트엔터 없애고 설정에서」)
+                int ws = PlayerPrefs.GetInt("orbit.win", 1);
+                int nw = Pick("창 크기 (가로)", ws, new[] { "1280", "1600", "1920" });
+                if (nw != ws) { PlayerPrefs.SetInt("orbit.win", nw); PlayerPrefs.Save(); ApplyScreen(); }
             }
             GUI.Label(new Rect(w.x + 24, w.yMax - 30, w.width - 48, 20), "<size=11><color=#8a93a3>저장은 자동 · M = 소리 끄기 · Esc = 닫기</color></size>", label);
             if (!lobby && sim.R.over && GUI.Button(new Rect(w.x + 24, w.yMax - 66, 130, 26), "<size=12>설명 다시 보기</size>", btnOffC)) { sim.M.flags.Remove("dlg:stock"); sim.M.flags.Remove("dlg:shop"); sim.M.flags.Remove("dlg:news"); settingsOpen = false; OrbitSfx.Play("tick", 0.6f); }   // 💬 증권 · 가게 · 신문 설명을 다시 — 그 방에 다시 들어가면 뜬다
