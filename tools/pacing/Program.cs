@@ -25,7 +25,9 @@ static class Program
         if (double.TryParse(Environment.GetEnvironmentVariable("TANKR"), out double tr)) SweepSim.TankR = tr;   // 💥 폭발 탱크 · 기폭 장치 반경 맞춤
         if (double.TryParse(Environment.GetEnvironmentVariable("DETR"), out double dr)) SweepSim.DetR = dr;
         if (double.TryParse(Environment.GetEnvironmentVariable("REDV"), out double rv)) SweepSim.RedBlastVal = rv;   // 💥 빨간 폭발 값 배수
-        if (double.TryParse(Environment.GetEnvironmentVariable("POUCH"), out double pk)) SweepSim.PouchK = pk;   // 💰 돈 주머니 배수   // 💥 폭발이 화력 배율을 얼마나 따르나
+        if (double.TryParse(Environment.GetEnvironmentVariable("POUCH"), out double pk)) SweepSim.PouchK = pk;   // 💰 돈 주머니 배수
+        if (double.TryParse(Environment.GetEnvironmentVariable("DRONEC"), out double dcc)) SweepSim.DroneCostK = dcc;   // 💰 드론 줄 칸 값
+        if (double.TryParse(Environment.GetEnvironmentVariable("BHC"), out double bhc)) SweepSim.BhCostK = bhc;   // 💰 블랙홀 줄 칸 값
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         if (double.TryParse(Environment.GetEnvironmentVariable("LOANMULT"), out double lm)) SweepSim.LoanMult = lm;
         if (args.Length > 0 && args[0] == "zones") { for (int z = 0; z < 6; z++) { double sum = 0; var ids = new List<string>(); for (int i = 0; i < SweepSim.NodeCount; i++) if (SweepSim.Zone[i] == z && SweepSim.ZoneNeed(i)) { sum += SweepSim.Nodes[i].first; ids.Add(SweepSim.Nodes[i].id + ":" + SweepSim.Nodes[i].first); } Console.WriteLine($"구역 {z} {SweepSim.ZoneName[z]} 칸 {ids.Count} 합 {sum:0}"); Console.WriteLine("   " + string.Join(" ", ids)); } return; }
