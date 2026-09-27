@@ -128,7 +128,7 @@ namespace SalvageRun.Orbit
                 if (loanOpen || lottoOpen) { } else if (flow == 2) Go(); else if (flow >= 3 && flow <= 5) GoFlow(2); else flow = 2;   // Space — 결과 · 정비소 → 조종실, 조종실 → 출동
             }
             if (sim.R.over && paidT < 2.4f) NavKeys(kb);                 // ← → 조종실 양옆 방
-            if (kb != null && kb.escapeKey.wasPressedThisFrame) { if (settingsOpen) settingsOpen = false; else if (lottoOpen) lottoOpen = false; else if (loanOpen) { loanOpen = false; pendLoan = 0; } else if (newsOpen) newsOpen = false; else bayOpen = false; }
+            if (kb != null && kb.escapeKey.wasPressedThisFrame) { if (settingsOpen) settingsOpen = false; else if (buyAsk >= 0) buyAsk = -1; else if (lottoOpen) lottoOpen = false; else if (loanOpen) { loanOpen = false; pendLoan = 0; } else if (newsOpen) newsOpen = false; else bayOpen = false; }
         }
 
         void OnGUI()
@@ -291,6 +291,7 @@ namespace SalvageRun.Orbit
             Slider("효과음", ref sfxVol);
             Slider("배경음", ref OrbitMusic.Vol);
             shakeLv = Pick("화면 흔들림", shakeLv, new[] { "켬", "줄임", "끔" });
+            { int sq = PlayerPrefs.GetInt("orbit.shopQuick", 0), nq = Pick("가게 구입", sq, new[] { "묻기", "바로" }); if (nq != sq) { PlayerPrefs.SetInt("orbit.shopQuick", nq); PlayerPrefs.Save(); } }   // 🛒 09-27 「다음부터 바로 구매」 되돌리기
             flashLv = Pick("번쩍임", flashLv, new[] { "켬", "줄임" });
             int fs = PlayerPrefs.GetInt("orbit.screen", 0);
             int nf = Pick("화면", fs, new[] { "전체 화면", "창" });

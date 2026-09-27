@@ -65,7 +65,7 @@ namespace SalvageRun.Orbit
                 else if (f == 5)
                 {
                     if (!sim.ShopOpen) continue;
-                    ShopRoom();
+                    ShopRoom(); GUI.enabled = true;                              // 🛒 구입 확인 창이 막아 둔 것을 풀어 준다
                     // 가게 안내 줄은 뺐다 — 카드 머리를 덮었고, 고 영감 대화(dlg:shop)가 같은 말을 한다 (09-26)
                     if (NavTab(false, "정비고", "", SweepGame.Amber)) GoFlow(3);
                     if (NavTab(true, "조종실로", "", SweepGame.Amber)) GoFlow(2);

@@ -54,9 +54,52 @@ namespace SalvageRun.Orbit
         }
 
         // 🏪 부품 가게 방 — 정비고 오른쪽 (09-24 사장님 24번 · 시안 https://claude.ai/artifact/CthkM2c8KDnFcaxG8m5zJt)
+        // 🛒 구입 확인 — 「다음부터 묻지 않고 바로 구매」 체크박스 (09-27). 설정에서 되돌린다
+        int buyAsk = -1; Rect buyAskR; bool buyAskChk;
+        public void TestBuyAsk(int k) { buyAsk = k; buyAskChk = true; }   // 에디터 캡처용
+        void ShopBuy(int k, Rect r, Rect w)
+        {
+            var S = sim.S; if (S.shop == null || k < 0 || k >= S.shop.Count) return;
+            int id = S.shop[k]; bool key = id == Parts.Key, cn = SweepSim.IsCons(id);
+            int slot = key || cn ? -1 : Parts.Defs[id].slot;
+            Color rc = key ? KeyCol : cn ? new Color(0.44f, 0.81f, 0.59f) : RarCol[Parts.Defs[id].rar];
+            string nm = key ? "양자 열쇠" : cn ? SweepSim.ConsName[id - SweepSim.Cons0] : Parts.Defs[id].name;
+            var to = key ? new Rect(w.xMax - 120, w.y + 6, 110, 24) : cn ? consRect : slotRects[slot];
+            string fl = key ? "열쇠 +1" : nm;
+            if (sim.BuyPart(k))
+            {
+                flyCards.Add(new FlyCard { a = new Rect(r.x + 6, r.y + 44, 52, 52), b = to, t0 = Time.unscaledTime, c = slot >= 0 ? SlotCol[slot] : rc, txt = fl, id = id, slot = slot });
+                OrbitSfx.Play(key ? "launch" : "buy", key ? 0.5f : 0.8f);
+            }
+        }
+        void BuyAskWin(Rect w)
+        {
+            var S = sim.S;
+            if (S.shop == null || buyAsk >= S.shop.Count) { buyAsk = -1; return; }
+            int id = S.shop[buyAsk]; bool key = id == Parts.Key, cn = SweepSim.IsCons(id);
+            string nm = key ? "양자 열쇠" : cn ? SweepSim.ConsName[id - SweepSim.Cons0] : Parts.Defs[id].name;
+            double price = sim.ShelfPrice(buyAsk); bool can = S.cash >= price;
+            GUI.color = new Color(0, 0, 0, 0.55f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white);
+            var m = new Rect(w.center.x - 200, w.center.y - 90, 400, 180);
+            GUI.color = new Color(0.043f, 0.063f, 0.09f, 0.98f); GUI.DrawTexture(m, white); Frame(m, SweepGame.Amber, 2); GUI.color = Color.white;
+            GUI.Label(new Rect(m.x, m.y + 18, m.width, 26), "<size=17><b>" + nm + "</b></size>", center);
+            GUI.Label(new Rect(m.x, m.y + 46, m.width, 22), "<size=14>구입하시겠습니까? · <color=#ffdf95>" + KNum.Fmt(price) + "</color></size>", center);
+            var cb = new Rect(m.x + 70, m.y + 84, 18, 18);
+            GUI.color = new Color(0.1f, 0.13f, 0.18f); GUI.DrawTexture(cb, white); Frame(cb, SweepGame.Amber, 1); GUI.color = Color.white;
+            if (buyAskChk) { GUI.color = SweepGame.Amber; GUI.DrawTexture(new Rect(cb.x + 4, cb.y + 4, 10, 10), white); GUI.color = Color.white; }
+            GUI.Label(new Rect(cb.xMax + 8, cb.y - 2, 260, 22), "<size=13>다음부터 묻지 않고 바로 구매</size>", label);
+            if (GUI.Button(new Rect(cb.x - 4, cb.y - 4, 290, 26), GUIContent.none, GUIStyle.none)) { buyAskChk = !buyAskChk; OrbitSfx.Play("tick", 0.5f); }
+            if (GUI.Button(new Rect(m.x + 60, m.yMax - 52, 130, 36), can ? "<size=15>구입</size>" : "<size=12>돈 모자람</size>", can ? btnC : btnOffC) && can)
+            {
+                if (buyAskChk) { PlayerPrefs.SetInt("orbit.shopQuick", 1); PlayerPrefs.Save(); }
+                int k = buyAsk; buyAsk = -1; ShopBuy(k, buyAskR, w);
+            }
+            if (GUI.Button(new Rect(m.xMax - 190, m.yMax - 52, 130, 36), "<size=15>취소</size>", btnOffC)) { buyAsk = -1; OrbitSfx.Play("tick", 0.4f); }
+        }
         void ShopRoom()
         {
             var S = sim.S;
+            bool askOpen = buyAsk >= 0; if (askOpen) GUI.enabled = false;                // 확인 창이 떠 있으면 뒤 단추는 막는다
             GUI.color = Th.room; GUI.DrawTexture(new Rect(0, 0, vw, RefH), white);   // 🎨 배 테마
             GUI.color = Th.scan; for (float yy = 0; yy < RefH; yy += 4) GUI.DrawTexture(new Rect(0, yy, vw, 1), white);
             GUI.color = Color.white;
@@ -156,19 +199,18 @@ namespace SalvageRun.Orbit
                 double price = sim.ShelfPrice(k); bool can = S.cash >= price;
                 var bb = new Rect(r.x + 10, r.yMax - 40, r.width - 20, 30);
                 string ptxt = KNum.Fmt(price) + (sale ? " <color=#ffb0a0>(반값)</color>" : "");   // 원래 값은 카드 위 「오늘의 반값」 띠가 말해 준다 — 단추가 좁다
-                if (GUI.Button(bb, can ? "<size=" + (sale ? 13 : 14) + ">구입 · " + ptxt + "</size>" : "<size=12><color=#ff9b8f>" + ptxt + " — 돈 모자람</color></size>", can ? btn : btnOff) && can)
+                bool clickBtn = GUI.Button(bb, can ? "<size=" + (sale ? 13 : 14) + ">구입 · " + ptxt + "</size>" : "<size=12><color=#ff9b8f>" + ptxt + " — 돈 모자람</color></size>", can ? btn : btnOff);
+                bool clickCard = GUI.Button(r, GUIContent.none, GUIStyle.none);          // 🛒 09-27 사장님 「물건 칸 전체를 클릭하면 구입하시겠습니까?」
+                if ((clickBtn || clickCard) && buyAsk < 0)
                 {
-                    var to = key ? new Rect(w.xMax - 120, w.y + 6, 110, 24) : cn ? consRect : slotRects[slot];
-                    string fl = key ? "열쇠 +1" : nm;
-                    if (sim.BuyPart(k))
-                    {
-                        flyCards.Add(new FlyCard { a = new Rect(r.x + 6, r.y + 44, 52, 52), b = to, t0 = Time.unscaledTime, c = slot >= 0 ? SlotCol[slot] : rc, txt = fl, id = id, slot = slot });
-                        OrbitSfx.Play(key ? "launch" : "buy", key ? 0.5f : 0.8f);
-                    }
+                    if (!can) OrbitSfx.Play("clank", 0.35f, 0.05f, 0f);
+                    else if (PlayerPrefs.GetInt("orbit.shopQuick", 0) == 1) ShopBuy(k, r, w);   // 「다음부터 바로 구매」
+                    else { buyAsk = k; buyAskR = r; buyAskChk = false; OrbitSfx.Play("tick", 0.6f); }
                 }
             }
-            if (tipK >= 0 && S.shop != null && tipK < S.shop.Count) ShopTip(S.shop[tipK], tipR);
+            if (tipK >= 0 && S.shop != null && tipK < S.shop.Count && buyAsk < 0) ShopTip(S.shop[tipK], tipR);
             tipK = -1;
+            if (askOpen) { GUI.enabled = true; BuyAskWin(w); GUI.enabled = false; }
             // 새로고침 — 판마다 한 번 공짜
             {
                 var rb = new Rect(RR.x + RR.width / 2 - 120, w.yMax - 36, 240, 32);
