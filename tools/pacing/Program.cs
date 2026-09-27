@@ -119,6 +119,7 @@ static class Program
                 E[eb, 0] += 1; E[eb, 1] += cn == 0 ? 1 : 0; E[eb, 2] += own / SweepSim.NodeCount;
             }
             shopClock += ShopSec;
+            if (Environment.GetEnvironmentVariable("DBG") == "shop") { int si = Array.FindIndex(SweepSim.Nodes, x => x.id == "e_shop"); double b = sim.ShopBase; Console.WriteLine($"SHOP	{Min():0.0}	{sim.M.company}	{sim.S.bill}	{Array.IndexOf(SweepSim.OrbitOrder, sim.S.orbit)}	{sim.S.cash:0}	{sim.S.runAvg:0}	{b:0}	{sim.State(si)}	{sim.TileCost(si):0}	{SweepSim.Zone[si]}	{sim.ZoneOpen}"); }   // 🔩 가게 값 재기 (09-27)
             if (Environment.GetEnvironmentVariable("DBG") == "2" && Min() > 90) Console.WriteLine($"  {Min(),5:0.0}분 돈 {sim.S.cash,12:0} 청구서 {sim.S.bill}({sim.BillAmount:0}) 기한 {sim.S.billDue}{(sim.S.overdue ? " 연체" : "")} 구역 {sim.ZoneOpen} 남음 {sim.ZoneLeft(sim.ZoneOpen)} 해왕성 {sim.State(Array.FindIndex(SweepSim.Nodes, x => x.id == "p_nep"))} 빚 {sim.S.debt:0} 궤도 {SweepSim.Orbits[sim.S.orbit].name}");
 
             // ── 출동
