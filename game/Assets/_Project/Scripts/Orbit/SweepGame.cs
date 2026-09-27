@@ -457,11 +457,11 @@ namespace SalvageRun.Orbit
                     case SwEv.Coin:
                     {
                         int src = e.k % 10; bool cut = e.k >= 10;
-                        Color c = src == 3 ? Red : cut ? new Color(0.9f, 0.65f, 0.6f) : Amber2;
+                        Color c = src == 3 ? Green : cut ? new Color(0.9f, 0.65f, 0.6f) : Amber2;
                         if (sim.R != tallyRun) { tallyRun = sim.R; runTally = 0; }
                         if (src != 3 && e.v > 0) runTally += e.v;                                   // 값은 계산대에 모은다 — 쓰레기 위 숫자는 아주 큰 것만
-                        if (e.v >= 1 && (src == 3 || e.v > sim.ValMult * 400 || brokeWinN <= 2)) CoinPop(e.x, e.y - 8, src == 3 ? "빚 -" : "+", e.v, c);
-                        if (Random.value < 0.25f) Add(disc, at, 0.11f, src == 3 ? Red : Amber, 2, 1.6f).v = (Vector3)(Random.insideUnitCircle * 3f);
+                        if (e.v >= 1 && (src == 3 || e.v > sim.ValMult * 400 || brokeWinN <= 2)) CoinPop(e.x, e.y - 8, src == 3 ? "청구서 -" : "+", e.v, c);   // 🏷 딱지 = 청구서를 깎는다 (09-27 「빚 -」라 떠서 돈이 빠지는 줄 알았다)
+                        if (Random.value < 0.25f) Add(disc, at, 0.11f, src == 3 ? Green : Amber, 2, 1.6f).v = (Vector3)(Random.insideUnitCircle * 3f);
                         break;
                     }
                     case SwEv.Pop: if (e.k >= 3) Note(e.text, e.k == 3 ? Orange : e.k == 4 ? new Color(1f, 0.5f, 0.85f) : Violet); else PopAt(e.x, e.y, e.text, e.k == 1 ? Green : Amber2, 15); if (e.k == 3) OrbitSfx.Play("unit", 0.8f); if (e.k >= 4) OrbitSfx.Play("buy", 0.6f); break;
