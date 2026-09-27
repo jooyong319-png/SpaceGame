@@ -1973,7 +1973,7 @@ namespace SalvageRun.Orbit.Sim
         }
         void ShellBurst(double x, double y, double Rb, double dk)
         {
-            Emit(SwEv.Blast, x, y, Rb);
+            Emit(SwEv.Blast, x, y, Rb, 1);                                      // k 1 = 맞는 범위 그대로 그린다
             bool crit = Rnd() < Crit; int dmg = Math.Max(1, RoundP(Pow * dk * (crit ? CritX : 1)));
             var list = R.junk;
             for (int i = 0; i < list.Count; i++)

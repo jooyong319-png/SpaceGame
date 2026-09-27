@@ -521,8 +521,9 @@ namespace SalvageRun.Orbit
                         if (spot && ice)
                         {   // ❄ 서리 원 — 픽셀랩 얼음 폭발 (0.25초마다 한 번 · 없으면 원 + 서리)
                             LoadAnims();
-                            { if (Time.time - lastFrost > 0.25f) { lastFrost = Time.time; var ff = OrbitFxArt.Frost; var fr = Make(ff[0], s1, Mathf.Min(spotR * 1.4f, 1.6f), Color.white, 58); frameFx.Add(new FrameFx { sr = fr, f = ff, fps = 22 }); } }   // ❄ 코드로 그린 얼음 — 고리 + 조각 넷 (09-26 · 픽셀랩 눈꽃은 과했다)
+                            { if (Time.time - lastFrost > 0.25f) { lastFrost = Time.time; var ff = OrbitFxArt.Frost; var fr = Make(ff[0], s1, spotR * 2 * 96f / 36f, Color.white, 58); frameFx.Add(new FrameFx { sr = fr, f = ff, fps = 22 }); } }   // ❄ 코드로 그린 얼음 — 고리 + 조각 넷 (09-26 · 픽셀랩 눈꽃은 과했다)
                             for (int q = 0; q < 3; q++) { var fp = s1 + (Vector3)(Random.insideUnitCircle * spotR); Add(pixel, fp, 0.08f, new Color(0.9f, 0.98f, 1f), 0, 0.5f).v = (Vector3)(Random.insideUnitCircle * 0.6f); }
+                            for (int q = 0; q < 10; q++) { var ep = s1 + (Vector3)(Random.insideUnitCircle.normalized * spotR); Add(pixel, ep, 0.06f, new Color(0.8f, 0.93f, 1f, 0.8f), 0, 0.3f); }   // ❄ 09-27 사장님 「범위가 표시에 비해 너무 크다」 — 눈꽃 가지 끝(그림 폭의 37.5%)이 실제 범위에 닿게 키우고, 경계에 서리 알갱이
                         }
                         if (cr && !fence) Star(s1, hc, 0.5f, 7, 0.16f);                             // 치명타 — 끝점에서 빛살
                         if (!fence && Random.value < 0.25f) OrbitSfx.PlayPitch("tick", 0.12f, ice ? 2.8f : 2.2f + Random.value * 0.3f);
@@ -630,7 +631,8 @@ namespace SalvageRun.Orbit
                         break;
                     case SwEv.Blast:
                         RingFx(at, Orange, 0.4f, (float)e.v * 2 / PxPerUnit);
-                        Fireball(at, Mathf.Clamp((float)e.v / PxPerUnit * 0.6f, 0.25f, 1.1f));
+                        if (e.k == 1) Fireball(at, (float)e.v / PxPerUnit * 1.9f, 99f);   // 🎆 분열탄선 포탄 · 파편 — 맞는 범위만큼 (09-27 「범위가 표시보다 크다」)
+                        else Fireball(at, Mathf.Clamp((float)e.v / PxPerUnit * 0.6f, 0.25f, 1.1f));
                         OrbitSfx.Play("blast", 0.5f, 0.025f, 0.12f);
                         shake = Mathf.Max(shake, 0.05f);
                         break;
@@ -689,14 +691,14 @@ namespace SalvageRun.Orbit
         }
         // 💥 불덩이 — 한 프레임 3개까지 (연쇄 폭발이 쏟아져도 화면이 안 덮이게)
         int fireballsThisFrame;
-        void Fireball(Vector3 at, float R)
+        void Fireball(Vector3 at, float R, float cap = 0.7f)
         {
             if (fireballsThisFrame >= 3 || fx.Count > 760) { Add(glow, at, R * 1.0f, new Color(1f, 0.6f, 0.3f, 0.22f), 7, 0.2f); return; }
             fireballsThisFrame++;
             LoadAnims();
             if (animExplode != null)
             {   // 💥 픽셀랩 폭발 9장 — 한 번 재생
-                var sr = MakeAnim(animExplode[0], at, Mathf.Min(R * 1.2f, 0.7f), new Color(1, 1, 1, 0.9f), 58);   // 판 전체 기준 · 폭발 반지름에 맞춤
+                var sr = MakeAnim(animExplode[0], at, Mathf.Min(R * 1.2f, cap), new Color(1, 1, 1, 0.9f), 58);   // 판 전체 기준 · 폭발 반지름에 맞춤
                 sr.transform.rotation = Quaternion.Euler(0, 0, Random.Range(0, 4) * 90);
                 frameFx.Add(new FrameFx { sr = sr, f = animExplode, fps = 20 });
             }
