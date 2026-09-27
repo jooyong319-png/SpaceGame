@@ -354,7 +354,10 @@ namespace SalvageRun.Orbit
             {
                 var c = bannerKind == -1 ? SweepGame.Amber2 : new Color(1f, 0.55f, 0.48f, Mathf.Sin(Time.time * 12) > -0.3f ? 1 : 0.55f);
                 pop.fontSize = 17; pop.normal.textColor = c;
-                GUI.Label(new Rect(vw / 2 - 300, 196, 600, 26), banner, pop);
+                float bw = pop.CalcSize(new GUIContent(banner)).x;              // 🌐 영어 안내는 길다 — 넘치면 글자를 줄여 한 줄에
+                if (bw > 760) pop.fontSize = Mathf.Max(12, (int)(17 * 760 / bw));
+                GUI.Label(new Rect(vw / 2 - 390, 196, 780, 26), banner, pop);
+                pop.fontSize = 17;
                 if (bannerKind == 0) GUI.Label(new Rect(8, RefH / 2 - 14, 30, 28), "◀", pop);
                 if (bannerKind == 1) GUI.Label(new Rect(vw - 36, 110, 30, 28), "▶", pop);
             }
