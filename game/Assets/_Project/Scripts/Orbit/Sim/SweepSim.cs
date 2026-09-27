@@ -50,6 +50,7 @@ namespace SalvageRun.Orbit.Sim
         public int planets = 1;                                          // 연 행성 (비트) — 지구는 늘
         public MarketState market;                                       // 📈 궤도 증권 — 회사마다 (파산하면 새 장)
         public int scratchRun = -1, scratchN;                            // 🎟 즉석 복권 — 출동마다 3장
+        public int freeTix;                                              // 🎟 공짜 표 (황금 잔해 · 복권 묶음 — 출동해도 남는다 · 09-27)
         public List<LottoTicket> lotto = new List<LottoTicket>();        // 🎱 궤도 로또 — 이번 회 내 표
         public int lottoRound = 1, lottoDrawAt = 3;                      // 다음 추첨 = 출동 번호
         public int[] lottoLast; public int lottoLastRound, lottoLastHit; public double lottoLastWin;
@@ -75,7 +76,7 @@ namespace SalvageRun.Orbit.Sim
         public List<PastCompany> history = new List<PastCompany>();
     }
 
-    public class Blast { public double x, y, t, R, dk; public bool w; public int wid = -1; }   // wid = 피해를 세어 줄 곳 (DmgCat) — 기뢰 · 분열탄처럼 늦게 터져도 제 무기로     // w = 무기가 낸 폭발 (이것만 또 번진다 — 09-24 사장님 「연쇄 반응도 무기 특성으로」)
+    public class Blast { public double x, y, t, R, dk; public bool w, red; public int wid = -1; }   // wid = 피해를 세어 줄 곳 (DmgCat) — 기뢰 · 분열탄처럼 늦게 터져도 제 무기로     // w = 무기가 낸 폭발 (이것만 또 번진다 — 09-24 사장님 「연쇄 반응도 무기 특성으로」)
     public class Drone { public double a, cd, x, y; }
     public class Missile { public double x, y, vx, vy, life; public Junk tg; }   // 🚀 미사일선 (09-27)
     public class Orb { public double x, y, tx, ty, vx, vy, t, zap; public bool there; }   // ⚡ 전격선 구체 (09-27)
@@ -267,7 +268,7 @@ namespace SalvageRun.Orbit.Sim
             N("q_sling", "bh", "★ 중력 새총", "블랙홀이 터질 때 빨아들인 잔해를 사방으로 쏘아 보낸다", new[] { "b_pack" }, 1, 250000, 1, 1, 0, 0),
             N("q_tour", "route", "★ 관광 명소", "한 판에 연쇄 100을 넘기면 관광객이 몰린다 — 토성 고리 관광 주가 ↑", new[] { "p_sat" }, 1, 3000000, 1, 1, 0, 0),
             N("q_rock", "route", "★ 떠돌이 소행성", "가끔 소행성이 궤도에 끼어든다 — 부수면 열쇠(40%) 또는 돈 뭉치", new[] { "p_jup" }, 1, 500000, 1, 1, 0, 0),
-            N("q_gold", "hull", "★ 황금 잔해", "가끔 금빛 잔해가 섞인다 — 값 ×3 · 부수면 즉석 복권 (한 판 2장까지)", new[] { "o_wide" }, 1, 40000, 1, 1, 0, 0),
+            N("q_gold", "hull", "★ 황금 잔해", "가끔 금빛 잔해가 섞인다 — 값 ×3 · 부수면 공짜 즉석 복권 (한 판 3장까지)", new[] { "o_wide" }, 1, 40000, 1, 1, 0, 0),
             N("q_lazy", "drone", "★ 연타 장인", "0.3초 안에 다시 누를 때마다 화력 +3% (최대 +30%) · 1초 손을 떼면 식는다", new[] { "d_fix" }, 1, 80000, 1, 1, 0, 0),
             // ⚔ 무기 여섯 더 (09-24 설계서 4단계)
             N("w_vac", "arm", "진공 청소기", "공격 때 8% — 조준점에 소용돌이, 0.7초 동안 빨아들인다 · 삼킨 것은 값 +30%", new[] { "w_chain" }, 1, 12000, 1, 1, 0, 0),
@@ -311,10 +312,10 @@ namespace SalvageRun.Orbit.Sim
             N("w_mag_e", "arm", "자석 펄스 특화", "끄는 범위 +20%", new[] { "w_mag_a" }, 1, 4800000, 4, 3, 0, 0),
             N("w_rail_e", "arm", "레일건 특화", "사거리 +120 — 3단계: 한 줄 더", new[] { "w_rail_a" }, 1, 18000000, 4, 3, 0, 0),
             // 🎟 복권 — 스킬로 (09-24 사장님 33번)
-            N("l_more", "eco", "복권 단골", "판마다 즉석 복권 +1장", new[] { "e_val" }, 1, 300, 3, 3, 0, 0),
-            N("l_luck", "eco", "행운의 긁개", "즉석 복권 당첨 확률 +25%", new[] { "l_more" }, 1, 2000, 3, 3, 0, 0),
-            N("l_free", "eco", "첫 장은 공짜", "판마다 즉석 복권 첫 장이 공짜", new[] { "l_luck" }, 1, 1500, 1, 1, 0, 0),
-            N("l_jack", "eco", "잭팟", "즉석 복권 당첨금 ×2", new[] { "l_luck" }, 1, 30000, 1, 1, 0, 0),
+            N("l_more", "eco", "복권 단골", "판마다 즉석 복권 +2장 (단계마다)", new[] { "e_val" }, 1, 300, 3, 3, 0, 0),
+            N("l_luck", "eco", "행운의 긁개", "즉석 복권 당첨 확률 +50% (단계마다)", new[] { "l_more" }, 1, 2000, 3, 3, 0, 0),
+            N("l_free", "eco", "첫 장은 공짜", "판마다 즉석 복권 두 장이 공짜", new[] { "l_luck" }, 1, 1500, 1, 1, 0, 0),
+            N("l_jack", "eco", "잭팟", "즉석 복권 돈 당첨 ×3 · 둘이 같으면 표값 두 배", new[] { "l_luck" }, 1, 30000, 1, 1, 0, 0),
             N("v_volley", "arm", "🚀 전탄 발사", "출동 중 게이지가 차면 Space · 계기판 단추 — 산 무기가 모두 한꺼번에 쏜다. 단계마다 더 오래 · 더 촘촘히 · 게이지가 빨리 찬다 (무기 둘부터)", new[] { "w_hub" }, 1, 4000, 4, 3, 0, 0),   // 09-26 사장님 「전탄 발사도 트리에 · 기본은 안 좋게 · 지금이 최종」
             // 🪐 09-27 행성 셋 더 — 맨 뒤에만 (저장 규칙)
             N("p_oort", "route", "오르트 구름 항로", "태양계 바깥 얼음 혜성 떼 — 값 ×19683 · 단단하고 느리다", new[] { "p_kui" }, 1, 120000000, 1, 1, 0, 0),
@@ -898,7 +899,10 @@ namespace SalvageRun.Orbit.Sim
         public double PackK => 0.02 + 0.012 * Lv("b_pack");
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
         public static double TankR = 75, DetR = 65;                              // 💥 폭발 탱크 · 기폭 장치 반경 (09-27 58 · 50 에서 넓힘)
-        public const int PendCap = 80;                                          // 터질 차례를 기다리는 폭발 한도 — 렉 막기
+        public const int PendCap = 80;
+        public static double RedBlastVal = 1.5;
+        public static double PouchK = 2.5;                                      // 봇 24판: ×4 는 82분 · 파산 2.1, ×2.5 는 137분 · 3.1
+        static string KFmt(double v) => v >= 1e12 ? (v / 1e12).ToString("0.#") + "조" : v >= 1e8 ? (v / 1e8).ToString("0.#") + "억" : v >= 1e4 ? (v / 1e4).ToString("0.#") + "만" : Math.Round(v).ToString("0");                                 // 봇 24판: ×2 는 파산 2.8 · ×1.5 는 3.3 (바꾸기 전과 같음)                                          // 터질 차례를 기다리는 폭발 한도 — 렉 막기
         public int ChainMax => R.clean ? 5000 : 40 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 15 * Lv("b_chain");
         // 🌪 모래 폭풍 (화성 · 해왕성) — 22초마다 4.5초. 값 ×1.5 · 왼쪽에서 고철이 몰려온다 (09-24 사장님 36번 「무의미함」)
         public bool StormOn => R != null && !R.over && !R.clean && Orbits[S.orbit].storm && R.t % 13.0 >= 6 && R.t % 13.0 < 10.5;   // 09-26 판이 20초 남짓 — 판 중간에 한 번
@@ -963,9 +967,9 @@ namespace SalvageRun.Orbit.Sim
         static readonly double[] ScratchOdds = { 0.12, 0.10, 0.06, 0.04, 0.03, 0.005 };   // 셋이 같을 확률 (드문 것부터 뽑는다)
         public const double ScratchPairP = 0.25;                                   // 둘만 같으면 표값 돌려받기
         public double ScratchPrice => Math.Max(10, Math.Round(ShopBase * 0.15 / 10) * 10);   // 한 장 = 판 벌이의 15%
-        public int ScratchMax => 3 + Lv("l_more");                                  // 🎟 복권 단골
-        public int ScratchLeft => S.scratchRun == S.runs ? Math.Max(0, ScratchMax - S.scratchN) : ScratchMax;
-        public double ScratchCost => Lv("l_free") > 0 && (S.scratchRun != S.runs || S.scratchN <= 0) ? 0 : ScratchPrice;   // 첫 장은 공짜
+        public int ScratchMax => 3 + 2 * Lv("l_more");                              // 🎟 복권 단골 — 단계마다 +2 (09-27 +1 에서)
+        public int ScratchLeft => (S.scratchRun == S.runs ? Math.Max(0, ScratchMax - S.scratchN) : ScratchMax) + S.freeTix;   // 공짜 표는 따로 더한다
+        public double ScratchCost => S.freeTix > 0 || Lv("l_free") > 0 && (S.scratchRun != S.runs || S.scratchN < 2) ? 0 : ScratchPrice;   // 공짜 표 · 판마다 두 장 공짜 (09-27 한 장에서)
         int scratchWin = -1; double scratchPaid;                                 // 긁어서 다 보이면 받는다
         public string ScratchText;                                               // 받은 것 한 줄 (화면에 띄운다)
         /// <summary>한 장 산다 — 돌려주는 값 = 칸 셋의 그림 (null = 못 삼). win = 셋이 같은 그림 (-1 꽝 · -2 둘만 같음)</summary>
@@ -975,8 +979,9 @@ namespace SalvageRun.Orbit.Sim
             if (ScratchLeft <= 0 || S.cash < ScratchCost) return null;
             double cost = ScratchCost;
             if (S.scratchRun != S.runs) { S.scratchRun = S.runs; S.scratchN = 0; }
-            S.scratchN++; S.cash -= cost; scratchPaid = cost > 0 ? cost : ScratchPrice;
-            double u = luck.NextDouble() / (1 + 0.25 * Lv("l_luck")), acc = 0;   // 행운의 긁개
+            if (S.freeTix > 0) S.freeTix--; else S.scratchN++;                // 공짜 표부터 쓴다 — 판마다 장수는 안 깎인다
+            S.cash -= cost; scratchPaid = cost > 0 ? cost : ScratchPrice;
+            double u = luck.NextDouble() / (1 + 0.5 * Lv("l_luck")), acc = 0;    // 행운의 긁개 — 단계마다 +50% (09-27 +25% 에서)
             for (int k = ScratchOdds.Length - 1; k >= 0; k--) { acc += ScratchOdds[k]; if (u < acc) { win = k; break; } }
             int n = ScratchSym.Length;
             if (win >= 0) { scratchWin = win; return new[] { win, win, win }; }
@@ -994,10 +999,10 @@ namespace SalvageRun.Orbit.Sim
         public double ScratchClaim()
         {
             int w = scratchWin; scratchWin = -1; ScratchText = null;
-            double R0 = ShopBase, jack = Lv("l_jack") > 0 ? 2 : 1, got = 0;
+            double R0 = ShopBase, jack = Lv("l_jack") > 0 ? 3 : 1, got = 0;       // 잭팟 ×3 (09-27 ×2 에서)
             switch (w)
             {
-                case -2: got = scratchPaid; ScratchText = "둘이 같다 — 표값 돌려받기"; break;
+                case -2: got = scratchPaid * (Lv("l_jack") > 0 ? 2 : 1); ScratchText = Lv("l_jack") > 0 ? "둘이 같다 — 잭팟! 표값 두 배" : "둘이 같다 — 표값 돌려받기"; break;
                 case 0: got = R0 * 0.2 * jack; ScratchText = "고철 셋 — 판 벌이 × 0.2"; break;
                 case 1: S.nDmg += 30; ScratchText = "위성 셋 — 다음 판 화력 +30%"; break;
                 case 2: got = R0 * 1 * jack; ScratchText = "금고 셋 — 판 벌이 × 1"; break;
@@ -1094,9 +1099,9 @@ namespace SalvageRun.Orbit.Sim
         public double ShopBase => Math.Max(80, Math.Round((S.runAvg > 0 ? S.runAvg : BillAmount * 0.15) / 10) * 10);   // 💰 09-26 사장님 「전설이 너무 싸」 — 청구서가 아니라 한 판 벌이에 묶는다
         public const int Cons0 = 200;
         public static readonly string[] ConsName = { "연료 캔", "복권 묶음", "과부하 탄창", "감정 할인권" };
-        public static readonly string[] ConsDesc = { "다음 판 연료 +10초", "즉석 복권 +3장", "다음 판 화력 +20%", "다음 판 모든 값 +15%" };
+        public static readonly string[] ConsDesc = { "다음 판 연료 +10초", "공짜 즉석 복권 +3장", "다음 판 화력 +20%", "다음 판 모든 값 +15%" };
         static readonly double[] ConsPrice = { 0.12, 0.1, 0.22, 0.25 };   // 09-26 밤 절반으로
-        public static readonly string[] ConsHelp = { "다음 출동 한 판만 연료가 10초 늘어난다. 끝나면 사라진다", "즉석 복권 세 장을 바로 받는다. 조종실 복권기에서 긁는다", "다음 출동 한 판 동안 모든 무기 화력이 20% 세진다", "다음 출동 한 판 동안 부순 것 값이 전부 15% 더 붙는다" };   // 📖 가게 카드 자세히
+        public static readonly string[] ConsHelp = { "다음 출동 한 판만 연료가 10초 늘어난다. 끝나면 사라진다", "공짜 즉석 복권 세 장을 받는다. 조종실 복권기에서 긁는다 — 표값이 안 든다", "다음 출동 한 판 동안 모든 무기 화력이 20% 세진다", "다음 출동 한 판 동안 부순 것 값이 전부 15% 더 붙는다" };   // 📖 가게 카드 자세히
         public static bool IsCons(int id) => id >= Cons0 && id < Cons0 + ConsName.Length;
         public double PartPrice(int id)
         {
@@ -1140,7 +1145,7 @@ namespace SalvageRun.Orbit.Sim
                 switch (id - Cons0)
                 {
                     case 0: S.nFuel += 10; break;
-                    case 1: if (S.scratchRun != S.runs) { S.scratchRun = S.runs; S.scratchN = 0; } S.scratchN -= 3; break;
+                    case 1: S.freeTix += 3; break;                                           // 🎟 공짜 표 셋 (09-27 — 전엔 살 수 있는 장수만 늘었다)
                     case 2: S.nDmg += 20; break;
                     case 3: S.nVal += 15; break;
                 }
@@ -1544,7 +1549,7 @@ namespace SalvageRun.Orbit.Sim
         Att PickAtt()
         {
             var list = new List<Att> { Att.Pouch, Att.Pouch };
-            list.Add(Att.Beacon);                                               // 자석 부착물은 없앴다 (09-26)
+            if (DronesOn) list.Add(Att.Beacon);                                 // 자석 부착물은 없앴다 (09-26) · 신호기는 드론이 있을 때만 (09-27 — 없으면 아무 일도 없었다)
             if (S.orbit >= 2 || R.clean) { list.Add(Att.Det); list.Add(Att.Det); list.Add(Att.Ice); }
             if (S.orbit == 2) { list.Add(Att.Ice); list.Add(Att.Ice); }             // 화성 — 얼음 껍질
             if (Rank >= 4 || R.clean) { list.Add(Att.Armor); list.Add(Att.Armor); }          // 목성부터 (순위)
@@ -1644,7 +1649,7 @@ namespace SalvageRun.Orbit.Sim
                 if (p.t > 0) continue;
                 r.pend.RemoveAt(i);
                 if (p.dk > 0) { ShellBurst(p.x, p.y, p.R, p.dk); continue; }        // 🎆 분열탄선 포탄 · 파편
-                blastW = p.w; dmgCat = p.wid; DoBlast(p.x, p.y, p.R * BlastK); dmgCat = -1; blastW = false;
+                blastW = p.w; redBlast = p.red; dmgCat = p.wid; DoBlast(p.x, p.y, p.R * BlastK); dmgCat = -1; blastW = false; redBlast = false;
             }
             r.chainT -= dt;
             if (r.chainT <= 0 && r.pend.Count == 0 && !r.holding) { r.chain = 0; r.tier = 0; }
@@ -2533,7 +2538,7 @@ namespace SalvageRun.Orbit.Sim
             }
         }
 
-        bool blastW; int shatterDepth;
+        bool blastW, redBlast; int shatterDepth;                                // redBlast = 폭발 탱크 · 기폭 장치 (휩쓸린 것 값 ×2)
         void Kill(Junk d, int src, double mult)
         {
             if (d.sig == GateSig) { if (!GateReady) { d.hp = d.max; return; } if (d.hp > 0) return; GateBroken(d); }
@@ -2563,23 +2568,25 @@ namespace SalvageRun.Orbit.Sim
             if (Lv("q_tour") > 0 && !r.tourDone && r.chain >= 100) { r.tourDone = true; Emit(SwEv.Pop, EX, EY - 120, 0, 4, "관광객이 몰려든다!"); Emit(SwEv.Tourist, 0, 0); if (Mk != null) Mk.GameEvent("토성 고리 관광객, 청소선 구경 러시", "궤도 청소부의 연쇄 파괴를 보려는 관광선이 줄을 섰다.", new[] { "sat" }, null, 0.12f); }
             mult *= TraitMult(d);                                               // 🪐 월면 금고 ×3 · 탐사차 ×5 · 혜성 ×4 · 대적점 안 ×2
             double v = Types[d.k].val * ValMult * mult * vacMul;
-            if (d.att == Att.Gold) { v *= 3; if (r.goldN < 2) { r.goldN++; if (S.scratchRun != S.runs) { S.scratchRun = S.runs; S.scratchN = 0; } S.scratchN--; Emit(SwEv.Pop, d.x, d.y - 14, 0, 4, "황금! 복권 +1"); } else Emit(SwEv.Pop, d.x, d.y - 14, 0, 4, "황금 ×3"); }   // 복권은 한 판 2장까지
+            if (d.att == Att.Gold) { v *= 3; if (r.goldN < 3) { r.goldN++; S.freeTix++; Emit(SwEv.Pop, d.x, d.y - 14, 0, 4, "황금! 공짜 복권 +1"); } }   // 🎟 09-27 사장님 「공짜 복권을 주는 게 낫다」 — 전엔 살 수 있는 장수만 늘었다
             if (d.att == Att.Rock)
             {
                 if (Rnd() < 0.4) { S.keys++; Emit(SwEv.Pop, d.x, d.y - 14, 0, 5, "열쇠 +1!"); AddNews(null, "떠돌이 소행성 속에서 이상한 열쇠가 나왔다", "청소선이 부순 소행성 속에서 반짝이는 금속 조각이 발견됐다. 케슬러 금융은 「우리 것이 아니다」라고 했다."); }
                 else { double cash = ShopBase * 0.4; S.cash += cash; Emit(SwEv.Pop, d.x, d.y - 14, 0, 4, "돈 뭉치 +" + Math.Round(cash).ToString("N0")); }
             }
-            if (d.att == Att.Pouch) v *= 2;
+            if (d.att == Att.Pouch) v *= PouchK;                                // 💰 09-27 「다른 것도 의미 있게」 — 돈 주머니 ×2 → ×2.5 · 늘 숫자가 뜬다
             if (src == 1) v *= DroneMag * DroneValK;
+            if (src == 2 && redBlast) v *= RedBlastVal;                        // 💥 09-27 사장님 「폭발 잔해가 의미가 없다」 — 빨간 폭발에 휩쓸린 것은 값 ×1.5
             v *= 1 + Math.Min(r.chain, 200 + Part("combo")) / 200.0;                    // 잇달아 부수면 값이 더 붙는다 (최대 ×2 · 어떤 무기든 — 연쇄 폭발을 무기 특성으로 옮긴 만큼)
             Pay(d, src, v, d.x, d.y, true);
+            if (d.att == Att.Pouch && v * BotEarn >= 1) Emit(SwEv.Pop, d.x, d.y - 14, 0, 0, "돈 주머니 +" + KFmt(v));
             Emit(SwEv.Broke, d.x, d.y, 0, d.k * 100 + (int)d.att);
             if (d.k == Fuel && AddFuel(3) > 0) Emit(SwEv.Pop, d.x, d.y, 0, 1, "연료 +3초");
-            if (d.k == Tank && r.pend.Count < PendCap) r.pend.Add(new Blast { x = d.x, y = d.y, t = 0.05, R = TankR });   // 💥 09-27 사장님 「빨간 폭탄 안 터지는 것도 있나?」 — 연쇄 한도(지구 40)를 넘으면 조용히 안 터졌다. 이제 늘 (렉 막는 건 대기 폭발 수로)
+            if (d.k == Tank && r.pend.Count < PendCap) r.pend.Add(new Blast { x = d.x, y = d.y, t = 0.05, R = TankR, red = true });   // 💥 09-27 사장님 「빨간 폭탄 안 터지는 것도 있나?」 — 연쇄 한도(지구 40)를 넘으면 조용히 안 터졌다. 이제 늘 (렉 막는 건 대기 폭발 수로)
             switch (d.att)
             {
                 case Att.FuelPod: if (AddFuel(2) > 0) Emit(SwEv.Pop, d.x, d.y - 10, 0, 1, "연료 +2초"); break;
-                case Att.Det: if (r.pend.Count < PendCap) r.pend.Add(new Blast { x = d.x, y = d.y, t = 0.07, R = DetR }); break;
+                case Att.Det: if (r.pend.Count < PendCap) r.pend.Add(new Blast { x = d.x, y = d.y, t = 0.07, R = DetR, red = true }); break;
                 case Att.Ice: for (int i = 0; i < 4; i++) SpawnFree(Chip, d.x, d.y, Rnd(-90, 90), Rnd(-90, 90), 1.2); break;
                 case Att.Magnet:
                     Emit(SwEv.Ring, d.x, d.y, 90, 2);

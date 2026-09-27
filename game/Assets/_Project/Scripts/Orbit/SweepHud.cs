@@ -1067,7 +1067,7 @@ namespace SalvageRun.Orbit
             if (scIcon == null) { scIcon = new Texture2D[ScIconPath.Length]; for (int i = 0; i < ScIconPath.Length; i++) scIcon[i] = Resources.Load<Texture2D>(ScIconPath[i]); }
             int leftN = sim.ScratchLeft + (scGrid != null && !scDone ? 1 : 0);          // 긁고 있는 장도 센다 (09-27 「남은 개수가 이상」)
             GUI.Label(new Rect(r.x + 20, r.y + 52, r.width - 40, 22), "<size=13>한 장 <color=#ffdf95>" + KNum.Fmt(sim.ScratchPrice) + "</color> · 같은 그림 셋 = 당첨 · 둘 = 표값 돌려받기</size>", label);
-            GUI.Label(new Rect(r.x + 20, r.y + 52, r.width - 40, 22), "<size=13><color=#f3c8ff>남은 표 " + leftN + "장" + (scGrid != null && !scDone ? " (이 장 포함)" : "") + "</color></size>", cost);
+            GUI.Label(new Rect(r.x + 20, r.y + 52, r.width - 40, 22), "<size=13><color=#f3c8ff>남은 표 " + leftN + "장" + (scGrid != null && !scDone ? " (이 장 포함)" : "") + (S.freeTix > 0 ? " · <color=#9ff0bf>공짜 " + S.freeTix + "</color>" : "") + "</color></size>", cost);
             // 표 — 분홍 바탕에 창 셋
             var card = new Rect(r.center.x - 250, r.y + 88, 500, 230);
             GUI.color = new Color(0.23f, 0.06f, 0.2f); GUI.DrawTexture(new Rect(card.x - 4, card.y - 4, card.width + 8, card.height + 8), white);

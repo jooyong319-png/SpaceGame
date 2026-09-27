@@ -355,15 +355,18 @@ static class Tests
         int b0 = sim.ScratchLeft; double c0 = sim.ScratchCost;
         if (b0 != 3) Fail($"처음 복권 {b0}장");
         sim.S.lv[Ix("l_more")] = 2; sim.S.lv[Ix("l_free")] = 1;
-        if (sim.ScratchLeft != 5) Fail($"복권 단골 2: {sim.ScratchLeft}장");
+        if (sim.ScratchLeft != 7) Fail($"복권 단골 2: {sim.ScratchLeft}장");
         if (sim.ScratchCost != 0) Fail($"첫 장 공짜: {sim.ScratchCost}");
         double cash = sim.S.cash; sim.ScratchBuy(out _); sim.ScratchClaim();
-        if (sim.ScratchCost <= 0) Fail("둘째 장도 공짜");
+        if (sim.ScratchCost != 0) Fail("둘째 장은 공짜여야");
+        sim.ScratchBuy(out _); sim.ScratchClaim();
+        if (sim.ScratchCost <= 0) Fail("셋째 장도 공짜");
+        sim.S.freeTix = 2; if (sim.ScratchCost != 0) Fail("공짜 표"); int l0 = sim.ScratchLeft; sim.ScratchBuy(out _); sim.ScratchClaim(); if (sim.S.freeTix != 1 || sim.ScratchLeft != l0 - 1) Fail($"공짜 표 쓰기 {sim.S.freeTix} {sim.ScratchLeft}");
         int wins = 0; var s2 = new SweepSim(null, null, 45); s2.S.cash = 1e12; s2.S.lv[Ix("l_luck")] = 3;
         for (int i = 0; i < 4000; i++) { s2.S.runs = i; s2.ScratchBuy(out int w); s2.ScratchClaim(); if (w >= 0) wins++; }
         var s3 = new SweepSim(null, null, 46); s3.S.cash = 1e12; int wins0 = 0;
         for (int i = 0; i < 4000; i++) { s3.S.runs = i; s3.ScratchBuy(out int w); s3.ScratchClaim(); if (w >= 0) wins0++; }
-        if (!(wins > wins0 * 1.3)) Fail($"행운의 긁개 3: 당첨 {wins} vs 없음 {wins0}");
+        if (!(wins > wins0 * 1.6)) Fail($"행운의 긁개 3: 당첨 {wins} vs 없음 {wins0}");
         Console.WriteLine($"   단골 · 공짜 · 긁개(당첨 {wins0} → {wins} / 4000)");
     }
 
