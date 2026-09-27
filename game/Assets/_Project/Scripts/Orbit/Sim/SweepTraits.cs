@@ -11,19 +11,19 @@ namespace SalvageRun.Orbit.Sim
     /// </summary>
     public sealed partial class SweepSim
     {
-        public static readonly string[] TraitName = { "", "위성 줄", "월면 금고", "폭풍 속 탐사차", "광맥 소행성", "대적점", "고리 얼음 덩이", "결정 공명", "돌풍", "혜성 통과" };
+        public static readonly string[] TraitName = { "", Loc.T("위성 줄"), Loc.T("월면 금고"), Loc.T("폭풍 속 탐사차"), Loc.T("광맥 소행성"), Loc.T("대적점"), Loc.T("고리 얼음 덩이"), Loc.T("결정 공명"), Loc.T("돌풍"), Loc.T("혜성 통과") };
         public static readonly string[] TraitDesc =
         {
             "",
-            "줄지어 도는 위성 — 하나를 부수면 줄 전체가 차례로 터진다",
-            "느린 큰 금고 — 값 ×3, 부서지며 둘레 조각까지 부순다",
-            "폭풍 동안만 나타나는 탐사차 — 값 ×5, 폭풍이 끝나면 묻힌다",
-            "큰 광맥 소행성 — 맞을 때마다 광석을 흘린다",
-            "붉은 소용돌이 — 안의 잔해 값 ×2, 대신 천천히 빨려 든다",
-            "고리 얼음 덩이 — 부수면 둘레를 얼린다(한 방에 깨짐)",
-            "결정 공명 — 결정 하나를 부수면 같은 결정이 모두 깨진다",
-            "돌풍 — 가끔 잔해가 한쪽으로 쏠린다",
-            "혜성 통과 — 꼬리에 닿은 잔해가 부서지고, 머리를 맞히면 열쇠",
+            Loc.T("줄지어 도는 위성 — 하나를 부수면 줄 전체가 차례로 터진다"),
+            Loc.T("느린 큰 금고 — 값 ×3, 부서지며 둘레 조각까지 부순다"),
+            Loc.T("폭풍 동안만 나타나는 탐사차 — 값 ×5, 폭풍이 끝나면 묻힌다"),
+            Loc.T("큰 광맥 소행성 — 맞을 때마다 광석을 흘린다"),
+            Loc.T("붉은 소용돌이 — 안의 잔해 값 ×2, 대신 천천히 빨려 든다"),
+            Loc.T("고리 얼음 덩이 — 부수면 둘레를 얼린다(한 방에 깨짐)"),
+            Loc.T("결정 공명 — 결정 하나를 부수면 같은 결정이 모두 깨진다"),
+            Loc.T("돌풍 — 가끔 잔해가 한쪽으로 쏠린다"),
+            Loc.T("혜성 통과 — 꼬리에 닿은 잔해가 부서지고, 머리를 맞히면 열쇠"),
         };
         public static int TraitOf(int orbit) { switch (orbit) { case 0: return 1; case 1: return 2; case 2: return 3; case 5: return 4; case 3: return 5; case 4: return 6; case 6: return 7; case 7: return 8; case 9: return 9; case 10: return 8; case 11: return 7; case 8: return 9; default: return 0; } }
         public int Trait => R == null || R.clean ? 0 : TraitOf(S.orbit);
@@ -70,7 +70,7 @@ namespace SalvageRun.Orbit.Sim
                     if (!StormOn && r.roverUp)
                     {
                         r.roverUp = false;
-                        foreach (var d in r.junk) if (!d.dead && d.sig == 3) { d.dead = true; Emit(SwEv.Pop, d.x, d.y, 0, 3, "탐사차가 모래에 묻혔다"); }
+                        foreach (var d in r.junk) if (!d.dead && d.sig == 3) { d.dead = true; Emit(SwEv.Pop, d.x, d.y, 0, 3, Loc.T("탐사차가 모래에 묻혔다")); }
                     }
                     break;
                 case 5:   // 목성 — 대적점이 궤도를 따라 돌고, 안의 잔해를 끌어들인다
@@ -103,7 +103,7 @@ namespace SalvageRun.Orbit.Sim
                     else if ((r.gustT -= dt) <= 0)
                     {
                         r.gustT = Rnd(9, 12); r.gustLeft = 3.5; r.gustA = Rnd(0, Math.PI * 2);
-                        Emit(SwEv.Pop, EX, EY, 0, 3, "★ 돌풍 — 잔해가 한쪽으로 쏠린다");
+                        Emit(SwEv.Pop, EX, EY, 0, 3, Loc.T("★ 돌풍 — 잔해가 한쪽으로 쏠린다"));
                         Emit(SwEv.TraitFx, EX + Math.Cos(r.gustA) * SpotRr, EY + Math.Sin(r.gustA) * SpotRr * Tilt, r.gustA, 8);
                     }
                     break;
@@ -173,7 +173,7 @@ namespace SalvageRun.Orbit.Sim
                 case 7:   // 결정 공명 — 같은 무리 결정이 모두
                 {
                     int i = 0; foreach (var q in r.junk) if (!q.dead && q.sig == 7 && q.grp == d.grp) { q.sig = 10; r.sigKills.Add(new SigKill { j = q, from = d, t = 0.05 * (++i) }); }
-                    if (i > 0) Emit(SwEv.Pop, d.x, d.y - 14, 0, 5, "결정 공명 ×" + (i + 1));
+                    if (i > 0) Emit(SwEv.Pop, d.x, d.y - 14, 0, 5, Loc.T("결정 공명 ×") + (i + 1));
                     break;
                 }
                 case 2:   // 월면 금고 — 금화가 튀며 둘레 조각까지
@@ -191,8 +191,8 @@ namespace SalvageRun.Orbit.Sim
                     break;
                 case 9:   // 혜성 머리 — 열쇠 (가끔 돈 뭉치)
                     r.comet = null;
-                    if (Rnd() < 0.35) { S.keys++; Emit(SwEv.Pop, d.x, d.y - 14, 0, 5, "혜성에서 열쇠 +1!"); }
-                    else { double cash = ShopBase * 0.3; S.cash += cash; Emit(SwEv.Pop, d.x, d.y - 14, 0, 4, "혜성 조각 +" + Math.Round(cash).ToString("N0")); }
+                    if (Rnd() < 0.35) { S.keys++; Emit(SwEv.Pop, d.x, d.y - 14, 0, 5, Loc.T("혜성에서 열쇠 +1!")); }
+                    else { double cash = ShopBase * 0.3; S.cash += cash; Emit(SwEv.Pop, d.x, d.y - 14, 0, 4, Loc.T("혜성 조각 +") + Math.Round(cash).ToString("N0")); }
                     break;
             }
         }

@@ -71,7 +71,7 @@ namespace SalvageRun.Orbit
         static void AutoBoot()
         {
             if (FindFirstObjectByType<SweepGame>() != null) return;
-            new GameObject("== 궤도 청소부 rev17 ==").AddComponent<SweepGame>();
+            new GameObject(Loc.T("== 궤도 청소부 rev17 ==")).AddComponent<SweepGame>();
         }
 
         void Awake()
@@ -160,7 +160,7 @@ namespace SalvageRun.Orbit
                 var S = sim.S; var R = sim.R; var g = sim.GateJunk;
                 double h = 0, m = 0; for (int i = 0; i < SweepSim.NodeCount; i++) { var nd = SweepSim.Nodes[i]; if (nd.id.StartsWith("p_")) continue; h += System.Math.Min(S.lv[i], nd.max); m += nd.max; }
                 string path = Application.dataPath + "/../../playlog.tsv";
-                if (!System.IO.File.Exists(path)) System.IO.File.AppendAllText(path, "시각\t분\t회사\t판\t청구서\t금액\t기한\t연체\t돈\t벌이\t빚\t궤도\t관문수\t관문체력\t트리%\t연쇄" + "\n");
+                if (!System.IO.File.Exists(path)) System.IO.File.AppendAllText(path, Loc.T("시각\t분\t회사\t판\t청구서\t금액\t기한\t연체\t돈\t벌이\t빚\t궤도\t관문수\t관문체력\t트리%\t연쇄") + "\n");
                 System.IO.File.AppendAllText(path, System.DateTime.Now.ToString("MM-dd HH:mm") + "\t" + (sim.M.playSeconds / 60).ToString("0.0") + "\t" + sim.M.company + "\t" + S.runs + "\t" + S.bill + "\t" + System.Math.Round(sim.BillAmount) + "\t" + S.billDue + "\t" + (S.overdue ? 1 : 0) + "\t" + System.Math.Round(S.cash) + "\t" + System.Math.Round(R != null ? R.Earned : 0) + "\t" + System.Math.Round(S.debt) + "\t" + SweepSim.Orbits[S.orbit].name + "\t" + sim.ZoneOpen + "\t" + (g != null ? g.hp + "/" + g.max : "-") + "\t" + (m > 0 ? h / m * 100 : 0).ToString("0") + "\t" + (R != null ? R.chainBest : 0) + "\n");
             }
             catch (System.Exception e) { Debug.LogWarning("playlog " + e.Message); }
@@ -210,7 +210,7 @@ namespace SalvageRun.Orbit
             var kb = Keyboard.current;
             if (kb != null)
             {
-                if (kb.f2Key.wasPressedThisFrame) timeScale = timeScale > 1f ? 1f : 3f;
+                if (Application.isEditor && kb.f2Key.wasPressedThisFrame) timeScale = timeScale > 1f ? 1f : 3f;   // 🔧 3배속은 시험용 — 출시 빌드에선 안 된다
                 if (kb.mKey.wasPressedThisFrame && OrbitSfx.I != null) OrbitSfx.I.ToggleMute();
                 if (kb.aKey.wasPressedThisFrame && !sim.R.over) ToggleAuto();                  // 🎯 자동 조준 ON/OFF
                 if (kb.sKey.wasPressedThisFrame && hud != null) { if (sim.R.over) { if (hud.flow == 2) hud.GoFlow(4); else if (hud.flow == 4) hud.GoFlow(2); } else if (sim.StockOpen) hud.stockOpen = !hud.stockOpen; }   // 📈 판 중 = 주식 창 · 조종실 = 증권 방
@@ -405,7 +405,7 @@ namespace SalvageRun.Orbit
                 var at = PxToWorld(e.x, e.y);
                 switch (e.kind)
                 {
-                    case SwEv.SkillReady: OrbitSfx.Play("tick", 0.5f, 1.4f, 0.05f); if (e.k == 1) Note("전탄 발사 준비 — Space", Amber); break;
+                    case SwEv.SkillReady: OrbitSfx.Play("tick", 0.5f, 1.4f, 0.05f); if (e.k == 1) Note(Loc.T("전탄 발사 준비 — Space"), Amber); break;
                     case SwEv.Supply:
                         PopAt(e.x, e.y - 10, e.text, e.k == 1 ? Violet : Green, 15);
                         OrbitSfx.Play("supply", 0.7f, 0.1f);
@@ -459,7 +459,7 @@ namespace SalvageRun.Orbit
                         if (e.v < 1) break;                                                  // 돈은 부술 때 이미 들어갔다 — 여기선 보여 주기만
                         if (e.k >= 5)
                         {
-                            PopAt(e.x, e.y - 34, "연쇄 " + e.k + " 보너스 +" + KNum.Fmt(e.v), new Color(1f, 0.87f, 0.4f), 18 + Mathf.Min(10, e.k / 20f));
+                            PopAt(e.x, e.y - 34, Loc.T("연쇄 ") + e.k + Loc.T(" 보너스 +") + KNum.Fmt(e.v), new Color(1f, 0.87f, 0.4f), 18 + Mathf.Min(10, e.k / 20f));
                             int coins = Mathf.Clamp(6 + e.k / 6, 6, 36);
                             for (int i = 0; i < coins && fx.Count < 880; i++) Add(disc, at + (Vector3)(Random.insideUnitCircle * 0.4f), 0.13f, Amber, 2, 1.4f + i * 0.02f).v = (Vector3)(Random.insideUnitCircle.normalized * Random.Range(2f, 5f));
                             OrbitSfx.Play("buy", 0.9f); OrbitSfx.Play("coin", 0.8f, 0.05f);
@@ -473,7 +473,7 @@ namespace SalvageRun.Orbit
                         Color c = src == 3 ? Green : cut ? new Color(0.9f, 0.65f, 0.6f) : Amber2;
                         if (sim.R != tallyRun) { tallyRun = sim.R; runTally = 0; }
                         if (src != 3 && e.v > 0) runTally += e.v;                                   // 값은 계산대에 모은다 — 쓰레기 위 숫자는 아주 큰 것만
-                        if (e.v >= 1 && (src == 3 || e.v > sim.ValMult * 400 || brokeWinN <= 2)) CoinPop(e.x, e.y - 8, src == 3 ? "청구서 -" : "+", e.v, c);   // 🏷 딱지 = 청구서를 깎는다 (09-27 「빚 -」라 떠서 돈이 빠지는 줄 알았다)
+                        if (e.v >= 1 && (src == 3 || e.v > sim.ValMult * 400 || brokeWinN <= 2)) CoinPop(e.x, e.y - 8, src == 3 ? Loc.T("청구서 -") : "+", e.v, c);   // 🏷 딱지 = 청구서를 깎는다 (09-27 「빚 -」라 떠서 돈이 빠지는 줄 알았다)
                         if (Random.value < 0.25f) Add(disc, at, 0.11f, src == 3 ? Green : Amber, 2, 1.6f).v = (Vector3)(Random.insideUnitCircle * 3f);
                         break;
                     }
@@ -484,7 +484,7 @@ namespace SalvageRun.Orbit
                         if (Prop(ref meteorSpr, "meteor") != null) meteors.Add(new Meteor { sr = MakeAnim(meteorSpr, from, 0.55f, Color.white, 62), a = from, b = to });
                         else { var tail = Add(pixel, from, 0.05f, new Color(1f, 0.6f, 0.2f, 0.9f), 8, 0.4f); tail.a = from; tail.b = to; tail.size = 0.25f; }
                         OrbitSfx.Play("launch", 0.7f);                                              // ☄ 빛 · 흔들림은 떨어질 때 (UpdateMissiles)
-                        Note("운석!", Orange);
+                        Note(Loc.T("운석!"), Orange);
                         break;
                     }
                     case SwEv.Tourist:
@@ -558,7 +558,7 @@ namespace SalvageRun.Orbit
                     case SwEv.Volley:
                     {   // 🚀 전탄 발사 — 멈칫 · 번쩍 · 흔들림 · 큰 글자
                         hitStop = Mathf.Max(hitStop, 0.08f); flash = Mathf.Max(flash, 0.55f); shake = Mathf.Max(shake, 0.35f);   // 멈춤 0.22 → 0.08 (09-26 「전탄 발사 랙」)
-                        if (hud != null) hud.Big("전탄 발사!", 1f, 34, new Color(1f, 0.87f, 0.58f));
+                        if (hud != null) hud.Big(Loc.T("전탄 발사!"), 1f, 34, new Color(1f, 0.87f, 0.58f));
                         OrbitSfx.Play("launch", 1f); OrbitSfx.Play("blast", 0.8f, 0.1f);
                         break;
                     }
@@ -617,7 +617,7 @@ namespace SalvageRun.Orbit
                         { var dl = s1 - s0; var nl = new Vector3(-dl.y, dl.x).normalized; for (int q = 0; q < 16; q++) Add(pixel, s0 + dl * (q / 16f) + nl * Random.Range(-0.08f, 0.08f), 0.05f, new Color(0.75f, 0.88f, 1f, 0.7f), 0, 0.5f); }   // 줄 따라 잔상
                         shake = Mathf.Max(shake, 0.2f); flash = Mathf.Max(flash, 0.12f);
                         OrbitSfx.PlayPitch("launch", 0.55f, 1.6f);
-                        if (e.v >= 5) PopAt(e.x2 * 0.3 + e.x * 0.7, e.y2 * 0.3 + e.y * 0.7 - 20, (int)e.v + "개 관통!", Cyan, 18);
+                        if (e.v >= 5) PopAt(e.x2 * 0.3 + e.x * 0.7, e.y2 * 0.3 + e.y * 0.7 - 20, (int)e.v + Loc.T("개 관통!"), Cyan, 18);
                         break;
                     }
                     case SwEv.Bolt:
@@ -654,8 +654,8 @@ namespace SalvageRun.Orbit
                     case SwEv.Tier:
                         OnTier(e.k);
                         break;
-                    case SwEv.Crit: PopAt(e.x, e.y, "치명타!", Orange, 16); OrbitSfx.Play("blast", 0.8f, 0.1f); shake = Mathf.Max(shake, 0.1f); break;
-                    case SwEv.Collapse: Note("붕괴! " + (int)e.v + "개 흩어짐", Red); Burst(at, Red, 40, 7f); shake = 0.25f; OrbitSfx.Play("collide", 1f); break;
+                    case SwEv.Crit: PopAt(e.x, e.y, Loc.T("치명타!"), Orange, 16); OrbitSfx.Play("blast", 0.8f, 0.1f); shake = Mathf.Max(shake, 0.1f); break;
+                    case SwEv.Collapse: Note(Loc.T("붕괴! ") + (int)e.v + Loc.T("개 흩어짐"), Red); Burst(at, Red, 40, 7f); shake = 0.25f; OrbitSfx.Play("collide", 1f); break;
                     case SwEv.Release:
                         Burst(at, Violet, 12 + (int)Mathf.Min(24, (float)e.v), 6f);
                         shake = Mathf.Max(shake, Mathf.Min(0.3f, 0.08f + (float)e.v * 0.01f));
@@ -766,8 +766,8 @@ namespace SalvageRun.Orbit
             {
                 case 1: shake = Mathf.Max(shake, 0.06f); break;
                 case 2: hud?.SawChain(); if (!calm) hitStop = 0.07f; edgeGlow = Mathf.Max(edgeGlow, 0.7f); OrbitSfx.Play("collide", 0.8f); break;
-                case 3: if (!calm) slowMo = 0.8f; edgeGlow = 1f; bandLit = 1f; kessT = 1.4f; kessText = "케슬러!"; OrbitSfx.Play("cine", 1f); break;
-                case 4: if (!calm) flash = 1f; bandLit = 1f; rimLit = 1f; kessT = 2.4f; kessText = "케슬러 연쇄"; OrbitSfx.Play("ending", 0.9f); break;
+                case 3: if (!calm) slowMo = 0.8f; edgeGlow = 1f; bandLit = 1f; kessT = 1.4f; kessText = Loc.T("케슬러!"); OrbitSfx.Play("cine", 1f); break;
+                case 4: if (!calm) flash = 1f; bandLit = 1f; rimLit = 1f; kessT = 2.4f; kessText = Loc.T("케슬러 연쇄"); OrbitSfx.Play("ending", 0.9f); break;
             }
         }
 

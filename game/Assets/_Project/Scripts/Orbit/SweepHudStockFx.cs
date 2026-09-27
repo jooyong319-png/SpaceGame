@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using SalvageRun.Orbit.Sim;
 
@@ -35,7 +35,7 @@ namespace SalvageRun.Orbit
             double spent = before - sim.S.cash; if (spent <= 0) return;
             OrbitSfx.Play("buy", 0.5f);
             Coins(8, from, stockRowPos[i]);
-            FxSay("체결", stockRowPos[i] + new Vector2(10, -4), UpCol, true, 8 * 0.05f + CoinFly);
+            FxSay(Loc.T("체결"), stockRowPos[i] + new Vector2(10, -4), UpCol, true, 8 * 0.05f + CoinFly);
             rowFlash[i] = 0.6f; rowFlashUp[i] = true;
         }
         public void TradeSell(int i, double frac, Vector2 from)
@@ -54,7 +54,7 @@ namespace SalvageRun.Orbit
                 FxSay("+" + KNum.Fmt(pl), stockCashPos + new Vector2(0, 26), UpCol, false, n * 0.045f + CoinFly * 0.6f);
                 if (ratio >= 0.3)
                 {
-                    bigAt = Time.unscaledTime + 0.3f; bigPlayed = false; bigTxt = ratio >= 0.5 ? "초대박!" : "대박!";
+                    bigAt = Time.unscaledTime + 0.3f; bigPlayed = false; bigTxt = ratio >= 0.5 ? Loc.T("초대박!") : Loc.T("대박!");
                     bigSub = Market.Defs[i].name + " +" + (ratio * 100).ToString("0.0") + "%";
                     for (int k = 0; k < rain.Length; k++) rain[k] = new Vector4(Random.value * vw, -Random.value * 200, 120 + Random.value * 160, Random.value);
                 }
@@ -62,7 +62,7 @@ namespace SalvageRun.Orbit
             else
             {
                 OrbitSfx.PlayPitch("tick", 0.7f, 0.55f);
-                FxSay("손절", stockRowPos[i] + new Vector2(10, -4), DnCol, true);
+                FxSay(Loc.T("손절"), stockRowPos[i] + new Vector2(10, -4), DnCol, true);
                 FxSay("−" + KNum.Fmt(-pl), stockCashPos + new Vector2(0, 26), DnCol, false, 0.1f);
             }
         }
@@ -172,7 +172,7 @@ namespace SalvageRun.Orbit
             var atx = anchorTex[anchorWho * 2 + (open ? 1 : 0)] ?? anchorTex[anchorWho * 2];
             if (atx != null) { GUI.color = new Color(1, 1, 1, a); GUI.DrawTexture(new Rect(face.x + 1, face.yMax - 52, 52, 52), atx); }
             GUI.color = new Color(1, 1, 1, a);
-            GUI.Label(new Rect(r.x + 62, r.y + 3, r.width - 68, 18), "<size=11><b><color=#ff5c5c>● 속보</color></b></size>", label);
+            GUI.Label(new Rect(r.x + 62, r.y + 3, r.width - 68, 18), Loc.T("<size=11><b><color=#ff5c5c>● 속보</color></b></size>"), label);
             GUI.Label(new Rect(r.x + 62, r.y + 20, r.width - 68, 36), "<size=12><color=#e8edf3>" + anchorHead + "</color></size>", small);
             GUI.color = Color.white;
         }
@@ -211,9 +211,9 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(r.x + 9, y - 1, r.width - 18, 18), "<size=11><b><color=#e8d8c0>" + Clip(Market.Defs[i].name, 7) + "</color></b></size>", label);
                 GUI.Label(new Rect(r.x + 9, y - 1, r.width - 18, 18), "<size=11><b>" + PctTxt(MyPct(i)) + "</b></size>", ledR ?? cost);
             }
-            if (n == 0) GUI.Label(new Rect(r.x + 9, r.y + 26, r.width - 18, 18), "<size=11><color=#7a6a55>보유 종목 없음</color></size>", label);
-            if (myIdx.Count > 3) GUI.Label(new Rect(r.x + 9, r.yMax - 21, r.width - 18, 16), "<size=9><color=#7a6a55>외 " + (myIdx.Count - 3) + "</color></size>", label);
-            GUI.Label(new Rect(r.x + 9, r.yMax - 21, r.width - 18, 16), "<size=11><color=" + (ov ? "#ffdf95" : "#9a8a70") + ">증권 가기 ›</color></size>", ledR ?? cost);
+            if (n == 0) GUI.Label(new Rect(r.x + 9, r.y + 26, r.width - 18, 18), Loc.T("<size=11><color=#7a6a55>보유 종목 없음</color></size>"), label);
+            if (myIdx.Count > 3) GUI.Label(new Rect(r.x + 9, r.yMax - 21, r.width - 18, 16), Loc.T("<size=9><color=#7a6a55>외 ") + (myIdx.Count - 3) + "</color></size>", label);
+            GUI.Label(new Rect(r.x + 9, r.yMax - 22, r.width - 18, 20), "<size=11><color=" + (ov ? "#ffdf95" : "#9a8a70") + Loc.T(">증권 가기 ›</color></size>"), ledR ?? cost);
             if (GUI.Button(r, GUIContent.none, GUIStyle.none)) GoFlow(4);
         }
 
@@ -221,7 +221,7 @@ namespace SalvageRun.Orbit
         void MyStockChips()
         {
             float y = 124, right = vw - 14;                                   // 연쇄 계기 · 압축 막대 아래
-            if (sim.Grit > 0.005) { var gr = new Rect(right - 130, y, 130, 22); GUI.color = new Color(0.2f, 0.05f, 0.05f, 0.85f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.4f, 0.3f), 1); GUI.color = Color.white; GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width, 20), "<size=12><color=#ffb3a8>근성 화력 <b>+" + Mathf.RoundToInt((float)sim.Grit * 100) + "%</b></color></size>", label); y += 25; }
+            if (sim.Grit > 0.005) { var gr = new Rect(right - 130, y, 130, 22); GUI.color = new Color(0.2f, 0.05f, 0.05f, 0.85f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.4f, 0.3f), 1); GUI.color = Color.white; GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width, 20), Loc.T("<size=12><color=#ffb3a8>근성 화력 <b>+") + Mathf.RoundToInt((float)sim.Grit * 100) + "%</b></color></size>", label); y += 25; }
             if (!sim.StockOpen || sim.Mk == null) return;
             MyStocks();
             if (myIdx.Count == 0) return;
@@ -236,10 +236,10 @@ namespace SalvageRun.Orbit
                 GUI.Label(new Rect(r.x + 8, r.y + 1, r.width, 20), txt, label);
                 y += 25;
             }
-            Chip("<size=12><color=#9ff0bf>●</color> 장 열림 · <color=#8a9bb3>매매는 조종실</color></size>", false);   // 출동 중엔 시세만 — 사고팔기는 돌아가서 (09-25 사장님 「출발에선 못 산다는 걸 모르겠다」)
-            Chip("<size=12>내 주식 <b>" + PctTxt(MyTotal()) + "</b></size>", false);
-            if (sim.PlanetStockBonus > 1) Chip("<size=12><color=#9fe8ff>행성 투자 값 <b>+20%</b></color></size>", false);
-            if (sim.Rage > 0.005) Chip("<size=12><color=#ff8a7a>분노 화력 <b>+" + Mathf.RoundToInt((float)sim.Rage * 100) + "%</b></color></size>", true);
+            Chip(Loc.T("<size=12><color=#9ff0bf>●</color> 장 열림 · <color=#8a9bb3>매매는 조종실</color></size>"), false);   // 출동 중엔 시세만 — 사고팔기는 돌아가서 (09-25 사장님 「출발에선 못 산다는 걸 모르겠다」)
+            Chip(Loc.T("<size=12>내 주식 <b>") + PctTxt(MyTotal()) + "</b></size>", false);
+            if (sim.PlanetStockBonus > 1) Chip(Loc.T("<size=12><color=#9fe8ff>행성 투자 값 <b>+20%</b></color></size>"), false);
+            if (sim.Rage > 0.005) Chip(Loc.T("<size=12><color=#ff8a7a>분노 화력 <b>+") + Mathf.RoundToInt((float)sim.Rage * 100) + "%</b></color></size>", true);
             for (int k = 0; k < Mathf.Min(3, myIdx.Count); k++) { int i = myIdx[k]; Chip("<size=12>" + Clip(Market.Defs[i].name, 7) + " <b>" + PctTxt(MyPct(i)) + (Hot(i) ? " ▲" : "") + "</b></size>", Hot(i)); }
         }
     }

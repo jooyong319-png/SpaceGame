@@ -23,7 +23,7 @@ namespace SalvageRun.Orbit
             if (donutRun != R) { donutRun = R; donutK = -1; }
             dmgItems.Clear();
             double tot = 0; for (int i = 0; i < SweepSim.DmgCatN; i++) tot += R.dmgBy[i];
-            if (tot <= 0) { GUI.Label(new Rect(RT.x + 18, RT.y + 44, RT.width - 36, 20), "<size=12><color=#5a6475>이번 판엔 피해를 못 넣었다</color></size>", label); return; }
+            if (tot <= 0) { GUI.Label(new Rect(RT.x + 18, RT.y + 44, RT.width - 36, 20), Loc.T("<size=12><color=#5a6475>이번 판엔 피해를 못 넣었다</color></size>"), label); return; }
             double etc = 0;
             for (int i = 0; i < SweepSim.DmgCatN; i++)
             {
@@ -34,14 +34,14 @@ namespace SalvageRun.Orbit
                 dmgItems.Add((nm, v, c));
             }
             dmgItems.Sort((a, b) => b.v.CompareTo(a.v));
-            if (etc > 0) dmgItems.Add(("기타", etc, DmgEtc));
+            if (etc > 0) dmgItems.Add((Loc.T("기타"), etc, DmgEtc));
 
             // 도넛 — 결과가 열리며 한 바퀴 차오른다
             var dr = new Rect(RT.x + 14, RT.y + 28, 86, 86);
             float k = Mathf.Clamp01(tally);
             if (Event.current.type == EventType.Repaint && (donutTex == null || Mathf.Abs(k - donutK) > 0.01f)) { donutK = k; BuildDonut(tot, k); }
             if (donutTex != null) GUI.DrawTexture(dr, donutTex);
-            GUI.Label(new Rect(dr.x, dr.center.y - 18, dr.width, 18), "<size=11><color=#8a93a3>총 피해</color></size>", center);
+            GUI.Label(new Rect(dr.x, dr.center.y - 18, dr.width, 18), Loc.T("<size=11><color=#8a93a3>총 피해</color></size>"), center);
             GUI.Label(new Rect(dr.x - 6, dr.center.y - 2, dr.width + 12, 20), "<size=11><color=#ffdf95>" + KNum.Short(tot * k) + "</color></size>", center);
 
             // 목록 — 두 줄로 (칸마다 이름 · 피해 · %)

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using SalvageRun.Orbit.Sim;
@@ -39,7 +39,7 @@ namespace SalvageRun.Orbit
         Texture2D texInk, white, texDim, texCard, texCard2, texRed, texAmber, texBar, texPaper, texDisc, texRing, texVignette;
 
         public void Banner(string s, int kind, float time) { banner = s.Replace("⚠", "!!"); bannerKind = kind; bannerT = time; }
-        public void OnNews(string head, bool scoop) { breakingT = 6f; breakingHead = (scoop ? "특종 — " : "") + head; }
+        public void OnNews(string head, bool scoop) { breakingT = 6f; breakingHead = (scoop ? Loc.T("특종 — ") : "") + head; }
         public void OnBillPaid(string text, int billNo) { paidText = text; paidT = 3f; paidBill = billNo; if (billNo == 1) branchFlash[1] = 3f; if (billNo == 2) branchFlash[2] = 3f; }
         public void OnWon() { endStage = 0; newsOpen = false; }
 
@@ -206,7 +206,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0.23f, 0.17f, 0.06f); GUI.DrawTexture(new Rect(r.x + 6, r.yMax - 7, r.width - 12, 4), white);
             GUI.color = firing ? Color.white : ready ? new Color(1f, 0.96f, 0.84f) : SweepGame.Amber; GUI.DrawTexture(new Rect(r.x + 6, r.yMax - 7, (r.width - 12) * k, 4), white);
             GUI.color = Color.white;
-            string t = firing ? "<color=#ffffff>발사 중!</color>" : ready ? "<color=#2a1400>전탄 발사 · Space</color>" : "<color=#8a7a5a>전탄 " + Mathf.FloorToInt(k * 100) + "%</color>";
+            string t = firing ? Loc.T("<color=#ffffff>발사 중!</color>") : ready ? Loc.T("<color=#2a1400>전탄 발사 · Space</color>") : Loc.T("<color=#8a7a5a>전탄 ") + Mathf.FloorToInt(k * 100) + "%</color>";
             GUI.Label(new Rect(r.x, r.y + 2, r.width, 20), "<size=13><b>" + t + "</b></size>", center);
             if (GUI.Button(r, GUIContent.none, GUIStyle.none) && ready) VolleyReq = true;
         }
@@ -253,7 +253,7 @@ namespace SalvageRun.Orbit
             bool ov = r.Contains(Event.current.mousePosition);
             GUI.color = settingsOpen || ov ? new Color(0.24f, 0.19f, 0.08f, 0.95f) : new Color(0.08f, 0.1f, 0.13f, 0.85f); GUI.DrawTexture(r, white);
             Frame(r, settingsOpen ? SweepGame.Amber : new Color(0.3f, 0.34f, 0.42f), 1); GUI.color = Color.white;
-            GUI.Label(r, "<size=12><color=" + (settingsOpen ? "#ffdf95" : "#c8d0dc") + ">설정</color></size>", center);
+            GUI.Label(r, "<size=12><color=" + (settingsOpen ? "#ffdf95" : "#c8d0dc") + Loc.T(">설정</color></size>"), center);
             if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { settingsOpen = !settingsOpen; OrbitSfx.Play("tick", 0.8f); }
             if (settingsOpen) SettingsWin();
         }
@@ -263,10 +263,10 @@ namespace SalvageRun.Orbit
         void SettingsWin()
         {
             GUI.color = new Color(0, 0, 0, 0.55f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
-            var w = new Rect(vw / 2 - 250, 70, 500, 460);
+            var w = new Rect(vw / 2 - 250, 44, 500, 510);
             GUI.color = new Color(0.043f, 0.063f, 0.09f, 0.98f); GUI.DrawTexture(w, white); Frame(w, SweepGame.Amber, 2); GUI.color = Color.white;
-            GUI.Label(new Rect(w.x + 22, w.y + 14, 200, 30), "<size=20><b><color=#ffdf95>설정</color></b></size>", label);
-            if (GUI.Button(new Rect(w.xMax - 104, w.y + 14, 88, 26), "<size=12>닫기 Esc</size>", btn)) settingsOpen = false;
+            GUI.Label(new Rect(w.x + 22, w.y + 14, 200, 30), Loc.T("<size=20><b><color=#ffdf95>설정</color></b></size>"), label);
+            if (GUI.Button(new Rect(w.xMax - 104, w.y + 14, 88, 26), Loc.T("<size=12>닫기 Esc</size>"), btn)) settingsOpen = false;
             float y = w.y + 62;
             bool changed = false;
             void Slider(string name, ref float v)
@@ -287,24 +287,29 @@ namespace SalvageRun.Orbit
                     if (GUI.Button(new Rect(w.x + 170 + k * 84, y, 80, 26), "<size=12>" + (k == cur ? "<color=#ffdf95>" + opts[k] + "</color>" : opts[k]) + "</size>", k == cur ? btn : btnOff)) { cur = k; changed = true; OrbitSfx.Play("tick", 0.6f); }
                 y += 40; return cur;
             }
-            Slider("전체 소리", ref vol);
-            Slider("효과음", ref sfxVol);
-            Slider("배경음", ref OrbitMusic.Vol);
-            shakeLv = Pick("화면 흔들림", shakeLv, new[] { "켬", "줄임", "끔" });
-            { int sq = PlayerPrefs.GetInt("orbit.shopQuick", 0), nq = Pick("가게 구입", sq, new[] { "묻기", "바로" }); if (nq != sq) { PlayerPrefs.SetInt("orbit.shopQuick", nq); PlayerPrefs.Save(); } }   // 🛒 09-27 「다음부터 바로 구매」 되돌리기
-            flashLv = Pick("번쩍임", flashLv, new[] { "켬", "줄임" });
+            Slider(Loc.T("전체 소리"), ref vol);
+            Slider(Loc.T("효과음"), ref sfxVol);
+            Slider(Loc.T("배경음"), ref OrbitMusic.Vol);
+            {   // 🌐 언어 (09-27) — 정적 표가 켤 때 만들어져서 다시 켜야 바뀐다
+                int sl = LocBoot.Saved, nl = Pick("언어 · Language", sl, new[] { "한국어", "English" });
+                if (nl != sl) LocBoot.Save(nl);
+                if (nl != (Loc.En ? 1 : 0)) { GUI.Label(new Rect(w.x + 24, y - 14, w.width - 48, 16), "<size=10><color=#ffdf95>" + (nl == 1 ? "Restart the game to apply" : Loc.T("게임을 다시 켜면 바뀐다")) + "</color></size>", label); y += 8; }
+            }
+            shakeLv = Pick(Loc.T("화면 흔들림"), shakeLv, new[] { Loc.T("켬"), Loc.T("줄임"), Loc.T("끔") });
+            { int sq = PlayerPrefs.GetInt("orbit.shopQuick", 0), nq = Pick(Loc.T("가게 구입"), sq, new[] { Loc.T("묻기"), Loc.T("바로") }); if (nq != sq) { PlayerPrefs.SetInt("orbit.shopQuick", nq); PlayerPrefs.Save(); } }   // 🛒 09-27 「다음부터 바로 구매」 되돌리기
+            flashLv = Pick(Loc.T("번쩍임"), flashLv, new[] { Loc.T("켬"), Loc.T("줄임") });
             int fs = PlayerPrefs.GetInt("orbit.screen", 0);
-            int nf = Pick("화면", fs, new[] { "전체 화면", "창" });
+            int nf = Pick(Loc.T("화면"), fs, new[] { Loc.T("전체 화면"), Loc.T("창") });
             if (nf != fs) { PlayerPrefs.SetInt("orbit.screen", nf); PlayerPrefs.Save(); ApplyScreen(); }
             if (nf == 1)
             {   // 🖥 창 크기 (09-27 사장님 「창 크기 조절 · 알트엔터 없애고 설정에서」)
                 int ws = PlayerPrefs.GetInt("orbit.win", 1);
-                int nw = Pick("창 크기 (가로)", ws, new[] { "1280", "1600", "1920" });
+                int nw = Pick(Loc.T("창 크기 (가로)"), ws, new[] { "1280", "1600", "1920" });
                 if (nw != ws) { PlayerPrefs.SetInt("orbit.win", nw); PlayerPrefs.Save(); ApplyScreen(); }
             }
-            GUI.Label(new Rect(w.x + 24, w.yMax - 30, w.width - 48, 20), "<size=11><color=#8a93a3>저장은 자동 · M = 소리 끄기 · Esc = 닫기</color></size>", label);
-            if (!lobby && sim.R.over && GUI.Button(new Rect(w.x + 24, w.yMax - 66, 130, 26), "<size=12>설명 다시 보기</size>", btnOffC)) { sim.M.flags.Remove("dlg:stock"); sim.M.flags.Remove("dlg:shop"); sim.M.flags.Remove("dlg:news"); settingsOpen = false; OrbitSfx.Play("tick", 0.6f); }   // 💬 증권 · 가게 · 신문 설명을 다시 — 그 방에 다시 들어가면 뜬다
-            if (!lobby && sim.R.over && GUI.Button(new Rect(w.xMax - 134, w.yMax - 36, 118, 26), "<size=12>로비로 나가기</size>", btnOff)) { game.Save(); settingsOpen = false; lobby = true; lobbyT = 0; }
+            GUI.Label(new Rect(w.x + 24, w.yMax - 30, w.width - 48, 20), Loc.T("<size=11><color=#8a93a3>저장은 자동 · M = 소리 끄기 · Esc = 닫기</color></size>"), label);
+            if (!lobby && sim.R.over && GUI.Button(new Rect(w.x + 24, w.yMax - 66, 130, 26), Loc.T("<size=12>설명 다시 보기</size>"), btnOffC)) { sim.M.flags.Remove("dlg:stock"); sim.M.flags.Remove("dlg:shop"); sim.M.flags.Remove("dlg:news"); settingsOpen = false; OrbitSfx.Play("tick", 0.6f); }   // 💬 증권 · 가게 · 신문 설명을 다시 — 그 방에 다시 들어가면 뜬다
+            if (!lobby && sim.R.over && GUI.Button(new Rect(w.xMax - 134, w.yMax - 36, 118, 26), Loc.T("<size=12>로비로 나가기</size>"), btnOff)) { game.Save(); settingsOpen = false; lobby = true; lobbyT = 0; }
             if (changed) SaveSettings();
         }
 
@@ -325,20 +330,20 @@ namespace SalvageRun.Orbit
                 int tier = R.chain >= 200 ? 4 : R.chain >= 80 ? 3 : R.chain >= 30 ? 2 : 1;
                 // 200 넘으면 큰 글자는 200 · 500 · 1000 · 2000 · 5000 … 넘을 때만 1.5초 — 그 사이엔 위쪽 작은 계수기 (09-24: 콤보가 판 내내 가운데를 덮었다)
                 int ms = 0; for (long m = 100; m <= R.chain; m = m.ToString()[0] == '1' ? m * 5 / 2 : m * 2) ms++;   // 100 · 250 · 500 · 1000 · 2500 …
-                if (ms > chainHund) { chainHund = ms; chainPopT = 1.1f; Big("연쇄 " + R.chain + "!", 1.1f, 38, new Color(1f, 0.87f, 0.58f)); }   // 가운데는 고비를 넘을 때만 — 평소엔 오른쪽 위 계기 (09-26 정돈 1)
+                if (ms > chainHund) { chainHund = ms; chainPopT = 1.1f; Big(Loc.T("연쇄 ") + R.chain + "!", 1.1f, 38, new Color(1f, 0.87f, 0.58f)); }   // 가운데는 고비를 넘을 때만 — 평소엔 오른쪽 위 계기 (09-26 정돈 1)
                 if (tier > chainTierSeen) { chainTierSeen = tier; chainPopT = Mathf.Max(chainPopT, 0.6f); }
                 chainPopT -= Time.unscaledDeltaTime;
                 var cg = new Rect(vw - 150, 38, 138, 50);
                 GUI.color = new Color(0.05f, 0.06f, 0.09f, 0.85f * Mathf.Min(1, (float)R.chainT * 3)); GUI.DrawTexture(cg, white);
                 Frame(cg, new Color(1f, 0.76f, 0.35f, (0.25f + 0.5f * Mathf.Clamp01(chainPopT)) * Mathf.Min(1, (float)R.chainT * 3)), 1);
                 GUI.color = new Color(1, 1, 1, Mathf.Min(1, (float)R.chainT * 3));
-                GUI.Label(new Rect(cg.x + 8, cg.y + 4, 60, 18), "<size=11><color=#8a93a3>연쇄</color></size>", label);
+                GUI.Label(new Rect(cg.x + 8, cg.y + 4, 60, 18), Loc.T("<size=11><color=#8a93a3>연쇄</color></size>"), label);
                 GUI.Label(new Rect(cg.x + 8, cg.y + 1, cg.width - 16, 26), "<size=" + (17 + tier) + "><b><color=#ffdf95>" + R.chain + "</color></b></size>", cost);
-                GUI.Label(new Rect(cg.x + 8, cg.y + 31, cg.width - 16, 18), "<size=10><color=#8a93a3>최고 " + Mathf.Max(R.chainBest, sim.M.bestChain) + "</color></size>", cost);
+                GUI.Label(new Rect(cg.x + 8, cg.y + 31, cg.width - 16, 18), Loc.T("<size=10><color=#8a93a3>최고 ") + Mathf.Max(R.chainBest, sim.M.bestChain) + "</color></size>", cost);
                 GUI.color = Color.white;
             }
             else { chainHund = 0; chainTierSeen = 0; }
-            if (game.kessText != null) { Big(game.kessText + " ×" + R.chain, game.kessT, game.kessText == "케슬러!" ? 30 : 36, new Color(1f, 0.6f, 0.3f)); game.kessText = null; }   // 케슬러 단계도 같은 통로 (정돈 6)
+            if (game.kessText != null) { Big(game.kessText + " ×" + R.chain, game.kessT, game.kessText == Loc.T("케슬러!") ? 30 : 36, new Color(1f, 0.6f, 0.3f)); game.kessText = null; }   // 케슬러 단계도 같은 통로 (정돈 6)
             if (cBigT > 0 && !R.over)
             {   // 🔠 가운데 큰 글자 — 한 번에 하나 (09-26 정돈 규칙 ①)
                 cBigT -= Time.unscaledDeltaTime;
@@ -373,7 +378,7 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(1f, 0.72f - (i % 3) * 0.08f, 0.45f, (0.25f + (i % 4) * 0.1f) * a); GUI.DrawTexture(new Rect(x, y, len, i % 5 == 0 ? 3 : 2), white);
             }
             GUI.color = Color.white;
-            if (ph > 14 && ph < 19.5f) GUI.Label(new Rect(0, 40, vw, 26), "<size=18><color=#ffb080><b>모래 폭풍</b></color></size>  <size=13><color=#ffd0b0>값 ×1.5 · 잔해가 몰려온다</color></size>", center);
+            if (ph > 14 && ph < 19.5f) GUI.Label(new Rect(0, 40, vw, 26), Loc.T("<size=18><color=#ffb080><b>모래 폭풍</b></color></size>  <size=13><color=#ffd0b0>값 ×1.5 · 잔해가 몰려온다</color></size>"), center);
         }
 
         // 🚀 출발 1.3초 — 조종실 선체가 커지며 밖으로 날아가고, 별 줄기가 쏟아지고, 행성 이름이 뜬다 (사장님 「출발 후가 2% 빠진 느낌」)
@@ -412,10 +417,10 @@ namespace SalvageRun.Orbit
                     GUI.DrawTexture(new Rect(vw / 2 - 360 + i * 45, 146 + dy, 46, 86), white);
                 }
                 GUI.color = new Color(1, 1, 1, ta);
-                GUI.Label(new Rect(0, 150 + dy, vw, 50), "<color=#ffdf95>" + (sim.R.clean ? "청산 출동" : o.name + " 궤도") + "</color>", title);
+                GUI.Label(new Rect(0, 150 + dy, vw, 50), "<color=#ffdf95>" + (sim.R.clean ? Loc.T("청산 출동") : o.name + Loc.T(" 궤도")) + "</color>", title);
                 var c = sim.CurContract;
                 title.fontSize = 16;
-                GUI.Label(new Rect(0, 200 + dy, vw, 26), "출동 " + sim.S.runs + " · 연료 " + Mathf.RoundToInt((float)sim.R.max) + "초" + (c != null && !sim.R.clean ? " · 의뢰: " + c.Value.text : ""), title);
+                GUI.Label(new Rect(0, 200 + dy, vw, 26), Loc.T("출동 ") + sim.S.runs + Loc.T(" · 연료 ") + Mathf.RoundToInt((float)sim.R.max) + Loc.T("초") + (c != null && !sim.R.clean ? Loc.T(" · 의뢰: ") + c.Value.text : ""), title);
                 GUI.color = Color.white; title.fontSize = 18;
             }
         }
@@ -481,17 +486,17 @@ namespace SalvageRun.Orbit
             big.fontSize = 22;                                                         // 도트 글꼴은 11의 배수에서만 또렷하다 — 크기 대신 색으로 번쩍 (정돈 5)
             big.normal.textColor = Color.Lerp(Color.white, new Color(1f, 0.87f, 0.58f), Mathf.Clamp01(game.creditPulse * 2));
             float x0 = x;
-            Item("돈", KNum.Fmt(shown));
+            Item(Loc.T("돈"), KNum.Fmt(shown));
             big.normal.textColor = Color.white; big.fontSize = 20;
             CreditScreen = new Vector2((x0 + 50) * scale, Screen.height - 22 * scale);
             if (R.clean)
             {
-                Item("궤도 청소율", Mathf.Min(100, Mathf.FloorToInt(100f * R.cleanKills / R.cleanGoal)) + "%", big);
+                Item(Loc.T("궤도 청소율"), Mathf.Min(100, Mathf.FloorToInt(100f * R.cleanKills / R.cleanGoal)) + "%", big);
             }
             else if (sim.M.endless)
-                Item("무한 궤도", "<color=#d8ccff>" + sim.M.depth + "층</color>  <color=#8a93a3>최고 " + sim.M.bestDepth + "층</color>", label);   // 빚은 끝났다 — 청구서 대신 층
+                Item(Loc.T("무한 궤도"), "<color=#d8ccff>" + sim.M.depth + Loc.T("층</color>  <color=#8a93a3>최고 ") + sim.M.bestDepth + Loc.T("층</color>"), label);   // 빚은 끝났다 — 청구서 대신 층
             else if (S.bill < SweepSim.Bills.Length)
-                Item("청구서", KNum.Fmt(sim.BillAmount) + " · " + S.billDue + "판" + (S.debt > 0 ? " <color=#ee7766>빚 상환 " + Mathf.RoundToInt((float)sim.Cut * 100) + "%</color>" : ""), label);
+                Item(Loc.T("청구서"), KNum.Fmt(sim.BillAmount) + " · " + S.billDue + Loc.T("판") + (S.debt > 0 ? Loc.T(" <color=#ee7766>빚 상환 ") + Mathf.RoundToInt((float)sim.Cut * 100) + "%</color>" : ""), label);
             // 🛰 관문 체력 — 위 가운데 (09-26)
             {
                 var gj = sim.GateJunk;
@@ -506,8 +511,8 @@ namespace SalvageRun.Orbit
                         GUI.color = new Color(0.45f, 0.8f, 1f, 0.12f + 0.08f * sp); GUI.DrawTexture(new Rect(gx - 78, gy - 78, 156, 156), texDisc);
                         GUI.color = new Color(0.6f, 0.9f, 1f, 0.55f + 0.25f * sp); GUI.DrawTexture(new Rect(gx - 80, gy - 80, 160, 160), texRing);
                         GUI.color = Color.white;
-                        GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), "<size=11><color=#ffb36b>🛰 " + sim.GateName + "</color> <color=#9fdcff>· 방어막</color></size>", label);
-                        GUI.Label(new Rect(gr.x + 8, gr.y + 14, gr.width - 16, 16), "<size=10><color=#9fdcff>청구서 " + sim.GateBill + "장을 갚으면 풀린다</color></size>", label);
+                        GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), "<size=11><color=#ffb36b>🛰 " + sim.GateName + Loc.T("</color> <color=#9fdcff>· 방어막</color></size>"), label);
+                        GUI.Label(new Rect(gr.x + 8, gr.y + 14, gr.width - 16, 16), Loc.T("<size=10><color=#9fdcff>청구서 ") + sim.GateBill + Loc.T("장을 갚으면 풀린다</color></size>"), label);
                         goto gateDone;
                     }
                     float gk = Mathf.Clamp01((float)gj.hp / Mathf.Max(1, gj.max));
@@ -524,17 +529,17 @@ namespace SalvageRun.Orbit
                 TallyScreen = new Vector2(tr.center.x * scale, Screen.height - tr.center.y * scale);
                 float pu = game.tallyPulse;
                 Lcd(tr, pu);
-                GUI.Label(new Rect(tr.x + 8, tr.y, tr.width, 18), "<size=10><color=#5fa37d>이번 판</color></size>", label);
+                GUI.Label(new Rect(tr.x + 8, tr.y, tr.width, 18), Loc.T("<size=10><color=#5fa37d>이번 판</color></size>"), label);
                 GUI.Label(new Rect(tr.x, tr.y + 14, tr.width - 8, 24), "<size=" + (15 + Mathf.RoundToInt(pu * 3)) + "><b><color=#ffc35a>" + (game.runTally > 0 ? "+" + KNum.Fmt(game.runTally) : "—") + "</color></b></size>", cost);
             }
-            GUI.Label(new Rect(x, 14, 40, 20), "연료", dim);
+            GUI.Label(new Rect(x, 14, 40, 20), Loc.T("연료"), dim);
             GUI.DrawTexture(new Rect(x + 34, 19, 160, 9), texBar);
             float fk = Mathf.Clamp01((float)(R.fuel / R.max));
             GUI.DrawTexture(new Rect(x + 34, 19, 160 * fk, 9), R.fuel < 6 ? texRed : texAmber);
             x += 210;
             if (false && R.maxShots > 0 && sim.HoleChance > 0)                     // 위 줄 덜기 — 블랙홀 %는 칸 툴팁으로 (09-24 9번)
             {
-                GUI.Label(new Rect(x, 14, 200, 20), "블랙홀 <color=#b69cff>자동 " + (sim.HoleChance * 100).ToString("0.#") + "%</color>" + (R.holding ? "  <color=#b69cff>● 열림</color>" : ""), dim);
+                GUI.Label(new Rect(x, 14, 200, 20), Loc.T("블랙홀 <color=#b69cff>자동 ") + (sim.HoleChance * 100).ToString("0.#") + "%</color>" + (R.holding ? Loc.T("  <color=#b69cff>● 열림</color>") : ""), dim);
             }
             GUI.Label(new Rect(vw - 264, 14, 196, 20), "<color=#8a93a3>" + SweepSim.Orbits[S.orbit].name + "</color>", cost);   // 회사 이름은 조종실에만 — 행성 이름만 작게
             if (R.holding)
@@ -542,7 +547,7 @@ namespace SalvageRun.Orbit
                 float k = Mathf.Clamp01((float)R.packed.Count / Mathf.Max(1, sim.Cap));
                 GUI.DrawTexture(new Rect(vw - 200, 90, 186, 8), texBar);
                 GUI.color = k > 0.8f ? SweepGame.Red : SweepGame.Violet; GUI.DrawTexture(new Rect(vw - 200, 90, 186 * k, 8), white); GUI.color = Color.white;
-                GUI.Label(new Rect(vw - 330, 100, 316, 18), "압축 " + R.packed.Count + " / 붕괴 " + sim.Cap, cost);
+                GUI.Label(new Rect(vw - 330, 100, 316, 18), Loc.T("압축 ") + R.packed.Count + Loc.T(" / 붕괴 ") + sim.Cap, cost);
             }
             AutoSwitch();
             if (sim.StockOpen) StockSwitch();
@@ -559,8 +564,8 @@ namespace SalvageRun.Orbit
                 Frame(cr, ok ? new Color(0.44f, 0.81f, 0.59f, 0.6f + 0.4f * cardFlash) : new Color(0.95f, 0.76f, 0.31f, 0.35f + 0.5f * big2), 1 + cardFlash * 2);
                 GUI.color = Color.white;
                 int pct = 25 + 10 * sim.Lv("e_quest");
-                GUI.Label(new Rect(cr.x + 8, cr.y + 3, cr.width - 16, 18), "<size=" + (12 + Mathf.RoundToInt(3 * big2)) + "><color=#ffdf95><b>의뢰</b></color>  " + c.Value.text + "</size>", label);
-                GUI.Label(new Rect(cr.x + 8, cr.y + 3, cr.width - 16, 18), "<size=11>" + (ok ? "<color=#6fcf97><b>성공! 판 수입 +" + pct + "%</b></color>" : "<color=#8a93a3>성공하면 +" + pct + "%</color>") + "</size>", cost);
+                GUI.Label(new Rect(cr.x + 8, cr.y + 3, cr.width - 16, 18), "<size=" + (12 + Mathf.RoundToInt(3 * big2)) + Loc.T("><color=#ffdf95><b>의뢰</b></color>  ") + c.Value.text + "</size>", label);
+                GUI.Label(new Rect(cr.x + 8, cr.y + 3, cr.width - 16, 18), "<size=11>" + (ok ? Loc.T("<color=#6fcf97><b>성공! 판 수입 +") + pct + "%</b></color>" : Loc.T("<color=#8a93a3>성공하면 +") + pct + "%</color>") + "</size>", cost);
                 var pb = new Rect(cr.x + 62, cr.yMax - 14, cr.width - 70, 6);
                 GUI.DrawTexture(pb, texBar); GUI.color = ok ? new Color(0.44f, 0.81f, 0.59f) : SweepGame.Amber;
                 GUI.DrawTexture(new Rect(pb.x, pb.y, pb.width * Mathf.Clamp01((float)pr / Mathf.Max(1, c.Value.target)), pb.height), white); GUI.color = Color.white;
@@ -570,9 +575,9 @@ namespace SalvageRun.Orbit
             string hint = null;
             if (R.clean) hint = null; else
             if (CoachBox()) hint = null; else
-            if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = manualFire ? "왼쪽 단추를 누르고 있는 동안 청소선이 쏜다 — 잔해 위를 겨누자" : "궤도 위에 커서를 대면 청소선이 빔을 쏜다 — 처음엔 한 점씩";
-            else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = "블랙홀이 열렸다 — 쏠 때 가끔 저절로 열려 빨아들인다";
-            else if (sim.DronesOn && !sim.M.flags.Contains("hint_drone") && R.t < 8) hint = "드론은 알아서 줍는다 — 한 방에 부서지는 것만";
+            if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = manualFire ? Loc.T("왼쪽 단추를 누르고 있는 동안 청소선이 쏜다 — 잔해 위를 겨누자") : Loc.T("궤도 위에 커서를 대면 청소선이 빔을 쏜다 — 처음엔 한 점씩");
+            else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = Loc.T("블랙홀이 열렸다 — 쏠 때 가끔 저절로 열려 빨아들인다");
+            else if (sim.DronesOn && !sim.M.flags.Contains("hint_drone") && R.t < 8) hint = Loc.T("드론은 알아서 줍는다 — 한 방에 부서지는 것만");
             else if (sim.S.orbit > 0 && !sim.M.flags.Contains("hint_p" + sim.S.orbit) && R.t < 8) hint = PlanetHint[sim.S.orbit];   // 새 행성 첫 판
             if (hint != null)
             {   // 궤도 · 포대 위에서도 읽히게 — 글자 폭만큼 어두운 띠 (09-26 밤 둘러보기)
@@ -580,7 +585,7 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(0.02f, 0.03f, 0.05f, 0.72f); GUI.DrawTexture(new Rect(vw / 2 - hw / 2, RefH - 72, hw, 24), white); GUI.color = Color.white;
                 GUI.Label(new Rect(vw / 2 - 360, RefH - 70, 720, 20), hint, center);
             }
-            if (game.timeScale > 1) GUI.Label(new Rect(vw - 120, RefH - 46, 106, 18), "시험 속도 ×3", cost);
+            if (game.timeScale > 1) GUI.Label(new Rect(vw - 120, RefH - 46, 106, 18), Loc.T("시험 속도 ×3"), cost);
         }
 
         // ───────────────────────────────── 조종실 — 첫 화면 (사장님 09-23: "첫 화면 자체를 우주선 화면 컨셉으로 · 유저 친화적으로")
@@ -590,15 +595,15 @@ namespace SalvageRun.Orbit
         // 한글은 유니티가 글자 가운데서 줄을 끊는다 (09-27 「머물 / 다」) — 띄어쓰기 자리에서만 끊도록 줄바꿈을 미리 넣는다. 꾸밈 태그 없는 글만
         static string Ro(string w)   // 받침이 있으면 「으로」 (ㄹ 받침은 「로」)
         {
-            if (string.IsNullOrEmpty(w)) return "로";
-            char c = w[w.Length - 1]; if (c < 0xAC00 || c > 0xD7A3) return "로";
-            int jong = (c - 0xAC00) % 28; return jong == 0 || jong == 8 ? "로" : "으로";
+            if (string.IsNullOrEmpty(w)) return Loc.T("로");
+            char c = w[w.Length - 1]; if (c < 0xAC00 || c > 0xD7A3) return Loc.T("로");
+            int jong = (c - 0xAC00) % 28; return jong == 0 || jong == 8 ? Loc.T("로") : Loc.T("으로");
         }
         static string Eul(string w)  // 받침이 있으면 「을」
         {
-            if (string.IsNullOrEmpty(w)) return "를";
-            char c = w[w.Length - 1]; if (c < 0xAC00 || c > 0xD7A3) return "를";
-            return (c - 0xAC00) % 28 == 0 ? "를" : "을";
+            if (string.IsNullOrEmpty(w)) return Loc.T("를");
+            char c = w[w.Length - 1]; if (c < 0xAC00 || c > 0xD7A3) return Loc.T("를");
+            return (c - 0xAC00) % 28 == 0 ? Loc.T("를") : Loc.T("을");
         }
         GUIStyle kwrapSt;
         string KWrap(string s, int size, float w)
@@ -625,10 +630,10 @@ namespace SalvageRun.Orbit
         public bool CockpitView => (flow >= 2 && flow <= 5) && sim != null && sim.R.over && !sim.M.careerOpen && !sim.M.won;   // 조종실 — 카메라가 물러나 지구가 창 가운데 (09-23 부활)
         public int flow;                         // 0 출동 중 · 1 결산 · 2 조종실 · 3 정비고(왼쪽 끝) · 5 부품 가게(정비고 오른쪽) · 4 증권(오른쪽 방)
         static readonly Color[] BranchCol = { SweepGame.Amber, SweepGame.Cyan, SweepGame.Violet, SweepGame.Green };
-        static readonly string[] BayDesc = { "조준점 하나 → 넓은 착탄 → 한 번에 여럿", "알아서 줍는다 — 한 방에 부서지는 것만", "블랙홀 스킬 · 지구에서 연료 보급", "돈 · 청구서 · 대출 · 기사" };
+        static readonly string[] BayDesc = { Loc.T("조준점 하나 → 넓은 착탄 → 한 번에 여럿"), Loc.T("알아서 줍는다 — 한 방에 부서지는 것만"), Loc.T("블랙홀 스킬 · 지구에서 연료 보급"), Loc.T("돈 · 청구서 · 대출 · 기사") };
         public static readonly Rect Win = new Rect(200, 44, 560, 344);
 
-        static string Clip(string s, int n) => s.Length <= n ? s : s.Substring(0, n - 1) + "…";
+        static string Clip(string s, int n) { if (Loc.En) n = n * 17 / 10; return s.Length <= n ? s : s.Substring(0, n - 1) + "…"; }   // 🌐 영어 글자는 한글보다 좁다
 
         void Frame(Rect r, Color c, float w)
         {
@@ -682,20 +687,20 @@ namespace SalvageRun.Orbit
 
             // 제목
             title.fontSize = 40;
-            GUI.Label(new Rect(cx - 300, 70, 600, 52), "연료 바닥!", title);
+            GUI.Label(new Rect(cx - 300, 70, 600, 52), Loc.T("연료 바닥!"), title);
 
             // 왼쪽 — 이번 출동: 부순 것 종류별 · 합계
             var L = new Rect(cx - 420, 140, 410, 250);
             Panel2(L, null);
             float y = L.y + 14;
             void Line2(string k, string v) { GUI.Label(new Rect(L.x + 18, y, L.width - 36, 26), "<size=18>" + k + "</size>", label); GUI.Label(new Rect(L.x + 18, y, L.width - 36, 26), "<size=18>" + v + "</size>", cost); y += 34; }
-            Line2("부순 것", Mathf.RoundToInt(R.broke * tally).ToString());
+            Line2(Loc.T("부순 것"), Mathf.RoundToInt(R.broke * tally).ToString());
             // 종류별 아이콘 줄
             int[] counts = { R.cChip, R.cSat, R.cFuel, R.cVault, R.cTank, R.cBig };
             int[] kinds = { SweepSim.Chip, SweepSim.Sat, SweepSim.Rocket, SweepSim.Vault, SweepSim.Tank, SweepSim.Big };
             float ix = L.x + 22;
             // 칸 폭을 글자에 맞춘다 — 다섯 자리면 70px 고정 칸을 넘었다 (09-24 사장님 사진 2)
-            string CntTxt(int c, bool shortF) => shortF && c >= 10000 ? (c / 10000f).ToString("0.#") + "만" : c.ToString();
+            string CntTxt(int c, bool shortF) => shortF && c >= 10000 ? (Loc.En ? KNum.Short(c) : (c / 10000f).ToString("0.#") + "만") : c.ToString();
             float need = 0; for (int i = 0; i < counts.Length; i++) if (counts[i] > 0) need += 34 + label.CalcSize(new GUIContent(counts[i].ToString())).x;
             bool shortC = need > L.width - 40;
             for (int i = 0; i < counts.Length; i++)
@@ -708,12 +713,12 @@ namespace SalvageRun.Orbit
                 ix += 34 + tw;
             }
             y += 32;
-            Line2("최대 연쇄", R.chainBest + (R.chainBest > prevBestChain && R.chainBest >= 10 ? " <color=#ff8a7a>새 기록!</color>" : ""));
+            Line2(Loc.T("최대 연쇄"), R.chainBest + (R.chainBest > prevBestChain && R.chainBest >= 10 ? Loc.T(" <color=#ff8a7a>새 기록!</color>") : ""));
             y += 6;
             GUI.color = new Color(0.16f, 0.2f, 0.27f); GUI.DrawTexture(new Rect(L.x + 18, y, L.width - 36, 1.5f), white); GUI.color = Color.white;
             y += 12;
             var totalPos = new Vector2(L.xMax - 60, y + 14);
-            GUI.Label(new Rect(L.x + 18, y, L.width - 36, 32), "<size=24>합계</size>", label);
+            GUI.Label(new Rect(L.x + 18, y, L.width - 36, 32), Loc.T("<size=24>합계</size>"), label);
             GUI.Label(new Rect(L.x + 18, y, L.width - 36, 32), "<size=26><color=#6fcf97>+" + KNum.Fmt(gained * tally) + "</color></size>", cost);
             if (sim.Mk != null && runStockSh != null && runStockSh.Length == sim.Mk.M.st.Count)
             {   // 📈 내 주식 이번 판 — 출발 때 들고 있던 주식이 얼마나 움직였나 (09-24 사장님 4번)
@@ -721,7 +726,7 @@ namespace SalvageRun.Orbit
                 if (v0 > 0)
                 {
                     double d = v1 - v0; string hx = d >= 0 ? "#ff5c5c" : "#5494ff";
-                    GUI.Label(new Rect(L.x + 18, y + 42, L.width - 36, 24), "<size=16>내 주식 이번 판</size>", label);
+                    GUI.Label(new Rect(L.x + 18, y + 42, L.width - 36, 24), Loc.T("<size=16>내 주식 이번 판</size>"), label);
                     GUI.Label(new Rect(L.x + 18, y + 42, L.width - 36, 24), "<size=16><color=" + hx + ">" + (d >= 0 ? "+" : "") + KNum.Fmt(d) + "  (" + (d >= 0 ? "+" : "") + (d / v0 * 100).ToString("0.0") + "%)</color></size>", cost);
                 }
             }
@@ -744,9 +749,9 @@ namespace SalvageRun.Orbit
 
             // 오른쪽 위 — 📊 무기별 피해 원그래프 (09-27 사장님 「출동 결과에서 어떤 무기들이 데미지 넣었는지 원그래프 · 블랙홀 기타 다 포함 · 잔잔바리는 기타로」)
             var RT = new Rect(cx + 10, 140, 410, 120);
-            Panel2(RT, "이번 판 피해 — 곳별");
+            Panel2(RT, Loc.T("이번 판 피해 — 곳별"));
             DmgChart(RT, R, tally);
-            if (R.cut > 0) GUI.Label(new Rect(RT.x + 16, RT.yMax - 2, RT.width - 32, 18), "<size=11><color=#ee7766>빚 상환으로 떼인 것 -" + KNum.Fmt(R.cut) + "</color></size>", label);
+            if (R.cut > 0) GUI.Label(new Rect(RT.x + 16, RT.yMax - 2, RT.width - 32, 18), Loc.T("<size=11><color=#ee7766>빚 상환으로 떼인 것 -") + KNum.Fmt(R.cut) + "</color></size>", label);
             if (false) {
             double tot = System.Math.Max(1, R.Earned);
             float a = (float)(R.earnClaw / tot), b = (float)(R.earnDrone / tot);
@@ -756,9 +761,9 @@ namespace SalvageRun.Orbit
             GUI.color = SweepGame.Cyan; GUI.DrawTexture(new Rect(bx + bw * a, by, bw * b * tally, 12), white);
             GUI.color = SweepGame.Violet; GUI.DrawTexture(new Rect(bx + bw * (a + b), by, bw * (1 - a - b) * tally, 12), white);
             GUI.color = Color.white;
-            GUI.Label(new Rect(bx, by + 16, bw, 18), "<color=#f2c14e>빔 " + Mathf.RoundToInt(a * 100) + "%</color>   " + (sim.DronesOn ? "<color=#6fd3e8>드론 " + Mathf.RoundToInt(b * 100) + "%</color>   " : "") + (sim.BombsOn ? "<color=#b69cff>폭발 " + Mathf.RoundToInt((1 - a - b) * 100) + "%</color>" : ""), label);
-            if (R.contractText != null) GUI.Label(new Rect(bx, by + 44, bw, 20), "의뢰 · " + R.contractText + "  " + (R.contractOk ? "<color=#6fcf97>성공 +" + KNum.Fmt(R.bonus) + "</color>" : "<color=#ee7766>실패 " + R.contractProg + "/" + R.contractTarget + "</color>"), label);
-            else if (R.cut > 0) GUI.Label(new Rect(bx, by + 44, bw, 20), "<color=#ee7766>빚 상환으로 떼인 것 -" + KNum.Fmt(R.cut) + "</color>", label);
+            GUI.Label(new Rect(bx, by + 16, bw, 18), Loc.T("<color=#f2c14e>빔 ") + Mathf.RoundToInt(a * 100) + "%</color>   " + (sim.DronesOn ? Loc.T("<color=#6fd3e8>드론 ") + Mathf.RoundToInt(b * 100) + "%</color>   " : "") + (sim.BombsOn ? Loc.T("<color=#b69cff>폭발 ") + Mathf.RoundToInt((1 - a - b) * 100) + "%</color>" : ""), label);
+            if (R.contractText != null) GUI.Label(new Rect(bx, by + 44, bw, 20), Loc.T("의뢰 · ") + R.contractText + "  " + (R.contractOk ? Loc.T("<color=#6fcf97>성공 +") + KNum.Fmt(R.bonus) + "</color>" : Loc.T("<color=#ee7766>실패 ") + R.contractProg + "/" + R.contractTarget + "</color>"), label);
+            else if (R.cut > 0) GUI.Label(new Rect(bx, by + 44, bw, 20), Loc.T("<color=#ee7766>빚 상환으로 떼인 것 -") + KNum.Fmt(R.cut) + "</color>", label);
             }
 
             // 오른쪽 아래 — 다음 해금 (청구서를 갚으면 열리는 것)
@@ -767,16 +772,16 @@ namespace SalvageRun.Orbit
             bool stuck = sim.CanBankrupt && S.overdue && S.cash + sim.LoanCap < sim.BillAmount;   // 대출 한도로도 모자라다
             if (stuck)
             {
-                Panel2(RB, "<color=#ff9b8f>대출 한도로도 못 갚는다</color>");
-                GUI.Label(new Rect(RB.x + 16, RB.y + 30, RB.width - 32, 20), "<size=13>파산하면 빚이 사라지고 <color=#ffdf95>신용 +" + S.creditPending * SweepSim.CreditK + "</color></size>", label);
-                GUI.Label(new Rect(RB.x + 16, RB.y + 50, RB.width - 32, 20), "<size=13>격납고에서 신용으로 새 배 · 영구 강화를 산다</size>", label);
+                Panel2(RB, Loc.T("<color=#ff9b8f>대출 한도로도 못 갚는다</color>"));
+                GUI.Label(new Rect(RB.x + 16, RB.y + 30, RB.width - 32, 20), Loc.T("<size=13>파산하면 빚이 사라지고 <color=#ffdf95>신용 +") + S.creditPending * SweepSim.CreditK + "</color></size>", label);
+                GUI.Label(new Rect(RB.x + 16, RB.y + 50, RB.width - 32, 20), Loc.T("<size=13>격납고에서 신용으로 새 배 · 영구 강화를 산다</size>"), label);
                 var bb = new Rect(RB.x + 16, RB.y + 76, RB.width - 32, 34);
-                if (GUI.Button(bb, bankruptArmed ? "<color=#ffb3a8>정말? 한 번 더 누르면 파산</color>" : "<color=#ffb3a8>파산하고 새 회사로 ▸</color>", btn))
+                if (GUI.Button(bb, bankruptArmed ? Loc.T("<color=#ffb3a8>정말? 한 번 더 누르면 파산</color>") : Loc.T("<color=#ffb3a8>파산하고 새 회사로 ▸</color>"), btn))
                 {
                     if (bankruptArmed) { sim.Bankrupt(); bankruptArmed = false; showResult = false; flow = 2; } else bankruptArmed = true;
                 }
             }
-            else Panel2(RB, sim.S.bill < SweepSim.Bills.Length ? "다음 청구서" : null);
+            else Panel2(RB, sim.S.bill < SweepSim.Bills.Length ? Loc.T("다음 청구서") : null);
             if (!stuck && S.bill < SweepSim.Bills.Length)
             {
                 float prog = Mathf.Clamp01((float)(S.cash / System.Math.Max(1, sim.BillAmount)));
@@ -792,9 +797,9 @@ namespace SalvageRun.Orbit
 
             // 아래 버튼 셋 — [업그레이드] [청구서] [계속]
             float w = 250, gap = 16, x0 = cx - (w * 3 + gap * 2) / 2, yb = 420;
-            if (GUI.Button(new Rect(x0, yb, w, 66), "업그레이드", bigBtn)) flow = 3;
+            if (GUI.Button(new Rect(x0, yb, w, 66), Loc.T("업그레이드"), bigBtn)) flow = 3;
             BillButton(new Rect(x0 + w + gap, yb, w, 66));
-            if (GUI.Button(new Rect(x0 + (w + gap) * 2, yb, w, 66), "조종실로 ▸", bigBtn)) flow = 2;
+            if (GUI.Button(new Rect(x0 + (w + gap) * 2, yb, w, 66), Loc.T("조종실로 ▸"), bigBtn)) flow = 2;
             GUI.Label(new Rect(x0 + (w + gap) * 2, yb + 68, w, 16), "<size=10>Space</size>", center);
         }
 
@@ -805,17 +810,17 @@ namespace SalvageRun.Orbit
             if (paidT > 0 && paidBill > 0)
             {
                 GUI.color = new Color(0.1f, 0.3f, 0.18f); GUI.DrawTexture(r, white); GUI.color = Color.white; Frame(r, SweepGame.Green, 2);
-                GUI.Label(new Rect(r.x, r.y + 8, r.width, 26), "<size=20><color=#6fcf97>납부 완료!</color></size>", center);
+                GUI.Label(new Rect(r.x, r.y + 8, r.width, 26), Loc.T("<size=20><color=#6fcf97>납부 완료!</color></size>"), center);
                 GUI.Label(new Rect(r.x + 6, r.y + 36, r.width - 12, 22), "<size=11>" + SweepSim.Bills[paidBill - 1].perk + "</size>", center);
                 return;
             }
             if (sim.M.cleanReady || S.bill >= SweepSim.Bills.Length)
             {
                 GUI.color = new Color(0.1f, 0.3f, 0.18f); GUI.DrawTexture(r, white); GUI.color = Color.white;
-                if (sim.M.cleanReady) { GUI.Label(r, "<size=20><color=#6fcf97>빚 청산</color></size>", center); return; }
+                if (sim.M.cleanReady) { GUI.Label(r, Loc.T("<size=20><color=#6fcf97>빚 청산</color></size>"), center); return; }
                 // 청구서는 끝 — 남은 빚을 갚아야 청산 출동
-                GUI.Label(new Rect(r.x, r.y + 6, r.width, 30), "<size=22><color=#ffdf95>빚 " + KNum.Fmt(S.debt) + "</color></size>", center);
-                GUI.Label(new Rect(r.x, r.y + 38, r.width, 22), "<size=13>" + (S.cash > 0 ? "눌러서 갚기 — 다 갚으면 청산 출동" : "다 갚으면 청산 출동") + "</size>", center);
+                GUI.Label(new Rect(r.x, r.y + 6, r.width, 30), Loc.T("<size=22><color=#ffdf95>빚 ") + KNum.Fmt(S.debt) + "</color></size>", center);
+                GUI.Label(new Rect(r.x, r.y + 38, r.width, 22), "<size=13>" + (S.cash > 0 ? Loc.T("눌러서 갚기 — 다 갚으면 청산 출동") : Loc.T("다 갚으면 청산 출동")) + "</size>", center);
                 if (GUI.Button(r, GUIContent.none, GUIStyle.none)) Repay();
                 return;
             }
@@ -827,19 +832,19 @@ namespace SalvageRun.Orbit
             GUI.DrawTexture(r, white); GUI.color = Color.white;
             Frame(r, can ? Color.Lerp(SweepGame.Red, Color.white, pulse * 0.5f) : new Color(0.5f, 0.2f, 0.18f), 2);
             GUI.Label(new Rect(r.x, r.y + 6, r.width, 30), "<size=24><color=#ffdf95>" + KNum.Fmt(sim.BillAmount) + "</color></size>", center);
-            string sub = S.overdue ? "<color=#ffb3a8>오늘 납부일</color>" : S.billDue + "판 남음";
-            if (can) sub += " · <color=#ffffff>눌러서 갚기</color>";
-            else if (loanPay) sub += " · <color=#ffffff>대출 " + KNum.Fmt(need) + " 받아 갚기</color>";
+            string sub = S.overdue ? Loc.T("<color=#ffb3a8>오늘 납부일</color>") : S.billDue + Loc.T("판 남음");
+            if (can) sub += Loc.T(" · <color=#ffffff>눌러서 갚기</color>");
+            else if (loanPay) sub += Loc.T(" · <color=#ffffff>대출 ") + KNum.Fmt(need) + Loc.T(" 받아 갚기</color>");
             GUI.Label(new Rect(r.x, r.y + 38, r.width, 22), "<size=13>" + sub + "</size>", center);
-            if (loanPay) GUI.Label(new Rect(r.x, r.yMax + 2, r.width, 16), "<size=11>빚 +" + KNum.Fmt(need * SweepSim.LoanMult) + " (판 수입 30%씩 상환)</size>", center);
-            if (dueNag > 0) GUI.Label(new Rect(r.x - 40, r.y - 22, r.width + 80, 18), "<color=#ff9b8f><size=12>납부일 — 먼저 갚거나 · 대출받거나 · 파산</size></color>", center);
+            if (loanPay) GUI.Label(new Rect(r.x, r.yMax + 2, r.width, 16), Loc.T("<size=11>빚 +") + KNum.Fmt(need * SweepSim.LoanMult) + Loc.T(" (판 수입 30%씩 상환)</size>"), center);
+            if (dueNag > 0) GUI.Label(new Rect(r.x - 40, r.y - 22, r.width + 80, 18), Loc.T("<color=#ff9b8f><size=12>납부일 — 먼저 갚거나 · 대출받거나 · 파산</size></color>"), center);
             if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { if (can) sim.PayBill(); else if (loanPay) RequestLoan(sim.BillAmount - S.cash, true); }
         }
 
         void FlowBottom()
         {
             float y = 512;
-            if (GUI.Button(new Rect(ox + 700, y, 246, 62), "조종실로 ▸", bigBtn)) GoFlow(2);
+            if (GUI.Button(new Rect(ox + 700, y, 246, 62), Loc.T("조종실로 ▸"), bigBtn)) GoFlow(2);
             GUI.Label(new Rect(ox + 700, y + 64, 246, 14), "<size=10>Space</size>", center);
         }
 
@@ -946,14 +951,14 @@ namespace SalvageRun.Orbit
 
             // 위 — 돈 (창 위 가운데)
             big.fontSize = 22;   // 도트 글꼴 11의 배수 (정돈 5)
-            GUI.Label(new Rect(ox + 330, 2, 300, 28), "<size=13><color=#8a9bb3>돈</color></size>  " + KNum.Fmt(shown), new GUIStyle(big) { alignment = TextAnchor.MiddleCenter });
+            GUI.Label(new Rect(ox + 330, 2, 300, 28), Loc.T("<size=13><color=#8a9bb3>돈</color></size>  ") + KNum.Fmt(shown), new GUIStyle(big) { alignment = TextAnchor.MiddleCenter });
             big.fontSize = 20;
             CreditScreen = new Vector2((ox + 480) * scale, 16 * scale);
             // 창 안 — 납부 완료 알림
             if (paidT > 0 && paidBill > 0)
             {
                 var pb = SweepSim.Bills[paidBill - 1];
-                title.fontSize = 24; GUI.Label(new Rect(ox + 200, 60, 560, 32), "<color=#ffdf95>납부 완료</color> · " + pb.t, title);
+                title.fontSize = 24; GUI.Label(new Rect(ox + 200, 60, 560, 32), Loc.T("<color=#ffdf95>납부 완료</color> · ") + pb.t, title);
                 title.fontSize = 16; GUI.Label(new Rect(ox + 200, 92, 560, 24), pb.perk, title);
             }
 
@@ -970,9 +975,9 @@ namespace SalvageRun.Orbit
 
             // ⑤ ‹ 정비고로 · 증권 하러 가기 › — 화면 양옆 탭 (누르면 옆 방으로 슥)
             int canN = 0; for (int b = 0; b < 4; b++) canN += CanCount(b);
-            if (sim.ShopOpen) { if (NavTab(false, "부품 가게", canN > 0 ? "<color=#f2c14e>정비 " + canN + "칸</color>" : "", SweepGame.Amber)) GoFlow(5); }   // 한 칸씩 — 정비고 ‹ 가게 ‹ 조종실 › 증권 (09-25 사장님: 곧장 정비고로 가니 이상하다)
-            else if (NavTab(false, "정비고로", canN > 0 ? "<color=#f2c14e>살 칸 " + canN + "</color>" : "", SweepGame.Amber)) GoFlow(3);
-            if (NavTab(true, "증권 하러 가기", sim.StockOpen ? "" : "<color=#5f6878>잠김</color>", new Color(0.62f, 0.94f, 0.75f))) GoFlow(4);
+            if (sim.ShopOpen) { if (NavTab(false, Loc.T("부품 가게"), canN > 0 ? Loc.T("<color=#f2c14e>정비 ") + canN + Loc.T("칸</color>") : "", SweepGame.Amber)) GoFlow(5); }   // 한 칸씩 — 정비고 ‹ 가게 ‹ 조종실 › 증권 (09-25 사장님: 곧장 정비고로 가니 이상하다)
+            else if (NavTab(false, Loc.T("정비고로"), canN > 0 ? Loc.T("<color=#f2c14e>살 칸 ") + canN + "</color>" : "", SweepGame.Amber)) GoFlow(3);
+            if (NavTab(true, Loc.T("증권 하러 가기"), sim.StockOpen ? "" : Loc.T("<color=#5f6878>잠김</color>"), new Color(0.62f, 0.94f, 0.75f))) GoFlow(4);
 
             // ⑥ 항로 — 조종대 오른쪽 홀로그램 (행성 다섯 · 의뢰)
             RouteHolo();
@@ -1003,7 +1008,7 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(1, 1, 1, due ? 0.05f : 0.22f); GUI.DrawTexture(new Rect(cxm - fw * 0.32f, fy + 6, fw * 0.5f, fh * 0.32f), texDisc);
                 GUI.color = Color.white;
                 // 윗면 글자
-                string word = due ? "납부일" : M.cleanReady ? "청산" : "출동";
+                string word = due ? Loc.T("납부일") : M.cleanReady ? Loc.T("청산") : Loc.T("출동");
                 GUI.Label(new Rect(cxm - fw / 2, fy + 2, fw, fh - 4), "<size=" + (due ? 20 : 28) + "><b><color=" + (due ? "#6a655e" : Th.btnInk) + ">" + word + "</color></b></size>", center);
                 if (GUI.Button(hit, GUIContent.none, GUIStyle.none) && paidT < 2.4f) Go();
             }
@@ -1013,7 +1018,7 @@ namespace SalvageRun.Orbit
             // 🎟 복권 — 분홍 홀로그램 (출동 버튼 오른쪽)
             LottoHolo();
             // 아래 한 줄
-            string tip = due ? "<color=" + (dueNag > 0 ? "#ff9b8f" : "#b8a89a") + ">납부일 — 왼쪽 홀로그램 청구서: 납부 · 대출 · 또는 파산</color>" : "Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 " + Mathf.RoundToInt((float)(sim.Widen - 1) * 100) + "% · 한 판 " + Mathf.RoundToInt((float)sim.FuelMax) + "초";
+            string tip = due ? "<color=" + (dueNag > 0 ? "#ff9b8f" : "#b8a89a") + Loc.T(">납부일 — 왼쪽 홀로그램 청구서: 납부 · 대출 · 또는 파산</color>") : Loc.T("Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 ") + Mathf.RoundToInt((float)(sim.Widen - 1) * 100) + Loc.T("% · 한 판 ") + Mathf.RoundToInt((float)sim.FuelMax) + Loc.T("초");
             if (due || sim.S.runs < 3 && sim.M.company <= 1) GUI.Label(new Rect(ox + 200, 570 - 3, 560, 26), "<size=12>" + tip + "</size>", center);   // 안내 줄은 처음 세 판 · 납부일만 (정돈 13)
         }
 
@@ -1041,8 +1046,8 @@ namespace SalvageRun.Orbit
             var tr = new Rect(vw / 2 - 250, RefH - 92, 500, 60);            // 결과 화면 단추 아래
             GUI.color = new Color(0.25f, 0.08f, 0.3f, 0.95f * Mathf.Clamp01(lottoToast)); GUI.DrawTexture(tr, white); GUI.color = new Color(1, 1, 1, Mathf.Clamp01(lottoToast));
             Frame(tr, SweepGame.Mag, 2);
-            GUI.Label(new Rect(tr.x, tr.y + 5, tr.width, 24), "<size=16><b>궤도 로또 " + S.lottoLastRound + "회 당첨 번호  " + S.lottoLast[0] + " · " + S.lottoLast[1] + " · " + S.lottoLast[2] + "</b></size>", center);
-            GUI.Label(new Rect(tr.x, tr.y + 31, tr.width, 22), "<size=14>" + (S.lottoLastWin > 0 ? "<color=#6fcf97>" + S.lottoLastHit + "개 맞음 · +" + KNum.Fmt(S.lottoLastWin) + "</color>" : "<color=#ee7766>꽝 — 하나도 못 맞혔다</color>") + "</size>", center);
+            GUI.Label(new Rect(tr.x, tr.y + 5, tr.width, 24), Loc.T("<size=16><b>궤도 로또 ") + S.lottoLastRound + Loc.T("회 당첨 번호  ") + S.lottoLast[0] + " · " + S.lottoLast[1] + " · " + S.lottoLast[2] + "</b></size>", center);
+            GUI.Label(new Rect(tr.x, tr.y + 31, tr.width, 22), "<size=14>" + (S.lottoLastWin > 0 ? "<color=#6fcf97>" + S.lottoLastHit + Loc.T("개 맞음 · +") + KNum.Fmt(S.lottoLastWin) + "</color>" : Loc.T("<color=#ee7766>꽝 — 하나도 못 맞혔다</color>")) + "</size>", center);
             GUI.color = Color.white;
         }
 
@@ -1056,10 +1061,10 @@ namespace SalvageRun.Orbit
             Frame(r, new Color(1f, 0.66f, 0.94f, 0.85f), 1.5f);
             GUI.color = new Color(1f, 0.66f, 0.94f); foreach (var cn in new[] { new Vector2(r.x, r.y), new Vector2(r.xMax - 14, r.y), new Vector2(r.x, r.yMax - 3), new Vector2(r.xMax - 14, r.yMax - 3) }) GUI.DrawTexture(new Rect(cn.x, cn.y, 14, 3), white);
             GUI.color = Color.white;
-            GUI.Label(new Rect(r.x + 20, r.y + 14, 200, 30), "<size=18><b><color=#f3c8ff>즉석 복권</color></b></size>", label);   // 🎱 궤도 로또는 뺐다 (09-24 사장님 「로또는 의미가 없다」)
-            GUI.Label(new Rect(r.x, r.y + 18, r.width - 20, 24), "<size=13><color=#8a9bb3>돈</color> " + KNum.Fmt(S.cash) + "</size>", cost);
+            GUI.Label(new Rect(r.x + 20, r.y + 14, 200, 30), Loc.T("<size=18><b><color=#f3c8ff>즉석 복권</color></b></size>"), label);   // 🎱 궤도 로또는 뺐다 (09-24 사장님 「로또는 의미가 없다」)
+            GUI.Label(new Rect(r.x, r.y + 18, r.width - 20, 24), Loc.T("<size=13><color=#8a9bb3>돈</color> ") + KNum.Fmt(S.cash) + "</size>", cost);
             Scratch(r, ev);
-            if (GUI.Button(new Rect(r.xMax - 106, r.yMax - 46, 92, 34), "닫기", btnOffC)) lottoOpen = false;
+            if (GUI.Button(new Rect(r.xMax - 106, r.yMax - 46, 92, 34), Loc.T("닫기"), btnOffC)) lottoOpen = false;
         }
 
         void Scratch(Rect r, Event ev)
@@ -1067,17 +1072,17 @@ namespace SalvageRun.Orbit
             var S = sim.S;
             if (scIcon == null) { scIcon = new Texture2D[ScIconPath.Length]; for (int i = 0; i < ScIconPath.Length; i++) scIcon[i] = Resources.Load<Texture2D>(ScIconPath[i]); }
             int leftN = sim.ScratchLeft + (scGrid != null && !scDone ? 1 : 0);          // 긁고 있는 장도 센다 (09-27 「남은 개수가 이상」)
-            GUI.Label(new Rect(r.x + 20, r.y + 52, r.width - 40, 22), "<size=13>한 장 <color=#ffdf95>" + KNum.Fmt(sim.ScratchPrice) + "</color> · 같은 그림 셋 = 당첨 · 둘 = 표값 돌려받기</size>", label);
-            GUI.Label(new Rect(r.x + 20, r.y + 52, r.width - 40, 22), "<size=13><color=#f3c8ff>남은 표 " + leftN + "장" + (scGrid != null && !scDone ? " (이 장 포함)" : "") + (S.freeTix > 0 ? " · <color=#9ff0bf>공짜 " + S.freeTix + "</color>" : "") + "</color></size>", cost);
+            GUI.Label(new Rect(r.x + 20, r.y + 52, r.width - 40, 22), Loc.T("<size=13>한 장 <color=#ffdf95>") + KNum.Fmt(sim.ScratchPrice) + Loc.T("</color> · 같은 그림 셋 = 당첨 · 둘 = 표값 돌려받기</size>"), label);
+            GUI.Label(new Rect(r.x + 20, r.y + 52, r.width - 40, 22), Loc.T("<size=13><color=#f3c8ff>남은 표 ") + leftN + Loc.T("장") + (scGrid != null && !scDone ? Loc.T(" (이 장 포함)") : "") + (S.freeTix > 0 ? Loc.T(" · <color=#9ff0bf>공짜 ") + S.freeTix + "</color>" : "") + "</color></size>", cost);
             // 표 — 분홍 바탕에 창 셋
             var card = new Rect(r.center.x - 250, r.y + 88, 500, 230);
             GUI.color = new Color(0.23f, 0.06f, 0.2f); GUI.DrawTexture(new Rect(card.x - 4, card.y - 4, card.width + 8, card.height + 8), white);
             GUI.color = new Color(1f, 0.7f, 0.86f); GUI.DrawTexture(card, white);
             GUI.color = new Color(1f, 0.83f, 0.45f, 0.55f); GUI.DrawTexture(new Rect(card.x, card.yMax - 40, card.width, 40), white); GUI.color = Color.white;
-            GUI.Label(new Rect(card.x + 14, card.y + 8, 300, 26), "<size=17><b><color=#3a0f33>궤도 즉석 복권</color></b></size>", label);
+            GUI.Label(new Rect(card.x + 14, card.y + 8, 300, 26), Loc.T("<size=17><b><color=#3a0f33>궤도 즉석 복권</color></b></size>"), label);
             if (scGrid == null)
             {
-                GUI.Label(new Rect(card.x, card.y + 40, card.width, card.height - 60), "<size=18><color=#5a2050>한 장 사서 긁어 보세요</color></size>", center);
+                GUI.Label(new Rect(card.x, card.y + 40, card.width, card.height - 60), Loc.T("<size=18><color=#5a2050>한 장 사서 긁어 보세요</color></size>"), center);
             }
             float gap = 14, cw = (card.width - gap * 4) / 3, ch = card.height - 70;
             int revealed = 0;
@@ -1101,7 +1106,7 @@ namespace SalvageRun.Orbit
                     float shade = (b % ScCols) % 2 == 0 ? 0.74f : 0.8f;
                     GUI.color = new Color(shade, shade, shade + 0.04f); GUI.DrawTexture(br, white); GUI.color = Color.white;
                 }
-                if (left == ScCols * ScRows && !scDone) GUI.Label(cr, "<size=13><color=#7a5a86>긁기</color></size>", center);
+                if (left == ScCols * ScRows && !scDone) GUI.Label(cr, Loc.T("<size=13><color=#7a5a86>긁기</color></size>"), center);
                 if (left <= ScCols * ScRows * 0.45f) revealed++;
                 if (!scDone && (ev.type == EventType.MouseDrag || ev.type == EventType.MouseDown) && ev.button == 0 && new Rect(cr.x - 20, cr.y - 20, cr.width + 40, cr.height + 40).Contains(ev.mousePosition))
                 {
@@ -1115,27 +1120,27 @@ namespace SalvageRun.Orbit
             }
             if (scUse) { scUse = false; ev.Use(); }
             // 당첨표 — 그림 여섯
-            string[] pay = { "× 0.2", "화력 +30%", "× 1", "열쇠", "부품", "× 10" };
+            string[] pay = { "× 0.2", Loc.T("화력 +30%"), "× 1", Loc.T("열쇠"), Loc.T("부품"), "× 10" };
             for (int k = 0; k < 6; k++)
             {
                 var pr = new Rect(r.x + 24 + k * 94, r.y + 330, 90, 30);
                 if (scIcon[k] != null) GUI.DrawTexture(new Rect(pr.x, pr.y + 2, 26, 26), scIcon[k], ScaleMode.ScaleToFit);
                 GUI.Label(new Rect(pr.x + 28, pr.y + 5, 64, 20), "<size=11><color=" + (k == 5 ? "#ffdf95" : "#c9b3d6") + ">" + pay[k] + "</color></size>", label);
             }
-            GUI.Label(new Rect(r.x + 24, r.y + 360, r.width - 48, 18), "<size=10><color=#8a7a96>× = 판 벌이 · 부품은 가게 진열에서 하나 공짜로 끼운다 · 황금은 부품도 하나</color></size>", label);
+            GUI.Label(new Rect(r.x + 24, r.y + 360, r.width - 48, 18), Loc.T("<size=10><color=#8a7a96>× = 판 벌이 · 부품은 가게 진열에서 하나 공짜로 끼운다 · 황금은 부품도 하나</color></size>"), label);
             if (scGrid != null && !scDone && revealed == ScCells) { scDone = true; scDoneT = Time.unscaledTime; scGot = sim.ScratchClaim(); if (scWin != -1) { OrbitSfx.Play("buy", 1f); OrbitSfx.Play("clank", 0.7f); game.creditPulse = 1; } else OrbitSfx.PlayPitch("tick", 0.6f, 0.7f); }
             bool can = sim.ScratchLeft > 0 && S.cash >= sim.ScratchCost;
-            string buyTxt = can ? "<size=16>" + (scGrid == null ? "한 장 사기" : "한 장 더") + " · " + (sim.ScratchCost <= 0 ? "공짜" : KNum.Fmt(sim.ScratchCost)) + "</size>" : "<size=12>" + (sim.ScratchLeft <= 0 ? "오늘 표는 다 썼다 — 출동하면 다시" : "돈이 모자라다") + "</size>";
+            string buyTxt = can ? "<size=16>" + (scGrid == null ? Loc.T("한 장 사기") : Loc.T("한 장 더")) + " · " + (sim.ScratchCost <= 0 ? Loc.T("공짜") : KNum.Fmt(sim.ScratchCost)) + "</size>" : "<size=12>" + (sim.ScratchLeft <= 0 ? Loc.T("오늘 표는 다 썼다 — 출동하면 다시") : Loc.T("돈이 모자라다")) + "</size>";
             if (scGrid != null && !scDone)
             {
-                GUI.Label(new Rect(r.x, r.yMax - 96, r.width, 22), "<size=13><color=#b89ac6>누른 채 문질러 긁기</color></size>", center);
-                if (GUI.Button(new Rect(r.center.x - 90, r.yMax - 70, 180, 36), "<size=14>한 번에 다 긁기</size>", btn)) for (int c = 0; c < ScCells; c++) for (int b = 0; b < ScCols * ScRows; b++) scCoat[c, b] = true;
+                GUI.Label(new Rect(r.x, r.yMax - 96, r.width, 22), Loc.T("<size=13><color=#b89ac6>누른 채 문질러 긁기</color></size>"), center);
+                if (GUI.Button(new Rect(r.center.x - 90, r.yMax - 70, 180, 36), Loc.T("<size=14>한 번에 다 긁기</size>"), btn)) for (int c = 0; c < ScCells; c++) for (int b = 0; b < ScCols * ScRows; b++) scCoat[c, b] = true;
                 return;
             }
             if (scDone)
             {
                 float k = Mathf.Clamp01((Time.unscaledTime - scDoneT) / 0.25f);
-                string msg = scWin == -1 ? "<size=22><color=#8a93a3>꽝</color></size>" : "<size=" + Mathf.RoundToInt(Mathf.Lerp(30, 20, k)) + "><b><color=#ffdf95>" + sim.ScratchText + (scGot > 0 ? "  +" + KNum.Fmt(scGot) : "") + "</color></b></size>";
+                string msg = scWin == -1 ? Loc.T("<size=22><color=#8a93a3>꽝</color></size>") : "<size=" + Mathf.RoundToInt(Mathf.Lerp(30, 20, k)) + "><b><color=#ffdf95>" + sim.ScratchText + (scGot > 0 ? "  +" + KNum.Fmt(scGot) : "") + "</color></b></size>";
                 GUI.Label(new Rect(r.x, r.yMax - 104, r.width, 36), msg, center);
             }
             if (GUI.Button(new Rect(r.center.x - 120, r.yMax - 62, 240, 40), buyTxt, can ? btn : btnOff) && can)
@@ -1145,8 +1150,8 @@ namespace SalvageRun.Orbit
         void Lotto(Rect r)
         {
             var S = sim.S;
-            GUI.Label(new Rect(r.x + 20, r.y + 58, r.width - 40, 24), "<size=15><b>제 " + S.lottoRound + "회</b> · <color=#ffdf95>출동 다녀오면 바로 추첨</color></size>", label);
-            GUI.Label(new Rect(r.x + 20, r.y + 82, r.width - 40, 20), "<size=11><color=#8a9bb3>1~12 중 셋 · 한 장 " + KNum.Fmt(sim.LottoPrice) + " · 한 회 3장까지 · 셋 다 ×60 · 둘 ×2 · 하나 ×0.3</color></size>", label);
+            GUI.Label(new Rect(r.x + 20, r.y + 58, r.width - 40, 24), Loc.T("<size=15><b>제 ") + S.lottoRound + Loc.T("회</b> · <color=#ffdf95>출동 다녀오면 바로 추첨</color></size>"), label);
+            GUI.Label(new Rect(r.x + 20, r.y + 82, r.width - 40, 20), Loc.T("<size=11><color=#8a9bb3>1~12 중 셋 · 한 장 ") + KNum.Fmt(sim.LottoPrice) + Loc.T(" · 한 회 3장까지 · 셋 다 ×60 · 둘 ×2 · 하나 ×0.3</color></size>"), label);
             // 번호판
             for (int n = 1; n <= 12; n++)
             {
@@ -1158,23 +1163,23 @@ namespace SalvageRun.Orbit
                 if (GUI.Button(nb, GUIContent.none, GUIStyle.none)) { if (on) lottoPick.Remove(n); else if (lottoPick.Count < 3) lottoPick.Add(n); OrbitSfx.Play("tick", 0.4f); }
             }
             bool can = lottoPick.Count == 3 && S.lotto.Count < 3 && S.cash >= sim.LottoPrice;
-            if (GUI.Button(new Rect(r.x + 400, r.y + 116, 170, 44), can ? "<size=14>이 번호로 사기</size>" : "<size=12>" + (S.lotto.Count >= 3 ? "이번 회는 3장까지" : lottoPick.Count < 3 ? "번호 셋을 고르세요" : "돈이 모자라다") + "</size>", can ? btnC : btnOffC) && can)
+            if (GUI.Button(new Rect(r.x + 400, r.y + 116, 170, 44), can ? Loc.T("<size=14>이 번호로 사기</size>") : "<size=12>" + (S.lotto.Count >= 3 ? Loc.T("이번 회는 3장까지") : lottoPick.Count < 3 ? Loc.T("번호 셋을 고르세요") : Loc.T("돈이 모자라다")) + "</size>", can ? btnC : btnOffC) && can)
             { lottoPick.Sort(); if (sim.LottoBuy(lottoPick[0], lottoPick[1], lottoPick[2])) { OrbitSfx.Play("buy", 0.6f); lottoPick.Clear(); } }
-            if (GUI.Button(new Rect(r.x + 400, r.y + 166, 170, 34), "<size=12>자동 고르기</size>", btnOff))
+            if (GUI.Button(new Rect(r.x + 400, r.y + 166, 170, 34), Loc.T("<size=12>자동 고르기</size>"), btnOff))
             { lottoPick.Clear(); while (lottoPick.Count < 3) { int n = Random.Range(1, 13); if (!lottoPick.Contains(n)) lottoPick.Add(n); } OrbitSfx.Play("tick", 0.5f); }
             // 내 표
-            GUI.Label(new Rect(r.x + 20, r.y + 244, 200, 22), "<size=13>내 표</size>", label);
+            GUI.Label(new Rect(r.x + 20, r.y + 244, 200, 22), Loc.T("<size=13>내 표</size>"), label);
             for (int i = 0; i < 3; i++)
             {
                 var tr = new Rect(r.x + 20 + i * 180, r.y + 270, 170, 40);
                 GUI.color = new Color(0.12f, 0.07f, 0.15f); GUI.DrawTexture(tr, white); GUI.color = Color.white; Frame(tr, new Color(0.4f, 0.25f, 0.45f), 1.5f);
-                GUI.Label(tr, i < S.lotto.Count ? "<size=17><b>" + S.lotto[i].a + " · " + S.lotto[i].b + " · " + S.lotto[i].c + "</b></size>" : "<size=12><color=#5f4f66>빈 칸</color></size>", center);
+                GUI.Label(tr, i < S.lotto.Count ? "<size=17><b>" + S.lotto[i].a + " · " + S.lotto[i].b + " · " + S.lotto[i].c + "</b></size>" : Loc.T("<size=12><color=#5f4f66>빈 칸</color></size>"), center);
             }
             // 지난 회
             if (S.lottoLast != null)
             {
-                GUI.Label(new Rect(r.x + 20, r.y + 330, r.width - 40, 22), "<size=13>지난 " + S.lottoLastRound + "회 당첨 번호  <b><color=#f3c8ff>" + S.lottoLast[0] + " · " + S.lottoLast[1] + " · " + S.lottoLast[2] + "</color></b></size>", label);
-                GUI.Label(new Rect(r.x + 20, r.y + 354, r.width - 40, 22), "<size=12>" + (S.lottoLastHit < 0 ? "<color=#8a9bb3>그 회엔 표가 없었다</color>" : S.lottoLastWin > 0 ? "<color=#6fcf97>" + S.lottoLastHit + "개 맞음 · +" + KNum.Fmt(S.lottoLastWin) + "</color>" : "<color=#ee7766>꽝</color>") + "</size>", label);
+                GUI.Label(new Rect(r.x + 20, r.y + 330, r.width - 40, 22), Loc.T("<size=13>지난 ") + S.lottoLastRound + Loc.T("회 당첨 번호  <b><color=#f3c8ff>") + S.lottoLast[0] + " · " + S.lottoLast[1] + " · " + S.lottoLast[2] + "</color></b></size>", label);
+                GUI.Label(new Rect(r.x + 20, r.y + 354, r.width - 40, 22), "<size=12>" + (S.lottoLastHit < 0 ? Loc.T("<color=#8a9bb3>그 회엔 표가 없었다</color>") : S.lottoLastWin > 0 ? "<color=#6fcf97>" + S.lottoLastHit + Loc.T("개 맞음 · +") + KNum.Fmt(S.lottoLastWin) + "</color>" : Loc.T("<color=#ee7766>꽝</color>")) + "</size>", label);
             }
         }
 
@@ -1195,10 +1200,10 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(r.x + 6, r.y + 8, r.width, r.height), white); GUI.color = Color.white;
             GUI.DrawTexture(r, texPaper);
             GUI.DrawTexture(new Rect(r.x + 20, r.y + 58, r.width - 40, 2), texInk);
-            paperHead.fontSize = 24; GUI.Label(new Rect(r.x, r.y + 16, r.width, 36), "대출 계약서", new GUIStyle(paperHead) { alignment = TextAnchor.UpperCenter });
-            paperSmall.fontSize = 11; GUI.Label(new Rect(r.x + 20, r.y + 62, r.width - 40, 18), "채권자 케슬러 금융 · 채무자 주식회사 궤도 청소부 (" + sim.M.company + "대)", paperSmall);
-            string[] k = { "빌리는 돈", "갚을 돈", "갚는 법", "쓰는 곳" };
-            string[] v = { KNum.Fmt(pendLoan), KNum.Fmt(pendLoan * SweepSim.LoanMult) + "  (" + SweepSim.LoanMult + "배)", "판 수입의 " + (sim.Lv("e_guard") > 0 ? 20 : 30) + "%가 자동으로", pendPay ? "청구서를 바로 갚는다" : "돈으로 들어온다" };
+            paperHead.fontSize = 24; GUI.Label(new Rect(r.x, r.y + 16, r.width, 36), Loc.T("대출 계약서"), new GUIStyle(paperHead) { alignment = TextAnchor.UpperCenter });
+            paperSmall.fontSize = 11; GUI.Label(new Rect(r.x + 20, r.y + 62, r.width - 40, 18), Loc.T("채권자 케슬러 금융 · 채무자 주식회사 궤도 청소부 (") + sim.M.company + Loc.T("대)"), paperSmall);
+            string[] k = { Loc.T("빌리는 돈"), Loc.T("갚을 돈"), Loc.T("갚는 법"), Loc.T("쓰는 곳") };
+            string[] v = { KNum.Fmt(pendLoan), KNum.Fmt(pendLoan * SweepSim.LoanMult) + "  (" + SweepSim.LoanMult + Loc.T("배)"), Loc.T("판 수입의 ") + (sim.Lv("e_guard") > 0 ? 20 : 30) + Loc.T("%가 자동으로"), pendPay ? Loc.T("청구서를 바로 갚는다") : Loc.T("돈으로 들어온다") };
             for (int i = 0; i < 4; i++)
             {
                 float y = r.y + 92 + i * 34;
@@ -1211,7 +1216,7 @@ namespace SalvageRun.Orbit
             var sa = new Rect(r.x + 40, r.y + 250, r.width - 80, 100);
             GUI.color = new Color(0, 0, 0, 0.04f); GUI.DrawTexture(sa, white); GUI.color = Color.white;
             GUI.DrawTexture(new Rect(sa.x, sa.yMax - 22, sa.width, 2), texInk);
-            paperSmall.fontSize = 11; GUI.Label(new Rect(sa.x, sa.yMax - 18, 200, 16), "서명", paperSmall);
+            paperSmall.fontSize = 11; GUI.Label(new Rect(sa.x, sa.yMax - 18, 200, 16), Loc.T("서명"), paperSmall);
             var ev = Event.current;
             bool done = signT >= 0;
             if (!done)
@@ -1229,7 +1234,7 @@ namespace SalvageRun.Orbit
                     signing = false; ev.Use();
                     if (signLen > 140) { signT = Time.unscaledTime; OrbitSfx.Play("clank", 0.9f); }   // 쾅 — 도장
                 }
-                if (signPts.Count == 0) GUI.Label(new Rect(sa.x, sa.y + 22, sa.width, 24), "<color=#8a7f6a>여기를 마우스로 그어 서명하세요</color>", paperBody);
+                if (signPts.Count == 0) GUI.Label(new Rect(sa.x, sa.y + 22, sa.width, 24), Loc.T("<color=#8a7f6a>여기를 마우스로 그어 서명하세요</color>"), paperBody);
             }
             for (int i = 1; i < signPts.Count; i++)
                 if (signPts[i - 1].x >= 0 && signPts[i].x >= 0) Line(signPts[i - 1], signPts[i], new Color(0.1f, 0.14f, 0.35f), 2.6f);
@@ -1244,8 +1249,8 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(0.78f, 0.14f, 0.12f, 0.85f * k2);
                 GUI.DrawTexture(new Rect(c.x - 52, c.y - 52, 104, 104), texRing);
                 GUI.DrawTexture(new Rect(c.x - 44, c.y - 44, 88, 88), texRing);
-                GUI.Label(new Rect(c.x - 60, c.y - 20, 120, 40), "<size=26><b><color=#c42420>승인</color></b></size>", center);
-                GUI.Label(new Rect(c.x - 60, c.y + 14, 120, 20), "<size=10><color=#c42420>케슬러 금융</color></size>", center);
+                GUI.Label(new Rect(c.x - 60, c.y - 20, 120, 40), Loc.T("<size=26><b><color=#c42420>승인</color></b></size>"), center);
+                GUI.Label(new Rect(c.x - 60, c.y + 14, 120, 20), Loc.T("<size=10><color=#c42420>케슬러 금융</color></size>"), center);
                 GUI.matrix = m; GUI.color = Color.white;
                 if (Time.unscaledTime - signT > 0.9f)
                 {
@@ -1255,8 +1260,8 @@ namespace SalvageRun.Orbit
                     if (pendPay) loanOpen = false;
                 }
             }
-            else if (GUI.Button(new Rect(r.xMax - 120, r.yMax - 52, 100, 34), "취소", btnOff)) { pendLoan = 0; if (pendPay) loanOpen = false; }
-            if (!done) GUI.Label(new Rect(r.x + 20, r.yMax - 50, 260, 30), "<size=11><color=#8a7f6a>서명하면 도장이 찍히고 돈이 들어온다</color></size>", paperBody);
+            else if (GUI.Button(new Rect(r.xMax - 120, r.yMax - 52, 100, 34), Loc.T("취소"), btnOff)) { pendLoan = 0; if (pendPay) loanOpen = false; }
+            if (!done) GUI.Label(new Rect(r.x + 20, r.yMax - 50, 260, 30), Loc.T("<size=11><color=#8a7f6a>서명하면 도장이 찍히고 돈이 들어온다</color></size>"), paperBody);
         }
 
         void LoanWin()
@@ -1267,11 +1272,11 @@ namespace SalvageRun.Orbit
             var r = new Rect(vw / 2 - 280, 70, 560, 440);
             GUI.color = new Color(0.05f, 0.06f, 0.09f, 0.99f); GUI.DrawTexture(r, white); GUI.color = Color.white;
             Frame(r, new Color(0.62f, 0.5f, 0.3f), 2);
-            title.fontSize = 22; GUI.Label(new Rect(r.x, r.y + 12, r.width, 30), "<color=#ffdf95>케슬러 금융 — 대출 창구</color>", title);
-            GUI.Label(new Rect(r.x, r.y + 44, r.width, 18), "<size=12>받은 돈의 " + SweepSim.LoanMult + "배를 갚는다 · 빚이 있으면 판 수입의 " + Mathf.RoundToInt((float)(sim.Lv("e_guard") > 0 ? 20 : 30)) + "%가 자동으로 빠져나간다</size>", center);
+            title.fontSize = 22; GUI.Label(new Rect(r.x, r.y + 12, r.width, 30), Loc.T("<color=#ffdf95>케슬러 금융 — 대출 창구</color>"), title);
+            GUI.Label(new Rect(r.x, r.y + 44, r.width, 18), Loc.T("<size=12>받은 돈의 ") + SweepSim.LoanMult + Loc.T("배를 갚는다 · 빚이 있으면 판 수입의 ") + Mathf.RoundToInt((float)(sim.Lv("e_guard") > 0 ? 20 : 30)) + Loc.T("%가 자동으로 빠져나간다</size>"), center);
             // 숫자 셋
             float cx = r.x + 24, cw = (r.width - 48) / 3;
-            string[] k = { "지금 빚", "대출 한도", "가진 돈" };
+            string[] k = { Loc.T("지금 빚"), Loc.T("대출 한도"), Loc.T("가진 돈") };
             string[] v = { KNum.Fmt(S.debt), KNum.Fmt(sim.LoanCap), KNum.Fmt(S.cash) };
             for (int i = 0; i < 3; i++)
             {
@@ -1284,32 +1289,32 @@ namespace SalvageRun.Orbit
             double quarter = System.Math.Min(sim.LoanCap, System.Math.Ceiling(sim.BillAmount * 0.25));
             float by = r.y + 146;
             GUI.enabled = quarter > 0;
-            if (GUI.Button(new Rect(cx + 4, by, 160, 36), "<size=12>대출 +" + KNum.Fmt(quarter) + "</size>", btnC)) RequestLoan(quarter, false);
+            if (GUI.Button(new Rect(cx + 4, by, 160, 36), Loc.T("<size=12>대출 +") + KNum.Fmt(quarter) + "</size>", btnC)) RequestLoan(quarter, false);
             GUI.enabled = sim.LoanCap > 0;
-            if (GUI.Button(new Rect(cx + 172, by, 160, 36), "<size=12>한도까지 +" + KNum.Fmt(sim.LoanCap) + "</size>", btnC)) RequestLoan(sim.LoanCap, false);
+            if (GUI.Button(new Rect(cx + 172, by, 160, 36), Loc.T("<size=12>한도까지 +") + KNum.Fmt(sim.LoanCap) + "</size>", btnC)) RequestLoan(sim.LoanCap, false);
             GUI.enabled = S.debt > 0 && S.cash > 0;
-            if (GUI.Button(new Rect(cx + 340, by, 168, 36), (S.debt > 0 ? "<size=12>빚 갚기 −" + KNum.Fmt(System.Math.Min(S.cash, S.debt)) + "</size>" : "<size=12>갚을 빚 없음</size>"), btnC)) Repay();
+            if (GUI.Button(new Rect(cx + 340, by, 168, 36), (S.debt > 0 ? Loc.T("<size=12>빚 갚기 −") + KNum.Fmt(System.Math.Min(S.cash, S.debt)) + "</size>" : Loc.T("<size=12>갚을 빚 없음</size>")), btnC)) Repay();
             GUI.enabled = true;
             GUI.Label(new Rect(cx + 4, by + 38, 500, 20), S.bill >= SweepSim.Bills.Length - 1
-                ? "<size=11><color=#ff9b8f>마지막 할부(완납)엔 대출이 안 된다 — 제힘으로 갚거나, 못 갚으면 파산</color></size>"
-                : "<size=11>받으면 빚 +" + KNum.Fmt(quarter * SweepSim.LoanMult) + " · 한도 = 지금 청구서 − 남은 원금</size>", small);
+                ? Loc.T("<size=11><color=#ff9b8f>마지막 할부(완납)엔 대출이 안 된다 — 제힘으로 갚거나, 못 갚으면 파산</color></size>")
+                : Loc.T("<size=11>받으면 빚 +") + KNum.Fmt(quarter * SweepSim.LoanMult) + Loc.T(" · 한도 = 지금 청구서 − 남은 원금</size>"), small);
             // 내역
             float hy = by + 64;
-            GUI.Label(new Rect(cx + 4, hy, 300, 18), "내역", label);
+            GUI.Label(new Rect(cx + 4, hy, 300, 18), Loc.T("내역"), label);
             GUI.DrawTexture(new Rect(cx + 4, hy + 20, r.width - 56, 1), texBar);
             var log = S.loanLog;
-            if (log == null || log.Count == 0) GUI.Label(new Rect(cx + 4, hy + 28, 400, 18), "<size=12>아직 없다</size>", small);
+            if (log == null || log.Count == 0) GUI.Label(new Rect(cx + 4, hy + 28, 400, 18), Loc.T("<size=12>아직 없다</size>"), small);
             else
                 for (int i = 0; i < 8 && i < log.Count; i++)
                 {
                     var e = log[log.Count - 1 - i];
-                    string what = e.kind == 0 ? "<color=#ffdf95>대출 +" + KNum.Fmt(e.amt) + "</color>  → 빚 +" + KNum.Fmt(e.amt * SweepSim.LoanMult)
-                                : e.kind == 1 ? "<color=#6fcf97>판 수입에서 상환 −" + KNum.Fmt(e.amt) + "</color>"
-                                : "<color=#6fcf97>직접 상환 −" + KNum.Fmt(e.amt) + "</color>";
-                    GUI.Label(new Rect(cx + 4, hy + 26 + i * 20, 90, 18), "<size=11>출동 " + e.run + "</size>", small);
+                    string what = e.kind == 0 ? Loc.T("<color=#ffdf95>대출 +") + KNum.Fmt(e.amt) + Loc.T("</color>  → 빚 +") + KNum.Fmt(e.amt * SweepSim.LoanMult)
+                                : e.kind == 1 ? Loc.T("<color=#6fcf97>판 수입에서 상환 −") + KNum.Fmt(e.amt) + "</color>"
+                                : Loc.T("<color=#6fcf97>직접 상환 −") + KNum.Fmt(e.amt) + "</color>";
+                    GUI.Label(new Rect(cx + 4, hy + 26 + i * 20, 90, 18), Loc.T("<size=11>출동 ") + e.run + "</size>", small);
                     GUI.Label(new Rect(cx + 96, hy + 26 + i * 20, 420, 18), "<size=12>" + what + "</size>", label);
                 }
-            if (GUI.Button(new Rect(r.xMax - 110, r.yMax - 44, 96, 32), "닫기", btnC)) loanOpen = false;
+            if (GUI.Button(new Rect(r.xMax - 110, r.yMax - 44, 96, 32), Loc.T("닫기"), btnC)) loanOpen = false;
         }
 
         bool CanPayNow => !sim.M.cleanReady && sim.S.bill < SweepSim.Bills.Length && sim.S.cash >= sim.BillAmount;
@@ -1379,7 +1384,7 @@ namespace SalvageRun.Orbit
             foreach (var x in t.xpar) if (GTileState(x) != 3) return x;
             return -1;
         }
-        string TileName(int k) { var t = gtiles[k]; if (t.stat < 0) return "청소선"; return sim.NodeName(t.stat) + (SweepSim.Tiles(t.stat) > 1 ? " " + Roman[t.j] : ""); }
+        string TileName(int k) { var t = gtiles[k]; if (t.stat < 0) return Loc.T("청소선"); return sim.NodeName(t.stat) + (SweepSim.Tiles(t.stat) > 1 ? " " + Roman[t.j] : ""); }
         int GTileState(int k)   // 0 안 보임 · 1 실루엣 · 2 다음 칸 · 3 산 것 (한 번 그릴 때 한 번만 계산 — 부모를 거슬러 가는 재귀가 겹치면 기하급수로 느려진다)
         {
             if (gmemo[k] >= 0) return gmemo[k];
@@ -1416,7 +1421,7 @@ namespace SalvageRun.Orbit
             if (!on) { overAuto = false; return; }                             // 꺼져 있으면 안 그린다 — A 키로 켠다 (09-26 정돈 8)
             overAuto = r.Contains(Event.current.mousePosition);
             GUI.color = on ? new Color(0.3f, 0.21f, 0.06f, 0.85f) : new Color(0.05f, 0.05f, 0.08f, 0.6f); GUI.DrawTexture(r, white); GUI.color = Color.white;
-            GUI.Label(r, "<size=9><color=" + (on ? "#ffdf95" : "#4a5260") + ">시험 · 자동 " + (on ? "켬" : "끔") + "</color></size>", center);
+            GUI.Label(r, "<size=9><color=" + (on ? "#ffdf95" : "#4a5260") + Loc.T(">시험 · 자동 ") + (on ? Loc.T("켬") : Loc.T("끔")) + "</color></size>", center);
             if (GUI.Button(r, GUIContent.none, GUIStyle.none)) game.ToggleAuto();
         }
 
@@ -1435,7 +1440,7 @@ namespace SalvageRun.Orbit
             var r = new Rect(vw - 134, RefH - 50, 92, 38);
             bool on = stockOpen, ov = r.Contains(Event.current.mousePosition);
             Lcd(r, ov ? 0.6f : on ? 0.35f : 0);
-            GUI.Label(new Rect(r.x, r.y, r.width, 24), on ? "<size=16><b><color=#9ff0bf>주식</color></b></size>" : "<size=16><b><color=#5fa37d>주식</color></b></size>", center);
+            GUI.Label(new Rect(r.x, r.y, r.width, 24), on ? Loc.T("<size=16><b><color=#9ff0bf>주식</color></b></size>") : Loc.T("<size=16><b><color=#5fa37d>주식</color></b></size>"), center);
             double pl = 0; for (int i = 0; i < sim.Mk.M.st.Count; i++) { var st = sim.Mk.M.st[i]; pl += st.shares * st.price - st.cost; }
             GUI.Label(new Rect(r.x, r.y + 20, r.width, 18), "<size=10>" + (sim.Mk.TotalValue() > 0 ? (pl >= 0 ? "<color=#ff5c5c>+" : "<color=#5494ff>") + KNum.Fmt(pl) + "</color>" : "<color=#5f6878>S</color>") + "</size>", center);
             if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { stockOpen = !stockOpen; OrbitSfx.Play("tick", 0.6f); }
@@ -1450,8 +1455,8 @@ namespace SalvageRun.Orbit
             Frame(r, new Color(0.3f, 0.55f, 0.4f), 2);
             double tv = mk.TotalValue(), tc = 0; foreach (var st in MS.st) tc += st.cost;
             RowTick(); stockCashPos = new Vector2(r.xMax - 60, r.y + 18);
-            GUI.Label(new Rect(r.x + 12, r.y + 6, 200, 24), "<size=16><b><color=#9ff0bf>궤도 증권</color></b></size>", label);
-            GUI.Label(new Rect(r.x + 12, r.y + 6, r.width - 24, 24), "<size=12><color=#8a9bb3>평가</color> " + KNum.Fmt(tv) + (tc > 0 ? "  " + (tv >= tc ? "<color=#ff5c5c>+" : "<color=#5494ff>") + ((tv / tc - 1) * 100).ToString("0.0") + "%</color>" : "") + "</size>", cost);
+            GUI.Label(new Rect(r.x + 12, r.y + 6, 200, 24), Loc.T("<size=16><b><color=#9ff0bf>궤도 증권</color></b></size>"), label);
+            GUI.Label(new Rect(r.x + 12, r.y + 6, r.width - 24, 24), Loc.T("<size=12><color=#8a9bb3>평가</color> ") + KNum.Fmt(tv) + (tc > 0 ? "  " + (tv >= tc ? "<color=#ff5c5c>+" : "<color=#5494ff>") + ((tv / tc - 1) * 100).ToString("0.0") + "%</color>" : "") + "</size>", cost);
             // 종목 여덟 — 이름 · 가격 · 최근 20봉 등락 · 보유 표시
             for (int i = 0; i < MS.st.Count; i++)
             {
@@ -1495,19 +1500,19 @@ namespace SalvageRun.Orbit
             GUI.Label(new Rect(g.x + 4, g.y + 2, 200, 16), "<size=11><color=#8a9bb3>" + Market.Defs[si].name + " · " + Market.Defs[si].desc + "</color></size>", small);
             // 보유 · 사고팔기
             float y = g.yMax + 6;
-            string hold = ss.shares > 0 ? "보유 " + KNum.Fmt(ss.shares * ss.price) + "  " + (ss.shares * ss.price >= ss.cost ? "<color=#ff5c5c>+" : "<color=#5494ff>") + ((ss.shares * ss.price / ss.cost - 1) * 100).ToString("0.0") + "%</color>" : "<color=#5f6878>보유 없음</color>";
+            string hold = ss.shares > 0 ? Loc.T("보유 ") + KNum.Fmt(ss.shares * ss.price) + "  " + (ss.shares * ss.price >= ss.cost ? "<color=#ff5c5c>+" : "<color=#5494ff>") + ((ss.shares * ss.price / ss.cost - 1) * 100).ToString("0.0") + "%</color>" : Loc.T("<color=#5f6878>보유 없음</color>");
             GUI.Label(new Rect(r.x + 12, y, r.width - 24, 20), "<size=12>" + hold + "</size>", label);
-            GUI.Label(new Rect(r.x + 12, y, r.width - 24, 20), "<size=11><color=#8a9bb3>돈 " + KNum.Fmt(S.cash) + " · 수수료 " + (sim.StockFee * 100).ToString("0.#") + "%</color></size>", cost);
+            GUI.Label(new Rect(r.x + 12, y, r.width - 24, 20), Loc.T("<size=11><color=#8a9bb3>돈 ") + KNum.Fmt(S.cash) + Loc.T(" · 수수료 ") + (sim.StockFee * 100).ToString("0.#") + "%</color></size>", cost);
             y += 22;
             float bw = (r.width - 24 - 12) / 6f;
-            string[] bl = { "10%", "25%", "50%", "전부" }; float[] bf = { 0.1f, 0.25f, 0.5f, 1f };
-            if (!sim.R.over) GUI.Label(new Rect(r.x + 12, y, r.width - 24, 28), "<size=12><color=#8a9bb3>출동 중엔 시세만 본다 — 사고팔기는 조종실 증권에서</color></size>", center);   // 🔒 출동 중 사고팔기 금지 (09-24 사장님 「팔기도 막아」)
+            string[] bl = { "10%", "25%", "50%", Loc.T("전부") }; float[] bf = { 0.1f, 0.25f, 0.5f, 1f };
+            if (!sim.R.over) GUI.Label(new Rect(r.x + 12, y, r.width - 24, 28), Loc.T("<size=12><color=#8a9bb3>출동 중엔 시세만 본다 — 사고팔기는 조종실 증권에서</color></size>"), center);   // 🔒 출동 중 사고팔기 금지 (09-24 사장님 「팔기도 막아」)
             else
             {
-                for (int k = 0; k < 4; k++) if (GUI.Button(new Rect(r.x + 12 + k * (bw + 2), y, bw, 28), "<size=12><color=#9ff0bf>사기 " + bl[k] + "</color></size>", btn)) TradeBuy(si, bf[k], new Vector2(r.x + 12 + k * (bw + 2) + bw / 2, y + 14));
+                for (int k = 0; k < 4; k++) if (GUI.Button(new Rect(r.x + 12 + k * (bw + 2), y, bw, 28), Loc.T("<size=12><color=#9ff0bf>사기 ") + bl[k] + "</color></size>", btn)) TradeBuy(si, bf[k], new Vector2(r.x + 12 + k * (bw + 2) + bw / 2, y + 14));
                 GUI.enabled = ss.shares > 0 && GUI.enabled;
-                if (GUI.Button(new Rect(r.x + 12 + 4 * (bw + 2) + 6, y, bw, 28), "<size=12><color=#ffb3a8>절반 팔기</color></size>", btn)) TradeSell(si, 0.5, new Vector2(r.x + 12 + 4 * (bw + 2) + 6 + bw / 2, y + 14));
-                if (GUI.Button(new Rect(r.x + 12 + 5 * (bw + 2) + 6, y, bw, 28), "<size=12><color=#ffb3a8>전부 팔기</color></size>", btn)) TradeSell(si, 1, new Vector2(r.x + 12 + 5 * (bw + 2) + 6 + bw / 2, y + 14));
+                if (GUI.Button(new Rect(r.x + 12 + 4 * (bw + 2) + 6, y, bw, 28), Loc.T("<size=12><color=#ffb3a8>절반 팔기</color></size>"), btn)) TradeSell(si, 0.5, new Vector2(r.x + 12 + 4 * (bw + 2) + 6 + bw / 2, y + 14));
+                if (GUI.Button(new Rect(r.x + 12 + 5 * (bw + 2) + 6, y, bw, 28), Loc.T("<size=12><color=#ffb3a8>전부 팔기</color></size>"), btn)) TradeSell(si, 1, new Vector2(r.x + 12 + 5 * (bw + 2) + 6 + bw / 2, y + 14));
             }
             GUI.enabled = !loanOpen;
             y += 32;
@@ -1519,8 +1524,8 @@ namespace SalvageRun.Orbit
             if (il > 0)
             {
                 var nn = mk.NextNews; string who = nn.up != null ? string.Join(" ", nn.up) : string.Join(" ", nn.down);
-                string tip = "다음 출동 중 속보" + (il >= 2 ? " · " + (nn.up != null ? "<color=#ff5c5c>오를</color>" : "<color=#5494ff>내릴</color>") + " 쪽: " + SecName(nn) : "") + (il >= 3 ? " · 「" + Clip(nn.head, 16) + "」" : "");
-                GUI.Label(new Rect(r.x + 12, y, r.width - 24, 20), "<size=11><color=#e8c77e>내부자</color> " + tip + "</size>", label);
+                string tip = Loc.T("다음 출동 중 속보") + (il >= 2 ? " · " + (nn.up != null ? Loc.T("<color=#ff5c5c>오를</color>") : Loc.T("<color=#5494ff>내릴</color>")) + Loc.T(" 쪽: ") + SecName(nn) : "") + (il >= 3 ? " · 「" + Clip(nn.head, 16) + "」" : "");
+                GUI.Label(new Rect(r.x + 12, y, r.width - 24, 20), Loc.T("<size=11><color=#e8c77e>내부자</color> ") + tip + "</size>", label);
                 y += 20;
             }
             // 최근 속보
@@ -1528,7 +1533,7 @@ namespace SalvageRun.Orbit
             for (int k = 0; k < 3 && k < MS.news.Count; k++)
             {
                 var nw = MS.news[MS.news.Count - 1 - k];
-                GUI.Label(new Rect(r.x + 12, y + 5 + k * 18, r.width - 24, 18), "<size=11>" + (k == 0 ? "<color=#ffdf95>" : "<color=#8a9bb3>") + Clip(nw.head, 30) + "</color></size>", label);
+                GUI.Label(new Rect(r.x + 12, y + 5 + k * 18, r.width - 24, 18), "<size=11>" + (k == 0 ? "<color=#ffdf95>" : "<color=#8a9bb3>") + Clip(Loc.T(nw.head), 30) + "</color></size>", label);
             }
         }
         static string SecName(NewsDef nn)
@@ -1548,7 +1553,7 @@ namespace SalvageRun.Orbit
             if (lastNewsSeen < 0) lastNewsSeen = ns.Count > 0 ? ns[ns.Count - 1].t : sim.Mk.M.clock - 0.01f;   // 켜자마자 옛 속보는 건너뛴다
             if (ns.Count > 0 && ns[ns.Count - 1].t > lastNewsSeen)
             {
-                bannerNews = ns[ns.Count - 1]; newsBanner = 5.5f; OrbitSfx.Play("supply", 0.5f); Anchor(bannerNews.head);
+                bannerNews = ns[ns.Count - 1]; newsBanner = 5.5f; OrbitSfx.Play("supply", 0.5f); Anchor(Loc.T(bannerNews.head));
                 lastNewsSeen = ns[ns.Count - 1].t;
             }
             if (newsBanner <= 0 || bannerNews == null) return;
@@ -1559,8 +1564,8 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0.55f, 0.08f, 0.06f, 0.92f * a); GUI.DrawTexture(new Rect(b.x, b.y, 74, b.height), white);
             GUI.color = new Color(0.04f, 0.04f, 0.06f, 0.92f * a); GUI.DrawTexture(new Rect(b.x + 74, b.y, b.width - 74, b.height), white);
             GUI.color = new Color(1, 1, 1, a);
-            GUI.Label(new Rect(b.x, b.y, 74, b.height), "<size=15><b>속보</b></size>", center);
-            GUI.Label(new Rect(b.x + 84, b.y + 3, b.width - 94, 22), "<size=14><b>" + Clip(bannerNews.head, 34) + "</b></size>", label);
+            GUI.Label(new Rect(b.x, b.y, 74, b.height), Loc.T("<size=15><b>속보</b></size>"), center);
+            GUI.Label(new Rect(b.x + 84, b.y + 3, b.width - 94, 22), "<size=14><b>" + Clip(Loc.T(bannerNews.head), 34) + "</b></size>", label);
             string moves = "";
             for (int i = 0; i < sim.Mk.M.st.Count; i++) { var st = sim.Mk.M.st[i]; if (st.pushLeft <= 0) continue; moves += Market.Defs[i].name + (st.push > 0 ? " <color=#ff5c5c>▲</color>  " : " <color=#5494ff>▼</color>  "); }
             GUI.Label(new Rect(b.x + 84, b.y + 23, b.width - 94, 20), "<size=11>" + moves + "</size>", label);
@@ -1575,7 +1580,7 @@ namespace SalvageRun.Orbit
             overSkill = r.Contains(Event.current.mousePosition);
             bool ready = R.shots > 0 && !R.holding;
             GUI.color = new Color(0.05f, 0.05f, 0.08f, 0.9f); GUI.DrawTexture(r, white);
-            if (R.shots < R.maxShots && !R.clean) GUI.Label(new Rect(r.x - 20, r.yMax + 1, r.width + 40, 16), "<size=9><color=#8a7fb0>공격 " + (sim.HoleChance * 100).ToString("0.#") + "%</color></size>", center);   // 확률로 찬다
+            if (R.shots < R.maxShots && !R.clean) GUI.Label(new Rect(r.x - 20, r.yMax + 1, r.width + 40, 16), Loc.T("<size=9><color=#8a7fb0>공격 ") + (sim.HoleChance * 100).ToString("0.#") + "%</color></size>", center);   // 확률로 찬다
             if (R.holding)
             {
                 float k = 1 - Mathf.Clamp01((float)(R.holdT / SweepSim.HoleDur));
@@ -1590,7 +1595,7 @@ namespace SalvageRun.Orbit
             if (GUI.Button(r, GUIContent.none, GUIStyle.none) && ready) CastReq = true;
         }
 
-        static readonly string[] PlanetHint = { "", "달 — 궤도가 느리다 · 금고 위성이 많으니 노려 보자", "화성 — 판 중간에 모래 폭풍이 온다 · 얼음 껍질은 먼저 깨 두자", "목성 — 중력이 잔해를 안쪽으로 모은다 · 안쪽 가장자리에 블랙홀을", "토성 — 고리가 두 겹 · 가운데 틈은 비어 있다" , "소행성대 — 단단한 암석과 광석이 많다", "천왕성 — 옆으로 누운 궤도 · 얼음 결정", "해왕성 — 초속 폭풍이 잔해를 흩는다", "카이퍼 벨트 — 태양계 끝 · 고대 탐사선과 혜성", "오르트 구름 — 얼음 혜성 떼가 단단하다 · 혜성 머리를 맞히면 열쇠", "태양권 계면 — 태양풍이 불면 잔해가 한쪽으로 쏠린다 · 폭풍 땐 값 ×1.5", "성간 공간 — 드문드문하지만 하나하나가 비싸다 · 결정 하나를 깨면 같은 결정이 모두" };
+        static readonly string[] PlanetHint = { "", Loc.T("달 — 궤도가 느리다 · 금고 위성이 많으니 노려 보자"), Loc.T("화성 — 판 중간에 모래 폭풍이 온다 · 얼음 껍질은 먼저 깨 두자"), Loc.T("목성 — 중력이 잔해를 안쪽으로 모은다 · 안쪽 가장자리에 블랙홀을"), Loc.T("토성 — 고리가 두 겹 · 가운데 틈은 비어 있다") , Loc.T("소행성대 — 단단한 암석과 광석이 많다"), Loc.T("천왕성 — 옆으로 누운 궤도 · 얼음 결정"), Loc.T("해왕성 — 초속 폭풍이 잔해를 흩는다"), Loc.T("카이퍼 벨트 — 태양계 끝 · 고대 탐사선과 혜성"), Loc.T("오르트 구름 — 얼음 혜성 떼가 단단하다 · 혜성 머리를 맞히면 열쇠"), Loc.T("태양권 계면 — 태양풍이 불면 잔해가 한쪽으로 쏠린다 · 폭풍 땐 값 ×1.5"), Loc.T("성간 공간 — 드문드문하지만 하나하나가 비싸다 · 결정 하나를 깨면 같은 결정이 모두") };
         static Texture2D iconTex;
         void DrawIcon(Rect r, string id)
         {
@@ -1628,19 +1633,20 @@ namespace SalvageRun.Orbit
             {
             // 머리 — 돈 · 청구서 · 궤도일보
             big.fontSize = 22;   // 도트 글꼴 11의 배수 (정돈 5)
-            GUI.Label(new Rect(ox + 16, 12, 40, 20), "돈", dim);
-            GUI.Label(new Rect(ox + 38, 6, 240, 32), "<color=#ffdf95>" + KNum.Fmt(shown) + "</color>", big);
+            float cashLw = dim.CalcSize(new GUIContent(Loc.T("돈"))).x;   // 🌐 이름 폭만큼 띄운다 (영어 Cash 는 더 길다)
+            GUI.Label(new Rect(ox + 16, 12, cashLw + 4, 20), Loc.T("돈"), dim);
+            GUI.Label(new Rect(ox + Mathf.Max(38, 22 + cashLw), 6, 240, 32), "<color=#ffdf95>" + KNum.Fmt(shown) + "</color>", big);
             big.fontSize = 20;
             CreditScreen = new Vector2((ox + 60) * scale, Screen.height - 22 * scale);
             if (S.bill < SweepSim.Bills.Length && !sim.M.cleanReady)
             {
-                string bl = "청구서 · " + SweepSim.Bills[S.bill].t + " <color=#ffdf95>" + KNum.Fmt(sim.BillAmount) + "</color>" + (S.overdue ? "  <color=#ff8a7a>오늘 납부일</color>" : " · " + S.billDue + "판 남음") + (S.debt > 0 ? "  <color=#ffb3a8>빚 " + KNum.Fmt(S.debt) + "</color>" : "") + (S.cash >= sim.BillAmount ? "  <color=#6fcf97>▶ 눌러서 갚기</color>" : "");
+                string bl = Loc.T("청구서 · ") + SweepSim.Bills[S.bill].t + " <color=#ffdf95>" + KNum.Fmt(sim.BillAmount) + "</color>" + (S.overdue ? Loc.T("  <color=#ff8a7a>오늘 납부일</color>") : " · " + S.billDue + Loc.T("판 남음")) + (S.debt > 0 ? Loc.T("  <color=#ffb3a8>빚 ") + KNum.Fmt(S.debt) + "</color>" : "") + (S.cash >= sim.BillAmount ? Loc.T("  <color=#6fcf97>▶ 눌러서 갚기</color>") : "");
                 bool loanPay = S.overdue && S.cash < sim.BillAmount && sim.BillAmount - S.cash <= sim.LoanCap;
-                if (loanPay) bl += "  <color=#6fcf97>▶ 대출 " + KNum.Fmt(sim.BillAmount - S.cash) + " 받아 갚기</color>";
+                if (loanPay) bl += Loc.T("  <color=#6fcf97>▶ 대출 ") + KNum.Fmt(sim.BillAmount - S.cash) + Loc.T(" 받아 갚기</color>");
                 if (GUI.Button(new Rect(ox + 240, 8, 500, 30), bl, S.cash >= sim.BillAmount || loanPay ? btn : btnOff)) { if (S.cash >= sim.BillAmount) sim.PayBill(); else if (loanPay) RequestLoan(sim.BillAmount - S.cash, true); }
             }
             int unreadN = sim.Unread;
-            if (GUI.Button(new Rect(ox + 780, 8, 166, 30), "궤도일보" + (unreadN > 0 ? "  <color=#ff8a7a>● " + unreadN + "</color>" : ""), btn)) { newsOpen = true; newsSel = -1; }
+            if (GUI.Button(new Rect(ox + 780, 8, 166, 30), Loc.T("궤도일보") + (unreadN > 0 ? "  <color=#ff8a7a>● " + unreadN + "</color>" : ""), btn)) { newsOpen = true; newsSel = -1; }
             }
 
             var area = new Rect(0, 46, vw, 500);
@@ -1743,7 +1749,7 @@ namespace SalvageRun.Orbit
                 if (planetI > 0) { var pr = new Rect(pc.x - isz * 0.62f, pc.y - isz * 0.62f, isz * 1.24f, isz * 1.24f); GUI.color = owned ? Color.white : next ? new Color(0.6f, 0.62f, 0.66f) : new Color(0.2f, 0.2f, 0.22f); GUI.DrawTexture(pr, PlanetArt.Get(planetI).texture); }
                 else DrawIcon(new Rect(pc.x - isz / 2, pc.y - isz / 2, isz, isz), isRoot ? "R" : n.id);
                 if (!isRoot && SweepSim.KeyNodes.Contains(n.id)) { float kp = sim.S.keys > 0 && next ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3 + k) : 0.3f; GUI.color = new Color(0.71f, 0.61f, 1f, owned ? 0.9f : 0.35f + 0.3f * kp); Frame(new Rect(r.x - 3 * zz, r.y - 3 * zz, r.width + 6 * zz, r.height + 6 * zz), GUI.color, 2f); GUI.color = Color.white; }   // 「열쇠」 글자는 툴팁에서 · 열쇠가 있을 때만 깜빡 (09-26 정돈 14)
-                if (!isRoot && n.max == 1 && System.Array.IndexOf(SweepSim.WeaponNode, n.id) == sim.Weapon && owned) { GUI.color = new Color(1f, 0.55f, 0.5f); GUI.Label(new Rect(pc.x - 40, r.yMax + 2 * zz, 80, 16), "<size=10><b>장착 중</b></size>", center); GUI.color = Color.white; }
+                if (!isRoot && n.max == 1 && System.Array.IndexOf(SweepSim.WeaponNode, n.id) == sim.Weapon && owned) { GUI.color = new Color(1f, 0.55f, 0.5f); GUI.Label(new Rect(pc.x - 40, r.yMax + 2 * zz, 80, 16), Loc.T("<size=10><b>장착 중</b></size>"), center); GUI.color = Color.white; }
                 if (k == recK) { float rp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 4); GUI.color = new Color(1f, 0.87f, 0.4f, 0.55f + 0.45f * rp); Frame(new Rect(r.x - 5 * zz, r.y - 5 * zz, r.width + 10 * zz, r.height + 10 * zz), GUI.color, 2.5f); GUI.color = Color.white; recLbl = new Rect(pc.x - 17, r.yMax + 1 * zz, 34, 15); }
                 if (lockedTile && next) { var lcol = gtiles[k].stat >= 0 && sim.CapLocked(gtiles[k].stat) ? new Color(1f, 0.6f, 0.4f) : new Color(1f, 0.42f, 0.38f); DashFrame(new Rect(r.x - 3 * zz, r.y - 3 * zz, r.width + 6 * zz, r.height + 6 * zz), lcol); lockLbls.Add((new Rect(pc.x - 17, r.yMax - 8, 34, 14), lcol)); }   // 잠김 = 점선 테두리 + 아래 가장자리 「잠김」 딱지 (주황 = 행성 한도)   // 잠김 = 점선 테두리 (주황 = 행성 한도) — 「잠」 글자가 칸 위에 겹쳐 두 개처럼 보였다 (09-26)
                 GUI.color = Color.white;
@@ -1755,12 +1761,12 @@ namespace SalvageRun.Orbit
                     int times = shift ? 5 : 1;
                     while (times-- > 0 && sim.State(t.stat) == NodeSt.Can) sim.BuyTile(t.stat);
                     if (n.id == "e_shop") { roomGo = 5; roomGoAt = Time.unscaledTime + 0.5f; }                // 🧭 09-27 사장님 「증권 · 가게 스킬 열리면 바로 거기 가게」 — 사는 효과를 보고 그 방으로
-                    else if (n.id == "v_volley" && sim.S.lv[t.stat] == 1) Guide("전탄 발사가 생겼다 — 출동 중 게이지가 차면 Space · 계기판 가운데 단추 (무기 둘부터)");
+                    else if (n.id == "v_volley" && sim.S.lv[t.stat] == 1) Guide(Loc.T("전탄 발사가 생겼다 — 출동 중 게이지가 차면 Space · 계기판 가운데 단추 (무기 둘부터)"));
                     else if (n.id == "a_open") { roomGo = 4; roomGoAt = Time.unscaledTime + 0.5f; }
-                    nodePulse[t.stat] = 1; OrbitSfx.Play("buy", 0.7f, 0.01f, 0.15f); lastBuyBranch = n.branch; BuyFx(pc, SweepSim.KeyNodes.Contains(n.id) ? new Color(0.71f, 0.61f, 1f) : bcol, n.max == 1, SweepSim.KeyNodes.Contains(n.id) ? "핵심 해금!" : "해금!");
+                    nodePulse[t.stat] = 1; OrbitSfx.Play("buy", 0.7f, 0.01f, 0.15f); lastBuyBranch = n.branch; BuyFx(pc, SweepSim.KeyNodes.Contains(n.id) ? new Color(0.71f, 0.61f, 1f) : bcol, n.max == 1, SweepSim.KeyNodes.Contains(n.id) ? Loc.T("핵심 해금!") : Loc.T("해금!"));
                 }
                 else if (clicked && ns != NodeSt.Max)
-                { OrbitSfx.Play("clank", 0.35f, 0.05f, 0f); int bk = ns == NodeSt.Hidden ? BlockTile(k) : -1; Deny(pc, bk >= 0 ? TileName(bk) + " 먼저" : WhyNot(t.stat)); }   // 🚫 안 눌리는 칸 — 왜 안 되는지 그 자리에 (09-25 사장님 「안 눌리는 게 있던데」)
+                { OrbitSfx.Play("clank", 0.35f, 0.05f, 0f); int bk = ns == NodeSt.Hidden ? BlockTile(k) : -1; Deny(pc, bk >= 0 ? TileName(bk) + Loc.T(" 먼저") : WhyNot(t.stat)); }   // 🚫 안 눌리는 칸 — 왜 안 되는지 그 자리에 (09-25 사장님 「안 눌리는 게 있던데」)
             }
             // 영역 밖 띠 — 넘어간 칸을 덮고 머리 · 안내를 다시 그린다
             GUI.color = new Color(0.02f, 0.027f, 0.04f); GUI.DrawTexture(new Rect(0, 0, vw, area.y), white); GUI.DrawTexture(new Rect(0, area.yMax, vw, RefH - area.yMax), white);
@@ -1771,7 +1777,7 @@ namespace SalvageRun.Orbit
                 float bw3 = 36;
                 if (GUI.Button(new Rect(zb.x, zb.y, bw3, zb.height), "<size=16>−</size>", btnOff)) ZoomAt(area.center, userZ / 1.25f);
                 if (GUI.Button(new Rect(zb.x + bw3 + 3, zb.y, bw3, zb.height), "<size=16>+</size>", btnOff)) ZoomAt(area.center, userZ * 1.25f);
-                if (GUI.Button(new Rect(zb.x + (bw3 + 3) * 2, zb.y, 40, zb.height), "<size=11>맞춤</size>", btnOff)) { userZ = 1; pan = Vector2.zero; }
+                if (GUI.Button(new Rect(zb.x + (bw3 + 3) * 2, zb.y, 40, zb.height), Loc.T("<size=11>맞춤</size>"), btnOff)) { userZ = 1; pan = Vector2.zero; }
                 var zr = new Rect(zb.xMax + 4, zb.y + 5, 44, 20);
                 GUI.color = new Color(0.04f, 0.05f, 0.07f, 0.9f); GUI.DrawTexture(zr, white); GUI.color = Color.white;
                 GUI.Label(zr, "<size=11><color=#8a93a3>" + Mathf.RoundToInt(userZ * 100) + "%</color></size>", center);
@@ -1779,13 +1785,13 @@ namespace SalvageRun.Orbit
             foreach (var (lr, lc) in lockLbls)
             {   // 🔒 「잠김」 — 칸을 다 그린 뒤 맨 위에 (09-26 사장님 「잠? 이해하기 힘듦 — 잠김으로」)
                 GUI.color = new Color(0.08f, 0.04f, 0.04f, 0.92f); GUI.DrawTexture(lr, white); GUI.color = Color.white;
-                GUI.Label(lr, "<size=9><b><color=#" + ColorUtility.ToHtmlStringRGB(lc) + ">잠김</color></b></size>", center);
+                GUI.Label(lr, "<size=9><b><color=#" + ColorUtility.ToHtmlStringRGB(lc) + Loc.T(">잠김</color></b></size>"), center);
             }
             lockLbls.Clear();
             if (recLbl.width > 0)
             {   // ⭐ 추천 글자 — 칸을 다 그린 뒤 맨 위에, 어두운 바탕으로 (아래 칸에 깔려 안 읽혔다)
                 GUI.color = new Color(0.1f, 0.08f, 0.03f, 0.95f); GUI.DrawTexture(recLbl, white); Frame(recLbl, new Color(1f, 0.8f, 0.4f, 0.8f), 1); GUI.color = Color.white;
-                GUI.Label(recLbl, "<size=10><b><color=#ffdf95>추천</color></b></size>", center);
+                GUI.Label(recLbl, Loc.T("<size=10><b><color=#ffdf95>추천</color></b></size>"), center);
                 recLbl = default;
             }
             PartsButton(new Rect(zb.x, zb.yMax + 8, 230, 30));             // 무기 효과판 뺌 (09-24 23번)
@@ -1793,10 +1799,10 @@ namespace SalvageRun.Orbit
                 int zo = sim.ZoneOpen, zl = sim.ZoneLeft(zo), zt = 0; for (int i = 0; i < SweepSim.Nodes.Length; i++) if (SweepSim.Zone[i] == zo && SweepSim.ZoneNeed(i)) zt++;
                 bool last = zo + 1 >= SweepSim.OrbitOrder.Length;
                 string zs = sim.HasGate && !sim.GateReady
-                    ? "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> 한 줄 " + sim.TileCap + "칸까지 · <color=#ffb36b>🛰 청구서 " + sim.GateBill + "장을 갚으면 " + sim.GateName + " 방어막이 풀린다</color></size>"
+                    ? "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + Loc.T("</color> 한 줄 ") + sim.TileCap + Loc.T("칸까지 · <color=#ffb36b>🛰 청구서 ") + sim.GateBill + Loc.T("장을 갚으면 ") + sim.GateName + Loc.T(" 방어막이 풀린다</color></size>")
                     : sim.HasGate
-                    ? "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> 한 줄 " + sim.TileCap + "칸까지 · <color=#ffb36b>🛰 " + sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + "%</color> <color=#8a93a3>부수면 " + sim.NextName + "</color></size>"
-                    : "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + "</color> <color=#8a93a3>— 마지막 항로 · 한도 없음</color></size>";
+                    ? "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + Loc.T("</color> 한 줄 ") + sim.TileCap + Loc.T("칸까지 · <color=#ffb36b>🛰 ") + sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + Loc.T("%</color> <color=#8a93a3>부수면 ") + sim.NextName + "</color></size>"
+                    : "<size=12><color=#ffdf95>" + SweepSim.ZoneName[zo] + Loc.T("</color> <color=#8a93a3>— 마지막 항로 · 한도 없음</color></size>");
                 var zr = new Rect(zb.xMax + 58, zb.y + 3, label.CalcSize(new GUIContent(zs)).x + 20, 24);   // 글자 폭만큼만 — 넓으면 트리 윗줄 칸을 덮었다
                 GUI.color = new Color(0.04f, 0.05f, 0.07f, 0.9f); GUI.DrawTexture(zr, white); GUI.color = Color.white;
                 GUI.Label(new Rect(zr.x + 8, zr.y + 3, zr.width - 8, 18), zs, label);   // 🛰 09-26 구역 칸 개수 → 관문
@@ -1810,11 +1816,11 @@ namespace SalvageRun.Orbit
                 {
                     var bp = ToScr(gtiles[bk].cell); float bp2 = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 8), bs = tile * (1.5f + 0.25f * bp2);
                     GUI.color = new Color(1f, 0.6f, 0.55f, 0.35f + 0.3f * bp2); GUI.DrawTexture(new Rect(bp.x - bs / 2, bp.y - bs / 2, bs, bs), texRing);
-                    GUI.color = Color.white; GUI.Label(new Rect(bp.x - 40, bp.y - tile * 0.5f - 20, 80, 18), "<size=11><b><color=#ff9b8f>먼저 이 칸</color></b></size>", center);
+                    GUI.color = Color.white; GUI.Label(new Rect(bp.x - 40, bp.y - tile * 0.5f - 20, 80, 18), Loc.T("<size=11><b><color=#ff9b8f>먼저 이 칸</color></b></size>"), center);
                 }
             }
             if (hover >= 0) Tip(hover, ToScr(gtiles[hover].cell), st[hover], tile);
-            else GUI.Label(new Rect(ox, area.yMax + 2, 750, 16), "<size=11>칸에 마우스를 올리면 무엇인지 보인다 · 빛나는 칸을 누르면 산다 · 휠 = 확대 · 끌기 = 이동</size>", center);
+            else GUI.Label(new Rect(ox, area.yMax + 2, 750, 16), Loc.T("<size=11>칸에 마우스를 올리면 무엇인지 보인다 · 빛나는 칸을 누르면 산다 · 휠 = 확대 · 끌기 = 이동</size>"), center);
         }
 
         GUIStyle tipWrap; Rect recLbl; readonly List<(Rect, Color)> lockLbls = new List<(Rect, Color)>();
@@ -1826,8 +1832,8 @@ namespace SalvageRun.Orbit
             {
                 var r0 = new Rect(at.x + tile / 2 + 14, at.y - 40, 260, 76);
                 GUI.color = new Color(0.05f, 0.05f, 0.06f, 0.97f); GUI.DrawTexture(r0, white); GUI.color = Color.white; Frame(r0, new Color(0.6f, 0.5f, 0.35f), 2);
-                title.fontSize = 18; GUI.Label(new Rect(r0.x, r0.y + 6, r0.width, 26), "<color=#d9b98a>청소선</color>", title);
-                GUI.Label(new Rect(r0.x + 10, r0.y + 38, r0.width - 20, 22), "여기서 다섯 갈래로 뻗는다", center);
+                title.fontSize = 18; GUI.Label(new Rect(r0.x, r0.y + 6, r0.width, 26), Loc.T("<color=#d9b98a>청소선</color>"), title);
+                GUI.Label(new Rect(r0.x + 10, r0.y + 38, r0.width - 20, 22), Loc.T("여기서 다섯 갈래로 뻗는다"), center);
                 return;
             }
             var n = SweepSim.Nodes[t.stat]; var ns = sim.State(t.stat); int lv = sim.S.lv[t.stat];
@@ -1849,7 +1855,7 @@ namespace SalvageRun.Orbit
             if (vis == 1)
             {
                 GUI.Label(new Rect(r.x, r.y + 4, r.width, 28), "<color=#b89a6a>?</color>", title);
-                { int bk = BlockTile(k); GUI.Label(new Rect(r.x, r.y + 52, r.width, 20), bk >= 0 ? "「" + TileName(bk) + "」 사면 무엇인지 보인다" : "앞 칸을 사면 무엇인지 보인다", center); }
+                { int bk = BlockTile(k); GUI.Label(new Rect(r.x, r.y + 52, r.width, 20), bk >= 0 ? "「" + TileName(bk) + Loc.T("」 사면 무엇인지 보인다") : Loc.T("앞 칸을 사면 무엇인지 보인다"), center); }
                 return;
             }
             string nm = sim.NodeName(t.stat) + (SweepSim.Tiles(t.stat) > 1 ? " " + Roman[t.j] : "");
@@ -1858,19 +1864,19 @@ namespace SalvageRun.Orbit
             float oy = dh - 22;                                          // 설명이 길어진 만큼 아래 줄을 내린다
             GUI.color = new Color(0.3f, 0.28f, 0.24f); GUI.DrawTexture(new Rect(r.x + 24, r.y + 70 + oy, r.width - 48, 1), white); GUI.DrawTexture(new Rect(r.x + 24, r.y + 98 + oy, r.width - 48, 1), white); GUI.color = Color.white;
             int from = t.j == 1 ? 0 : SweepSim.TileLv(t.stat, t.j - 1), to = SweepSim.TileLv(t.stat, t.j);
-            if (vis == 3 && !SweepSim.Infinite(t.stat)) GUI.Label(new Rect(r.x + 10, r.y + 74 + oy, r.width - 20, 20), "<color=#8a93a3>지금</color>  <color=#ffdf95>" + Val(n.id, to) + "</color>", center);   // 산 칸은 「0 ▸ 1」 대신 지금 값만
+            if (vis == 3 && !SweepSim.Infinite(t.stat)) GUI.Label(new Rect(r.x + 10, r.y + 74 + oy, r.width - 20, 20), Loc.T("<color=#8a93a3>지금</color>  <color=#ffdf95>") + Val(n.id, to) + "</color>", center);   // 산 칸은 「0 ▸ 1」 대신 지금 값만
             else GUI.Label(new Rect(r.x + 10, r.y + 74 + oy, r.width - 20, 20), Val(n.id, from) + "  <color=#d9b98a>▸</color>  <color=#ffdf95>" + Val(n.id, to) + "</color>", center);
             string foot;
-            if (vis == 3 && SweepSim.Infinite(t.stat)) foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>  <color=#ffdf95>∞ " + sim.S.lv[t.stat] + "번 삼 · 계속 살 수 있다</color>";   // 누적 칸 — 다음 가격 (09-24 친구들 「가격이 안 보인다」)
-            else if (vis == 3) foot = "<color=#6fcf97>샀다</color>";
-            else if (ns == NodeSt.Locked && n.id.StartsWith("p_")) foot = "<color=#ffb36b>🛰 " + (sim.HasGate ? (sim.GateReady ? "" : "청구서 " + sim.GateBill + "장을 갚으면 나타나는 ") + sim.GateName + " 관문을 부수면 열린다" : "앞 항로부터") + "</color>";   // 🛰 항로 = 관문
-            else if (ns == NodeSt.Locked && sim.CapLocked(t.stat)) foot = "<color=#ffb36b>행성 한도 — " + sim.GateName + Eul(sim.GateName) + " 부수면 한 칸 더</color>";
-            else if (ns == NodeSt.Locked && SweepSim.Zone[t.stat] > sim.ZoneOpen) foot = "<color=#ff9b8f>" + SweepSim.ZoneName[SweepSim.Zone[t.stat]] + " 항로를 열면 열린다</color>";
-            else if (ns == NodeSt.Locked) foot = SweepSim.Ring4(n.id) ? "<color=#ff9b8f>목성 항로를 열면 — 외행성 면허</color>" : "<color=#ff9b8f>청구서 " + SweepSim.BranchNeed[b] + "을 갚으면 열린다</color>";
-            else if (ns == NodeSt.Hidden) { int bk = BlockTile(k); foot = "<color=#ff9b8f>" + (bk >= 0 ? "「" + TileName(bk) + "」 먼저 사야 열린다" : "앞 칸을 먼저 사야 한다") + "</color>"; }   // 어느 칸인지 콕 집어 — 「앞 칸」만으론 이미 산 칸을 또 눌러야 하나 헷갈렸다 (09-25 사장님)
-            else if (SweepSim.KeyNodes.Contains(n.id) && sim.S.keys < 1) foot = (sim.S.cash >= sim.TileCost(t.stat) ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>  <color=#ff9b8f>+ 열쇠 1 (없음)</color>";   // 돈은 되는데 열쇠가 없다 — 값만 빨개서 이유를 몰랐다
-            else foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>" + (SweepSim.KeyNodes.Contains(n.id) ? "  <color=#d8ccff>+ 열쇠 1</color>" : "");
-            if (keyNote) GUI.Label(new Rect(r.x, r.y + 136 + oy, r.width, 16), "<size=11><color=#b9a9ee>" + (sim.S.keys < 1 ? "열쇠 0 — 청구서를 갚거나 파산하면 +1" : "가진 열쇠 " + sim.S.keys + " · ◆ 핵심 칸은 파산해도 남는다") + "</color></size>", center);
+            if (vis == 3 && SweepSim.Infinite(t.stat)) foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>  <color=#ffdf95>∞ " + sim.S.lv[t.stat] + Loc.T("번 삼 · 계속 살 수 있다</color>");   // 누적 칸 — 다음 가격 (09-24 친구들 「가격이 안 보인다」)
+            else if (vis == 3) foot = Loc.T("<color=#6fcf97>샀다</color>");
+            else if (ns == NodeSt.Locked && n.id.StartsWith("p_")) foot = "<color=#ffb36b>🛰 " + (sim.HasGate ? (sim.GateReady ? "" : Loc.T("청구서 ") + sim.GateBill + Loc.T("장을 갚으면 나타나는 ")) + sim.GateName + Loc.T(" 관문을 부수면 열린다") : Loc.T("앞 항로부터")) + "</color>";   // 🛰 항로 = 관문
+            else if (ns == NodeSt.Locked && sim.CapLocked(t.stat)) foot = Loc.T("<color=#ffb36b>행성 한도 — ") + sim.GateName + Eul(sim.GateName) + Loc.T(" 부수면 한 칸 더</color>");
+            else if (ns == NodeSt.Locked && SweepSim.Zone[t.stat] > sim.ZoneOpen) foot = "<color=#ff9b8f>" + SweepSim.ZoneName[SweepSim.Zone[t.stat]] + Loc.T(" 항로를 열면 열린다</color>");
+            else if (ns == NodeSt.Locked) foot = SweepSim.Ring4(n.id) ? Loc.T("<color=#ff9b8f>목성 항로를 열면 — 외행성 면허</color>") : Loc.T("<color=#ff9b8f>청구서 ") + SweepSim.BranchNeed[b] + Loc.T("을 갚으면 열린다</color>");
+            else if (ns == NodeSt.Hidden) { int bk = BlockTile(k); foot = "<color=#ff9b8f>" + (bk >= 0 ? "「" + TileName(bk) + Loc.T("」 먼저 사야 열린다") : Loc.T("앞 칸을 먼저 사야 한다")) + "</color>"; }   // 어느 칸인지 콕 집어 — 「앞 칸」만으론 이미 산 칸을 또 눌러야 하나 헷갈렸다 (09-25 사장님)
+            else if (SweepSim.KeyNodes.Contains(n.id) && sim.S.keys < 1) foot = (sim.S.cash >= sim.TileCost(t.stat) ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + Loc.T("</color>  <color=#ff9b8f>+ 열쇠 1 (없음)</color>");   // 돈은 되는데 열쇠가 없다 — 값만 빨개서 이유를 몰랐다
+            else foot = (ns == NodeSt.Can ? "<color=#ffffff>" : "<color=#ff9b8f>") + KNum.Fmt(sim.TileCost(t.stat)) + "</color>" + (SweepSim.KeyNodes.Contains(n.id) ? Loc.T("  <color=#d8ccff>+ 열쇠 1</color>") : "");
+            if (keyNote) GUI.Label(new Rect(r.x, r.y + 136 + oy, r.width, 16), "<size=11><color=#b9a9ee>" + (sim.S.keys < 1 ? Loc.T("열쇠 0 — 청구서를 갚거나 파산하면 +1") : Loc.T("가진 열쇠 ") + sim.S.keys + Loc.T(" · ◆ 핵심 칸은 파산해도 남는다")) + "</color></size>", center);
             center.fontSize = 20; if (center.CalcSize(new GUIContent(foot)).x > r.width - 16) center.fontSize = 14;   // 핵심 칸 · 누적 칸은 줄이 길다
             GUI.Label(new Rect(r.x, r.y + 106 + oy, r.width, 32), foot, center); center.fontSize = 13;
         }
@@ -1888,87 +1894,87 @@ namespace SalvageRun.Orbit
         {
             switch (id)
             {
-                case "c_pow": return "한 방 " + (1 + l);
-                case "c_rad": return l > 0 ? "반지름 " + (20 + 5 * l) : "한 점";
-                case "c_spd": return "화력 +" + 8 * l + "%";
-                case "a_open": return l > 0 ? "열림" : "잠김";
-                case "w_hub": return l > 0 ? "무기 효과 열림" : "잠김";
-                case "w_laser": case "w_chain": return l > 0 ? "발동 " + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : "잠김";
-                case "w_laser_e": case "w_chain_e": case "w_vac_e": case "w_mine_e": case "w_frz_e": case "w_clus_e": case "w_mag_e": case "w_rail_e": return l > 0 ? "특화 " + l + "단계" : "없음";   // ◇ 무기 특화
-                case "w_laser_u": return new[] { "없음", "굵기 +50%", "굵기 +50% · 열 축적" }[Mathf.Min(2, l)];
-                case "w_chain_u": return new[] { "없음", "7번 튄다", "7번 · 튈수록 ×1.2" }[Mathf.Min(2, l)];
-                case "w_laser_a": case "w_chain_a": return l > 0 ? "각성!" : "잠김";
-                case "e_shop": return l > 0 ? "부품 가게 열림" : "잠김";
-                case "x_claw_arm": return l > 0 ? "켜짐" : "꺼짐";
-                case "x_arm_drone": return l > 0 ? "켜짐" : "꺼짐";
-                case "x_drone_bh": return l > 0 ? "켜짐" : "꺼짐";
-                case "x_bh_eco": return l > 0 ? "켜짐" : "꺼짐";
-                case "x_eco_route": return l > 0 ? "켜짐" : "꺼짐";
-                case "x_route_claw": return l > 0 ? "켜짐" : "꺼짐";
-                case "i_claw": return "화력 +" + 10 * l + "%";
-                case "i_drone": return "드론 +" + 10 * l + "%";
-                case "i_bh": return "블랙홀 확률 +" + (0.2 * l).ToString("0.#") + "%";
-                case "i_eco": return "값 +" + 8 * l + "%";
-                case "i_route": return "행성 값 +" + 5 * l + "%";
-                case "w_vac": return l > 0 ? "발동 " + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : "잠김";
-                case "w_vac_u": return new[] { "없음", "1단계", "2단계" }[Mathf.Min(2, l)];
-                case "w_vac_a": return l > 0 ? "각성!" : "잠김";
-                case "w_mine": return l > 0 ? "발동 " + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : "잠김";
-                case "w_mine_u": return new[] { "없음", "1단계", "2단계" }[Mathf.Min(2, l)];
-                case "w_mine_a": return l > 0 ? "각성!" : "잠김";
-                case "w_frz": return l > 0 ? "발동 " + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : "잠김";
-                case "w_frz_u": return new[] { "없음", "1단계", "2단계" }[Mathf.Min(2, l)];
-                case "w_frz_a": return l > 0 ? "각성!" : "잠김";
-                case "w_clus": return l > 0 ? "발동 " + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : "잠김";
-                case "w_clus_u": return new[] { "없음", "1단계", "2단계" }[Mathf.Min(2, l)];
-                case "w_clus_a": return l > 0 ? "각성!" : "잠김";
-                case "w_mag": return l > 0 ? "발동 " + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : "잠김";
-                case "w_mag_u": return new[] { "없음", "1단계", "2단계" }[Mathf.Min(2, l)];
-                case "w_mag_a": return l > 0 ? "각성!" : "잠김";
-                case "w_rail": return l > 0 ? "발동 " + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : "잠김";
-                case "w_rail_u": return new[] { "없음", "1단계", "2단계" }[Mathf.Min(2, l)];
-                case "w_rail_a": return l > 0 ? "각성!" : "잠김";
-                case "k_claw": case "k_drone": case "k_bh": case "k_eco": case "k_route": return l > 0 ? "켜짐" : "꺼짐";
-                case "w_slot2": return l > 0 ? "발동률 ×1.5" : "없음";
-                case "v_volley": { double[] du = { 0, 0.5, 0.8, 1.1 }, gp = { 0, 0.16, 0.12, 0.09 }, fl = { 0, 0.5, 0.75, 1 }; int q = Mathf.Clamp(l, 0, 3); return q == 0 ? "없음" : du[q].ToString("0.0") + "초 · 초당 " + Mathf.RoundToInt((float)(1 / gp[q])) + "발"; }   // 게이지 배율은 설명에 — 값 줄이 길어 잘렸다
-                case "q_insider": case "q_rage": case "q_front": case "q_debt": case "q_meteor": case "q_sling": case "q_tour": case "q_rock": case "q_gold": case "q_lazy": return l > 0 ? "켜짐" : "꺼짐";
-                case "p_moon": case "p_mars": case "p_jup": case "p_sat": return l > 0 ? "열림 — 항로 다이얼에서 고른다" : "잠김";
-                case "a_auto": return l > 0 ? "내 종목 봉마다 +0.08% 쪽으로" : "없음";
-                case "a_read": return new[] { "없음", "다음 속보까지 시간", "+ 업종", "+ 제목까지" }[Mathf.Min(3, l)];
-                case "a_ins": return l == 0 ? "없음" : "나쁜 속보 피하기 " + new[] { 0, 60, 70, 80 }[Mathf.Min(3, l)] + "%";
-                case "a_big": return "수수료 " + new[] { "1", "0.6", "0.3", "0" }[Mathf.Min(3, l)] + "% · 배당 +" + (0.03f * l).ToString("0.00") + "%";
+                case "c_pow": return Loc.T("한 방 ") + (1 + l);
+                case "c_rad": return l > 0 ? Loc.T("반지름 ") + (20 + 5 * l) : Loc.T("한 점");
+                case "c_spd": return Loc.T("화력 +") + 8 * l + "%";
+                case "a_open": return l > 0 ? Loc.T("열림") : Loc.T("잠김");
+                case "w_hub": return l > 0 ? Loc.T("무기 효과 열림") : Loc.T("잠김");
+                case "w_laser": case "w_chain": return l > 0 ? Loc.T("발동 ") + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : Loc.T("잠김");
+                case "w_laser_e": case "w_chain_e": case "w_vac_e": case "w_mine_e": case "w_frz_e": case "w_clus_e": case "w_mag_e": case "w_rail_e": return l > 0 ? Loc.T("특화 ") + l + Loc.T("단계") : Loc.T("없음");   // ◇ 무기 특화
+                case "w_laser_u": return new[] { Loc.T("없음"), Loc.T("굵기 +50%"), Loc.T("굵기 +50% · 열 축적") }[Mathf.Min(2, l)];
+                case "w_chain_u": return new[] { Loc.T("없음"), Loc.T("7번 튄다"), Loc.T("7번 · 튈수록 ×1.2") }[Mathf.Min(2, l)];
+                case "w_laser_a": case "w_chain_a": return l > 0 ? Loc.T("각성!") : Loc.T("잠김");
+                case "e_shop": return l > 0 ? Loc.T("부품 가게 열림") : Loc.T("잠김");
+                case "x_claw_arm": return l > 0 ? Loc.T("켜짐") : Loc.T("꺼짐");
+                case "x_arm_drone": return l > 0 ? Loc.T("켜짐") : Loc.T("꺼짐");
+                case "x_drone_bh": return l > 0 ? Loc.T("켜짐") : Loc.T("꺼짐");
+                case "x_bh_eco": return l > 0 ? Loc.T("켜짐") : Loc.T("꺼짐");
+                case "x_eco_route": return l > 0 ? Loc.T("켜짐") : Loc.T("꺼짐");
+                case "x_route_claw": return l > 0 ? Loc.T("켜짐") : Loc.T("꺼짐");
+                case "i_claw": return Loc.T("화력 +") + 10 * l + "%";
+                case "i_drone": return Loc.T("드론 +") + 10 * l + "%";
+                case "i_bh": return Loc.T("블랙홀 확률 +") + (0.2 * l).ToString("0.#") + "%";
+                case "i_eco": return Loc.T("값 +") + 8 * l + "%";
+                case "i_route": return Loc.T("행성 값 +") + 5 * l + "%";
+                case "w_vac": return l > 0 ? Loc.T("발동 ") + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : Loc.T("잠김");
+                case "w_vac_u": return new[] { Loc.T("없음"), Loc.T("1단계"), Loc.T("2단계") }[Mathf.Min(2, l)];
+                case "w_vac_a": return l > 0 ? Loc.T("각성!") : Loc.T("잠김");
+                case "w_mine": return l > 0 ? Loc.T("발동 ") + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : Loc.T("잠김");
+                case "w_mine_u": return new[] { Loc.T("없음"), Loc.T("1단계"), Loc.T("2단계") }[Mathf.Min(2, l)];
+                case "w_mine_a": return l > 0 ? Loc.T("각성!") : Loc.T("잠김");
+                case "w_frz": return l > 0 ? Loc.T("발동 ") + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : Loc.T("잠김");
+                case "w_frz_u": return new[] { Loc.T("없음"), Loc.T("1단계"), Loc.T("2단계") }[Mathf.Min(2, l)];
+                case "w_frz_a": return l > 0 ? Loc.T("각성!") : Loc.T("잠김");
+                case "w_clus": return l > 0 ? Loc.T("발동 ") + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : Loc.T("잠김");
+                case "w_clus_u": return new[] { Loc.T("없음"), Loc.T("1단계"), Loc.T("2단계") }[Mathf.Min(2, l)];
+                case "w_clus_a": return l > 0 ? Loc.T("각성!") : Loc.T("잠김");
+                case "w_mag": return l > 0 ? Loc.T("발동 ") + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : Loc.T("잠김");
+                case "w_mag_u": return new[] { Loc.T("없음"), Loc.T("1단계"), Loc.T("2단계") }[Mathf.Min(2, l)];
+                case "w_mag_a": return l > 0 ? Loc.T("각성!") : Loc.T("잠김");
+                case "w_rail": return l > 0 ? Loc.T("발동 ") + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : Loc.T("잠김");
+                case "w_rail_u": return new[] { Loc.T("없음"), Loc.T("1단계"), Loc.T("2단계") }[Mathf.Min(2, l)];
+                case "w_rail_a": return l > 0 ? Loc.T("각성!") : Loc.T("잠김");
+                case "k_claw": case "k_drone": case "k_bh": case "k_eco": case "k_route": return l > 0 ? Loc.T("켜짐") : Loc.T("꺼짐");
+                case "w_slot2": return l > 0 ? Loc.T("발동률 ×1.5") : Loc.T("없음");
+                case "v_volley": { double[] du = { 0, 0.5, 0.8, 1.1 }, gp = { 0, 0.16, 0.12, 0.09 }, fl = { 0, 0.5, 0.75, 1 }; int q = Mathf.Clamp(l, 0, 3); return q == 0 ? Loc.T("없음") : du[q].ToString("0.0") + Loc.T("초 · 초당 ") + Mathf.RoundToInt((float)(1 / gp[q])) + Loc.T("발"); }   // 게이지 배율은 설명에 — 값 줄이 길어 잘렸다
+                case "q_insider": case "q_rage": case "q_front": case "q_debt": case "q_meteor": case "q_sling": case "q_tour": case "q_rock": case "q_gold": case "q_lazy": return l > 0 ? Loc.T("켜짐") : Loc.T("꺼짐");
+                case "p_moon": case "p_mars": case "p_jup": case "p_sat": return l > 0 ? Loc.T("열림 — 항로 다이얼에서 고른다") : Loc.T("잠김");
+                case "a_auto": return l > 0 ? Loc.T("내 종목 봉마다 +0.08% 쪽으로") : Loc.T("없음");
+                case "a_read": return new[] { Loc.T("없음"), Loc.T("다음 속보까지 시간"), Loc.T("+ 업종"), Loc.T("+ 제목까지") }[Mathf.Min(3, l)];
+                case "a_ins": return l == 0 ? Loc.T("없음") : Loc.T("나쁜 속보 피하기 ") + new[] { 0, 60, 70, 80 }[Mathf.Min(3, l)] + "%";
+                case "a_big": return Loc.T("수수료 ") + new[] { "1", "0.6", "0.3", "0" }[Mathf.Min(3, l)] + Loc.T("% · 배당 +") + (0.03f * l).ToString("0.00") + "%";
                 case "c_fuel": return "+" + Mathf.RoundToInt((float)(SweepSim.FuelTankPct * l * 100)) + "%";
                 case "c_crit": return (5 * l) + "%";
                 case "c_double": return (10 * l) + "%";
-                case "c_magnet": return l > 0 ? "반경 +" + (40 + 20 * l) : "없음";
-                case "c_over": return l > 0 ? "마지막 5초 ×2" : "없음";
-                case "d_n": return (2 + l) + "대";
-                case "d_spd": return Mathf.Max(0.4f, 1 - 0.1f * l).ToString("0.0") + "초마다";
-                case "d_reach": return "거리 " + (80 + 15 * l);
+                case "c_magnet": return l > 0 ? Loc.T("반경 +") + (40 + 20 * l) : Loc.T("없음");
+                case "c_over": return l > 0 ? Loc.T("마지막 5초 ×2") : Loc.T("없음");
+                case "d_n": return (2 + l) + Loc.T("대");
+                case "d_spd": return Mathf.Max(0.4f, 1 - 0.1f * l).ToString("0.0") + Loc.T("초마다");
+                case "d_reach": return Loc.T("거리 ") + (80 + 15 * l);
                 case "d_mag": return "+" + (25 * l) + "%";
-                case "d_sig": return (3 + 2 * l) + "초";
-                case "d_grade": return "한 방 " + (1 + l);
-                case "d_fix": return "+" + l + "초";
-                case "d_pair": return l > 0 ? "둘씩" : "하나씩";
-                case "d_fact": return "+" + l + "대";
-                case "b_n": return "공격마다 +" + (0.2f * l).ToString("0.#") + "%";
-                case "c_find": return "판마다 " + l + "번";
-                case "s_speed": return "공격마다 " + (1.2f + 0.25f * l).ToString("0.##") + "%";
-                case "b_pr": return "반경 " + (260 + 30 * l);
-                case "b_cap": return (40 + 15 * l) + "개";
+                case "d_sig": return (3 + 2 * l) + Loc.T("초");
+                case "d_grade": return Loc.T("한 방 ") + (1 + l);
+                case "d_fix": return "+" + l + Loc.T("초");
+                case "d_pair": return l > 0 ? Loc.T("둘씩") : Loc.T("하나씩");
+                case "d_fact": return "+" + l + Loc.T("대");
+                case "b_n": return Loc.T("공격마다 +") + (0.2f * l).ToString("0.#") + "%";
+                case "c_find": return Loc.T("판마다 ") + l + Loc.T("번");
+                case "s_speed": return Loc.T("공격마다 ") + (1.2f + 0.25f * l).ToString("0.##") + "%";
+                case "b_pr": return Loc.T("반경 ") + (260 + 30 * l);
+                case "b_cap": return (40 + 15 * l) + Loc.T("개");
                 case "b_pf": return "×" + (1 + 0.25f * l).ToString("0.00");
                 case "b_br": return "+" + (15 * l) + "%";
                 case "b_chain": return (25 + 7 * l) + "%";
-                case "b_pack": return "개당 +" + (2 + 1.2f * l).ToString("0.0") + "%";
-                case "o_wide": return "궤도 폭 +" + (10 * l) + "%";
+                case "b_pack": return Loc.T("개당 +") + (2 + 1.2f * l).ToString("0.0") + "%";
+                case "o_wide": return Loc.T("궤도 폭 +") + (10 * l) + "%";
                 case "e_val": return "×" + Mathf.Pow(1.25f, l).ToString("0.00");
                 case "e_vault": return "+" + (50 * l) + "%";
                 case "e_att": return "+" + (40 * l) + "%";
                 case "e_quest": return "+" + (25 + 10 * l) + "%";
-                case "e_talk": return "기한 +" + l + "판";
+                case "e_talk": return Loc.T("기한 +") + l + Loc.T("판");
                 case "e_tip": return (25 + 10 * l) + "%";
-                case "e_save": return "이자 " + (2 * l) + "%";
-                case "e_guard": return "상환 " + (l > 0 ? 20 : 30) + "%";
+                case "e_save": return Loc.T("이자 ") + (2 * l) + "%";
+                case "e_guard": return Loc.T("상환 ") + (l > 0 ? 20 : 30) + "%";
                 case "e_used": return "-" + (5 * l) + "%";
             }
             return l.ToString();
@@ -1986,14 +1992,14 @@ namespace SalvageRun.Orbit
             else
             {
                 var heads = new List<string>();
-                for (int i = sim.M.news.Count - 1; i >= 0 && heads.Count < 3; i--) heads.Add(sim.M.news[i].head);
+                for (int i = sim.M.news.Count - 1; i >= 0 && heads.Count < 3; i--) heads.Add(Loc.T(sim.M.news[i].head));
                 int k = tickI % (heads.Count + 2);
                 line = k < heads.Count ? heads[k] : SweepSim.World[(tickI * 7) % SweepSim.World.Length];
             }
             float y = RefH - 22;
             float x = sim.R.over ? ox + 14 : 14;
-            if (breaking) { GUI.DrawTexture(new Rect(x, y + 2, 34, 15), texRed); GUI.Label(new Rect(x, y, 34, 18), "<color=#ffffff>속보</color>", center); x += 40; }
-            GUI.Label(new Rect(x, y, 700, 18), "궤도일보 · " + line, dim);
+            if (breaking) { GUI.DrawTexture(new Rect(x, y + 2, 34, 15), texRed); GUI.Label(new Rect(x, y, 34, 18), Loc.T("<color=#ffffff>속보</color>"), center); x += 40; }
+            GUI.Label(new Rect(x, y, 700, 18), Loc.T("궤도일보 · ") + line, dim);
         }
 
         void News()
@@ -2004,18 +2010,18 @@ namespace SalvageRun.Orbit
             GUI.DrawTexture(box, texCard);
             // 목록
             var lr = new Rect(box.x + 10, box.y + 34, 300, box.height - 70);
-            GUI.Label(new Rect(box.x + 12, box.y + 8, 300, 20), "궤도일보 — 기사 목록", label);
+            GUI.Label(new Rect(box.x + 12, box.y + 8, 300, 20), Loc.T("궤도일보 — 기사 목록"), label);
             int total = M.news.Count;
             newsScroll = GUI.BeginScrollView(lr, newsScroll, new Rect(0, 0, 280, total * 40));
             for (int j = 0; j < total; j++)
             {
                 int i = total - 1 - j; var it = M.news[i];
-                string kind = it.kind == "scoop" ? "<color=#ff6b5a>특종</color>" : it.kind == "world" ? "<color=#8a93a3>세상</color>" : it.kind == "extra" ? "<color=#ffdf95>호외</color>" : "<color=#f2c14e>우리</color>";
-                if (GUI.Button(new Rect(0, j * 40, 280, 36), (it.read ? "   " : "<color=#ff6b5a>●</color> ") + kind + "  <size=12>" + Clip(it.head, 20) + "</size>", i == newsSel ? btn : btnOff)) { newsSel = i; it.read = true; }
+                string kind = it.kind == "scoop" ? Loc.T("<color=#ff6b5a>특종</color>") : it.kind == "world" ? Loc.T("<color=#8a93a3>세상</color>") : it.kind == "extra" ? Loc.T("<color=#ffdf95>호외</color>") : Loc.T("<color=#f2c14e>우리</color>");
+                if (GUI.Button(new Rect(0, j * 40, 280, 36), (it.read ? "   " : "<color=#ff6b5a>●</color> ") + kind + "  <size=12>" + Clip(Loc.T(it.head), 20) + "</size>", i == newsSel ? btn : btnOff)) { newsSel = i; it.read = true; }
             }
             GUI.EndScrollView();
             int scoops = 0; foreach (var it in M.news) if (it.kind == "scoop") scoops++;
-            GUI.Label(new Rect(box.x + 12, box.yMax - 30, 300, 18), "모은 기사 " + total + " · 특종 " + scoops + " / 6 · 파산해도 남는다", small);
+            GUI.Label(new Rect(box.x + 12, box.yMax - 30, 300, 18), Loc.T("모은 기사 ") + total + Loc.T(" · 특종 ") + scoops + Loc.T(" / 6 · 파산해도 남는다"), small);
             // 전문
             if (newsSel < 0 && total > 0) { newsSel = total - 1; M.news[newsSel].read = true; }
             var pr = new Rect(box.x + 322, box.y + 10, box.width - 332, box.height - 20);
@@ -2024,20 +2030,20 @@ namespace SalvageRun.Orbit
             {
                 var it = M.news[newsSel];
                 float x = pr.x + 22, w = pr.width - 44, y = pr.y + 16;
-                paperHead.fontSize = 26; GUI.Label(new Rect(x, y, 200, 30), "궤도일보", paperHead);
-                paperSmall.alignment = TextAnchor.UpperRight; GUI.Label(new Rect(x, y + 8, w, 18), "출동 " + it.run + "일째 · " + it.company + "대 시절", paperSmall); paperSmall.alignment = TextAnchor.UpperLeft;
+                paperHead.fontSize = 26; GUI.Label(new Rect(x, y, 200, 30), Loc.T("궤도일보"), paperHead);
+                paperSmall.alignment = TextAnchor.UpperRight; GUI.Label(new Rect(x, y + 8, w, 18), Loc.T("출동 ") + it.run + Loc.T("일째 · ") + it.company + Loc.T("대 시절"), paperSmall); paperSmall.alignment = TextAnchor.UpperLeft;
                 y += 36; GUI.DrawTexture(new Rect(x, y, w, 3), texInk); y += 12;
-                string kn = it.kind == "scoop" ? "특종" : it.kind == "world" ? "세상 소식" : it.kind == "extra" ? "호외" : "우리 소식";
+                string kn = it.kind == "scoop" ? Loc.T("특종") : it.kind == "world" ? Loc.T("세상 소식") : it.kind == "extra" ? Loc.T("호외") : Loc.T("우리 소식");
                 GUI.color = it.kind == "scoop" ? new Color(0.75f, 0.22f, 0.17f) : it.kind == "world" ? new Color(0.42f, 0.39f, 0.34f) : new Color(0.72f, 0.53f, 0.04f);
                 GUI.DrawTexture(new Rect(x, y, 70, 18), white); GUI.color = Color.white;
                 GUI.Label(new Rect(x, y, 70, 18), "<color=#ffffff>" + kn + "</color>", center); y += 26;
-                paperHead.fontSize = 22; float hh = paperHead.CalcHeight(new GUIContent(it.head), w);
-                GUI.Label(new Rect(x, y, w, hh), it.head, paperHead); y += hh + 14;
-                float bh = paperBody.CalcHeight(new GUIContent(it.body), w);
-                GUI.Label(new Rect(x, y, w, bh), it.body, paperBody); y += bh + 16;
-                GUI.Label(new Rect(x, y, w, 16), "— 궤도일보 궤도부", paperSmall);
+                paperHead.fontSize = 22; float hh = paperHead.CalcHeight(new GUIContent(Loc.T(it.head)), w);
+                GUI.Label(new Rect(x, y, w, hh), Loc.T(it.head), paperHead); y += hh + 14;
+                float bh = paperBody.CalcHeight(new GUIContent(Loc.T(it.body)), w);
+                GUI.Label(new Rect(x, y, w, bh), Loc.T(it.body), paperBody); y += bh + 16;
+                GUI.Label(new Rect(x, y, w, 16), Loc.T("— 궤도일보 궤도부"), paperSmall);
             }
-            if (GUI.Button(new Rect(box.xMax - 110, box.y + 6, 100, 24), "닫기 (Esc)", btn)) newsOpen = false;
+            if (GUI.Button(new Rect(box.xMax - 110, box.y + 6, 100, 24), Loc.T("닫기 (Esc)"), btn)) newsOpen = false;
         }
 
         // ───────────────────────────────── 엔딩 — 마지막 호외 → 결과판 (§9-5)
@@ -2055,16 +2061,16 @@ namespace SalvageRun.Orbit
             double minutes = 0; foreach (var h in M.history) minutes += h.minutes;
             string[,] rows =
             {
-                { "", "<size=34><b><color=#ffdf95>궤도 청소부</color></b></size>" },
-                { "", "<color=#c8d0dc>오늘도 궤도는 깨끗합니다</color>" },
-                { "만든 사람", "사장님" },
-                { "함께 만든", "Claude" },
-                { "도트", "PixelLab" },
-                { "글꼴", "갈무리 (Galmuri)" },
-                { "엔진", "Unity" },
-                { "먼저 해 본 친구들", "고마워" },
-                { "기록", Mathf.RoundToInt((float)minutes) + "분 · 회사 " + M.company + "대 · 최고 연쇄 " + M.bestChain },
-                { "", "<color=#d8ccff>★ 전설 경력 " + M.legend + "</color>" },
+                { "", Loc.T("<size=34><b><color=#ffdf95>궤도 청소부</color></b></size>") },
+                { "", Loc.T("<color=#c8d0dc>오늘도 궤도는 깨끗합니다</color>") },
+                { Loc.T("만든 사람"), Loc.T("사장님") },
+                { Loc.T("함께 만든"), "Claude" },
+                { Loc.T("도트"), "PixelLab" },
+                { Loc.T("글꼴"), Loc.T("갈무리 (Galmuri)") },
+                { Loc.T("엔진"), "Unity" },
+                { Loc.T("먼저 해 본 친구들"), Loc.T("고마워") },
+                { Loc.T("기록"), Mathf.RoundToInt((float)minutes) + Loc.T("분 · 회사 ") + M.company + Loc.T("대 · 최고 연쇄 ") + M.bestChain },
+                { "", Loc.T("<color=#d8ccff>★ 전설 경력 ") + M.legend + "</color>" },
             };
             float y = RefH + 20 - creditT * 42;
             for (int i = 0; i < rows.GetLength(0); i++)
@@ -2072,8 +2078,8 @@ namespace SalvageRun.Orbit
                 if (rows[i, 0].Length > 0) { GUI.Label(new Rect(0, y, vw, 18), "<size=11><color=#8a93a3>" + rows[i, 0] + "</color></size>", center); y += 20; }
                 GUI.Label(new Rect(0, y, vw, 40), "<size=20><b>" + rows[i, 1] + "</b></size>", center); y += 70;
             }
-            GUI.Label(new Rect(vw - 320, RefH - 30, 222, 20), "<size=11><color=#5f6878>누르고 있으면 빨리</color></size>", cost);
-            if (GUI.Button(new Rect(vw - 90, RefH - 34, 80, 24), "<size=11>넘기기</size>", btnOff) || y < -40) endStage = 1;
+            GUI.Label(new Rect(vw - 320, RefH - 30, 222, 20), Loc.T("<size=11><color=#5f6878>누르고 있으면 빨리</color></size>"), cost);
+            if (GUI.Button(new Rect(vw - 90, RefH - 34, 80, 24), Loc.T("<size=11>넘기기</size>"), btnOff) || y < -40) endStage = 1;
         }
 
         void Ending()
@@ -2085,41 +2091,41 @@ namespace SalvageRun.Orbit
                 var pr = new Rect(ox + 130, 40, 700, 500);
                 GUI.DrawTexture(pr, texPaper);
                 float x = pr.x + 30, w = pr.width - 60, y = pr.y + 20;
-                paperHead.fontSize = 40; GUI.Label(new Rect(x, y, w, 48), "궤도일보 — 호외", paperHead);
+                paperHead.fontSize = 40; GUI.Label(new Rect(x, y, w, 48), Loc.T("궤도일보 — 호외"), paperHead);
                 y += 56; GUI.DrawTexture(new Rect(x, y, w, 4), texInk); y += 20;
-                paperHead.fontSize = 46; GUI.Label(new Rect(x, y, w, 56), "궤도 청소율 100%", paperHead); y += 70;
-                GUI.Label(new Rect(x, y, w, 90), "지구 둘레에 쓰레기가 하나도 없다. 주식회사 궤도 청소부 (" + M.company + "대)가 청소선 할부를 끝까지 갚고, 마지막 출동에서 궤도를 전부 치웠다. 케슬러 발사는 이번 분기 발사 계획이 없다고 밝혔다.", paperBody); y += 100;
-                if (M.scoops >= 6) { paperHead.fontSize = 24; GUI.Label(new Rect(x, y, w, 60), "케슬러 그룹, 궤도 사업 전면 철수", paperHead); y += 50; }
-                else GUI.Label(new Rect(x, y, w, 20), "(특종 " + M.scoops + " / 6 — 블랙박스를 더 모으면 한 줄이 더 붙는다)", paperSmall);
-                if (GUI.Button(new Rect(pr.center.x - 100, pr.yMax - 70, 200, 44), "다음", bigBtn)) { endStage = 2; creditT = 0; }
+                paperHead.fontSize = 46; GUI.Label(new Rect(x, y, w, 56), Loc.T("궤도 청소율 100%"), paperHead); y += 70;
+                GUI.Label(new Rect(x, y, w, 90), Loc.T("지구 둘레에 쓰레기가 하나도 없다. 주식회사 궤도 청소부 (") + M.company + Loc.T("대)가 청소선 할부를 끝까지 갚고, 마지막 출동에서 궤도를 전부 치웠다. 케슬러 발사는 이번 분기 발사 계획이 없다고 밝혔다."), paperBody); y += 100;
+                if (M.scoops >= 6) { paperHead.fontSize = 24; GUI.Label(new Rect(x, y, w, 60), Loc.T("케슬러 그룹, 궤도 사업 전면 철수"), paperHead); y += 50; }
+                else GUI.Label(new Rect(x, y, w, 20), Loc.T("(특종 ") + M.scoops + Loc.T(" / 6 — 블랙박스를 더 모으면 한 줄이 더 붙는다)"), paperSmall);
+                if (GUI.Button(new Rect(pr.center.x - 100, pr.yMax - 70, 200, 44), Loc.T("다음"), bigBtn)) { endStage = 2; creditT = 0; }
                 return;
             }
             if (endStage == 2) { Credits(); return; }
             float cx = ox + 180, cw = 600;
-            title.fontSize = 44; GUI.Label(new Rect(cx, 40, cw, 60), "빚 청산", title);
-            GUI.Label(new Rect(cx, 102, cw, 22), "주식회사 궤도 청소부 (" + M.company + "대) — 청소선은 이제 조종사의 것이다", center);
+            title.fontSize = 44; GUI.Label(new Rect(cx, 40, cw, 60), Loc.T("빚 청산"), title);
+            GUI.Label(new Rect(cx, 102, cw, 22), Loc.T("주식회사 궤도 청소부 (") + M.company + Loc.T("대) — 청소선은 이제 조종사의 것이다"), center);
             double minutes = 0; foreach (var h in M.history) minutes += h.minutes;
             string[] rows =
             {
-                "걸린 시간   " + Mathf.RoundToInt((float)minutes) + "분",
-                "출동 · 파산   " + M.totalRuns + " · " + M.bankrupt,
-                "부순 잔해   " + KNum.Fmt(M.broken),
-                "최대 연쇄 · 최대 압축   " + M.bestChain + " · " + M.bestPack,
-                "기사 · 특종   " + M.news.Count + " · " + M.scoops + " / 6",
+                Loc.T("걸린 시간   ") + Mathf.RoundToInt((float)minutes) + Loc.T("분"),
+                Loc.T("출동 · 파산   ") + M.totalRuns + " · " + M.bankrupt,
+                Loc.T("부순 잔해   ") + KNum.Fmt(M.broken),
+                Loc.T("최대 연쇄 · 최대 압축   ") + M.bestChain + " · " + M.bestPack,
+                Loc.T("기사 · 특종   ") + M.news.Count + " · " + M.scoops + " / 6",
             };
             for (int i = 0; i < rows.Length; i++) GUI.Label(new Rect(cx, 140 + i * 24, cw, 22), rows[i], center);
-            GUI.Label(new Rect(cx, 272, cw, 18), "지난 회사들", head);
+            GUI.Label(new Rect(cx, 272, cw, 18), Loc.T("지난 회사들"), head);
             for (int i = 0; i < M.history.Count && i < 8; i++)
             {
                 var h = M.history[i];
-                GUI.Label(new Rect(cx, 292 + i * 20, cw, 20), "(" + h.company + "대)  " + (h.won ? "<color=#ffdf95>빚 청산</color>" : SweepSim.Bills[Mathf.Min(h.bill, SweepSim.Bills.Length - 1)].t + "에서 파산") + " · 출동 " + h.runs + " · " + Mathf.RoundToInt((float)h.minutes) + "분", label);
+                GUI.Label(new Rect(cx, 292 + i * 20, cw, 20), "(" + h.company + Loc.T("대)  ") + (h.won ? Loc.T("<color=#ffdf95>빚 청산</color>") : SweepSim.Bills[Mathf.Min(h.bill, SweepSim.Bills.Length - 1)].t + Loc.T("에서 파산")) + Loc.T(" · 출동 ") + h.runs + " · " + Mathf.RoundToInt((float)h.minutes) + Loc.T("분"), label);
             }
-            GUI.Label(new Rect(cx, 470, cw, 20), "<color=#f2c14e>오늘도 궤도는 깨끗합니다.</color>", center);
+            GUI.Label(new Rect(cx, 470, cw, 20), Loc.T("<color=#f2c14e>오늘도 궤도는 깨끗합니다.</color>"), center);
             // ∞ 무한 궤도 · ★ 새 회사 (09-24 사장님 12 · 26번)
-            if (GUI.Button(new Rect(cx - 10, 500, 220, 44), "<color=#d8ccff>무한 궤도로 ▸</color>", bigBtn)) { sim.EnterEndless(); showResult = false; flow = 2; OrbitSfx.Play("launch", 0.8f); }
-            if (GUI.Button(new Rect(cx + 220, 500, 200, 44), "새 회사로 · ★" + M.legend, bigBtn)) { game.NewGame(true); showResult = false; }
-            if (GUI.Button(new Rect(cx + 430, 506, 180, 32), "<size=12>기록까지 모두 지우기</size>", btnC)) { game.WipeAll(); showResult = false; }
-            GUI.Label(new Rect(cx, 552, cw, 18), "<size=11><color=#8a93a3>★ 전설 경력 " + M.legend + " — 다음 회사부터 모든 값 +" + (M.legend * 10) + "% · 처음 열쇠 +" + M.legend + "</color></size>", center);
+            if (GUI.Button(new Rect(cx - 10, 500, 220, 44), Loc.T("<color=#d8ccff>무한 궤도로 ▸</color>"), bigBtn)) { sim.EnterEndless(); showResult = false; flow = 2; OrbitSfx.Play("launch", 0.8f); }
+            if (GUI.Button(new Rect(cx + 220, 500, 200, 44), Loc.T("새 회사로 · ★") + M.legend, bigBtn)) { game.NewGame(true); showResult = false; }
+            if (GUI.Button(new Rect(cx + 430, 506, 180, 32), Loc.T("<size=12>기록까지 모두 지우기</size>"), btnC)) { game.WipeAll(); showResult = false; }
+            GUI.Label(new Rect(cx, 552, cw, 18), Loc.T("<size=11><color=#8a93a3>★ 전설 경력 ") + M.legend + Loc.T(" — 다음 회사부터 모든 값 +") + (M.legend * 10) + Loc.T("% · 처음 열쇠 +") + M.legend + "</color></size>", center);
         }
     }
 }

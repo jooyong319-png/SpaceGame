@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using SalvageRun.Orbit.Sim;
 
 namespace SalvageRun.Orbit
@@ -30,10 +30,10 @@ namespace SalvageRun.Orbit
             float x = Mathf.Max(48, ox + 40);
             // 이름
             title.fontSize = 58; title.alignment = TextAnchor.UpperLeft;
-            GUI.color = new Color(1f, 0.76f, 0.3f, 0.25f * a); GUI.Label(new Rect(x + 2, 96, 520, 80), "궤도 청소부", title);
-            GUI.color = new Color(1, 1, 1, a); GUI.Label(new Rect(x, 94, 520, 80), "<color=#ffdf95>궤도 청소부</color>", title);
+            GUI.color = new Color(1f, 0.76f, 0.3f, 0.25f * a); GUI.Label(new Rect(x + 2, 96, 520, 80), Loc.T("궤도 청소부"), title);
+            GUI.color = new Color(1, 1, 1, a); GUI.Label(new Rect(x, 94, 520, 80), Loc.T("<color=#ffdf95>궤도 청소부</color>"), title);
             title.alignment = TextAnchor.MiddleCenter; title.fontSize = 34;
-            GUI.Label(new Rect(x + 4, 162, 400, 20), "<size=12><color=#8a93a3>O R B I T   S W E E P E R</color></size>", label);
+            if (!Loc.En) GUI.Label(new Rect(x + 4, 162, 400, 20), "<size=12><color=#8a93a3>O R B I T   S W E E P E R</color></size>", label);   // 🌐 영어면 큰 제목과 같은 말이라 뺀다
 
             float y = 240, w = 320, h = 54;
             bool Btn(string main, string sub, bool primary)
@@ -51,14 +51,14 @@ namespace SalvageRun.Orbit
             if (HasProgress)
             {
                 int min = Mathf.RoundToInt((float)sim.M.playSeconds / 60f);
-                string info = "궤도 청소부 " + sim.M.company + "대 · 청구서 " + Mathf.Min(sim.S.bill + 1, SweepSim.Bills.Length) + "/" + SweepSim.Bills.Length + " · " + (min >= 60 ? min / 60 + "시간 " + min % 60 + "분" : min + "분");
-                if (Btn("이어하기", info, true)) LobbyContinue();
-                if (Btn("새로 시작", "처음부터 — 지금 회사와 기록이 지워진다", false)) { wipeAsk = true; OrbitSfx.Play("tick", 0.7f); }
+                string info = Loc.T("궤도 청소부 ") + sim.M.company + Loc.T("대 · 청구서 ") + Mathf.Min(sim.S.bill + 1, SweepSim.Bills.Length) + "/" + SweepSim.Bills.Length + " · " + (min >= 60 ? min / 60 + Loc.T("시간 ") + min % 60 + Loc.T("분") : min + Loc.T("분"));
+                if (Btn(Loc.T("이어하기"), info, true)) LobbyContinue();
+                if (Btn(Loc.T("새로 시작"), Loc.T("처음부터 — 지금 회사와 기록이 지워진다"), false)) { wipeAsk = true; OrbitSfx.Play("tick", 0.7f); }
             }
-            else if (Btn("시작하기", "빚내서 산 청소선 한 척 — 궤도를 치운다", true)) LobbyContinue();
-            if (Btn("설정", null, false)) { settingsOpen = true; OrbitSfx.Play("tick", 0.6f); }
-            if (Btn("끝내기", null, false)) { game.Save(); Application.Quit(); }
-            GUI.Label(new Rect(x, RefH - 34, 500, 18), "<size=11><color=#5f6878>v0.9 · 오늘도 궤도는 깨끗합니다 · Space = 이어하기</color></size>", label);
+            else if (Btn(Loc.T("시작하기"), Loc.T("빚내서 산 청소선 한 척 — 궤도를 치운다"), true)) LobbyContinue();
+            if (Btn(Loc.T("설정"), null, false)) { settingsOpen = true; OrbitSfx.Play("tick", 0.6f); }
+            if (Btn(Loc.T("끝내기"), null, false)) { game.Save(); Application.Quit(); }
+            GUI.Label(new Rect(x, RefH - 34, 500, 18), Loc.T("<size=11><color=#5f6878>v0.9 · 오늘도 궤도는 깨끗합니다 · Space = 이어하기</color></size>"), label);
             GUI.enabled = en0;
             GUI.color = Color.white;
             if (wipeAsk) WipeConfirm();
@@ -71,13 +71,13 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0, 0, 0, 0.65f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white);
             var w = new Rect(vw / 2 - 230, RefH / 2 - 130, 460, 250);
             GUI.color = new Color(0.06f, 0.05f, 0.05f, 0.98f); GUI.DrawTexture(w, white); Frame(w, new Color(1f, 0.42f, 0.35f), 2); GUI.color = Color.white;
-            GUI.Label(new Rect(w.x, w.y + 18, w.width, 30), "<size=20><b><color=#ffb3a8>정말 처음부터 할까요?</color></b></size>", center);
-            GUI.Label(new Rect(w.x + 30, w.y + 60, w.width - 60, 20), "<size=13>아래가 모두 지워지고 되돌릴 수 없다</size>", center);
-            string lost = "주식회사 궤도 청소부 (" + M.company + "대) · 청구서 " + Mathf.Min(sim.S.bill + 1, SweepSim.Bills.Length) + "/" + SweepSim.Bills.Length + "\n모은 기사 " + M.news.Count + " · 특종 " + M.scoops + (M.legend > 0 ? " · ★ " + M.legend : "") + (M.bestDepth > 0 ? " · 무한 궤도 " + M.bestDepth + "층" : "") + "\n최고 연쇄 " + M.bestChain;
+            GUI.Label(new Rect(w.x, w.y + 18, w.width, 30), Loc.T("<size=20><b><color=#ffb3a8>정말 처음부터 할까요?</color></b></size>"), center);
+            GUI.Label(new Rect(w.x + 30, w.y + 60, w.width - 60, 20), Loc.T("<size=13>아래가 모두 지워지고 되돌릴 수 없다</size>"), center);
+            string lost = Loc.T("주식회사 궤도 청소부 (") + M.company + Loc.T("대) · 청구서 ") + Mathf.Min(sim.S.bill + 1, SweepSim.Bills.Length) + "/" + SweepSim.Bills.Length + Loc.T("\n모은 기사 ") + M.news.Count + Loc.T(" · 특종 ") + M.scoops + (M.legend > 0 ? " · ★ " + M.legend : "") + (M.bestDepth > 0 ? Loc.T(" · 무한 궤도 ") + M.bestDepth + Loc.T("층") : "") + Loc.T("\n최고 연쇄 ") + M.bestChain;
             GUI.Label(new Rect(w.x + 30, w.y + 88, w.width - 60, 70), "<size=13><color=#c8d0dc>" + lost + "</color></size>", center);
             var al = btn.alignment; btn.alignment = TextAnchor.MiddleCenter;
-            if (GUI.Button(new Rect(w.x + 30, w.yMax - 62, 190, 40), "<size=14><color=#ffb3a8>지우고 새로 시작</color></size>", btn)) { game.WipeAll(); wipeAsk = false; LobbyContinue(); }
-            if (GUI.Button(new Rect(w.xMax - 220, w.yMax - 62, 190, 40), "<size=14>취소</size>", btn)) { wipeAsk = false; OrbitSfx.Play("tick", 0.6f); }
+            if (GUI.Button(new Rect(w.x + 30, w.yMax - 62, 190, 40), Loc.T("<size=14><color=#ffb3a8>지우고 새로 시작</color></size>"), btn)) { game.WipeAll(); wipeAsk = false; LobbyContinue(); }
+            if (GUI.Button(new Rect(w.xMax - 220, w.yMax - 62, 190, 40), Loc.T("<size=14>취소</size>"), btn)) { wipeAsk = false; OrbitSfx.Play("tick", 0.6f); }
             btn.alignment = al;
         }
     }
