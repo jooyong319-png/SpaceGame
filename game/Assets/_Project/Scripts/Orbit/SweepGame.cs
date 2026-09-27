@@ -521,7 +521,7 @@ namespace SalvageRun.Orbit
                         if (spot && ice)
                         {   // ❄ 서리 원 — 픽셀랩 얼음 폭발 (0.25초마다 한 번 · 없으면 원 + 서리)
                             LoadAnims();
-                            { if (Time.time - lastFrost > 0.25f) { lastFrost = Time.time; var ff = OrbitFxArt.Frost; var fr = Make(ff[0], s1, spotR * 2 * 96f / 36f, Color.white, 58); frameFx.Add(new FrameFx { sr = fr, f = ff, fps = 22 }); } }   // ❄ 코드로 그린 얼음 — 고리 + 조각 넷 (09-26 · 픽셀랩 눈꽃은 과했다)
+                            { if (Time.time - lastFrost > 0.25f) { lastFrost = Time.time; FrostFlakes(s1, spotR); } }   // ❄ 코드로 그린 얼음 — 고리 + 조각 넷 (09-26 · 픽셀랩 눈꽃은 과했다)
                             for (int q = 0; q < 3; q++) { var fp = s1 + (Vector3)(Random.insideUnitCircle * spotR); Add(pixel, fp, 0.08f, new Color(0.9f, 0.98f, 1f), 0, 0.5f).v = (Vector3)(Random.insideUnitCircle * 0.6f); }
                             for (int q = 0; q < 10; q++) { var ep = s1 + (Vector3)(Random.insideUnitCircle.normalized * spotR); Add(pixel, ep, 0.06f, new Color(0.8f, 0.93f, 1f, 0.8f), 0, 0.3f); }   // ❄ 09-27 사장님 「범위가 표시에 비해 너무 크다」 — 눈꽃 가지 끝(그림 폭의 37.5%)이 실제 범위에 닿게 키우고, 경계에 서리 알갱이
                         }
@@ -691,6 +691,19 @@ namespace SalvageRun.Orbit
         }
         // 💥 불덩이 — 한 프레임 3개까지 (연쇄 폭발이 쏟아져도 화면이 안 덮이게)
         int fireballsThisFrame;
+        // ❄ 서리 원 눈꽃 — 범위가 커지면 하나를 키우지 않고 여러 개로 채운다 (09-27 사장님 「커질수록 1개로 커지지 말고 여러 개」)
+        void FrostFlakes(Vector3 c, float R)
+        {
+            var ff = OrbitFxArt.Frost; const float Art = 96f / 36f;                    // 눈꽃 가지 끝 = 그림 폭의 37.5%
+            float rb = Mathf.Min(R, 0.5f);                                            // 눈꽃 하나가 덮는 반지름 (월드)
+            void Flake(Vector3 at, float r) { var fr = Make(ff[0], at, r * 2 * Art, Color.white, 58); fr.transform.rotation = Quaternion.Euler(0, 0, Random.Range(0f, 60f)); frameFx.Add(new FrameFx { sr = fr, f = ff, fps = 22 }); }
+            Flake(c, rb);
+            if (R <= rb * 1.3f) return;
+            float ring = R - rb * 0.8f, sr = rb * 0.8f;
+            int n = Mathf.Clamp(Mathf.RoundToInt(2 * Mathf.PI * ring / (sr * 1.8f)), 3, 8);
+            float a0 = Random.Range(0f, Mathf.PI * 2);
+            for (int k = 0; k < n; k++) { float an = a0 + k * Mathf.PI * 2 / n; Flake(c + new Vector3(Mathf.Cos(an) * ring, Mathf.Sin(an) * ring, 0), sr); }
+        }
         void Fireball(Vector3 at, float R, float cap = 0.7f)
         {
             if (fireballsThisFrame >= 3 || fx.Count > 760) { Add(glow, at, R * 1.0f, new Color(1f, 0.6f, 0.3f, 0.22f), 7, 0.2f); return; }
