@@ -898,8 +898,8 @@ namespace SalvageRun.Orbit.Sim
         public const double HoleDur = 3;                           // 열려 있는 시간 — 끝나면 저절로 터진다
         public double PackK => 0.02 + 0.012 * Lv("b_pack");
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
-        public static double TankR = 58, DetR = 50;                              // 💥 폭발 탱크 · 기폭 장치 반경 (09-27 75 · 65 로 넓혔다가 「너무 터진다」 — 되돌림)
-        public const int RedGenMax = 3;                                         // 빨간 폭발이 옆 폭탄을 터뜨리는 대 — 직접 부순 것 1 · 그 폭발로 2 · 한 번 더 3 (09-27 「너무 터진다 · 말이 안 된다」)
+        public static double TankR = 40, DetR = 35;   // 09-27 저녁 「아무것도 안 해도 계속 폭발」 — 58 · 50 → 40 · 35                              // 💥 폭발 탱크 · 기폭 장치 반경 (09-27 75 · 65 로 넓혔다가 「너무 터진다」 — 되돌림)
+        public const int RedGenMax = 2;                                         // 빨간 폭발이 옆 폭탄을 터뜨리는 대 — 직접 부순 것 1 · 그 폭발로 2 · 한 번 더 3 (09-27 「너무 터진다 · 말이 안 된다」)
         public const int PendCap = 80;
         public static double RedBlastVal = 1.5;
         public static double PouchK = 2.5;                                      // 봇 24판: ×4 는 82분 · 파산 2.1, ×2.5 는 137분 · 3.1
@@ -2511,7 +2511,7 @@ namespace SalvageRun.Orbit.Sim
                     Junk best = null; double bd = reach * reach;
                     foreach (var d in r.junk)
                     {
-                        if (d.dead || d.hp > grade || Types[d.k].big || d.k == Fuel || d.att == Att.Armor || d.att == Att.FuelPod) continue;   // 🔴 한 방에 부술 수 있는 것만 줍는다
+                        if (d.dead || d.hp > grade || Types[d.k].big || d.k == Fuel || d.k == Tank || d.att == Att.Det || d.att == Att.Armor || d.att == Att.FuelPod) continue;   // 💥 폭탄은 드론이 안 건드린다 (09-27 — 가만히 있어도 터졌다)   // 🔴 한 방에 부술 수 있는 것만 줍는다
                         double dx = d.x - dr.x, dy = d.y - dr.y, dd = dx * dx + dy * dy;
                         if (dd < bd) { bd = dd; best = d; }
                     }
@@ -2525,7 +2525,7 @@ namespace SalvageRun.Orbit.Sim
 
         void DoBlast(double x, double y, double Rb, bool chainable = true)
         {
-            Emit(SwEv.Blast, x, y, Rb);
+            Emit(SwEv.Blast, x, y, Rb, redBlast ? 2 : 0);                    // k 2 = 빨간 폭발 — 그림 하나로
             var list = R.junk;
             for (int i = 0; i < list.Count; i++)
             {

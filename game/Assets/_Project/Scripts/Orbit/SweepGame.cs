@@ -632,7 +632,8 @@ namespace SalvageRun.Orbit
                         break;
                     case SwEv.Blast:
                         RingFx(at, Orange, 0.4f, (float)e.v * 2 / PxPerUnit);
-                        if (e.k == 1) FireFill(at, (float)e.v / PxPerUnit);   // 🎆 분열탄선 포탄 · 파편 — 맞는 범위만큼 (09-27 「범위가 표시보다 크다」)
+                        if (e.k == 2) Fireball(at, (float)e.v / PxPerUnit * 1.6f, 99f);   // 💥 빨간 폭발 — 하나만 (09-27 여러 개로 채우니 너무 요란했다)
+                        else if (e.k == 1) FireFill(at, (float)e.v / PxPerUnit);   // 🎆 분열탄선 포탄 · 파편 — 맞는 범위만큼 (09-27 「범위가 표시보다 크다」)
                         else FireFill(at, (float)e.v / PxPerUnit);                             // 💥 09-27 폭발 그림 = 맞는 범위 (전엔 상한에 막혀 1/3) · 크면 여러 개
                         OrbitSfx.Play("blast", 0.5f, 0.025f, 0.12f);
                         shake = Mathf.Max(shake, 0.05f);
