@@ -290,10 +290,9 @@ namespace SalvageRun.Orbit
             Slider(Loc.T("전체 소리"), ref vol);
             Slider(Loc.T("효과음"), ref sfxVol);
             Slider(Loc.T("배경음"), ref OrbitMusic.Vol);
-            {   // 🌐 언어 (09-27) — 정적 표가 켤 때 만들어져서 다시 켜야 바뀐다
-                int sl = LocBoot.Saved, nl = Pick("언어 · Language", sl, new[] { "한국어", "English" });
-                if (nl != sl) LocBoot.Save(nl);
-                if (nl != (Loc.En ? 1 : 0)) { GUI.Label(new Rect(w.x + 24, y - 14, w.width - 48, 16), "<size=10><color=#ffdf95>" + (nl == 1 ? "Restart the game to apply" : Loc.T("게임을 다시 켜면 바뀐다")) + "</color></size>", label); y += 8; }
+            {   // 🌐 언어 — 09-28부터 고르면 바로 바뀐다 (Loc.SetLang 이 표의 글자를 갈아 끼운다)
+                int sl = Loc.En ? 1 : 0, nl = Pick("언어 · Language", sl, new[] { "한국어", "English" });
+                if (nl != sl) { LocBoot.Apply(nl); OrbitSfx.Play("tick", 0.6f); }
             }
             shakeLv = Pick(Loc.T("화면 흔들림"), shakeLv, new[] { Loc.T("켬"), Loc.T("줄임"), Loc.T("끔") });
             { int sq = PlayerPrefs.GetInt("orbit.shopQuick", 0), nq = Pick(Loc.T("가게 구입"), sq, new[] { Loc.T("묻기"), Loc.T("바로") }); if (nq != sq) { PlayerPrefs.SetInt("orbit.shopQuick", nq); PlayerPrefs.Save(); } }   // 🛒 09-27 「다음부터 바로 구매」 되돌리기

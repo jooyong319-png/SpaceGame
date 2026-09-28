@@ -25,9 +25,18 @@ namespace SalvageRun.Orbit.Sim
                 {
                     if (d.v[j] > 0 && d.k[j] != "fee0") d.v[j] *= RarBoost[d.rar];
                     if (d.k[j] == "dbl") d.v[j] = System.Math.Min(1, d.v[j]);
-                    parts.Add(Say(d.k[j], d.v[j]));
                 }
-                Defs[i].desc = string.Join(" · ", parts);                           // 설명은 실제 값으로 (등급 배수를 곱한 뒤)
+            }
+            SayAll();
+            Loc.Changed += SayAll;                                              // 🌐 도중에 언어를 바꾸면 설명도 다시 짓는다 (09-28)
+        }
+        static void SayAll()
+        {
+            for (int i = 0; i < Defs.Length; i++)
+            {
+                var d = Defs[i]; var parts = new System.Collections.Generic.List<string>();
+                for (int j = 0; j < d.k.Length; j++) parts.Add(Say(d.k[j], d.v[j]));
+                Defs[i].desc = string.Join(" · ", parts);                             // 설명은 실제 값으로 (등급 배수를 곱한 뒤)
             }
         }
         static string Pc(double v) => System.Math.Round(v * 100, v * 100 < 10 ? 1 : 0).ToString();
