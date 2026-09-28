@@ -78,7 +78,7 @@ namespace SalvageRun.Orbit
         {
             TestAim = false; TestHold = false;                                // 시험 스위치는 Play 를 넘어 남는다 (정적) — 켜진 채 남으면 사장님 커서가 안 먹는다
             SweepHud.CastReq = false;
-            autoMode = PlayerPrefs.GetInt("orbit.auto", 0) == 1;
+            autoMode = false; PlayerPrefs.DeleteKey("orbit.auto");               // 🎯 09-29 사장님 「자동 조준은 없애고」 — 사람은 못 켠다 (에디터 캡처 도구만 autoMode 를 직접 켠다)
             Application.targetFrameRate = 60;
             OrbitMusic.Ensure();                                             // 🎵 배경음 (09-25)
             if (!Application.isEditor)                                                  // 🖥 빌드는 전체 화면으로 시작 (09-24) — 창 모드 · 창 크기는 설정에서 (09-27, Alt+Enter 끔)
@@ -212,7 +212,6 @@ namespace SalvageRun.Orbit
             {
                 if (Application.isEditor && kb.f2Key.wasPressedThisFrame) timeScale = timeScale > 1f ? 1f : 3f;   // 🔧 3배속은 시험용 — 출시 빌드에선 안 된다
                 if (kb.mKey.wasPressedThisFrame && OrbitSfx.I != null) OrbitSfx.I.ToggleMute();
-                if (kb.aKey.wasPressedThisFrame && !sim.R.over) ToggleAuto();                  // 🎯 자동 조준 ON/OFF
                 if (kb.sKey.wasPressedThisFrame && hud != null) { if (sim.R.over) { if (hud.flow == 2) hud.GoFlow(4); else if (hud.flow == 4) hud.GoFlow(2); } else if (sim.StockOpen) hud.stockOpen = !hud.stockOpen; }   // 📈 판 중 = 주식 창 · 조종실 = 증권 방
             }
             ReadAim();
