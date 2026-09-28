@@ -23,7 +23,7 @@ namespace SalvageRun.Orbit
             if (donutRun != R) { donutRun = R; donutK = -1; }
             dmgItems.Clear();
             double tot = 0; for (int i = 0; i < SweepSim.DmgCatN; i++) tot += R.dmgBy[i];
-            if (tot <= 0) { GUI.Label(new Rect(RT.x + 18, RT.y + 44, RT.width - 36, 20), Loc.T("<size=12><color=#5a6475>이번 판엔 피해를 못 넣었다</color></size>"), label); return; }
+            if (tot <= 0) { Lbl(new Rect(RT.x + 18, RT.y + 44, RT.width - 36, 20), Loc.T("<size=12><color=#5a6475>이번 판엔 피해를 못 넣었다</color></size>"), label); return; }
             double etc = 0;
             for (int i = 0; i < SweepSim.DmgCatN; i++)
             {
@@ -41,8 +41,8 @@ namespace SalvageRun.Orbit
             float k = Mathf.Clamp01(tally);
             if (Event.current.type == EventType.Repaint && (donutTex == null || Mathf.Abs(k - donutK) > 0.01f)) { donutK = k; BuildDonut(tot, k); }
             if (donutTex != null) GUI.DrawTexture(dr, donutTex);
-            GUI.Label(new Rect(dr.x, dr.center.y - 18, dr.width, 18), Loc.T("<size=11><color=#8a93a3>총 피해</color></size>"), center);
-            GUI.Label(new Rect(dr.x - 6, dr.center.y - 2, dr.width + 12, 20), "<size=11><color=#ffdf95>" + KNum.Short(tot * k) + "</color></size>", center);
+            Lbl(new Rect(dr.x, dr.center.y - 18, dr.width, 18), Loc.T("<size=11><color=#8a93a3>총 피해</color></size>"), center);
+            Lbl(new Rect(dr.x - 6, dr.center.y - 2, dr.width + 12, 20), "<size=11><color=#ffdf95>" + KNum.Short(tot * k) + "</color></size>", center);
 
             // 목록 — 두 줄로 (칸마다 이름 · 피해 · %)
             float lx = dr.xMax + 12, ly = RT.y + 28, cw = (RT.xMax - 12 - lx) / 2, rh = 17f;
@@ -54,8 +54,8 @@ namespace SalvageRun.Orbit
                 float x = lx + col * cw, y = ly + row * rh;
                 GUI.color = it.c; GUI.DrawTexture(new Rect(x, y + 5, 9, 9), white); GUI.color = Color.white;
                 string pc = (it.v / tot * 100).ToString(it.v / tot < 0.1 ? "0.0" : "0") + "%";
-                GUI.Label(new Rect(x + 13, y - 1, cw - 13, 20), "<size=11>" + (i == 0 ? "<color=#ffdf95>" + it.n + " ★</color>" : "<color=#c8d0dc>" + it.n + "</color>") + "</size>", label);
-                GUI.Label(new Rect(x + 13, y - 1, cw - 16, 20), "<size=11><color=#6f7a8c>" + KNum.Short(it.v) + "</color> <color=#e7ecf8>" + pc + "</color></size>", cost);
+                Lbl(new Rect(x + 13, y - 1, cw - 13, 20), "<size=11>" + (i == 0 ? "<color=#ffdf95>" + it.n + " ★</color>" : "<color=#c8d0dc>" + it.n + "</color>") + "</size>", label);
+                Lbl(new Rect(x + 13, y - 1, cw - 16, 20), "<size=11><color=#6f7a8c>" + KNum.Short(it.v) + "</color> <color=#e7ecf8>" + pc + "</color></size>", cost);
             }
         }
 

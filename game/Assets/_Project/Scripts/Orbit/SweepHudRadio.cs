@@ -67,14 +67,14 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0.1f, 0.14f, 0.2f, a); GUI.DrawTexture(face, white);
             if (radioTex != null) { GUI.color = new Color(1, 1, 1, a); GUI.DrawTexture(new Rect(face.x + 2, face.y + 2, 58, 58), radioTex); }
             GUI.color = new Color(1, 1, 1, a);
-            GUI.Label(new Rect(r.x + 76, r.y + 5, 300, 18), Loc.T("<size=11><color=#ffdf95><b>케슬러 금융 · 윤 대리</b></color>  <color=#5fa37d>● 무전</color></size>"), label);
+            Lbl(new Rect(r.x + 76, r.y + 5, 300, 18), Loc.T("<size=11><color=#ffdf95><b>케슬러 금융 · 윤 대리</b></color>  <color=#5fa37d>● 무전</color></size>"), label);
             string meter = coachStep == 1 ? coachHold.ToString("0.0") + Loc.T(" / 2초") : coachStep == 2 ? coachTaps.Count + Loc.T(" / 5번") : "";
-            if (meter != "") GUI.Label(new Rect(r.x + 76, r.y + 5, r.width - 86, 18), "<size=11><color=#8a93a3>" + meter + "</color></size>", cost);
+            if (meter != "") Lbl(new Rect(r.x + 76, r.y + 5, r.width - 86, 18), "<size=11><color=#8a93a3>" + meter + "</color></size>", cost);
             string line = CoachLines[coachStep]; int n = Mathf.Clamp(Mathf.FloorToInt(coachAge * 40), 0, line.Length);
             string shown = line.Substring(0, n);
             int lt = shown.LastIndexOf('<'), gtx = shown.LastIndexOf('>'); if (lt > gtx) shown = shown.Substring(0, lt);   // 찍다 만 태그 조각은 빼고
             if (shown.LastIndexOf("<color") > shown.LastIndexOf("</color>")) shown += "</color>";
-            GUI.Label(new Rect(r.x + 76, r.y + 24, r.width - 86, 44), "<size=13><color=#e8edf3>" + shown + "</color></size>", small);
+            Lbl(new Rect(r.x + 76, r.y + 24, r.width - 86, 44), "<size=13><color=#e8edf3>" + shown + "</color></size>", small);
             GUI.color = Color.white;
             return true;
         }
@@ -96,9 +96,9 @@ namespace SalvageRun.Orbit
             // 무전 줄무늬
             GUI.color = new Color(0.44f, 0.81f, 0.59f, 0.06f * a); for (float yy = face.y; yy < face.yMax; yy += 3) GUI.DrawTexture(new Rect(face.x, yy, face.width, 1), white);
             GUI.color = new Color(1, 1, 1, a);
-            GUI.Label(new Rect(r.x + 90, r.y + 6, 360, 18), Loc.T("<size=11><color=#ffdf95><b>케슬러 금융 · 윤 대리</b></color>  <color=#5fa37d>● 무전</color></size>"), label);
+            Lbl(new Rect(r.x + 90, r.y + 6, 360, 18), Loc.T("<size=11><color=#ffdf95><b>케슬러 금융 · 윤 대리</b></color>  <color=#5fa37d>● 무전</color></size>"), label);
             int n = Mathf.Clamp(Mathf.FloorToInt(age * 28), 0, radioLine.Length);           // 타자 치듯
-            GUI.Label(new Rect(r.x + 90, r.y + 26, 360, 54), "<size=13><color=#e8edf3>" + radioLine.Substring(0, n) + "</color></size>", small);
+            Lbl(new Rect(r.x + 90, r.y + 26, 360, 54), "<size=13><color=#e8edf3>" + radioLine.Substring(0, n) + "</color></size>", small);
             GUI.color = Color.white;
         }
     }

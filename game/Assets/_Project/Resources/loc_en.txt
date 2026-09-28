@@ -1352,7 +1352,7 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 <color=#8a9bb3>사 두면 <color=#9ff0bf>다음 출동 때 저절로</color> 쓰인다 · 한 번 쓰면 끝</color>	<color=#8a9bb3>Buy now and it's <color=#9ff0bf>used automatically next run</color> · single use</color>
  <color=#ffb0a0>(반값)</color>	 <color=#ffb0a0>(half)</color>
 >구입 · 	>Buy · 
- — 돈 모자람</color></size>	 — not enough cash</color></size>
+ — 돈 모자람</color></size>	 · need cash</color></size>
 <size=13>진열 새로고침 · 	<size=13>Reroll stock · 
 <color=#9ff0bf>공짜</color>	<color=#9ff0bf>Free</color>
  장착!	 equipped!

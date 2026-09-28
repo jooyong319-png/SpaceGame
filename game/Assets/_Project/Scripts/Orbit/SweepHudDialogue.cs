@@ -130,6 +130,8 @@ namespace SalvageRun.Orbit
         Rect dlgSkipR, dlgLogR; GUIStyle dlgText;
         public bool DlgOn => dlgId != null;
         public void TestDlg(string id) => DlgStart(id, true);          // 에디터 시험용
+        public void TestDlgLine(int i) { if (dlgId != null) { dlgI = Mathf.Clamp(i, 0, Scenes[dlgId].Length - 1); dlgShown = 9999; } }   // 에디터 시험용 — 그 줄을 다 보인 채로
+        public int TestDlgCount => dlgId != null ? Scenes[dlgId].Length : 0;
 
         void DlgStart(string id, bool force = false)
         {
@@ -259,30 +261,30 @@ namespace SalvageRun.Orbit
             float nw = label.CalcSize(new GUIContent(nm)).x + 26;
             var nr = new Rect(bx + 164, by - 26, nw, 26);
             GUI.color = c; GUI.DrawTexture(nr, white); GUI.color = Color.white;
-            GUI.Label(new Rect(nr.x + 13, nr.y + 3, nw, 22), nm, label);
+            Lbl(new Rect(nr.x + 13, nr.y + 3, nw, 22), nm, label);
 
             // 대사
-            GUI.Label(new Rect(bx + 24, by + 18, bw - 64, bh - 40), DlgReveal(t, w.hex, Mathf.FloorToInt(dlgShown)), dlgText);
-            GUI.Label(new Rect(bx + 24, by + bh - 24, 120, 18), "<size=11><color=#5f6878>" + (dlgI + 1) + " / " + lines.Length + "</color></size>", label);
+            Lbl(new Rect(bx + 24, by + 18, bw - 64, bh - 40), DlgReveal(t, w.hex, Mathf.FloorToInt(dlgShown)), dlgText);
+            Lbl(new Rect(bx + 24, by + bh - 24, 120, 18), "<size=11><color=#5f6878>" + (dlgI + 1) + " / " + lines.Length + "</color></size>", label);
             if (!talking && (reduceMotion || Mathf.FloorToInt(Time.unscaledTime * 2.2f) % 2 == 0))
-                GUI.Label(new Rect(box.xMax - 40, by + bh - 30, 24, 24), "<size=16><color=" + w.hex + ">▼</color></size>", center);
+                Lbl(new Rect(box.xMax - 40, by + bh - 30, 24, 24), "<size=16><color=" + w.hex + ">▼</color></size>", center);
 
             // 기록 · 건너뛰기
             dlgLogR = new Rect(box.xMax - 214, by - 30, 86, 24); dlgSkipR = new Rect(box.xMax - 120, by - 30, 120, 24);
             foreach (var (r, s) in new[] { (dlgLogR, dlgLog ? Loc.T("기록 닫기") : Loc.T("기록")), (dlgSkipR, Loc.T("건너뛰기 ▸▸")) })
             {
                 GUI.color = new Color(0.04f, 0.05f, 0.08f, 0.9f); GUI.DrawTexture(r, white); Frame(r, new Color(0.3f, 0.34f, 0.42f), 1); GUI.color = Color.white;
-                GUI.Label(r, "<size=12><color=#aab3c2>" + s + "</color></size>", center);
+                Lbl(r, "<size=12><color=#aab3c2>" + s + "</color></size>", center);
             }
             if (dlgLog)
             {
                 var lr = new Rect(vw / 2 - 360, 60, 720, by - 110);
                 GUI.color = new Color(0.03f, 0.04f, 0.06f, 0.97f); GUI.DrawTexture(lr, white); Frame(lr, new Color(0.3f, 0.34f, 0.42f), 1); GUI.color = Color.white;
-                GUI.Label(new Rect(lr.x + 18, lr.y + 10, 400, 20), Loc.T("<size=12><color=#8a93a3>기록 — 이 장면에서 지나간 대사 · 누르면 닫힘</color></size>"), label);
+                Lbl(new Rect(lr.x + 18, lr.y + 10, 400, 20), Loc.T("<size=12><color=#8a93a3>기록 — 이 장면에서 지나간 대사 · 누르면 닫힘</color></size>"), label);
                 var sb = new System.Text.StringBuilder();
                 for (int i = Mathf.Max(0, dlgI - 7); i <= dlgI; i++) { var ww = Who[DlgWhoOf(lines[i])]; sb.Append("<color=" + ww.hex + ">" + ww.name + "</color>  " + DlgTextOf(lines[i]).Replace("*", "") + "\n\n"); }
                 var ls = new GUIStyle(dlgText) { fontSize = 14 };
-                GUI.Label(new Rect(lr.x + 18, lr.y + 36, lr.width - 36, lr.height - 46), sb.ToString(), ls);
+                Lbl(new Rect(lr.x + 18, lr.y + 36, lr.width - 36, lr.height - 46), sb.ToString(), ls);
             }
         }
     }

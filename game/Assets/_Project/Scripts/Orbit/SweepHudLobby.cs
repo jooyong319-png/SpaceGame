@@ -30,10 +30,10 @@ namespace SalvageRun.Orbit
             float x = Mathf.Max(48, ox + 40);
             // 이름
             title.fontSize = 58; title.alignment = TextAnchor.UpperLeft;
-            GUI.color = new Color(1f, 0.76f, 0.3f, 0.25f * a); GUI.Label(new Rect(x + 2, 96, 520, 80), Loc.T("궤도 청소부"), title);
-            GUI.color = new Color(1, 1, 1, a); GUI.Label(new Rect(x, 94, 520, 80), Loc.T("<color=#ffdf95>궤도 청소부</color>"), title);
+            GUI.color = new Color(1f, 0.76f, 0.3f, 0.25f * a); Lbl(new Rect(x + 2, 96, 520, 80), Loc.T("궤도 청소부"), title);
+            GUI.color = new Color(1, 1, 1, a); Lbl(new Rect(x, 94, 520, 80), Loc.T("<color=#ffdf95>궤도 청소부</color>"), title);
             title.alignment = TextAnchor.MiddleCenter; title.fontSize = 34;
-            if (!Loc.En) GUI.Label(new Rect(x + 4, 162, 400, 20), "<size=12><color=#8a93a3>O R B I T   S W E E P E R</color></size>", label);   // 🌐 영어면 큰 제목과 같은 말이라 뺀다
+            if (!Loc.En) Lbl(new Rect(x + 4, 162, 400, 20), "<size=12><color=#8a93a3>O R B I T   S W E E P E R</color></size>", label);   // 🌐 영어면 큰 제목과 같은 말이라 뺀다
 
             float y = 240, w = 320, h = 54;
             bool Btn(string main, string sub, bool primary)
@@ -44,9 +44,9 @@ namespace SalvageRun.Orbit
                 Frame(r, primary ? new Color(1f, 0.76f, 0.35f, (ov ? 1f : 0.7f) * a) : new Color(0.3f, 0.34f, 0.42f, (ov ? 1f : 0.7f) * a), ov ? 2 : 1);
                 if (ov) { GUI.color = new Color(1f, 0.76f, 0.35f, 0.08f * a); GUI.DrawTexture(r, white); }
                 GUI.color = new Color(1, 1, 1, a);
-                GUI.Label(new Rect(r.x + 16, r.y + (sub == null ? 13 : 6), r.width - 32, 24), "<size=" + (primary ? 19 : 16) + "><b>" + (primary ? "<color=#ffdf95>" + main + "</color>" : main) + "</b></size>", label);
-                if (sub != null) GUI.Label(new Rect(r.x + 16, r.y + 30, r.width - 32, 18), "<size=11><color=#8a93a3>" + sub + "</color></size>", label);
-                return GUI.Button(r, GUIContent.none, GUIStyle.none);
+                Lbl(new Rect(r.x + 16, r.y + (sub == null ? 11 : 4), r.width - 32, 28), "<size=" + (primary ? 19 : 16) + "><b>" + (primary ? "<color=#ffdf95>" + main + "</color>" : main) + "</b></size>", label);
+                if (sub != null) Lbl(new Rect(r.x + 16, r.y + 30, r.width - 24, 18), "<color=#8a93a3>" + Fit(sub, 11, r.width - 26, label) + "</color>", label);
+                return Bt(r, GUIContent.none, GUIStyle.none);
             }
             if (HasProgress)
             {
@@ -58,7 +58,7 @@ namespace SalvageRun.Orbit
             else if (Btn(Loc.T("시작하기"), Loc.T("빚내서 산 청소선 한 척 — 궤도를 치운다"), true)) LobbyContinue();
             if (Btn(Loc.T("설정"), null, false)) { settingsOpen = true; OrbitSfx.Play("tick", 0.6f); }
             if (Btn(Loc.T("끝내기"), null, false)) { game.Save(); Application.Quit(); }
-            GUI.Label(new Rect(x, RefH - 34, 500, 18), Loc.T("<size=11><color=#5f6878>v0.9 · 오늘도 궤도는 깨끗합니다 · Space = 이어하기</color></size>"), label);
+            Lbl(new Rect(x, RefH - 34, 500, 18), Loc.T("<size=11><color=#5f6878>v0.9 · 오늘도 궤도는 깨끗합니다 · Space = 이어하기</color></size>"), label);
             GUI.enabled = en0;
             GUI.color = Color.white;
             if (wipeAsk) WipeConfirm();
@@ -71,13 +71,13 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0, 0, 0, 0.65f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white);
             var w = new Rect(vw / 2 - 230, RefH / 2 - 130, 460, 250);
             GUI.color = new Color(0.06f, 0.05f, 0.05f, 0.98f); GUI.DrawTexture(w, white); Frame(w, new Color(1f, 0.42f, 0.35f), 2); GUI.color = Color.white;
-            GUI.Label(new Rect(w.x, w.y + 18, w.width, 30), Loc.T("<size=20><b><color=#ffb3a8>정말 처음부터 할까요?</color></b></size>"), center);
-            GUI.Label(new Rect(w.x + 30, w.y + 60, w.width - 60, 20), Loc.T("<size=13>아래가 모두 지워지고 되돌릴 수 없다</size>"), center);
+            Lbl(new Rect(w.x, w.y + 18, w.width, 30), Loc.T("<size=20><b><color=#ffb3a8>정말 처음부터 할까요?</color></b></size>"), center);
+            Lbl(new Rect(w.x + 30, w.y + 60, w.width - 60, 20), Loc.T("<size=13>아래가 모두 지워지고 되돌릴 수 없다</size>"), center);
             string lost = Loc.T("주식회사 궤도 청소부 (") + M.company + Loc.T("대) · 청구서 ") + Mathf.Min(sim.S.bill + 1, SweepSim.Bills.Length) + "/" + SweepSim.Bills.Length + Loc.T("\n모은 기사 ") + M.news.Count + Loc.T(" · 특종 ") + M.scoops + (M.legend > 0 ? " · ★ " + M.legend : "") + (M.bestDepth > 0 ? Loc.T(" · 무한 궤도 ") + M.bestDepth + Loc.T("층") : "") + Loc.T("\n최고 연쇄 ") + M.bestChain;
-            GUI.Label(new Rect(w.x + 30, w.y + 88, w.width - 60, 70), "<size=13><color=#c8d0dc>" + lost + "</color></size>", center);
+            Lbl(new Rect(w.x + 30, w.y + 88, w.width - 60, 70), "<size=13><color=#c8d0dc>" + lost + "</color></size>", center);
             var al = btn.alignment; btn.alignment = TextAnchor.MiddleCenter;
-            if (GUI.Button(new Rect(w.x + 30, w.yMax - 62, 190, 40), Loc.T("<size=14><color=#ffb3a8>지우고 새로 시작</color></size>"), btn)) { game.WipeAll(); wipeAsk = false; LobbyContinue(); }
-            if (GUI.Button(new Rect(w.xMax - 220, w.yMax - 62, 190, 40), Loc.T("<size=14>취소</size>"), btn)) { wipeAsk = false; OrbitSfx.Play("tick", 0.6f); }
+            if (Bt(new Rect(w.x + 30, w.yMax - 62, 190, 40), Loc.T("<size=14><color=#ffb3a8>지우고 새로 시작</color></size>"), btn)) { game.WipeAll(); wipeAsk = false; LobbyContinue(); }
+            if (Bt(new Rect(w.xMax - 220, w.yMax - 62, 190, 40), Loc.T("<size=14>취소</size>"), btn)) { wipeAsk = false; OrbitSfx.Play("tick", 0.6f); }
             btn.alignment = al;
         }
     }

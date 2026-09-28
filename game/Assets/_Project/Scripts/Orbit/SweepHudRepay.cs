@@ -55,18 +55,18 @@ namespace SalvageRun.Orbit
                 for (float y = s.y + 2; y < s.yMax; y += 4) GUI.DrawTexture(new Rect(s.x, y, s.width, 1), white);
                 Frame(s, new Color(HoloRed.r, HoloRed.g, HoloRed.b, 0.9f * alpha), 1.5f);
                 GUI.color = new Color(1, 1, 1, alpha);
-                GUI.Label(new Rect(s.x + 14, s.y + 8, s.width - 28, 20), "<size=12><b><color=#ffd0c8>" + (rpMini ? Loc.T("자동 상환 · 판 수입 30%") : Loc.T("KESSLER // 빚 명세서")) + "</color></b></size>", label);
-                GUI.Label(new Rect(s.x + 14, s.y + 8, s.width - 28, 20), "<size=11><color=#ffb3a8>−" + KNum.Fmt(rpFrom - rpTo) + "</color></size>", cost);
-                if (rpMini) GUI.Label(new Rect(s.x + 14, s.y + 28, s.width - 28, 34), Loc.T("<size=24><b><color=#ffffff>빚 ") + KNum.Fmt(cur) + "</color></b></size>", label);
+                Lbl(new Rect(s.x + 14, s.y + 8, s.width - 28, 20), "<size=12><b><color=#ffd0c8>" + (rpMini ? Loc.T("자동 상환 · 판 수입 30%") : Loc.T("KESSLER // 빚 명세서")) + "</color></b></size>", label);
+                Lbl(new Rect(s.x + 14, s.y + 8, s.width - 28, 20), "<size=11><color=#ffb3a8>−" + KNum.Fmt(rpFrom - rpTo) + "</color></size>", cost);
+                if (rpMini) Lbl(new Rect(s.x + 14, s.y + 28, s.width - 28, 34), Loc.T("<size=24><b><color=#ffffff>빚 ") + KNum.Fmt(cur) + "</color></b></size>", label);
                 else
                 {
-                    GUI.Label(new Rect(s.x + 14, s.y + 34, s.width - 28, 56), "<size=42><b><color=#ffffff>" + KNum.Fmt(cur) + "</color></b></size>", label);
+                    Lbl(new Rect(s.x + 14, s.y + 34, s.width - 28, 56), "<size=42><b><color=#ffffff>" + KNum.Fmt(cur) + "</color></b></size>", label);
                     float paid = Mathf.Clamp01((float)(1 - cur / rpOwed));
                     GUI.color = new Color(HoloRed.r, HoloRed.g, HoloRed.b, 0.2f * alpha); GUI.DrawTexture(new Rect(s.x + 14, s.y + 104, s.width - 28, 9), white);
                     GUI.color = new Color(0.62f, 0.94f, 0.75f, alpha); GUI.DrawTexture(new Rect(s.x + 14, s.y + 104, (s.width - 28) * paid, 9), white);
                     GUI.color = new Color(1, 1, 1, alpha);
-                    GUI.Label(new Rect(s.x + 14, s.y + 118, s.width - 28, 20), Loc.T("<size=11><color=#ffd0c8>갚은 비율</color></size>"), label);
-                    GUI.Label(new Rect(s.x + 14, s.y + 118, s.width - 28, 20), "<size=11><color=#9ff0bf>" + Mathf.RoundToInt(paid * 100) + "%</color></size>", cost);
+                    Lbl(new Rect(s.x + 14, s.y + 118, s.width - 28, 20), Loc.T("<size=11><color=#ffd0c8>갚은 비율</color></size>"), label);
+                    Lbl(new Rect(s.x + 14, s.y + 118, s.width - 28, 20), "<size=11><color=#9ff0bf>" + Mathf.RoundToInt(paid * 100) + "%</color></size>", cost);
                 }
                 // 도장
                 if (!rpMini && t > tStamp)
@@ -78,7 +78,7 @@ namespace SalvageRun.Orbit
                     var m = GUI.matrix; GUIUtility.RotateAroundPivot(-12, c);
                     Frame(sr, new Color(1f, 0.29f, 0.23f, Mathf.Min(1, k * 2) * 0.95f * alpha), 4 * sc);
                     GUI.color = new Color(1, 1, 1, Mathf.Min(1, k * 2) * alpha);
-                    GUI.Label(sr, "<size=" + Mathf.RoundToInt(26 * sc) + "><b><color=#ff4a3a>" + (rpFull ? Loc.T("완납") : Loc.T("상환")) + "</color></b></size>", center);
+                    Lbl(sr, "<size=" + Mathf.RoundToInt(26 * sc) + "><b><color=#ff4a3a>" + (rpFull ? Loc.T("완납") : Loc.T("상환")) + "</color></b></size>", center);
                     GUI.matrix = m;
                 }
             }
@@ -107,8 +107,8 @@ namespace SalvageRun.Orbit
                 }
                 float k = Mathf.Clamp01(tt / 0.25f), sc = tt < 0.25f ? Mathf.Lerp(0.4f, 1.15f, k) : Mathf.Lerp(1.15f, 1f, Mathf.Clamp01((tt - 0.25f) / 0.2f));
                 GUI.color = new Color(1, 1, 1, Mathf.Clamp01((end - t) / 0.4f));
-                GUI.Label(new Rect(0, RefH * 0.42f - 50 * sc, vw, 100 * sc), "<size=" + Mathf.RoundToInt(64 * sc) + Loc.T("><b><color=#ffdf95>완납!</color></b></size>"), center);
-                GUI.Label(new Rect(0, RefH * 0.42f + 48, vw, 24), Loc.T("<size=14><color=#ffe9b0>케슬러 금융에 진 빚을 다 갚았다</color></size>"), center);
+                Lbl(new Rect(0, RefH * 0.42f - 50 * sc, vw, 100 * sc), "<size=" + Mathf.RoundToInt(64 * sc) + Loc.T("><b><color=#ffdf95>완납!</color></b></size>"), center);
+                Lbl(new Rect(0, RefH * 0.42f + 48, vw, 24), Loc.T("<size=14><color=#ffe9b0>케슬러 금융에 진 빚을 다 갚았다</color></size>"), center);
             }
             GUI.color = Color.white;
         }

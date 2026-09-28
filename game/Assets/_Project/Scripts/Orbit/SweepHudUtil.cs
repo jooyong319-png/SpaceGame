@@ -68,12 +68,46 @@ namespace SalvageRun.Orbit
             bool hover = clickable && r.Contains(Event.current.mousePosition);
             GUI.DrawTexture(r, texCard2);
             Frame(r, hover ? edge : new Color(0.14f, 0.2f, 0.28f), hover ? 2 : 1.5f);
-            GUI.Label(new Rect(r.x + 9, r.y + 6, r.width - 18, 16), label, head);
-            if (right != null) GUI.Label(new Rect(r.x + 9, r.y + 5, r.width - 18, 16), right, cost);
-            return clickable && GUI.Button(r, GUIContent.none, GUIStyle.none);
+            Lbl(new Rect(r.x + 9, r.y + 6, r.width - 18, 16), label, head);
+            if (right != null) Lbl(new Rect(r.x + 9, r.y + 5, r.width - 18, 16), right, cost);
+            return clickable && Bt(r, GUIContent.none, GUIStyle.none);
         }
 
-
-
+        // ───────────────────────── 🔍 글자 잘림 검사 (09-28 리팩토링)
+        // 글자는 모두 Lbl · 단추는 Bt 로 그린다 — GUI.Label · GUI.Button 과 똑같이 그리고, Probe 를 켜면(시험 때만)
+        // 글자가 칸보다 넓거나 높아 잘리는 곳을 ProbeHits 에 모은다 (파일:줄 · 글 · 칸 크기 → 필요한 크기).
+        public static bool Probe;
+        public static readonly List<string> ProbeHits = new List<string>();
+        /// <summary>폭 w 에 들어가는 가장 큰 글자 크기(size → min)로 「&lt;size=N&gt;inner&lt;/size&gt;」 를 만든다 (영어가 길 때)</summary>
+        static string Fit(string inner, int size, float w, GUIStyle st, int min = 9)
+        {
+            for (int s = size; s > min; s--) { string t = "<size=" + s + ">" + inner + "</size>"; if (st.CalcSize(new GUIContent(t)).x <= w) return t; }
+            return "<size=" + min + ">" + inner + "</size>";
+        }
+        static readonly HashSet<string> probeSeen = new HashSet<string>();
+        static void Lbl(Rect r, string s) => Lbl(r, s, GUI.skin.label);
+        static void Lbl(Rect r, string s, GUIStyle st) { GUI.Label(r, s, st); if (Probe) ProbeFit(r, s, st); }
+        static void Lbl(Rect r, GUIContent c, GUIStyle st) => GUI.Label(r, c, st);
+        static bool Bt(Rect r, string s) => Bt(r, s, GUI.skin.button);
+        static bool Bt(Rect r, string s, GUIStyle st) { if (Probe && st != GUIStyle.none) ProbeFit(r, s, st); return GUI.Button(r, s, st); }
+        static bool Bt(Rect r, GUIContent c, GUIStyle st) => GUI.Button(r, c, st);
+        static void ProbeFit(Rect r, string s, GUIStyle st)
+        {
+            if (string.IsNullOrEmpty(s) || Event.current == null || Event.current.type != EventType.Repaint) return;
+            var c = new GUIContent(s); string why = null;
+            if (st.wordWrap) { float h = st.CalcHeight(c, r.width); if (h > r.height + 3) why = "h " + r.height.ToString("0") + "→" + h.ToString("0"); }
+            else
+            {
+                var sz = st.CalcSize(c);
+                if (st.clipping == TextClipping.Clip && sz.x > r.width + 3) why = "w " + r.width.ToString("0") + "→" + sz.x.ToString("0");
+                else if (sz.y > r.height + 4) why = "h " + r.height.ToString("0") + "→" + sz.y.ToString("0");
+            }
+            if (why == null) return;
+            var f = new System.Diagnostics.StackTrace(true).GetFrame(2);
+            string at = f != null ? System.IO.Path.GetFileName(f.GetFileName() ?? "?") + ":" + f.GetFileLineNumber() : "?";
+            string plain = System.Text.RegularExpressions.Regex.Replace(s, "<[^>]+>", "").Replace('\n', ' ');
+            if (plain.Length > 50) plain = plain.Substring(0, 50);
+            if (probeSeen.Add(at + "|" + plain)) ProbeHits.Add(at + "  [" + why + "]  " + plain);
+        }
     }
 }

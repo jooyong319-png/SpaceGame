@@ -46,12 +46,13 @@ namespace SalvageRun.Orbit
         {
             if (vol < 0) LoadSettings();
             if (lobby) { if (settingsOpen) SettingsWin(); return; }            // 로비엔 메뉴에 설정이 있다 — 구석 단추는 숨김
-            var r = new Rect(vw - 58, 8, 50, 22);
+            float sw = Mathf.Max(50, center.CalcSize(new GUIContent("<size=12>" + Loc.T("설정") + "</size>")).x + 12);   // 🌐 영어 Settings 는 넓다
+            var r = new Rect(vw - 8 - sw, 8, sw, 22);
             bool ov = r.Contains(Event.current.mousePosition);
             GUI.color = settingsOpen || ov ? new Color(0.24f, 0.19f, 0.08f, 0.95f) : new Color(0.08f, 0.1f, 0.13f, 0.85f); GUI.DrawTexture(r, white);
             Frame(r, settingsOpen ? SweepGame.Amber : new Color(0.3f, 0.34f, 0.42f), 1); GUI.color = Color.white;
-            GUI.Label(r, "<size=12><color=" + (settingsOpen ? "#ffdf95" : "#c8d0dc") + Loc.T(">설정</color></size>"), center);
-            if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { settingsOpen = !settingsOpen; OrbitSfx.Play("tick", 0.8f); }
+            Lbl(r, "<size=12><color=" + (settingsOpen ? "#ffdf95" : "#c8d0dc") + Loc.T(">설정</color></size>"), center);
+            if (Bt(r, GUIContent.none, GUIStyle.none)) { settingsOpen = !settingsOpen; OrbitSfx.Play("tick", 0.8f); }
             if (settingsOpen) SettingsWin();
         }
         public void TestSettings() => settingsOpen = true;   // 에디터 캡처용
@@ -62,26 +63,26 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0, 0, 0, 0.55f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
             var w = new Rect(vw / 2 - 250, 44, 500, 510);
             GUI.color = new Color(0.043f, 0.063f, 0.09f, 0.98f); GUI.DrawTexture(w, white); Frame(w, SweepGame.Amber, 2); GUI.color = Color.white;
-            GUI.Label(new Rect(w.x + 22, w.y + 14, 200, 30), Loc.T("<size=20><b><color=#ffdf95>설정</color></b></size>"), label);
-            if (GUI.Button(new Rect(w.xMax - 104, w.y + 14, 88, 26), Loc.T("<size=12>닫기 Esc</size>"), btn)) settingsOpen = false;
+            Lbl(new Rect(w.x + 22, w.y + 14, 200, 30), Loc.T("<size=20><b><color=#ffdf95>설정</color></b></size>"), label);
+            if (Bt(new Rect(w.xMax - 104, w.y + 14, 88, 26), Loc.T("<size=12>닫기 Esc</size>"), btn)) settingsOpen = false;
             float y = w.y + 62;
             bool changed = false;
             void Slider(string name, ref float v)
             {
-                GUI.Label(new Rect(w.x + 24, y, 140, 24), "<size=14>" + name + "</size>", label);
+                Lbl(new Rect(w.x + 24, y, 140, 24), "<size=14>" + name + "</size>", label);
                 var sr = new Rect(w.x + 170, y + 9, 230, 8);
                 GUI.DrawTexture(sr, texBar); GUI.color = SweepGame.Amber; GUI.DrawTexture(new Rect(sr.x, sr.y, sr.width * v, sr.height), white);
                 GUI.color = new Color(1f, 0.87f, 0.58f); GUI.DrawTexture(new Rect(sr.x + sr.width * v - 6, sr.y - 4, 12, 16), white); GUI.color = Color.white;
-                GUI.Label(new Rect(sr.xMax + 10, y, 60, 24), "<size=13>" + Mathf.RoundToInt(v * 100) + "%</size>", label);
+                Lbl(new Rect(sr.xMax + 10, y, 60, 24), "<size=13>" + Mathf.RoundToInt(v * 100) + "%</size>", label);
                 var hit = new Rect(sr.x - 8, y, sr.width + 16, 26); var e = Event.current;
                 if ((e.type == EventType.MouseDown || e.type == EventType.MouseDrag) && e.button == 0 && hit.Contains(e.mousePosition)) { v = Mathf.Clamp01((e.mousePosition.x - sr.x) / sr.width); v = Mathf.Round(v * 20) / 20f; changed = true; e.Use(); }
                 y += 40;
             }
             int Pick(string name, int cur, string[] opts)
             {
-                GUI.Label(new Rect(w.x + 24, y, 140, 24), "<size=14>" + name + "</size>", label);
+                Lbl(new Rect(w.x + 24, y, 140, 24), "<size=14>" + name + "</size>", label);
                 for (int k = 0; k < opts.Length; k++)
-                    if (GUI.Button(new Rect(w.x + 170 + k * 84, y, 80, 26), "<size=12>" + (k == cur ? "<color=#ffdf95>" + opts[k] + "</color>" : opts[k]) + "</size>", k == cur ? btn : btnOff)) { cur = k; changed = true; OrbitSfx.Play("tick", 0.6f); }
+                    if (Bt(new Rect(w.x + 170 + k * 84, y, 80, 26), "<size=12>" + (k == cur ? "<color=#ffdf95>" + opts[k] + "</color>" : opts[k]) + "</size>", k == cur ? btn : btnOff)) { cur = k; changed = true; OrbitSfx.Play("tick", 0.6f); }
                 y += 40; return cur;
             }
             Slider(Loc.T("전체 소리"), ref vol);
@@ -103,9 +104,9 @@ namespace SalvageRun.Orbit
                 int nw = Pick(Loc.T("창 크기 (가로)"), ws, new[] { "1280", "1600", "1920" });
                 if (nw != ws) { PlayerPrefs.SetInt("orbit.win", nw); PlayerPrefs.Save(); ApplyScreen(); }
             }
-            GUI.Label(new Rect(w.x + 24, w.yMax - 30, w.width - 48, 20), Loc.T("<size=11><color=#8a93a3>저장은 자동 · M = 소리 끄기 · Esc = 닫기</color></size>"), label);
-            if (!lobby && sim.R.over && GUI.Button(new Rect(w.x + 24, w.yMax - 66, 130, 26), Loc.T("<size=12>설명 다시 보기</size>"), btnOffC)) { sim.M.flags.Remove("dlg:stock"); sim.M.flags.Remove("dlg:shop"); sim.M.flags.Remove("dlg:news"); settingsOpen = false; OrbitSfx.Play("tick", 0.6f); }   // 💬 증권 · 가게 · 신문 설명을 다시 — 그 방에 다시 들어가면 뜬다
-            if (!lobby && sim.R.over && GUI.Button(new Rect(w.xMax - 134, w.yMax - 36, 118, 26), Loc.T("<size=12>로비로 나가기</size>"), btnOff)) { game.Save(); settingsOpen = false; lobby = true; lobbyT = 0; }
+            Lbl(new Rect(w.x + 24, w.yMax - 30, w.width - 48, 20), Loc.T("<size=11><color=#8a93a3>저장은 자동 · M = 소리 끄기 · Esc = 닫기</color></size>"), label);
+            if (!lobby && sim.R.over && Bt(new Rect(w.x + 24, w.yMax - 66, 130, 26), Loc.T("<size=12>설명 다시 보기</size>"), btnOffC)) { sim.M.flags.Remove("dlg:stock"); sim.M.flags.Remove("dlg:shop"); sim.M.flags.Remove("dlg:news"); settingsOpen = false; OrbitSfx.Play("tick", 0.6f); }   // 💬 증권 · 가게 · 신문 설명을 다시 — 그 방에 다시 들어가면 뜬다
+            if (!lobby && sim.R.over && Bt(new Rect(w.xMax - 134, w.yMax - 36, 118, 26), Loc.T("<size=12>로비로 나가기</size>"), btnOff)) { game.Save(); settingsOpen = false; lobby = true; lobbyT = 0; }
             if (changed) SaveSettings();
         }
 

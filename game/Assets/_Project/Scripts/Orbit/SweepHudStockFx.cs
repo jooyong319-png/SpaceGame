@@ -123,13 +123,13 @@ namespace SalvageRun.Orbit
                     var m = GUI.matrix; GUIUtility.RotateAroundPivot(-10, f.p);
                     Frame(r, new Color(f.c.r, f.c.g, f.c.b, Mathf.Min(1, k * 2) * a), 3 * sc);
                     GUI.color = new Color(1, 1, 1, Mathf.Min(1, k * 2) * a);
-                    GUI.Label(r, "<size=" + Mathf.RoundToInt(17 * sc) + "><b><color=#" + hex + ">" + f.txt + "</color></b></size>", center);
+                    Lbl(r, "<size=" + Mathf.RoundToInt(17 * sc) + "><b><color=#" + hex + ">" + f.txt + "</color></b></size>", center);
                     GUI.matrix = m;
                 }
                 else
                 {
                     GUI.color = new Color(1, 1, 1, a);
-                    GUI.Label(new Rect(f.p.x - 120, f.p.y - 40 * t, 240, 30), "<size=20><b><color=#" + hex + ">" + f.txt + "</color></b></size>", center);
+                    Lbl(new Rect(f.p.x - 120, f.p.y - 40 * t, 240, 30), "<size=20><b><color=#" + hex + ">" + f.txt + "</color></b></size>", center);
                 }
             }
             GUI.color = Color.white;
@@ -145,8 +145,8 @@ namespace SalvageRun.Orbit
                 }
                 float sc = bt < 0.25f ? Mathf.Lerp(0.4f, 1.15f, bt / 0.25f) : Mathf.Lerp(1.15f, 1f, Mathf.Clamp01((bt - 0.25f) / 0.2f));
                 GUI.color = new Color(1, 1, 1, Mathf.Clamp01((2f - bt) / 0.4f));
-                GUI.Label(new Rect(0, RefH * 0.4f - 46 * sc, vw, 92 * sc), "<size=" + Mathf.RoundToInt(60 * sc) + "><b><color=#ffdf95>" + bigTxt + "</color></b></size>", center);
-                GUI.Label(new Rect(0, RefH * 0.4f + 44, vw, 28), "<size=20><b><color=" + UpHex + ">" + bigSub + "</color></b></size>", center);
+                Lbl(new Rect(0, RefH * 0.4f - 46 * sc, vw, 92 * sc), "<size=" + Mathf.RoundToInt(60 * sc) + "><b><color=#ffdf95>" + bigTxt + "</color></b></size>", center);
+                Lbl(new Rect(0, RefH * 0.4f + 44, vw, 28), "<size=20><b><color=" + UpHex + ">" + bigSub + "</color></b></size>", center);
                 GUI.color = Color.white;
             }
         }
@@ -172,8 +172,8 @@ namespace SalvageRun.Orbit
             var atx = anchorTex[anchorWho * 2 + (open ? 1 : 0)] ?? anchorTex[anchorWho * 2];
             if (atx != null) { GUI.color = new Color(1, 1, 1, a); GUI.DrawTexture(new Rect(face.x + 1, face.yMax - 52, 52, 52), atx); }
             GUI.color = new Color(1, 1, 1, a);
-            GUI.Label(new Rect(r.x + 62, r.y + 3, r.width - 68, 18), Loc.T("<size=11><b><color=#ff5c5c>● 속보</color></b></size>"), label);
-            GUI.Label(new Rect(r.x + 62, r.y + 20, r.width - 68, 36), "<size=12><color=#e8edf3>" + anchorHead + "</color></size>", small);
+            Lbl(new Rect(r.x + 62, r.y + 3, r.width - 68, 18), Loc.T("<size=11><b><color=#ff5c5c>● 속보</color></b></size>"), label);
+            Lbl(new Rect(r.x + 62, r.y + 20, r.width - 68, 36), "<size=12><color=#e8edf3>" + anchorHead + "</color></size>", small);
             GUI.color = Color.white;
         }
 
@@ -202,26 +202,26 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0, 0, 0, 0.45f); GUI.DrawTexture(new Rect(r.x + 3, r.y + 4, r.width, r.height), white);
             GUI.color = new Color(0.045f, 0.035f, 0.028f, 0.96f); GUI.DrawTexture(r, white);
             Frame(r, ov ? Amber3 : new Color(0.17f, 0.15f, 0.13f), 3);
-            GUI.Label(new Rect(r.x + 9, r.y + 6, r.width - 18, 18), "<size=10><color=#ffab3d>MY STOCK</color></size>", label);
-            if (n > 0) GUI.Label(new Rect(r.x + 9, r.y + 5, r.width - 18, 18), "<size=12><b>" + PctTxt(MyTotal()) + "</b></size>", ledR ?? cost);
+            Lbl(new Rect(r.x + 9, r.y + 6, r.width - 18, 18), "<size=10><color=#ffab3d>MY STOCK</color></size>", label);
+            if (n > 0) Lbl(new Rect(r.x + 9, r.y + 5, r.width - 18, 18), "<size=12><b>" + PctTxt(MyTotal()) + "</b></size>", ledR ?? cost);
             for (int k = 0; k < n; k++)
             {
                 int i = myIdx[k]; float y = r.y + 26 + k * 17;
                 if (Hot(i)) { GUI.color = new Color(1f, 0.36f, 0.36f, 0.14f + 0.1f * Mathf.Sin(Time.unscaledTime * 10)); GUI.DrawTexture(new Rect(r.x + 4, y, r.width - 8, 16), white); GUI.color = Color.white; }
-                GUI.Label(new Rect(r.x + 9, y - 1, r.width - 18, 18), "<size=11><b><color=#e8d8c0>" + Clip(Market.Defs[i].name, 7) + "</color></b></size>", label);
-                GUI.Label(new Rect(r.x + 9, y - 1, r.width - 18, 18), "<size=11><b>" + PctTxt(MyPct(i)) + "</b></size>", ledR ?? cost);
+                Lbl(new Rect(r.x + 9, y - 1, r.width - 18, 18), "<size=11><b><color=#e8d8c0>" + Clip(Market.Defs[i].name, 7) + "</color></b></size>", label);
+                Lbl(new Rect(r.x + 9, y - 1, r.width - 18, 18), "<size=11><b>" + PctTxt(MyPct(i)) + "</b></size>", ledR ?? cost);
             }
-            if (n == 0) GUI.Label(new Rect(r.x + 9, r.y + 26, r.width - 18, 18), Loc.T("<size=11><color=#7a6a55>보유 종목 없음</color></size>"), label);
-            if (myIdx.Count > 3) GUI.Label(new Rect(r.x + 9, r.yMax - 21, r.width - 18, 16), Loc.T("<size=9><color=#7a6a55>외 ") + (myIdx.Count - 3) + "</color></size>", label);
-            GUI.Label(new Rect(r.x + 9, r.yMax - 22, r.width - 18, 20), "<size=11><color=" + (ov ? "#ffdf95" : "#9a8a70") + Loc.T(">증권 가기 ›</color></size>"), ledR ?? cost);
-            if (GUI.Button(r, GUIContent.none, GUIStyle.none)) GoFlow(4);
+            if (n == 0) Lbl(new Rect(r.x + 9, r.y + 26, r.width - 18, 18), Loc.T("<size=11><color=#7a6a55>보유 종목 없음</color></size>"), label);
+            if (myIdx.Count > 3) Lbl(new Rect(r.x + 9, r.yMax - 21, r.width - 18, 16), Loc.T("<size=9><color=#7a6a55>외 ") + (myIdx.Count - 3) + "</color></size>", label);
+            Lbl(new Rect(r.x + 9, r.yMax - 22, r.width - 18, 20), "<size=11><color=" + (ov ? "#ffdf95" : "#9a8a70") + Loc.T(">증권 가기 ›</color></size>"), ledR ?? cost);
+            if (Bt(r, GUIContent.none, GUIStyle.none)) GoFlow(4);
         }
 
         /// <summary>출동 중 — 오른쪽 위 작은 칩 (전체 + 종목 셋, 수익률 높은 순 · 급등 중이면 빨갛게 빛남)</summary>
         void MyStockChips()
         {
             float y = 124, right = vw - 14;                                   // 연쇄 계기 · 압축 막대 아래
-            if (sim.Grit > 0.005) { var gr = new Rect(right - 130, y, 130, 22); GUI.color = new Color(0.2f, 0.05f, 0.05f, 0.85f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.4f, 0.3f), 1); GUI.color = Color.white; GUI.Label(new Rect(gr.x + 8, gr.y + 1, gr.width, 20), Loc.T("<size=12><color=#ffb3a8>근성 화력 <b>+") + Mathf.RoundToInt((float)sim.Grit * 100) + "%</b></color></size>", label); y += 25; }
+            if (sim.Grit > 0.005) { var gr = new Rect(right - 130, y, 130, 22); GUI.color = new Color(0.2f, 0.05f, 0.05f, 0.85f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.4f, 0.3f), 1); GUI.color = Color.white; Lbl(new Rect(gr.x + 8, gr.y + 1, gr.width, 20), Loc.T("<size=12><color=#ffb3a8>근성 화력 <b>+") + Mathf.RoundToInt((float)sim.Grit * 100) + "%</b></color></size>", label); y += 25; }
             if (!sim.StockOpen || sim.Mk == null) return;
             MyStocks();
             if (myIdx.Count == 0) return;
@@ -233,7 +233,7 @@ namespace SalvageRun.Orbit
                 if (hot) { float p = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 10); GUI.color = new Color(1f, 0.36f, 0.36f, 0.12f + 0.12f * p); GUI.DrawTexture(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), white); Frame(r, UpCol, 1 + p); }
                 else Frame(r, new Color(0.16f, 0.2f, 0.26f), 1);
                 GUI.color = Color.white;
-                GUI.Label(new Rect(r.x + 8, r.y + 1, r.width, 20), txt, label);
+                Lbl(new Rect(r.x + 8, r.y + 1, r.width, 20), txt, label);
                 y += 25;
             }
             Chip(Loc.T("<size=12><color=#9ff0bf>●</color> 장 열림 · <color=#8a9bb3>매매는 조종실</color></size>"), false);   // 출동 중엔 시세만 — 사고팔기는 돌아가서 (09-25 사장님 「출발에선 못 산다는 걸 모르겠다」)

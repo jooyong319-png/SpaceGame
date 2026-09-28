@@ -85,22 +85,22 @@ namespace SalvageRun.Orbit
             Frame(r, ov ? col : new Color(col.r * 0.5f, col.g * 0.5f, col.b * 0.5f), ov ? 2.5f : 1.5f);
             string hex = ColorUtility.ToHtmlStringRGB(col);
             float nd = ov && !reduceMotion ? Mathf.Sin(Time.unscaledTime * 9) * 2.5f : 0;
-            GUI.Label(new Rect(r.x + (right ? nd : -nd), r.y + 6, w, 44), "<size=34><b><color=#" + hex + ">" + (right ? "›" : "‹") + "</color></b></size>", center);
+            Lbl(new Rect(r.x + (right ? nd : -nd), r.y + 6, w, 44), "<size=34><b><color=#" + hex + ">" + (right ? "›" : "‹") + "</color></b></size>", center);
             if (Loc.En)
             {   // 🌐 영어는 한 글자씩 세우면 못 읽는다 — 책등처럼 옆으로 눕혀 쓴다
                 var m0 = GUI.matrix; var c = new Vector2(r.center.x, r.y + 48 + 90);
                 GUI.matrix = m0 * Matrix4x4.TRS(c, Quaternion.Euler(0, 0, 90), Vector3.one) * Matrix4x4.TRS(-c, Quaternion.identity, Vector3.one);   // 화면 배율(GUI.matrix) 위에서 돌린다
-                GUI.Label(new Rect(c.x - 90, c.y - w / 2, 180, w), "<size=15><b><color=#" + hex + ">" + word + "</color></b></size>", center);
+                Lbl(new Rect(c.x - 90, c.y - w / 2, 180, w), "<size=15><b><color=#" + hex + ">" + word + "</color></b></size>", center);
                 GUI.matrix = m0;
             }
             else
             {
                 var sb = new System.Text.StringBuilder();
                 foreach (char ch in word) sb.Append(ch == ' ' ? "\n" : ch + "\n");
-                GUI.Label(new Rect(r.x, r.y + 48, w, 180), "<size=14><b><color=#" + hex + ">" + sb.ToString().TrimEnd('\n') + "</color></b></size>", center);
+                Lbl(new Rect(r.x, r.y + 48, w, 180), "<size=14><b><color=#" + hex + ">" + sb.ToString().TrimEnd('\n') + "</color></b></size>", center);
             }
-            if (!string.IsNullOrEmpty(sub)) GUI.Label(new Rect(r.x, r.yMax - 38, w, 34), "<size=10>" + sub.Replace(" ", "\n") + "</size>", center);   // 탭 안에 두 줄 — 밖으로 삐져나오지 않게
-            return GUI.Button(r, GUIContent.none, GUIStyle.none);
+            if (!string.IsNullOrEmpty(sub)) Lbl(new Rect(r.x, r.yMax - 38, w, 34), "<size=10>" + sub.Replace(" ", "\n") + "</size>", center);   // 탭 안에 두 줄 — 밖으로 삐져나오지 않게
+            return Bt(r, GUIContent.none, GUIStyle.none);
         }
 
     }

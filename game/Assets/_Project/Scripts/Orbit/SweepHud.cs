@@ -184,7 +184,7 @@ namespace SalvageRun.Orbit
             var r = new Rect(vw / 2 - 300, 64, 600, 36);
             GUI.color = new Color(0.06f, 0.08f, 0.05f, 0.94f * a); GUI.DrawTexture(r, white);
             Frame(r, new Color(0.44f, 0.81f, 0.59f, a * (0.6f + 0.4f * Mathf.Sin(Time.unscaledTime * 6))), 2);
-            GUI.color = new Color(1, 1, 1, a); GUI.Label(r, "<size=14><color=#bff4d0>" + guideMsg + "</color></size>", center);
+            GUI.color = new Color(1, 1, 1, a); Lbl(r, "<size=14><color=#bff4d0>" + guideMsg + "</color></size>", center);
             GUI.color = Color.white;
         }
 
@@ -207,8 +207,8 @@ namespace SalvageRun.Orbit
             GUI.color = firing ? Color.white : ready ? new Color(1f, 0.96f, 0.84f) : SweepGame.Amber; GUI.DrawTexture(new Rect(r.x + 6, r.yMax - 7, (r.width - 12) * k, 4), white);
             GUI.color = Color.white;
             string t = firing ? Loc.T("<color=#ffffff>발사 중!</color>") : ready ? Loc.T("<color=#2a1400>전탄 발사 · Space</color>") : Loc.T("<color=#8a7a5a>전탄 ") + Mathf.FloorToInt(k * 100) + "%</color>";
-            GUI.Label(new Rect(r.x, r.y + 2, r.width, 20), "<size=13><b>" + t + "</b></size>", center);
-            if (GUI.Button(r, GUIContent.none, GUIStyle.none) && ready) VolleyReq = true;
+            Lbl(new Rect(r.x, r.y + 2, r.width, 20), "<size=13><b>" + t + "</b></size>", center);
+            if (Bt(r, GUIContent.none, GUIStyle.none) && ready) VolleyReq = true;
         }
 
     }

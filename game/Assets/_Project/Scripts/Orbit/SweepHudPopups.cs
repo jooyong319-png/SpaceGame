@@ -35,7 +35,7 @@ namespace SalvageRun.Orbit
                 float a = Mathf.Clamp01((1.2f - dt) / 0.4f), sx = dt < 0.25f ? Mathf.Sin(dt * 60) * 4 * (1 - dt / 0.25f) : 0;
                 var dr = new Rect(denyP.x - 110 + sx, denyP.y - 52 - 10 * dt, 220, 24);
                 GUI.color = new Color(0.08f, 0.03f, 0.03f, 0.85f * a); GUI.DrawTexture(new Rect(dr.center.x - center.CalcSize(new GUIContent(denyMsg)).x / 2 - 10, dr.y, center.CalcSize(new GUIContent(denyMsg)).x + 20, dr.height), white);
-                GUI.color = new Color(1, 1, 1, a); GUI.Label(dr, "<size=13><b><color=#ff9b8f>" + denyMsg + "</color></b></size>", center); GUI.color = Color.white;
+                GUI.color = new Color(1, 1, 1, a); Lbl(dr, "<size=13><b><color=#ff9b8f>" + denyMsg + "</color></b></size>", center); GUI.color = Color.white;
             }
             for (int i = bursts.Count - 1; i >= 0; i--)
             {
@@ -46,7 +46,7 @@ namespace SalvageRun.Orbit
                 int seg = 28;
                 for (int s = 0; s < seg; s++) { float an = s * Mathf.PI * 2 / seg; GUI.DrawTexture(new Rect(b.p.x + Mathf.Cos(an) * R - 2, b.p.y + Mathf.Sin(an) * R - 2, 4, 4), white); }
                 for (int s = 0; s < (b.big ? 14 : 8); s++) { float an = s * 2.39996f, d = R * (0.6f + 0.5f * ((s * 37) % 10) / 10f); GUI.color = new Color(1f, 0.93f, 0.7f, a); GUI.DrawTexture(new Rect(b.p.x + Mathf.Cos(an) * d - 1.5f, b.p.y + Mathf.Sin(an) * d - 1.5f, 3, 3), white); }
-                if (b.big) { GUI.color = new Color(1, 1, 1, Mathf.Clamp01(a * 1.5f)); GUI.Label(new Rect(b.p.x - 80, b.p.y - 46 - 30 * k, 160, 30), "<size=18><b><color=#" + ColorUtility.ToHtmlStringRGB(Color.Lerp(b.c, Color.white, 0.4f)) + ">" + b.txt + "</color></b></size>", center); }
+                if (b.big) { GUI.color = new Color(1, 1, 1, Mathf.Clamp01(a * 1.5f)); Lbl(new Rect(b.p.x - 80, b.p.y - 46 - 30 * k, 160, 30), "<size=18><b><color=#" + ColorUtility.ToHtmlStringRGB(Color.Lerp(b.c, Color.white, 0.4f)) + ">" + b.txt + "</color></b></size>", center); }
             }
             GUI.color = Color.white;
         }
@@ -63,12 +63,12 @@ namespace SalvageRun.Orbit
             for (int w = 1; w < SweepSim.ProcBase.Length; w++) if (sim.ProcChance(w) > 0) list.Add(w);
             var b = new Rect(r.x, r.y, 190, 26 + 18 * System.Math.Max(1, list.Count));
             GUI.color = new Color(0.07f, 0.08f, 0.11f, 0.94f); GUI.DrawTexture(b, white); Frame(b, new Color(0.25f, 0.28f, 0.34f), 1); GUI.color = Color.white;
-            GUI.Label(new Rect(b.x + 8, b.y + 3, 180, 20), Loc.T("<size=12><color=#8a9bb3>공격 때 함께 터진다</color></size>"), label);
-            if (list.Count == 0) GUI.Label(new Rect(b.x + 8, b.y + 22, 180, 18), Loc.T("<size=12><color=#5f6878>산 무기가 없다</color></size>"), label);
+            Lbl(new Rect(b.x + 8, b.y + 3, 180, 20), Loc.T("<size=12><color=#8a9bb3>공격 때 함께 터진다</color></size>"), label);
+            if (list.Count == 0) Lbl(new Rect(b.x + 8, b.y + 22, 180, 18), Loc.T("<size=12><color=#5f6878>산 무기가 없다</color></size>"), label);
             for (int i = 0; i < list.Count; i++)
             {
                 int w = list[i]; var c = SweepGame.WeaponCol(w);
-                GUI.Label(new Rect(b.x + 8, b.y + 22 + i * 18, 180, 18), "<size=12><color=#" + ColorUtility.ToHtmlStringRGB(c) + ">● " + SweepSim.WeaponName[w] + "</color>  <b>" + Mathf.RoundToInt((float)sim.ProcChance(w) * 100) + "%</b></size>", label);
+                Lbl(new Rect(b.x + 8, b.y + 22 + i * 18, 180, 18), "<size=12><color=#" + ColorUtility.ToHtmlStringRGB(c) + ">● " + SweepSim.WeaponName[w] + "</color>  <b>" + Mathf.RoundToInt((float)sim.ProcChance(w) * 100) + "%</b></size>", label);
             }
         }
         static int NodeIndex(string id) { for (int i = 0; i < SweepSim.Nodes.Length; i++) if (SweepSim.Nodes[i].id == id) return i; return 0; }
@@ -83,7 +83,7 @@ namespace SalvageRun.Orbit
             {   // 📰 내일 1면 확정 — 조종실 창 위 띠 (다음 출동과 함께 발행)
                 var fr = new Rect(ox + 250, 50, 460, 24);
                 GUI.color = new Color(0.08f, 0.07f, 0.06f, 0.92f); GUI.DrawTexture(fr, white); Frame(fr, new Color(1f, 0.36f, 0.81f, 0.7f), 1); GUI.color = Color.white;
-                GUI.Label(fr, Loc.T("<size=12><color=#ffb3ea>★ 내일 1면</color>  ") + Clip(Market.NewsBook[S.frontPick].head.Replace(Loc.T("[소문] "), ""), 24) + Loc.T("  <color=#8a93a3>· 출동하면 발행</color></size>"), center);
+                Lbl(fr, Loc.T("<size=12><color=#ffb3ea>★ 내일 1면</color>  ") + Clip(Market.NewsBook[S.frontPick].head.Replace(Loc.T("[소문] "), ""), 24) + Loc.T("  <color=#8a93a3>· 출동하면 발행</color></size>"), center);
             }
             if (S.front1 < 0 || S.front2 < 0 || sim.Mk == null) { frontOpen = false; return; }
             if (!frontOpen) return;                                             // 궤도일보 모니터의 「★ 내일 1면 고르기」를 눌러야 뜬다
@@ -91,7 +91,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0, 0, 0, 0.6f); GUI.DrawTexture(new Rect(w.x + 4, w.y + 6, w.width, w.height), white);
             GUI.color = new Color(0.08f, 0.07f, 0.06f, 0.96f); GUI.DrawTexture(w, white); Frame(w, new Color(1f, 0.36f, 0.81f), 2);
             GUI.color = Color.white;
-            GUI.Label(new Rect(w.x, w.y + 6, w.width, 22), Loc.T("<size=14><b><color=#ffb3ea>★ 내일 궤도일보 1면을 고른다</color></b></size>"), center);
+            Lbl(new Rect(w.x, w.y + 6, w.width, 22), Loc.T("<size=14><b><color=#ffb3ea>★ 내일 궤도일보 1면을 고른다</color></b></size>"), center);
             for (int k = 0; k < 2; k++)
             {
                 var nd = Market.NewsBook[k == 0 ? S.front1 : S.front2];
@@ -99,14 +99,14 @@ namespace SalvageRun.Orbit
                 bool ov = r.Contains(Event.current.mousePosition);
                 GUI.color = ov ? new Color(0.98f, 0.95f, 0.88f) : new Color(0.93f, 0.9f, 0.83f); GUI.DrawTexture(r, white);
                 GUI.color = new Color(0.1f, 0.1f, 0.1f); GUI.DrawTexture(new Rect(r.x + 8, r.y + 24, r.width - 16, 2), white); GUI.color = Color.white;
-                paperSmall.fontSize = 10; GUI.Label(new Rect(r.x + 8, r.y + 3, r.width - 16, 20), Loc.T("궤도일보 1면"), paperSmall);
-                paperBody.fontSize = 13; GUI.Label(new Rect(r.x + 8, r.y + 30, r.width - 16, 40), "<b>" + nd.head.Replace(Loc.T("[소문] "), "") + "</b>", paperBody);
+                paperSmall.fontSize = 10; Lbl(new Rect(r.x + 8, r.y + 3, r.width - 16, 20), Loc.T("궤도일보 1면"), paperSmall);
+                paperBody.fontSize = 13; Lbl(new Rect(r.x + 8, r.y + 30, r.width - 16, 40), "<b>" + nd.head.Replace(Loc.T("[소문] "), "") + "</b>", paperBody);
                 string eff = (nd.up != null ? "<color=#b3261e>▲ " + SecName(new NewsDef { up = nd.up }) + "</color>  " : "") + (nd.down != null ? "<color=#1f4fb3>▼ " + SecName(new NewsDef { down = nd.down }) + "</color>" : "");
-                paperBody.fontSize = 11; GUI.Label(new Rect(r.x + 8, r.y + 78, r.width - 16, 40), eff, paperBody);
+                paperBody.fontSize = 11; Lbl(new Rect(r.x + 8, r.y + 78, r.width - 16, 40), eff, paperBody);
                 paperBody.fontSize = 14;
-                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { sim.PickFront(k); frontOpen = false; OrbitSfx.Play("buy", 0.8f); BuyFx(r.center, new Color(1f, 0.36f, 0.81f), true, Loc.T("1면 확정!")); }
+                if (Bt(r, GUIContent.none, GUIStyle.none)) { sim.PickFront(k); frontOpen = false; OrbitSfx.Play("buy", 0.8f); BuyFx(r.center, new Color(1f, 0.36f, 0.81f), true, Loc.T("1면 확정!")); }
             }
-            if (GUI.Button(new Rect(w.xMax - 30, w.y + 4, 26, 22), "<size=13>✕</size>", btnOff)) frontOpen = false;   // 나중에
+            if (Bt(new Rect(w.xMax - 30, w.y + 4, 26, 22), "<size=13>✕</size>", btnOff)) frontOpen = false;   // 나중에
         }
     }
 }

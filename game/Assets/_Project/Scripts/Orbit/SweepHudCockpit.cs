@@ -89,9 +89,9 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0, 0, 0, 0.45f); GUI.DrawTexture(new Rect(r.x + 3, r.y + 5, r.width, r.height), white);
             GUI.color = PlateCol; GUI.DrawTexture(r, white); GUI.color = Color.white;
             Frame(r, hover ? hot : Bezel, hover ? 2.5f : 2f);
-            GUI.Label(new Rect(r.x + 10, r.y + 6 - 3, r.width - 20, 22), "<size=11><color=#8a9bb3>" + cap + "</color></size>", label);
-            if (!string.IsNullOrEmpty(right)) GUI.Label(new Rect(r.x + 10, r.y + 6 - 3, r.width - 20, 22), "<size=11>" + right + "</size>", cost);
-            return clickable && GUI.Button(r, GUIContent.none, GUIStyle.none);
+            Lbl(new Rect(r.x + 10, r.y + 6 - 3, r.width - 20, 22), "<size=11><color=#8a9bb3>" + cap + "</color></size>", label);
+            if (!string.IsNullOrEmpty(right)) Lbl(new Rect(r.x + 10, r.y + 6 - 3, r.width - 20, 22), "<size=11>" + right + "</size>", cost);
+            return clickable && Bt(r, GUIContent.none, GUIStyle.none);
         }
         Rect Scr(Rect r, float top, float h) { var sr = new Rect(r.x + 8, r.y + top, r.width - 16, h); GUI.color = ScreenCol; GUI.DrawTexture(sr, white); GUI.color = Color.white; return sr; }
         string Led(Color c) => "<color=#" + ColorUtility.ToHtmlStringRGB(c) + ">●</color> ";
@@ -111,15 +111,15 @@ namespace SalvageRun.Orbit
 
             // 위 — 돈 (창 위 가운데)
             big.fontSize = 22;   // 도트 글꼴 11의 배수 (정돈 5)
-            GUI.Label(new Rect(ox + 330, 2, 300, 28), Loc.T("<size=13><color=#8a9bb3>돈</color></size>  ") + KNum.Fmt(shown), new GUIStyle(big) { alignment = TextAnchor.MiddleCenter });
+            Lbl(new Rect(ox + 330, 2, 300, 28), Loc.T("<size=13><color=#8a9bb3>돈</color></size>  ") + KNum.Fmt(shown), new GUIStyle(big) { alignment = TextAnchor.MiddleCenter });
             big.fontSize = 20;
             CreditScreen = new Vector2((ox + 480) * scale, 16 * scale);
             // 창 안 — 납부 완료 알림
             if (paidT > 0 && paidBill > 0)
             {
                 var pb = SweepSim.Bills[paidBill - 1];
-                title.fontSize = 24; GUI.Label(new Rect(ox + 200, 60, 560, 32), Loc.T("<color=#ffdf95>납부 완료</color> · ") + pb.t, title);
-                title.fontSize = 16; GUI.Label(new Rect(ox + 200, 92, 560, 24), pb.perk, title);
+                title.fontSize = 24; Lbl(new Rect(ox + 200, 60, 560, 32), Loc.T("<color=#ffdf95>납부 완료</color> · ") + pb.t, title);
+                title.fontSize = 16; Lbl(new Rect(ox + 200, 92, 560, 24), pb.perk, title);
             }
 
             bool due = S.overdue && !M.cleanReady;
@@ -169,8 +169,8 @@ namespace SalvageRun.Orbit
                 GUI.color = Color.white;
                 // 윗면 글자
                 string word = due ? Loc.T("납부일") : M.cleanReady ? Loc.T("청산") : Loc.T("출동");
-                GUI.Label(new Rect(cxm - fw / 2, fy + 2, fw, fh - 4), "<size=" + (due ? 20 : 28) + "><b><color=" + (due ? "#6a655e" : Th.btnInk) + ">" + word + "</color></b></size>", center);
-                if (GUI.Button(hit, GUIContent.none, GUIStyle.none) && paidT < 2.4f) Go();
+                Lbl(new Rect(cxm - fw / 2, fy + 2, fw, fh - 4), "<size=" + (due ? 20 : 28) + "><b><color=" + (due ? "#6a655e" : Th.btnInk) + ">" + word + "</color></b></size>", center);
+                if (Bt(hit, GUIContent.none, GUIStyle.none) && paidT < 2.4f) Go();
             }
 
             // 🧯 파산 단추 — 출동 단추 왼쪽 위, 유리 덮개 속 (09-24 사장님)
@@ -179,7 +179,7 @@ namespace SalvageRun.Orbit
             LottoHolo();
             // 아래 한 줄
             string tip = due ? "<color=" + (dueNag > 0 ? "#ff9b8f" : "#b8a89a") + Loc.T(">납부일 — 왼쪽 홀로그램 청구서: 납부 · 대출 · 또는 파산</color>") : Loc.T("Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 ") + Mathf.RoundToInt((float)(sim.Widen - 1) * 100) + Loc.T("% · 한 판 ") + Mathf.RoundToInt((float)sim.FuelMax) + Loc.T("초");
-            if (due || sim.S.runs < 3 && sim.M.company <= 1) GUI.Label(new Rect(ox + 200, 570 - 3, 560, 26), "<size=12>" + tip + "</size>", center);   // 안내 줄은 처음 세 판 · 납부일만 (정돈 13)
+            if (due || sim.S.runs < 3 && sim.M.company <= 1) Lbl(new Rect(ox + 200, 570 - 3, 560, 26), "<size=12>" + tip + "</size>", center);   // 안내 줄은 처음 세 판 · 납부일만 (정돈 13)
         }
 
     }
