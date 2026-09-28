@@ -16,12 +16,15 @@ namespace SalvageRun.Orbit
         static void Init()
         {
             int lang = PlayerPrefs.GetInt(Key, Application.systemLanguage == SystemLanguage.Korean ? 0 : 1);
-            Loc.En = false;                                                  // 표는 한국어로 먼저
-            Loc.Source = () => { var t = Resources.Load<TextAsset>("loc_en"); return t != null ? t.text : null; };
-            Loc.Reset();
-            var types = new[] { typeof(SweepSim), typeof(Parts), typeof(Market), typeof(SweepHud) };
-            foreach (var t in types) System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(t.TypeHandle);
-            Loc.Track(types);
+            if (!Loc.Tracked)
+            {   // 처음 한 번만 — 에디터는 플레이마다 코드를 새로 안 불러와서(도메인 리로드 끔) 표가 이전 언어로 남아 있다. 다시 기억하면 영어를 한국어로 잘못 안다 (09-28)
+                Loc.En = false;                                              // 표는 한국어로 먼저
+                Loc.Source = () => { var t = Resources.Load<TextAsset>("loc_en"); return t != null ? t.text : null; };
+                Loc.Reset();
+                var types = new[] { typeof(SweepSim), typeof(Parts), typeof(Market), typeof(SweepHud) };
+                foreach (var t in types) System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(t.TypeHandle);
+                Loc.Track(types);
+            }
             Loc.SetLang(lang == 1);
         }
         public static int Saved => PlayerPrefs.GetInt(Key, Loc.En ? 1 : 0);

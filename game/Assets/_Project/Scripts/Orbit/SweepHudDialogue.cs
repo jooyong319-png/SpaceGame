@@ -20,12 +20,13 @@ namespace SalvageRun.Orbit
         };
 
         // 「누구|대사」 — *별표 사이*는 말하는 사람 색으로
-        static Dictionary<string, string[]> scenes;
+        static Dictionary<string, string[]> scenes; static bool scenesEn;   // 🌐 만든 때의 언어 — 바뀌면 다시 만든다 (09-28 사장님 「대사 안 바뀌는데?」)
         static Dictionary<string, string[]> Scenes
         {
             get
             {
-                if (scenes != null) return scenes;
+                if (scenes != null && scenesEn == Loc.En) return scenes;
+                scenesEn = Loc.En;
                 string Y(int k) => "yoon|" + RadioLines[k];
                 scenes = new Dictionary<string, string[]>
                 {

@@ -80,6 +80,7 @@ namespace SalvageRun.Orbit.Sim
 
         /// <summary>시험용 — 기억한 자리 수 · 번역 안 되는 한국어가 남은 곳 (영어일 때 표 안에 한글이 보이면 여기 나온다)</summary>
         public static int TrackedCount => slots != null ? slots.Count : 0;
+        public static bool Tracked => slots != null;
         public static List<string> LeftKorean()
         {
             var left = new List<string>(); var seen = new HashSet<object>(new RefEq());
