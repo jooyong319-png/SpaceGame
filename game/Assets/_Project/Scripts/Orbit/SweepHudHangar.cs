@@ -127,7 +127,7 @@ namespace SalvageRun.Orbit
         {
             var M = sim.M;
             GUI.Label(new Rect(body.x + 14, body.y + 8, body.width - 28, 20), Loc.T("<size=11><color=#8d99b8>회사가 바뀌어도 남는다 · 단계마다 값이 오른다 · 언제든 전부 되돌려 받아 다시 짤 수 있다</color></size>"), label);
-            float cw = (body.width - 24 - 3 * 8) / 4, ch = 82;
+            float cw = (body.width - 24 - 3 * 8) / 4, ch = 96;   // 82 → 96: 아래 「신용 N」 줄이 반쯤 잘렸다 (09-28)
             for (int i = 0; i < SweepSim.UpCount; i++)
             {
                 var u = SweepSim.Ups[i]; int lv = sim.Up(i), c = sim.UpCost(i); bool max = c < 0, can = !max && M.credit >= c;
@@ -135,14 +135,14 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(0.08f, 0.1f, 0.16f); GUI.DrawTexture(r, white);
                 Frame(r, max ? new Color(0.3f, 0.6f, 0.42f) : can ? new Color(0.45f, 0.37f, 0.12f) : new Color(0.15f, 0.18f, 0.26f), can ? 2 : 1);
                 GUI.color = Color.white;
-                var t = UpTex(i); if (t != null) GUI.DrawTexture(new Rect(r.x + 6, r.y + 8, 52, 52), t);
+                var t = UpTex(i); if (t != null) GUI.DrawTexture(new Rect(r.x + 6, r.y + 10, 56, 56), t);
                 GUI.Label(new Rect(r.x + 64, r.y + 4, r.width - 68, 20), "<size=13><b>" + u.name + "</b></size>", label);
                 var ws = new GUIStyle(label) { wordWrap = true };
                 GUI.Label(new Rect(r.x + 64, r.y + 22, r.width - 68, 30), "<size=10><color=#8d99b8>" + KWrap(u.desc, 10, r.width - 74) + "</color></size>", ws);
                 float pw = Mathf.Min(10, (r.width - 72) / u.max - 2);
-                for (int k = 0; k < u.max; k++) { GUI.color = k < lv ? new Color(1f, 0.81f, 0.29f) : new Color(0.14f, 0.17f, 0.27f); GUI.DrawTexture(new Rect(r.x + 64 + k * (pw + 2), r.y + 56, pw, 6), white); }
+                for (int k = 0; k < u.max; k++) { GUI.color = k < lv ? new Color(1f, 0.81f, 0.29f) : new Color(0.14f, 0.17f, 0.27f); GUI.DrawTexture(new Rect(r.x + 64 + k * (pw + 2), r.y + 58, pw, 6), white); }
                 GUI.color = Color.white;
-                GUI.Label(new Rect(r.x + 64, r.y + 62, r.width - 68, 18), max ? Loc.T("<size=11><color=#6fe3a0>최대</color></size>") : "<size=11><color=" + (can ? "#ffdf95" : "#ff8a7a") + Loc.T(">신용 ") + c + "</color></size>", label);
+                GUI.Label(new Rect(r.x + 64, r.y + 67, r.width - 68, 24), max ? Loc.T("<size=11><color=#6fe3a0>최대</color></size>") : "<size=11><color=" + (can ? "#ffdf95" : "#ff8a7a") + Loc.T(">신용 ") + c + "</color></size>", label);
                 if (GUI.Button(r, GUIContent.none, GUIStyle.none) && can && sim.BuyUp(i)) OrbitSfx.Play("buy", 0.8f);
             }
             GUI.Label(new Rect(body.x + 14, body.yMax - 24, body.width - 28, 20), Loc.T("<size=10><color=#5a6475>신용은 파산할 때 받는다 — 갚은 청구서가 많을수록 많이 (쌓인 신용 × ") + SweepSim.CreditK + ")</color></size>", label);

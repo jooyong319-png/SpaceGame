@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace SalvageRun.Orbit.Sim
@@ -802,7 +802,11 @@ namespace SalvageRun.Orbit.Sim
         public bool GateReady => HasGate && (S.bill >= GateBill || M.cleanReady);
         public string GateName => HasGate ? GateNames[Frontier] : "";
         public string NextName => HasGate ? Orbits[OrbitOrder[Frontier + 1]].name : "";
-        public int GateMax { get { if (S.gateMax <= 0) S.gateMax = Math.Max(Types[Big].hp * HpMul * GateK, GateShotDmg * FuelMax / Gap * GateRuns); return (int)Math.Min(2e9, Math.Round(S.gateMax)); } }   // 🛰 처음 뜰 때 「지금 화력으로 한 판 내내 관문만 쳤을 때의 90%」 — 한 판 안에 부숴야 한다 (09-26)
+        public int GateMax { get { double want = GateHpNow; if (S.gateMax <= 0 || Frontier == 0 && S.gateMax > want) S.gateMax = want; return (int)Math.Min(2e9, Math.Round(S.gateMax)); } }   // 첫 관문은 옛 저장에 큰 값이 남아 있어도 새 값으로 줄인다
+        double GateHpNow => Frontier == 0 ? Math.Max(Types[Big].hp * HpMul * GateK0, GateShotDmg * FuelMax / Gap * GateRuns0) : Math.Max(Types[Big].hp * HpMul * GateK, GateShotDmg * FuelMax / Gap * GateRuns);
+        // 🛰 09-28 사장님 「초반 절대 못 깬다 — 위력 3만 찍어도 지구→달 관문을 부수게」: 지구 관문은 큰 잔해 × 2.5 (≈100) · 한 판 빔 피해의 40%.
+        //    전엔 × 10 (≈405) 이라 한 방 4로 한 판(빔 60방 = 240) 안에 못 깼다 — 못 깨면 다음 판에 다시 가득 찬다.
+        public const double GateK0 = 2.5, GateRuns0 = 0.4;   // 🛰 처음 뜰 때 「지금 화력으로 한 판 내내 관문만 쳤을 때의 90%」 — 한 판 안에 부숴야 한다 (09-26)
         public double GateShotDmg => ShipGateK * Pow * (1 + Crit * (CritX - 1)) * (1 + 0.1 * Lv("c_double") + Part("dbl"));   // 🛰 처음 뜰 때 「지금 한 판 피해 × 6」으로 정한다 — 화력이 불어나도 늘 몇 판 공들여야
         public const double GateRuns = 1.6;
         public Junk GateJunk { get { if (R == null) return null; foreach (var d in R.junk) if (d.sig == GateSig && !d.dead) return d; return null; } }

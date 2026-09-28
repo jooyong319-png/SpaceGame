@@ -1649,7 +1649,8 @@ namespace SalvageRun.Orbit
                 if (GUI.Button(new Rect(ox + 240, 8, 500, 30), bl, S.cash >= sim.BillAmount || loanPay ? btn : btnOff)) { if (S.cash >= sim.BillAmount) sim.PayBill(); else if (loanPay) RequestLoan(sim.BillAmount - S.cash, true); }
             }
             int unreadN = sim.Unread;
-            if (GUI.Button(new Rect(ox + 780, 8, 166, 30), Loc.T("궤도일보") + (unreadN > 0 ? "  <color=#ff8a7a>● " + unreadN + "</color>" : ""), btn)) { newsOpen = true; newsSel = -1; }
+            // 오른쪽 끝은 ⚙ 설정 단추(vw-58) 앞에서 멈춘다 — 겹쳐서 설정을 누르면 신문이 열렸다 (09-28)
+            if (GUI.Button(new Rect(ox + 750, 8, Mathf.Min(166, vw - 66 - (ox + 750)), 30), Loc.T("궤도일보") + (unreadN > 0 ? "  <color=#ff8a7a>● " + unreadN + "</color>" : ""), btn)) { newsOpen = true; newsSel = -1; }
             }
 
             var area = new Rect(0, 46, vw, 500);

@@ -495,7 +495,7 @@
 범위	Range
 주 무기 범위 +4%	Main weapon range +4%
 시작 돈	Starting Cash
-새 회사 시작 돈 +60	New company starts with +60 cash
+새 회사 시작 돈 +60	Start cash +60 per company
 행운	Luck
 치명타 확률 +3%	Crit chance +3%
 시세	Market Value
@@ -511,7 +511,7 @@
 연쇄 반경	Chain Radius
 폭발 · 연쇄 반경 +6%	Blast · chain radius +6%
 예비 열쇠	Spare Key
-새 회사 시작 열쇠 +1	New company starts with +1 key
+새 회사 시작 열쇠 +1	Start keys +1 per company
 낡은 청소선	Old Sweeper
 빔	Beam
 처음부터 있는 배. 한 점을 겨누는 빔 — 무엇 하나 튀지 않지만 무엇도 모자라지 않다	The ship you start with. A beam aimed at one point — nothing flashy, nothing lacking
