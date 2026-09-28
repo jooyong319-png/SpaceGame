@@ -61,6 +61,7 @@ namespace SalvageRun.Orbit
         {
             if (sim.S.overdue && !sim.M.cleanReady) { dueNag = 1.6f; OrbitSfx.Play("tick", 0.6f, 0.6f, 0.05f); return; }   // 납부일 — 갚기 · 대출 · 파산 중 하나를 먼저
             bayOpen = false; flow = 0; lobby = false; charmKick = 1.2f;
+            routeBrowse = -1;                                                  // 🧭 다이얼로 안 열린 「?」 행성을 보다 나가도 돌아오면 실제로 간 행성을 보인다 (09-29)
             prevBestChain = sim.M.bestChain; prevBestPack = sim.M.bestPack; runNewsFrom = sim.M.news.Count;
             showResult = false; bankruptArmed = false;
             if (sim.Mk != null) { var ms = sim.Mk.M.st; runStockSh = new double[ms.Count]; runStockPx = new double[ms.Count]; for (int i = 0; i < ms.Count; i++) { runStockSh[i] = ms[i].shares; runStockPx[i] = ms[i].price; } }   // 📈 이번 판 주식 통계용

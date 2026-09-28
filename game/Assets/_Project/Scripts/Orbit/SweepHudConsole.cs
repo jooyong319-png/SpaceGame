@@ -190,7 +190,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(1, 1, 1, fl);
             var big = new Rect(p.center.x - 30, p.y + 26, 60, 60);
             GUI.color = new Color(Holo.r, Holo.g, Holo.b, 0.22f * fl); GUI.DrawTexture(new Rect(big.x - 8, big.y - 8, big.width + 16, big.height + 16), texDisc);
-            GUI.color = open ? new Color(1, 1, 1, fl) : new Color(0.25f, 0.28f, 0.32f, 0.9f * fl); GUI.DrawTexture(big, PlanetArt.Get(show).texture);
+            GUI.color = open ? new Color(1, 1, 1, fl) : new Color(0.25f, 0.28f, 0.32f, 0.9f * fl); var bs = PlanetArt.Icon(show); GUI.DrawTextureWithTexCoords(big, bs.texture, SprUV(bs));   // 출동 화면과 같은 그림
             if (!open) { GUI.color = new Color(1, 1, 1, fl); Lbl(big, "<size=20><b>?</b></size>", center); }
             GUI.color = new Color(1, 1, 1, fl);
             Lbl(new Rect(p.x + 6, p.y + 86, p.width - 12, 18), "<size=13><b><color=#ffdf95>" + so.name + "</color></b>" + (open ? "" : Loc.T("  <color=#ffb3a8>다음</color>")) + "</size>", center);
@@ -237,6 +237,7 @@ namespace SalvageRun.Orbit
                 bool nextUp = sim.HasGate && show == SweepSim.OrbitOrder[sim.Frontier + 1];
                 GUI.color = new Color(1, 1, 1, fl);
                 Lbl(new Rect(p.x + 10, p.y + 170, p.width - 20, 22), nextUp ? "<size=11><color=#ffb36b>🛰 " + (sim.GateReady ? sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + Loc.T("% — 부수면 열린다") : Loc.T("청구서 ") + sim.GateBill + Loc.T("장을 갚으면 관문 방어막이 풀린다")) + "</color></size>" : Loc.T("<size=11><color=#8a93a3>앞 행성 관문부터</color></size>"), center);   // 🛰 09-26 허가증 대신 관문
+                Lbl(new Rect(p.x + 6, p.y + 186, p.width - 12, 14), Fit(Loc.T("<color=#bff4ff>출동하면 지금 궤도 · </color><color=#ffdf95>") + SweepSim.Orbits[S.orbit].name + "</color>", 9, p.width - 14, label, 8), center);   // 🧭 다음 행성을 보고 있어도 실제로 가는 곳 (09-29)
             }
             else
             {

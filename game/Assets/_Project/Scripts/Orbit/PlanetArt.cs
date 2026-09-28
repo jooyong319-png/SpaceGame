@@ -14,6 +14,14 @@ namespace SalvageRun.Orbit
 
         // 🔴 ?? 는 쓰지 않는다 — Play 를 멈추면 유니티가 그림을 지우는데 C# 참조는 남는다. 유니티식 == null 로 봐야 다시 그린다
         public static Sprite Get(int kind) { if (cache[kind] == null) cache[kind] = (kind == 5 || kind >= 9) && Resources.Load<Sprite>("planet_anim/p" + kind + "_0") is Sprite ce ? ce : Make(kind < 5 ? kind : kind >= 9 ? 1 : new[] { 1, 4, 3, 1 }[kind - 5]); return cache[kind]; }   // 소행성대 = 세레스 도트 (09-26 밤 — 달 그림을 빌려 써서 달과 똑같았다)   // 새 행성 넷은 픽셀랩 그림이 없을 때만 비슷한 것으로
+        /// <summary>🪐 조종실 항로 다이얼 · 트리 아이콘용 — 출동 화면과 같은 픽셀랩 그림(첫 장)이 있으면 그것, 없으면 Get.
+        /// 09-29 사장님 「조종석에서 고른 행성이랑 실제 행성이 다른 경우」: 다이얼은 코드 그림을 써서 천왕성 = 토성 무늬 · 해왕성 = 목성 무늬 · 카이퍼 = 달로 보였다</summary>
+        public static Sprite Icon(int kind)
+        {
+            if (icon[kind] == null) { var s = Resources.Load<Sprite>("planet_anim/p" + kind + "_0"); icon[kind] = s != null ? s : Get(kind); }
+            return icon[kind];
+        }
+        static readonly Sprite[] icon = new Sprite[12];
         public static Sprite RingBack { get { if (ringBack == null) ringBack = Ring(false); return ringBack; } }
         public static Sprite RingFront { get { if (ringFront == null) ringFront = Ring(true); return ringFront; } }
 

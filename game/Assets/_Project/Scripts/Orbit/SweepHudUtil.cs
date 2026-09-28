@@ -76,6 +76,8 @@ namespace SalvageRun.Orbit
         // ───────────────────────── 🔍 글자 잘림 검사 (09-28 리팩토링)
         // 글자는 모두 Lbl · 단추는 Bt 로 그린다 — GUI.Label · GUI.Button 과 똑같이 그리고, Probe 를 켜면(시험 때만)
         // 글자가 칸보다 넓거나 높아 잘리는 곳을 ProbeHits 에 모은다 (파일:줄 · 글 · 칸 크기 → 필요한 크기).
+        /// <summary>스프라이트가 그림 파일의 어디를 쓰는지 (0~1) — GUI.DrawTextureWithTexCoords 로 그 부분만 그린다</summary>
+        static Rect SprUV(Sprite s) { var t = s.texture; var r = s.textureRect; return new Rect(r.x / t.width, r.y / t.height, r.width / t.width, r.height / t.height); }
         public static bool Probe;
         public static readonly List<string> ProbeHits = new List<string>();
         /// <summary>폭 w 에 들어가는 가장 큰 글자 크기(size → min)로 「&lt;size=N&gt;inner&lt;/size&gt;」 를 만든다 (영어가 길 때)</summary>

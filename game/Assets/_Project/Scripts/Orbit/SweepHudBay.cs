@@ -22,6 +22,25 @@ namespace SalvageRun.Orbit
         class GTile { public int stat, j, lpar = -1; public List<int> xpar = new List<int>(); public Vector2Int cell; public Vector2Int inDir; }
         static List<GTile> gtiles;
         public int TestTip = -1;                                               // 에디터 시험용 — 마우스 없이 칸 설명 띄우기
+        // ✨ 09-29 사장님 「스킬 찍을 때 이펙트 + 애니」 — 칸 튕김 · 흰빛 · 다음 칸으로 흐르는 빛 · 쓴 돈이 떠오른다 (화려하되 정돈)
+        readonly Dictionary<int, float> tileBuyT = new Dictionary<int, float>();   // 칸(타일) 번호 → 산 시각
+        readonly List<(int from, int to, float t0)> buyFlows = new List<(int, int, float)>();
+        readonly List<(int k, string txt, float t0)> buyCoins = new List<(int, string, float)>();
+        const float FlowLen = 0.45f, PingLen = 0.4f;
+        public void TestBuyFx(int k) { if (gtiles != null && k >= 0 && k < gtiles.Count) BuyAnim(k, "-1.2K"); }   // 에디터 시험용
+        void BuyAnim(int k, string spent)
+        {
+            float now = Time.unscaledTime; tileBuyT[k] = now;
+            if (spent != null) buyCoins.Add((k, spent, now));
+            if (reduceMotion) return;
+            int j = 0;
+            for (int c = 0; c < gtiles.Count; c++)
+                if ((gtiles[c].lpar == k || gtiles[c].xpar.Contains(k)) && !(gtiles[c].stat >= 0 && sim.State(gtiles[c].stat) == NodeSt.Locked))
+                    buyFlows.Add((k, c, now + 0.08f + 0.06f * j++));   // 새로 열린 다음 칸들로 — 조금씩 어긋나게 · 잠긴 칸은 빼서 「다음은 여기」만
+        }
+        /// <summary>산 칸이 튕긴다 — 쑥 커졌다 살짝 줄고 제자리 (0.5초)</summary>
+        float BuyScale(int k) { if (!tileBuyT.TryGetValue(k, out var t0)) return 1; float e = Time.unscaledTime - t0; if (e > 0.6f) { tileBuyT.Remove(k); return 1; } return reduceMotion ? 1 : 1 + 0.34f * Mathf.Exp(-7 * e) * Mathf.Sin(e * 24 + 0.35f); }
+        float BuyFlash(int k) => tileBuyT.TryGetValue(k, out var t0) ? Mathf.Clamp01(1 - (Time.unscaledTime - t0) / 0.25f) : 0;
         public int TileCount => gtiles != null ? gtiles.Count : 0;
         static readonly Vector2Int[] Dirs8 = { new Vector2Int(0, -1), new Vector2Int(1, -1), new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(0, 1), new Vector2Int(-1, 1), new Vector2Int(-1, 0), new Vector2Int(-1, -1) };
         string lastBuyBranch = "";
@@ -200,6 +219,26 @@ namespace SalvageRun.Orbit
                     Line(a, b, gold ? new Color(1f, 0.74f, 0.2f) : new Color(0.32f, 0.3f, 0.28f, st[k] == 1 ? 0.5f : 0.9f), (gold ? 3.2f : 2f) * zz);
                 }
             }
+            // ✨ 산 칸 → 다음 칸으로 선을 따라 흐르는 빛 (꼬리 넷)
+            {
+                float now = Time.unscaledTime;
+                for (int i = buyFlows.Count - 1; i >= 0; i--)
+                {
+                    var f = buyFlows[i]; float e = now - f.t0;
+                    if (e > FlowLen + PingLen) { buyFlows.RemoveAt(i); continue; }
+                    if (e < 0 || e > FlowLen || f.from >= nT || f.to >= nT || st[f.to] == 0) continue;
+                    var a = ToScr(gtiles[f.from].cell); var b = ToScr(gtiles[f.to].cell);
+                    for (int q = 0; q < 5; q++)
+                    {
+                        float u = Mathf.Clamp01((e - q * 0.035f) / FlowLen); if (u <= 0) continue;
+                        u = 1 - (1 - u) * (1 - u);                                   // 빨리 나가 부드럽게 닿는다
+                        var p = Vector2.Lerp(a, b, u); float s = (q == 0 ? 9 : 7 - q) * zz, al = q == 0 ? 1 : 0.55f - 0.1f * q;
+                        GUI.color = new Color(1f, 0.86f, 0.45f, al * 0.45f); GUI.DrawTexture(new Rect(p.x - s * 1.6f, p.y - s * 1.6f, s * 3.2f, s * 3.2f), texDisc);
+                        GUI.color = new Color(1f, 0.97f, 0.85f, al); GUI.DrawTexture(new Rect(p.x - s / 2, p.y - s / 2, s, s), texDisc);
+                    }
+                }
+                GUI.color = Color.white;
+            }
             // ⭐ 추천 한 칸 — 모르면 이것만 사도 된다 (09-24 설계서 「무거워도 자연스럽게」)
             int recK = -1;                                                   // 추천 표시는 뺐다 (09-26 사장님 「추천은 하지 말자」)
             // 칸
@@ -221,12 +260,13 @@ namespace SalvageRun.Orbit
                 bool diamond = !isRoot && !circle && n.max == 1;
                 var pc = ToScr(t.cell);
                 float grow = isRoot ? 0 : nodePulse[t.stat] * 8 * zz;
-                float sz = (isRoot ? tile * 1.25f : diamond ? tile * 0.92f : tile) + grow;
+                float sz = ((isRoot ? tile * 1.25f : diamond ? tile * 0.92f : tile) + grow) * BuyScale(k);
                 var r = new Rect(pc.x - sz / 2, pc.y - sz / 2, sz, sz);
                 if (can) { GUI.color = new Color(1f, 0.78f, 0.3f, 0.28f + 0.18f * Mathf.Sin(Time.time * 5 + k)); GUI.DrawTexture(new Rect(r.x - 9 * zz, r.y - 9 * zz, r.width + 18 * zz, r.height + 18 * zz), texDisc); }
                 if (diamond) GUI.matrix = m0 * Matrix4x4.TRS(new Vector3(pc.x, pc.y, 0), Quaternion.Euler(0, 0, 45), Vector3.one) * Matrix4x4.TRS(new Vector3(-pc.x, -pc.y, 0), Quaternion.identity, Vector3.one);
                 Color bg = owned ? Color.Lerp(bcol, new Color(0.1f, 0.08f, 0.06f), 0.62f) : next ? new Color(0.09f, 0.09f, 0.1f) : new Color(0.06f, 0.06f, 0.07f);
                 GUI.color = bg; GUI.DrawTexture(r, circle ? texDisc : white);
+                float bfl = BuyFlash(k); if (bfl > 0) { GUI.color = new Color(1f, 0.97f, 0.88f, 0.75f * bfl); GUI.DrawTexture(r, circle ? texDisc : white); }   // ✨ 산 순간 흰빛
                 Color edge = can ? new Color(1f, 0.8f, 0.35f) : owned ? Color.Lerp(bcol, Color.black, 0.25f) : new Color(0.22f, 0.21f, 0.2f);
                 if (circle) { GUI.color = edge; GUI.DrawTexture(r, texRing); GUI.color = Color.white; } else Frame(r, edge, can ? 2.5f : 1.5f);
                 GUI.matrix = m0;
@@ -235,7 +275,7 @@ namespace SalvageRun.Orbit
                 GUI.color = owned ? new Color(1f, 0.96f, 0.86f) : next ? (lockedTile ? new Color(0.3f, 0.31f, 0.34f) : new Color(0.72f, 0.72f, 0.74f)) : new Color(0.17f, 0.17f, 0.19f);
                 float isz = sz * 0.62f;
                 int planetI = isRoot ? -1 : System.Array.IndexOf(SweepSim.PlanetNode, n.id);
-                if (planetI > 0) { var pr = new Rect(pc.x - isz * 0.62f, pc.y - isz * 0.62f, isz * 1.24f, isz * 1.24f); GUI.color = owned ? Color.white : next ? new Color(0.6f, 0.62f, 0.66f) : new Color(0.2f, 0.2f, 0.22f); GUI.DrawTexture(pr, PlanetArt.Get(planetI).texture); }
+                if (planetI > 0) { var pr = new Rect(pc.x - isz * 0.62f, pc.y - isz * 0.62f, isz * 1.24f, isz * 1.24f); GUI.color = owned ? Color.white : next ? new Color(0.6f, 0.62f, 0.66f) : new Color(0.2f, 0.2f, 0.22f); var ps = PlanetArt.Icon(planetI); GUI.DrawTextureWithTexCoords(pr, ps.texture, SprUV(ps)); }
                 else DrawIcon(new Rect(pc.x - isz / 2, pc.y - isz / 2, isz, isz), isRoot ? "R" : n.id);
                 if (!isRoot && SweepSim.KeyNodes.Contains(n.id)) { float kp = sim.S.keys > 0 && next ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 3 + k) : 0.3f; GUI.color = new Color(0.71f, 0.61f, 1f, owned ? 0.9f : 0.35f + 0.3f * kp); Frame(new Rect(r.x - 3 * zz, r.y - 3 * zz, r.width + 6 * zz, r.height + 6 * zz), GUI.color, 2f); GUI.color = Color.white; }   // 「열쇠」 글자는 툴팁에서 · 열쇠가 있을 때만 깜빡 (09-26 정돈 14)
                 if (!isRoot && n.max == 1 && System.Array.IndexOf(SweepSim.WeaponNode, n.id) == sim.Weapon && owned) { GUI.color = new Color(1f, 0.55f, 0.5f); Lbl(new Rect(pc.x - 40, r.yMax + 2 * zz, 80, 16), Loc.T("<size=10><b>장착 중</b></size>"), center); GUI.color = Color.white; }
@@ -247,8 +287,9 @@ namespace SalvageRun.Orbit
                 bool clicked = !isRoot && (next || inf && owned) && inArea && Bt(r, GUIContent.none, GUIStyle.none);
                 if (clicked && ns == NodeSt.Can)
                 {
-                    int times = shift ? 5 : 1;
+                    int times = shift ? 5 : 1; double cash0 = sim.S.cash;
                     while (times-- > 0 && sim.State(t.stat) == NodeSt.Can) sim.BuyTile(t.stat);
+                    BuyAnim(k, cash0 - sim.S.cash >= 1 ? "-" + KNum.Short(cash0 - sim.S.cash) : null);
                     if (n.id == "e_shop") { roomGo = 5; roomGoAt = Time.unscaledTime + 0.5f; }                // 🧭 09-27 사장님 「증권 · 가게 스킬 열리면 바로 거기 가게」 — 사는 효과를 보고 그 방으로
                     else if (n.id == "v_volley" && sim.S.lv[t.stat] == 1) Guide(Loc.T("전탄 발사가 생겼다 — 출동 중 게이지가 차면 Space · 계기판 가운데 단추 (무기 둘부터)"));
                     else if (n.id == "a_open") { roomGo = 4; roomGoAt = Time.unscaledTime + 0.5f; }
@@ -256,6 +297,23 @@ namespace SalvageRun.Orbit
                 }
                 else if (clicked && ns != NodeSt.Max)
                 { OrbitSfx.Play("clank", 0.35f, 0.05f, 0f); int bk = ns == NodeSt.Hidden ? BlockTile(k) : -1; Deny(pc, bk >= 0 ? TileName(bk) + Loc.T(" 먼저") : WhyNot(t.stat)); }   // 🚫 안 눌리는 칸 — 왜 안 되는지 그 자리에 (09-25 사장님 「안 눌리는 게 있던데」)
+            }
+            // ✨ 빛이 닿은 다음 칸 — 작은 고리가 번진다 · 쓴 돈이 금색으로 떠오른다
+            {
+                float now = Time.unscaledTime;
+                foreach (var f in buyFlows)
+                {
+                    float e = now - f.t0 - FlowLen; if (e < 0 || e > PingLen || f.to >= nT || st[f.to] == 0) continue;
+                    var p = ToScr(gtiles[f.to].cell); float k2 = e / PingLen, R = tile * (0.55f + 0.6f * k2);
+                    GUI.color = new Color(1f, 0.86f, 0.45f, 0.8f * (1 - k2)); GUI.DrawTexture(new Rect(p.x - R, p.y - R, R * 2, R * 2), texRing);
+                }
+                for (int i = buyCoins.Count - 1; i >= 0; i--)
+                {
+                    var c = buyCoins[i]; float e = now - c.t0; if (e > 0.9f || c.k >= nT) { buyCoins.RemoveAt(i); continue; }
+                    var p = ToScr(gtiles[c.k].cell); float a = Mathf.Clamp01((0.9f - e) / 0.3f);
+                    GUI.color = new Color(1, 1, 1, a); Lbl(new Rect(p.x - 60, p.y - tile * 0.9f - 26 * e, 120, 20), "<size=13><b><color=#ffdf95>" + c.txt + "</color></b></size>", center);
+                }
+                GUI.color = Color.white;
             }
             // 영역 밖 띠 — 넘어간 칸을 덮고 머리 · 안내를 다시 그린다
             GUI.color = new Color(0.02f, 0.027f, 0.04f); GUI.DrawTexture(new Rect(0, 0, vw, area.y), white); GUI.DrawTexture(new Rect(0, area.yMax, vw, RefH - area.yMax), white);
