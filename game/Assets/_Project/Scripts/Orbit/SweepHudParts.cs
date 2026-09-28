@@ -192,7 +192,7 @@ namespace SalvageRun.Orbit
                 string nm = key ? Loc.T("양자 열쇠") : cn ? SweepSim.ConsName[id - SweepSim.Cons0] : Parts.Defs[id].name;
                 var itx = ItemTex(id);
                 if (itx != null) { GUI.color = new Color(1, 1, 1, 0.08f); GUI.DrawTexture(new Rect(r.x + 8, r.y + 46, 48, 48), texDisc); GUI.color = Color.white; GUI.DrawTexture(new Rect(r.x + 6, r.y + 44, 52, 52), itx); }
-                int nmFs = 15; while (nmFs > 11 && label.CalcSize(new GUIContent("<size=" + nmFs + "><b>" + nm + "</b></size>")).x > r.width - 68) nmFs--;   // 🌐 긴 이름은 글자를 줄인다
+                int nmFs = 15; while (nmFs > 9 &&label.CalcSize(new GUIContent("<size=" + nmFs + "><b>" + nm + "</b></size>")).x > r.width - 68) nmFs--;   // 🌐 긴 이름은 글자를 줄인다
                 Lbl(new Rect(r.x + 62, r.y + 44, r.width - 68, 22), "<size=" + nmFs + "><b><color=#ffffff>" + nm + "</color></b></size>", label);
                 string desc = key ? Loc.T("◆ 보라 테두리 핵심 칸 하나를 연다") : cn ? SweepSim.ConsDesc[id - SweepSim.Cons0] : Parts.Defs[id].desc;
                 Lbl(new Rect(r.x + 62, r.y + 66, r.width - 68, 42), "<size=11><color=#c8d0dc>" + desc + "</color></size>", small);

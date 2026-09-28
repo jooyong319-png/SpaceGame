@@ -72,7 +72,7 @@ namespace SalvageRun.Orbit
             y += 12;
             var totalPos = new Vector2(L.xMax - 60, y + 14);
             Lbl(new Rect(L.x + 18, y, L.width - 36, 32), Loc.T("<size=24>합계</size>"), label);
-            Lbl(new Rect(L.x + 18, y, L.width - 36, 32), "<size=26><color=#6fcf97>+" + KNum.Fmt(gained * tally) + "</color></size>", cost);
+            Lbl(new Rect(L.x + 18, y - 2, L.width - 36, 38), "<size=26><color=#6fcf97>+" + KNum.Fmt(gained * tally) + "</color></size>", cost);
             if (sim.Mk != null && runStockSh != null && runStockSh.Length == sim.Mk.M.st.Count)
             {   // 📈 내 주식 이번 판 — 출발 때 들고 있던 주식이 얼마나 움직였나 (09-24 사장님 4번)
                 double v0 = 0, v1 = 0; for (int i = 0; i < runStockSh.Length; i++) { v0 += runStockSh[i] * runStockPx[i]; v1 += runStockSh[i] * sim.Mk.M.st[i].price; }
@@ -142,7 +142,7 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(0.1f, 0.12f, 0.16f); GUI.DrawTexture(sil, texDisc);
                 GUI.color = prog >= 1 ? SweepGame.Green : new Color(0.3f, 0.34f, 0.42f); GUI.DrawTexture(sil, texRing); GUI.color = Color.white;
                 title.fontSize = 22; Lbl(sil, prog >= 1 ? "<color=#6fcf97>!</color>" : "?", title);
-                Lbl(new Rect(sil.xMax + 14, RB.y + 38, RB.width - 120, 40), "<size=13>" + SweepSim.Bills[S.bill].perk + "</size>", label);
+                Lbl(new Rect(sil.xMax + 14, RB.y + 38, RB.width - 120, 40), Fit(SweepSim.Bills[S.bill].perk, 13, RB.width - 122, label), label);   // 🌐 영어는 길다
                 GUI.DrawTexture(new Rect(sil.xMax + 14, RB.y + 84, RB.width - 124, 8), texBar);
                 GUI.color = prog >= 1 ? SweepGame.Green : SweepGame.Amber; GUI.DrawTexture(new Rect(sil.xMax + 14, RB.y + 84, (RB.width - 124) * prog, 8), white); GUI.color = Color.white;
                 Lbl(new Rect(sil.xMax + 14, RB.y + 94, RB.width - 124, 16), "<size=11>" + Mathf.RoundToInt(prog * 100) + "%</size>", small);
@@ -184,7 +184,7 @@ namespace SalvageRun.Orbit
             GUI.color = can ? Color.Lerp(new Color(0.42f, 0.1f, 0.1f), new Color(0.6f, 0.16f, 0.14f), pulse) : new Color(0.3f, 0.08f, 0.09f);
             GUI.DrawTexture(r, white); GUI.color = Color.white;
             Frame(r, can ? Color.Lerp(SweepGame.Red, Color.white, pulse * 0.5f) : new Color(0.5f, 0.2f, 0.18f), 2);
-            Lbl(new Rect(r.x, r.y + 6, r.width, 30), "<size=24><color=#ffdf95>" + KNum.Fmt(sim.BillAmount) + "</color></size>", center);
+            Lbl(new Rect(r.x, r.y + 4, r.width, 34), "<size=24><color=#ffdf95>" + KNum.Fmt(sim.BillAmount) + "</color></size>", center);
             string sub = S.overdue ? Loc.T("<color=#ffb3a8>오늘 납부일</color>") : S.billDue + Loc.T("판 남음");
             if (can) sub += Loc.T(" · <color=#ffffff>눌러서 갚기</color>");
             else if (loanPay) sub += Loc.T(" · <color=#ffffff>대출 ") + KNum.Fmt(need) + Loc.T(" 받아 갚기</color>");

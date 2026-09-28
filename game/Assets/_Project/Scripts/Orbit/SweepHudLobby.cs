@@ -58,7 +58,7 @@ namespace SalvageRun.Orbit
             else if (Btn(Loc.T("시작하기"), Loc.T("빚내서 산 청소선 한 척 — 궤도를 치운다"), true)) LobbyContinue();
             if (Btn(Loc.T("설정"), null, false)) { settingsOpen = true; OrbitSfx.Play("tick", 0.6f); }
             if (Btn(Loc.T("끝내기"), null, false)) { game.Save(); Application.Quit(); }
-            Lbl(new Rect(x, RefH - 34, 500, 18), Loc.T("<size=11><color=#5f6878>v0.9 · 오늘도 궤도는 깨끗합니다 · Space = 이어하기</color></size>"), label);
+            Lbl(new Rect(x, RefH - 34, 500, 18), "<size=11><color=#5f6878>v" + Application.version + Loc.T(" · 오늘도 궤도는 깨끗합니다 · Space = 이어하기</color></size>"), label);   // 🏷 버전은 빌드 설정(bundleVersion) 한 곳에서 (09-29)
             GUI.enabled = en0;
             GUI.color = Color.white;
             if (wipeAsk) WipeConfirm();

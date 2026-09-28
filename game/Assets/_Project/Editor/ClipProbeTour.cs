@@ -75,6 +75,14 @@ namespace SalvageRun.EditorTools
                 }
                 for (int e = 0; e < 4; e++) { int ee = e; acts.Add(g => { Close(g); g.hud.TestEnd(ee); }); }
                 acts.Add(g => g.hud.TestEnd(-1));
+                // 📻 무전 — 모든 줄을 다 찍힌 채로
+                for (int q = 0; q < 16; q++) { int qq = q; acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.TestRadio(qq); }); }
+                // 🚀 출동 — 위 줄 · 계기 · 행성 이벤트 안내 전부 · 그다음 결산
+                acts.Add(g => { Close(g); g.hud.flow = 2; g.sim.S.overdue = false; g.hud.Go(); });
+                for (int q = 0; q < 30; q++) acts.Add(g => { if (!g.sim.R.over && g.sim.R.fuel < 8) g.sim.R.fuel = 20; });
+                for (int e = 0; e < SweepSim.EventNames.Length; e++) { int ee = e; acts.Add(g => { if (!g.sim.R.over) { g.sim.R.fuel = 20; g.hud.Banner("⚠ " + SweepSim.EventNames[ee] + " — " + SweepSim.EventHint[ee], ee % 2, 2.2f); } }); }
+                acts.Add(g => { g.sim.R.fuel = 0; });
+                for (int q = 0; q < 40; q++) acts.Add(g => { });            // 결산 화면이 뜨는 동안
             }
         }
 

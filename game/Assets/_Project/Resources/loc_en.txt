@@ -1662,3 +1662,4 @@ KESSLER // 빚 명세서	KESSLER // DEBT STATEMENT
 황금 셋! 판 벌이 × 10 + 	Three gold! Run earnings × 10 + 
 연료 +2초	Fuel +2s
 <color=#bff4ff>출동하면 지금 궤도 · </color><color=#ffdf95>	<color=#bff4ff>Launch goes to · </color><color=#ffdf95>
+ · 오늘도 궤도는 깨끗합니다 · Space = 이어하기</color></size>	 · The orbit is clean today, too · Space = continue</color></size>

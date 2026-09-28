@@ -34,6 +34,13 @@ namespace SalvageRun.Orbit
         }
         public void RadioOverdue(int bill) => Radio(bill < 5 ? Loc.T("기한 지났다? 납부든 대출이든 오늘 정해.") : Loc.T("기한이 지났습니다. 창구는 열려 있어요, 대표님."));
         public void RadioBankrupt() => Radio(Loc.T("…파산 접수했어. 다음 회사도 우리가 빌려줄게. 그게 우리 일이니까."));
+        /// <summary>에디터 시험용 — 무전 k 번째 줄을 다 찍힌 채로 (0~12 청구서 · 13 · 14 연체 · 15 파산)</summary>
+        public void TestRadio(int k)
+        {
+            if (k < RadioLines.Length) Radio(RadioLines[k]); else if (k <= RadioLines.Length + 1) RadioOverdue(k == RadioLines.Length ? 1 : 9); else RadioBankrupt();
+            radioPending = false; radioT = 0.6f;
+        }
+        public int TestRadioCount => RadioLines.Length + 3;
 
         // 📻 첫 판 무전 — 쭉 누르기 → 연타 → 끝. 해 봐야 넘어간다 (09-27 사장님 「처음 하는 사람들이 연타 · 쭉 누르기를 모른다」 · 시안 TxxPY6mLoewcLnW1vmNVBG)
         int coachStep; float coachHold, coachEnd, coachAge; double coachLastPress = -9; readonly System.Collections.Generic.List<float> coachTaps = new System.Collections.Generic.List<float>();
