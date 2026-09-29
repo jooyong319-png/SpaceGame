@@ -198,7 +198,7 @@ namespace SalvageRun.Orbit
             var ms = Mouse.current;
             if (ms != null)
             {
-                var mp = ms.position.ReadValue(); var gp = new Vector2(mp.x / scale, (Screen.height - mp.y) / scale);
+                var mp = ms.position.ReadValue(); var gp = new Vector2(mp.x / scale, (Screen.height - mp.y) / scale - oy);
                 if (ms.leftButton.wasPressedThisFrame)
                 {
                     dlgHold = 0; dlgRep = 0;

@@ -15,7 +15,7 @@ namespace SalvageRun.Orbit
         SweepSim sim => game.sim;
 
         const float RefH = 600f;
-        float scale = 1f, vw = 960f, ox;
+        float scale = 1f, vw = 960f, ox, oy;                                 // oy = 좁은 화면(4:3)에서 위 띠 높이 (화면 글자 좌표)
         public Vector2 CreditScreen = new Vector2(120, 580), TallyScreen = new Vector2(600, 60);
         public bool reduceMotion;
         public bool Blocking => sim != null && (sim.R.over || sim.M.careerOpen || sim.M.won || newsOpen || bayOpen);
@@ -136,8 +136,12 @@ namespace SalvageRun.Orbit
         {
             if (sim == null) return;
             Styles();
-            scale = Screen.height / RefH; vw = Screen.width / scale; ox = Mathf.Max(0, (vw - 960) / 2);
-            GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(scale, scale, 1));
+            float asp = Screen.width / (float)Mathf.Max(1, Screen.height);
+            if (asp < 1.6f) { scale = Screen.width / 960f; vw = 960; oy = (Screen.height / scale - RefH) / 2; }   // 📐 09-29 4:3 · 5:4 — 오른쪽이 잘렸다. 가로 960이 다 들어가게 줄이고 위아래는 띠
+            else { scale = Screen.height / RefH; vw = Screen.width / scale; oy = 0; }
+            ox = Mathf.Max(0, (vw - 960) / 2);
+            GUI.matrix = Matrix4x4.TRS(new Vector3(0, oy * scale, 0), Quaternion.identity, new Vector3(scale, scale, 1));
+            if (oy > 0.5f && Event.current.type == EventType.Repaint) { GUI.color = new Color(0.01f, 0.012f, 0.02f); GUI.DrawTexture(new Rect(-4, -oy - 4, vw + 8, oy + 4), white); GUI.DrawTexture(new Rect(-4, RefH, vw + 8, oy + 4), white); GUI.color = Color.white; }
             if (dlgId != null && (Event.current.isMouse || Event.current.isKey || Event.current.type == EventType.ScrollWheel)) Event.current.Use();   // 대화 중엔 뒤 단추가 눌리지 않게
             Effects();
             if (lobby && sim.R.over && !sim.M.won)

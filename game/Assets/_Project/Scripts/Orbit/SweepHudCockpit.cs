@@ -113,7 +113,7 @@ namespace SalvageRun.Orbit
             big.fontSize = 22;   // 도트 글꼴 11의 배수 (정돈 5)
             Lbl(new Rect(ox + 330, 2, 300, 28), Loc.T("<size=13><color=#8a9bb3>돈</color></size>  ") + KNum.Fmt(shown), new GUIStyle(big) { alignment = TextAnchor.MiddleCenter });
             big.fontSize = 20;
-            CreditScreen = new Vector2((ox + 480) * scale, 16 * scale);
+            CreditScreen = new Vector2((ox + 480) * scale, Screen.height - (16 + oy) * scale);   // 화면 좌표(아래가 0) — 위쪽 돈 자리 (예전엔 위아래가 뒤집혀 아래로 갔다)
             // 창 안 — 납부 완료 알림
             if (paidT > 0 && paidBill > 0)
             {

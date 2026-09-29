@@ -164,7 +164,7 @@ namespace SalvageRun.Orbit
                 Vector3 sp = game.WorldToScreen(game.PxToWorld(p.px.x, p.px.y));
                 var c = p.c; c.a = 1 - p.age * p.age;
                 pop.normal.textColor = c; pop.fontSize = Mathf.RoundToInt(p.size);
-                Lbl(new Rect(sp.x / scale - 120, (Screen.height - sp.y) / scale - 12, 240, 24), p.text, pop);
+                Lbl(new Rect(sp.x / scale - 120, (Screen.height - sp.y) / scale - oy - 12, 240, 24), p.text, pop);
             }
         }
 
@@ -186,7 +186,7 @@ namespace SalvageRun.Orbit
             float x0 = x;
             Item(Loc.T("돈"), KNum.Fmt(shown));
             big.normal.textColor = Color.white; big.fontSize = 20;
-            CreditScreen = new Vector2((x0 + 50) * scale, Screen.height - 22 * scale);
+            CreditScreen = new Vector2((x0 + 50) * scale, Screen.height - (22 + oy) * scale);
             if (R.clean)
             {
                 Item(Loc.T("궤도 청소율"), Mathf.Min(100, Mathf.FloorToInt(100f * R.cleanKills / R.cleanGoal)) + "%", big);
@@ -201,11 +201,11 @@ namespace SalvageRun.Orbit
                 if (gj != null)
                 {
                     Vector3 gsp = game.WorldToScreen(game.PxToWorld(gj.x, gj.y));    // 🛰 관문 바로 위에 따라다닌다 (09-26 — 위 가운데 막대가 화면을 가렸다)
-                    var gr = new Rect(Mathf.Clamp(gsp.x / scale - 110, 8, vw - 228), Mathf.Clamp((Screen.height - gsp.y) / scale - 78, 60, RefH - 120), 220, 30);
+                    var gr = new Rect(Mathf.Clamp(gsp.x / scale - 110, 8, vw - 228), Mathf.Clamp((Screen.height - gsp.y) / scale - oy - 78, 60, RefH - 120), 220, 30);
                     GUI.color = new Color(0.05f, 0.04f, 0.04f, 0.85f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.6f, 0.4f, 0.8f), 1);
                     if (!sim.GateReady)
                     {   // 🛡 방어막 — 관문 둘레에 푸른 막 · 막대 대신 자물쇠 (09-27)
-                        float sp = 0.5f + 0.5f * Mathf.Sin(Time.time * 3f), gx = gsp.x / scale, gy = (Screen.height - gsp.y) / scale;
+                        float sp = 0.5f + 0.5f * Mathf.Sin(Time.time * 3f), gx = gsp.x / scale, gy = (Screen.height - gsp.y) / scale - oy;
                         GUI.color = new Color(0.45f, 0.8f, 1f, 0.12f + 0.08f * sp); GUI.DrawTexture(new Rect(gx - 78, gy - 78, 156, 156), texDisc);
                         GUI.color = new Color(0.6f, 0.9f, 1f, 0.55f + 0.25f * sp); GUI.DrawTexture(new Rect(gx - 80, gy - 80, 160, 160), texRing);
                         GUI.color = Color.white;
@@ -224,7 +224,7 @@ namespace SalvageRun.Orbit
             // 💰 이번 판 계산대 — 계기판 위, 포구 오른쪽. 금화가 여기로 날아와 한 숫자로 (시안 DbsvFEEy1K5ddbZsM61B2y)
             {
                 var tr = new Rect(vw - 312, RefH - 50, 170, 38);                      // 🟩 계기판 속 액정 (09-24 10 · 28번)
-                TallyScreen = new Vector2(tr.center.x * scale, Screen.height - tr.center.y * scale);
+                TallyScreen = new Vector2(tr.center.x * scale, Screen.height - (tr.center.y + oy) * scale);
                 float pu = game.tallyPulse;
                 Lcd(tr, pu);
                 Lbl(new Rect(tr.x + 8, tr.y, tr.width, 18), Loc.T("<size=10><color=#5fa37d>이번 판</color></size>"), label);

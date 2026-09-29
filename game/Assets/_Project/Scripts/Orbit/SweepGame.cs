@@ -88,7 +88,7 @@ namespace SalvageRun.Orbit
             Load();
             cam = Camera.main;
             if (cam == null) { var go = new GameObject("Main Camera"); go.tag = "MainCamera"; cam = go.AddComponent<Camera>(); }
-            cam.orthographic = true; cam.orthographicSize = 6f;
+            cam.orthographic = true; cam.orthographicSize = 6f; OrthoBase = 6f;
             cam.clearFlags = CameraClearFlags.SolidColor; cam.backgroundColor = new Color(0.012f, 0.02f, 0.04f);
             cam.transform.position = new Vector3(0, 0, -10);
             // 🟦 640×360 도트 격자 — 게임 화면은 작은 그림에 그려 도트 그대로 키운다 (09-24 사장님 「픽셀 개수를 안 정해서 지저분」). 글자(HUD)는 화면 해상도 그대로
@@ -264,10 +264,12 @@ namespace SalvageRun.Orbit
             bool cockpit = hud != null && hud.CockpitView;
             // 출동 중엔 궤도 띠가 화면에 차도록 당긴다 (사장님 「좀 더 확대」) — 띠가 넓어지면 그만큼 물러난다
             float wantSize = cockpit ? 9.6f : Mathf.Clamp((float)sim.Bo * 0.0145f, 3.8f, 7f) * 1.1f;   // 아래 계기판 몫만큼 물린다 (sim.ViewHalf 와 같은 식)   // 09-24 「화면에 작게 보인다」 — 더 당긴다 (띠는 30% 넓어짐)
-            cam.orthographicSize = Mathf.Lerp(cam.orthographicSize, wantSize, 1 - Mathf.Exp(-dt * 5f));
-            float camY = cockpit ? -0.3f * cam.orthographicSize : -0.1f * cam.orthographicSize;   // 출동 중엔 궤도가 계기판 위로
+            OrthoBase = Mathf.Lerp(OrthoBase, wantSize, 1 - Mathf.Exp(-dt * 5f));
+            NarrowK = Mathf.Max(1f, 1.6f / Mathf.Max(0.1f, (float)Screen.width / Mathf.Max(1, Screen.height)));   // 📐 16:10보다 좁으면 (4:3 · 5:4) 화면 글자처럼 가로가 다 들어가게 넓게 본다 — 위아래는 띠
+            cam.orthographicSize = OrthoBase * NarrowK;
+            float camY = cockpit ? -0.3f * OrthoBase : -0.1f * OrthoBase;   // 출동 중엔 궤도가 계기판 위로
             camBase = Mathf.Lerp(camBase, camY, 1 - Mathf.Exp(-dt * 5f));
-            float camX = hud != null ? -hud.CockpitDx * 2f * cam.orthographicSize / 600f : 0f;   // 옆 방으로 밀리면 창밖도 같이
+            float camX = hud != null ? -hud.CockpitDx * 2f * OrthoBase / 600f : 0f;   // 옆 방으로 밀리면 창밖도 같이
             cam.transform.position = new Vector3(camX, camBase, -10) + (Vector3)(Random.insideUnitCircle * shake * ShakeMul);
             foreach (var bp in bgParts) bp.sr.transform.position = new Vector3(bp.at.x + camX * bp.par, bp.at.y + camBase * bp.par, 0);   // 멀리 있는 것은 카메라를 거의 따라온다
             if (bgView != null)
@@ -365,6 +367,9 @@ namespace SalvageRun.Orbit
 
         // 🟦 도트 격자 — 모니터 높이를 정수로 나눠 약 540줄 (1080p = 960×540 ×2 · 1600 = 853×533 ×3). 띠 없이 도트가 고르다 (09-24 사장님 「픽셀 수를 좀 늘리자」)
         public int PixW = 960, PixH = 540, PixS = 2;
+        /// <summary>📐 카메라 기준 크기 — 16:10 이상 화면의 세로 반폭. 좁은 화면(4:3)은 실제 카메라가 NarrowK 배 넓다.
+        /// 효과 · 포대 · 계기판은 이 기준으로 그린다 (화면 글자 칸 960×600 과 맞게) — 09-29 화면 비율 검사</summary>
+        public float OrthoBase = 6f; public static float NarrowK = 1f;
         RenderTexture pixRT;
         void EnsurePixRT()
         {

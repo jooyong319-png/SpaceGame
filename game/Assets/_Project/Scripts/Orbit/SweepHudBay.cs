@@ -144,7 +144,7 @@ namespace SalvageRun.Orbit
             Lbl(new Rect(ox + 16, 12, cashLw + 4, 20), Loc.T("돈"), dim);
             Lbl(new Rect(ox + Mathf.Max(38, 22 + cashLw), 6, 240, 32), "<color=#ffdf95>" + KNum.Fmt(shown) + "</color>", big);
             big.fontSize = 20;
-            CreditScreen = new Vector2((ox + 60) * scale, Screen.height - 22 * scale);
+            CreditScreen = new Vector2((ox + 60) * scale, Screen.height - (22 + oy) * scale);
             if (S.bill < SweepSim.Bills.Length && !sim.M.cleanReady)
             {
                 string bl = Loc.T("청구서 · ") + SweepSim.Bills[S.bill].t + " <color=#ffdf95>" + KNum.Fmt(sim.BillAmount) + "</color>" + (S.overdue ? Loc.T("  <color=#ff8a7a>오늘 납부일</color>") : " · " + S.billDue + Loc.T("판 남음")) + (S.debt > 0 ? Loc.T("  <color=#ffb3a8>빚 ") + KNum.Fmt(S.debt) + "</color>" : "") + (S.cash >= sim.BillAmount ? Loc.T("  <color=#6fcf97>▶ 눌러서 갚기</color>") : "");

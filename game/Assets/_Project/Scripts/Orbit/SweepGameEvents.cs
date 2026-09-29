@@ -63,7 +63,7 @@ namespace SalvageRun.Orbit
                         if (Time.time - brokeWinT > 0.25f) { brokeWinT = Time.time; brokeWinN = 0; }
                         if (++brokeWinN <= 4)
                         {
-                            Add(glow, at, 0.6f * cam.orthographicSize / 6f, new Color(1f, 0.93f, 0.75f, 0.9f), 7, 0.09f).sr.sortingOrder = 120;
+                            Add(glow, at, 0.6f * OrthoBase / 6f, new Color(1f, 0.93f, 0.75f, 0.9f), 7, 0.09f).sr.sortingOrder = 120;
                             Burst(at, Color.Lerp(JunkColor(k), Color.white, 0.3f), 6, 4f);
                             if (brokeWinN == 1 && Time.time - brokeStopT > 0.5f && (sim.R == null || sim.R.volleyT <= 0)) { brokeStopT = Time.time; hitStop = Mathf.Max(hitStop, 0.015f); }   // 🐢 09-26 사장님 「해왕성 · 전탄 발사 랙」 — 멈칫이 연달아 걸려 끊겨 보였다 → 0.5초에 한 번 · 절반 · 전탄 중엔 없음
                             shake = Mathf.Max(shake, 0.07f);
@@ -168,7 +168,7 @@ namespace SalvageRun.Orbit
                     {   // 🔫 확률 효과 발동 — 무기 이름이 조준점 위에 잠깐 · 포대가 그 색으로 번쩍
                         int pw = (int)e.v; var pc = WeaponCol(pw);
                         curW = pw; if (pw > 0 && pw < 9) { wTgt[pw] = PxToWorld(e.x, e.y + (e.k == 0 ? 26 : 20)); wRec[pw] = 1; }
-                        if (e.k == 0) { Add(glow, ShotFrom(), 0.3f * cam.orthographicSize / 6f, pc, 7, 0.18f).sr.sortingOrder = 150; }
+                        if (e.k == 0) { Add(glow, ShotFrom(), 0.3f * OrthoBase / 6f, pc, 7, 0.18f).sr.sortingOrder = 150; }
                         break;
                     }
                     case SwEv.TraitFx:
@@ -395,7 +395,7 @@ namespace SalvageRun.Orbit
         /// <summary>🔴 빔 — 화면 아래 선체(포구)에서 조준점까지 (사장님 09-23: "집게보단 우주선에서 빔 쏘는 느낌")</summary>
         void Beam(Vector3 at, bool hit)
         {
-            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);   // 청소선에서 나간다 (09-24)
+            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - OrthoBase - 0.4f, 0);   // 청소선에서 나간다 (09-24)
             var core = Add(pixel, at, 0.05f, hit ? new Color(1f, 0.95f, 0.78f, 1f) : new Color(0.6f, 0.65f, 0.75f, 0.5f), 8, 0.22f);
             core.a = muzzle; core.b = at; core.size = hit ? 0.1f : 0.05f;
             var halo = Add(pixel, at, 0.05f, new Color(1f, 0.76f, 0.3f, hit ? 0.55f : 0.22f), 8, 0.3f);
@@ -406,7 +406,7 @@ namespace SalvageRun.Orbit
         // 🚀 산탄선 — 포구 불꽃 · 굵은 알 여덟이 날아가 조준 원 안에 흩어진다 · 닿는 자리 불똥 · 탄피 (09-26 사장님 「기본 무기 외형 바꾸자」)
         void ScatterFx(Vector3 at, float radiusPx, bool hit)
         {
-            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);
+            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - OrthoBase - 0.4f, 0);
             float rw = radiusPx / PxPerUnit; var col = new Color(1f, 0.8f, 0.25f); const float fly = 0.11f;
             Add(glow, muzzle, 1.1f, new Color(1f, 0.85f, 0.4f, 0.95f), 7, 0.1f);                    // 포구 불꽃
             Star(muzzle, new Color(1f, 0.9f, 0.55f), 0.7f, 8, 0.09f);
@@ -431,7 +431,7 @@ namespace SalvageRun.Orbit
         // 🚀 작살선 — 작살 머리가 한 줄로 날아가고 밧줄이 따라가다 감긴다 · 꿰뚫은 수만큼 탁탁 (09-26)
         void HarpoonFx(Vector3 end, int hits)
         {
-            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);
+            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - OrthoBase - 0.4f, 0);
             var teal = new Color(0.45f, 0.95f, 0.9f);
             Add(glow, muzzle, 0.8f, new Color(0.6f, 1f, 0.95f, 0.8f), 7, 0.09f);                              // 포구 불빛
             var head = Add(pixel, muzzle, 0.05f, new Color(0.9f, 1f, 1f, 1f), 9, 0.2f); head.a = muzzle; head.b = end; head.size = 0.13f;   // 작살 머리
@@ -449,7 +449,7 @@ namespace SalvageRun.Orbit
         // 🚀 전격선 — 쏠 때 포구 번쩍 (구체는 DrawOrbs 가 매 판 그린다 · 09-27)
         void TeslaFx()
         {
-            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);
+            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - OrthoBase - 0.4f, 0);
             Add(glow, muzzle, 0.9f, new Color(0.6f, 0.9f, 1f, 0.9f), 7, 0.12f);
             Star(muzzle, new Color(0.75f, 0.95f, 1f), 0.5f, 6, 0.1f);
             OrbitSfx.PlayPitch("launch", 0.3f, 1.8f);
@@ -457,7 +457,7 @@ namespace SalvageRun.Orbit
         // 🚀 미사일선 — 발사 연기 · 날아가는 미사일(빨간 머리 + 꼬리 연기) · 닿으면 작은 폭발 (09-27)
         void MissileLaunchFx()
         {
-            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - cam.orthographicSize - 0.4f, 0);
+            var muzzle = sim.R != null && !sim.R.over ? ShotFrom() : new Vector3(0, camBase - OrthoBase - 0.4f, 0);
             Add(glow, muzzle, 0.55f, new Color(1f, 0.7f, 0.45f, 0.8f), 7, 0.08f);
             for (int i = 0; i < 3; i++) { var sm = Add(glow, muzzle, 0.3f, new Color(0.7f, 0.7f, 0.75f, 0.5f), 0, 0.5f); sm.v = new Vector3(Random.Range(-1.2f, 1.2f), Random.Range(-0.6f, 0.2f), 0); }
             OrbitSfx.PlayPitch("launch", 0.18f, 2.2f);

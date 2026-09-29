@@ -38,8 +38,8 @@ namespace SalvageRun.Orbit
         // ───────────────────────────────── 🔫 조종실 포구 (시안 좌표 1280×720 → 월드)
         readonly List<SpriteRenderer> turPool = new List<SpriteRenderer>(); int turN, turFire;
         readonly float[] recoil = new float[12]; Vector3 turAim; int turW = -1;
-        float TK => 2f * cam.orthographicSize / 720f * (float)SweepSim.TurS;          // 시안 1px → 월드 (포구 크기 배율 포함)
-        Vector3 TW(float mx, float my) => new Vector3(cam.transform.position.x + (mx - 640) * TK, camBase - cam.orthographicSize + (720 - my) * TK, 0);
+        float TK => 2f * OrthoBase / 720f * (float)SweepSim.TurS;          // 시안 1px → 월드 (포구 크기 배율 포함)
+        Vector3 TW(float mx, float my) => new Vector3(cam.transform.position.x + (mx - 640) * TK, camBase - OrthoBase + (720 - my) * TK, 0);
         SpriteRenderer TPiece(Sprite s, Color c, int order)
         {
             if (turN >= turPool.Count) { var go = new GameObject("tur"); go.transform.SetParent(transform); turPool.Add(go.AddComponent<SpriteRenderer>()); }
@@ -136,7 +136,7 @@ namespace SalvageRun.Orbit
             OrbitSfx.PlayPitch("tick", 0.35f, 1.6f + b.hop * 0.12f);
         }
         readonly List<Missile> missiles = new List<Missile>();
-        public string TestFxSizes() { var sb = new System.Text.StringBuilder("ortho=" + cam.orthographicSize + " frameFx=" + frameFx.Count + " :"); foreach (var f in frameFx) if (f.sr != null) sb.Append(" " + f.sr.sprite.name + "@" + f.sr.bounds.size.x.ToString("0.00")); return sb.ToString(); }   // 에디터 시험용
+        public string TestFxSizes() { var sb = new System.Text.StringBuilder("ortho=" + OrthoBase + " frameFx=" + frameFx.Count + " :"); foreach (var f in frameFx) if (f.sr != null) sb.Append(" " + f.sr.sprite.name + "@" + f.sr.bounds.size.x.ToString("0.00")); return sb.ToString(); }   // 에디터 시험용
         public Vector3 TestMissileScreen() { foreach (var m in missiles) if (!m.small && m.sr != null && m.sr.enabled) return cam.WorldToScreenPoint(m.sr.transform.position); return new Vector3(-1, -1, 0); }   // 에디터 시험용
         static Vector3 Bez(Vector3 a, Vector3 b, Vector3 c, float u) => (1 - u) * (1 - u) * a + 2 * (1 - u) * u * b + u * u * c;
         void UpdateMissiles(float dt)
@@ -239,11 +239,11 @@ namespace SalvageRun.Orbit
             if (curW > 0 && sim.WeaponOwned(curW))
             {   // 무기 포대 포구
                 var wb = WTurretPos(curW); float wa = WTurretAng(curW, wb); wRec[curW] = 1;
-                var wp = TAlong(wb, wa, TurW[curW] * 0.8f); Add(glow, wp, 0.25f * cam.orthographicSize / 6f, WeaponCol(curW), 7, 0.1f).sr.sortingOrder = 150; return wp;
+                var wp = TAlong(wb, wa, TurW[curW] * 0.8f); Add(glow, wp, 0.25f * OrthoBase / 6f, WeaponCol(curW), 7, 0.1f).sr.sortingOrder = 150; return wp;
             }
             int w = sim.Weapon, n = sim.MountCount(w); turFire = (turFire + 1) % n; recoil[turFire] = 1;
             sim.MountPx(w, turFire, out _, out _, out var tx, out var ty);
-            var p = PxToWorld(tx, ty); Add(glow, p, 0.25f * cam.orthographicSize / 6f, WeaponCol(w), 7, 0.1f).sr.sortingOrder = 150; return p;
+            var p = PxToWorld(tx, ty); Add(glow, p, 0.25f * OrthoBase / 6f, WeaponCol(w), 7, 0.1f).sr.sortingOrder = 150; return p;
         }
         public static Color WeaponCol(int w) => w switch { 1 => new Color(1f, 0.3f, 0.37f), 2 => new Color(0.62f, 0.85f, 1f), 3 => new Color(0.37f, 0.9f, 0.78f), 4 => new Color(1f, 0.6f, 0.24f), 5 => new Color(0.75f, 0.94f, 1f), 6 => new Color(1f, 0.82f, 0.4f), 7 => new Color(0.77f, 0.61f, 1f), 8 => Color.white, _ => new Color(1f, 0.76f, 0.35f) };
         void DrawTurret(bool on)
