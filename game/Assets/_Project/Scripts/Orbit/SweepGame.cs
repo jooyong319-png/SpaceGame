@@ -292,7 +292,7 @@ namespace SalvageRun.Orbit
             // 출동 중엔 궤도 띠가 화면에 차도록 당긴다 (사장님 「좀 더 확대」) — 띠가 넓어지면 그만큼 물러난다
             float wantSize = cockpit ? 9.6f : Mathf.Clamp((float)sim.Bo * 0.0145f, 3.8f, 7f) * 1.1f;   // 아래 계기판 몫만큼 물린다 (sim.ViewHalf 와 같은 식)   // 09-24 「화면에 작게 보인다」 — 더 당긴다 (띠는 30% 넓어짐)
             OrthoBase = Mathf.Lerp(OrthoBase, wantSize, 1 - Mathf.Exp(-dt * 5f));
-            NarrowK = Mathf.Max(1f, 1.6f / Mathf.Max(0.1f, (float)Screen.width / Mathf.Max(1, Screen.height)));   // 📐 16:10보다 좁으면 (4:3 · 5:4) 화면 글자처럼 가로가 다 들어가게 넓게 본다 — 위아래는 띠
+            NarrowK = Mathf.Max(1f, SweepHud.MinAspect / Mathf.Max(0.1f, (float)Screen.width / Mathf.Max(1, Screen.height)));   // 📐 16:9보다 좁으면 (16:10 · 4:3 · 5:4) 화면 글자처럼 16:9 폭이 다 들어가게 넓게 본다 — 위아래는 띠
             cam.orthographicSize = OrthoBase * NarrowK;
             float camY = cockpit ? -0.3f * OrthoBase : -0.1f * OrthoBase;   // 출동 중엔 궤도가 계기판 위로
             camBase = Mathf.Lerp(camBase, camY, 1 - Mathf.Exp(-dt * 5f));

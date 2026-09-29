@@ -89,11 +89,13 @@ namespace SalvageRun.EditorTools
                     case 5: if (Wait(40)) { Shot("2tree"); Next(); } break;
                     case 6: if (Wait(3)) { g.hud.flow = 5; Next(); } break;
                     case 7: if (Wait(40)) { Shot("3shop"); Next(); } break;
-                    case 8: if (Wait(3)) { g.hud.flow = 2; Next(); } break;
-                    case 9: if (Wait(10)) { g.sim.S.overdue = false; g.hud.Go(); Next(); } break;
-                    case 10: if (!g.sim.R.over && g.sim.R.fuel < 5) g.sim.R.fuel = 20; if (Wait(150)) { Shot("4run"); g.sim.R.fuel = 0; Next(); } break;
-                    case 11: if (g.sim.R.over && Wait(60)) { Shot("5result"); Next(); } break;
-                    case 12: if (Wait(3)) { g.hud.flow = 2; si++; if (si >= Sizes.Length) { f = 99001; EditorApplication.ExitPlaymode(); return; } step = 0; } break;
+                    case 8: if (Wait(3)) { g.hud.flow = 4; Next(); } break;
+                    case 9: if (Wait(40)) { Shot("3stock"); Next(); } break;
+                    case 10: if (Wait(3)) { g.hud.flow = 2; Next(); } break;
+                    case 11: if (Wait(10)) { g.sim.S.overdue = false; g.hud.Go(); Next(); } break;
+                    case 12: if (!g.sim.R.over && g.sim.R.fuel < 5) g.sim.R.fuel = 20; if (Wait(150)) { Shot("4run"); g.sim.R.fuel = 0; Next(); } break;
+                    case 13: if (g.sim.R.over && Wait(60)) { Shot("5result"); Next(); } break;
+                    case 14: if (Wait(3)) { g.hud.flow = 2; si++; if (si >= Sizes.Length) { f = 99001; EditorApplication.ExitPlaymode(); return; } step = 0; } break;
                 }
             }
             catch (Exception e) { Debug.LogWarning("[비율 검사] " + e.Message); f = 99001; EditorApplication.ExitPlaymode(); }

@@ -15,6 +15,7 @@ namespace SalvageRun.Orbit
         SweepSim sim => game.sim;
 
         const float RefH = 600f;
+        public const float MinAspect = 16f / 9f;                               // 📐 이보다 좁은 화면은 이 폭(1067)이 다 들어가게 — 960 판 + 양옆 탭 자리 (SweepGame.NarrowK 와 같이)
         float scale = 1f, vw = 960f, ox, oy;                                 // oy = 좁은 화면(4:3)에서 위 띠 높이 (화면 글자 좌표)
         public Vector2 CreditScreen = new Vector2(120, 580), TallyScreen = new Vector2(600, 60);
         public bool reduceMotion;
@@ -138,7 +139,7 @@ namespace SalvageRun.Orbit
             if (sim == null) return;
             Styles();
             float asp = Screen.width / (float)Mathf.Max(1, Screen.height);
-            if (asp < 1.6f) { scale = Screen.width / 960f; vw = 960; oy = (Screen.height / scale - RefH) / 2; }   // 📐 09-29 4:3 · 5:4 — 오른쪽이 잘렸다. 가로 960이 다 들어가게 줄이고 위아래는 띠
+            if (asp < MinAspect) { scale = Screen.width / (RefH * MinAspect); vw = RefH * MinAspect; oy = (Screen.height / scale - RefH) / 2; }   // 📐 09-29 16:9보다 좁으면(16:10 · 4:3 · 5:4) 16:9 폭이 다 들어가게 줄이고 위아래는 띠 — 16:10 에서 증권 왼쪽 탭이 판 밑에 깔리고 설정 단추가 「시세 멈춤」을 덮었다
             else { scale = Screen.height / RefH; vw = Screen.width / scale; oy = 0; }
             ox = Mathf.Max(0, (vw - 960) / 2);
             GUI.matrix = Matrix4x4.TRS(new Vector3(0, oy * scale, 0), Quaternion.identity, new Vector3(scale, scale, 1));
