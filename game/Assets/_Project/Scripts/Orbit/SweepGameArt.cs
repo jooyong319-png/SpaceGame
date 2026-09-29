@@ -11,8 +11,20 @@ namespace SalvageRun.Orbit
     {
         // ───────────────────────────────── 입자
 
+        // ⚡ 09-29 성능 점검 — 큰 폭발이 겹치면 효과 조각이 1만 8천 개까지 늘어 한 프레임이 18ms 로 튀었다.
+        //    평소는 1천 개 안팎. 4천을 넘으면 새로 만들지 않고 오래된 조각 자리를 돌려 가며 다시 쓴다.
+        const int FxCap = 4000; int fxVictim;
         P Add(Sprite s, Vector3 at, float size, Color c, int kind, float life, float grow = 0)
         {
+            if (fx.Count >= FxCap)
+            {
+                int vi = fxVictim++ % fx.Count; var vsr = fx[vi].sr;
+                vsr.sprite = s; vsr.color = c; vsr.sortingOrder = kind == 2 ? 90 : kind == 7 ? 38 : 40;
+                vsr.transform.position = at; vsr.transform.rotation = Quaternion.identity;
+                vsr.transform.localScale = Vector3.one * size / Mathf.Max(0.01f, s.bounds.size.x);
+                var vp = new P { sr = vsr, c = c, kind = kind, life = life, size = grow > 0 ? grow : size };
+                fx[vi] = vp; return vp;
+            }
             var sr = pool.Count > 0 ? pool.Pop() : null;
             if (sr == null) { var go = new GameObject("fx"); go.transform.SetParent(transform); sr = go.AddComponent<SpriteRenderer>(); }
             sr.gameObject.SetActive(true);
