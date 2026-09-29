@@ -227,6 +227,10 @@ namespace SalvageRun.Orbit
         }
 
         void OnApplicationQuit() { Save(); }
+        // ⏸ 09-29 점검 — 창이 뒤에 있어도 판이 계속 흘렀다(설정: 뒤에서도 돌기). 빌드에서만: 창을 벗어나면 저장 · 소리 멈춤 · 출동 중이면 판도 멈춘다
+        //    (에디터는 자동 시험이 뒤에서 돌아야 해서 그대로)
+        void OnApplicationFocus(bool on) { if (Application.isEditor) return; AudioListener.pause = !on; if (!on) Save(); }
+        bool BgPause => !Application.isEditor && !Application.isFocused && sim != null && sim.R != null && !sim.R.over;
 
         // ───────────────────────────────── 매 프레임
 
@@ -234,6 +238,7 @@ namespace SalvageRun.Orbit
         {
             if (sim == null) { Load(); return; }
             RunCursor();                                                        // 🖱 출동 중에만 창 안에 가두고 조준 커서 (09-29)
+            if (BgPause) return;                                                // ⏸ 출동 중 창을 벗어나면 판이 멈춘다 (빌드만)
             float dt = Time.deltaTime;
             t += dt;
             var kb = Keyboard.current;
