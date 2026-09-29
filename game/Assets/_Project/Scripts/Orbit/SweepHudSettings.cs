@@ -26,15 +26,25 @@ namespace SalvageRun.Orbit
             reduceMotion = shakeLv == 2;
         }
         // 🖥 화면 — 저장한 대로 (0 전체 화면 · 1 창). 창 크기는 모니터보다 크면 들어가는 가장 큰 것으로. Alt+Enter 는 껐다 (09-27)
-        static readonly int[] WinW = { 1280, 1600, 1920 }, WinH = { 720, 900, 1080 };
+        // 📐 09-29 사장님 「대표적인 비율 다 테스트하고 화면에도 넣어」 — 창 모드는 비율(16:9 · 16:10 · 21:9 · 4:3) × 크기(높이 720 · 900 · 1080)
+        public static readonly float[] WinRatio = { 16f / 9f, 16f / 10f, 21f / 9f, 4f / 3f };
+        public static readonly string[] WinRatioName = { "16:9", "16:10", "21:9", "4:3" };
+        static readonly int[] WinH = { 720, 900, 1080 };
+        public static Vector2Int WinSize(int ratio, int size, int sw, int sh)
+        {   // 모니터보다 크면 한 단계씩 줄이고, 가장 작은 것도 크면 모니터에 들어가게 맞춘다
+            float r = WinRatio[Mathf.Clamp(ratio, 0, WinRatio.Length - 1)];
+            int k = Mathf.Clamp(size, 0, WinH.Length - 1), h = WinH[k], w = Mathf.RoundToInt(h * r);
+            while (k > 0 && (w > sw || h > sh - 60)) { k--; h = WinH[k]; w = Mathf.RoundToInt(h * r); }
+            if (w > sw || h > sh - 60) { h = Mathf.Min(sh - 60, Mathf.FloorToInt(sw / r)); w = Mathf.RoundToInt(h * r); }
+            return new Vector2Int(Mathf.Max(640, w), Mathf.Max(360, h));
+        }
         public static void ApplyScreen()
         {
             if (Application.isEditor) return;
             int sw = Display.main.systemWidth, sh = Display.main.systemHeight;
             if (PlayerPrefs.GetInt("orbit.screen", 0) == 0) { Screen.SetResolution(sw, sh, FullScreenMode.FullScreenWindow); return; }
-            int k = Mathf.Clamp(PlayerPrefs.GetInt("orbit.win", 1), 0, WinW.Length - 1);
-            while (k > 0 && (WinW[k] > sw || WinH[k] > sh - 60)) k--;
-            Screen.SetResolution(WinW[k], WinH[k], FullScreenMode.Windowed);
+            var s = WinSize(PlayerPrefs.GetInt("orbit.winRatio", 0), PlayerPrefs.GetInt("orbit.win", 1), sw, sh);
+            Screen.SetResolution(s.x, s.y, FullScreenMode.Windowed);
         }
         void SaveSettings()
         {
@@ -61,7 +71,7 @@ namespace SalvageRun.Orbit
         void SettingsWin()
         {
             GUI.color = new Color(0, 0, 0, 0.55f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
-            var w = new Rect(vw / 2 - 250, 44, 500, 510);
+            var w = new Rect(vw / 2 - 250, 20, 500, 560);                      // 09-29 창 비율 줄이 늘어 키웠다
             GUI.color = new Color(0.043f, 0.063f, 0.09f, 0.98f); GUI.DrawTexture(w, white); Frame(w, SweepGame.Amber, 2); GUI.color = Color.white;
             Lbl(new Rect(w.x + 22, w.y + 14, 200, 30), Loc.T("<size=20><b><color=#ffdf95>설정</color></b></size>"), label);
             if (Bt(new Rect(w.xMax - 104, w.y + 14, 88, 26), Loc.T("<size=12>닫기 Esc</size>"), btn)) settingsOpen = false;
@@ -81,8 +91,9 @@ namespace SalvageRun.Orbit
             int Pick(string name, int cur, string[] opts)
             {
                 Lbl(new Rect(w.x + 24, y, 140, 24), "<size=14>" + name + "</size>", label);
+                float bw = Mathf.Min(80, (w.width - 190) / opts.Length - 4);   // 단추가 넷이어도 창 안에
                 for (int k = 0; k < opts.Length; k++)
-                    if (Bt(new Rect(w.x + 170 + k * 84, y, 80, 26), "<size=12>" + (k == cur ? "<color=#ffdf95>" + opts[k] + "</color>" : opts[k]) + "</size>", k == cur ? btn : btnOff)) { cur = k; changed = true; OrbitSfx.Play("tick", 0.6f); }
+                    if (Bt(new Rect(w.x + 170 + k * (bw + 4), y, bw, 26), "<size=12>" + (k == cur ? "<color=#ffdf95>" + opts[k] + "</color>" : opts[k]) + "</size>", k == cur ? btn : btnOff)) { cur = k; changed = true; OrbitSfx.Play("tick", 0.6f); }
                 y += 40; return cur;
             }
             Slider(Loc.T("전체 소리"), ref vol);
@@ -99,9 +110,14 @@ namespace SalvageRun.Orbit
             int nf = Pick(Loc.T("화면"), fs, new[] { Loc.T("전체 화면"), Loc.T("창") });
             if (nf != fs) { PlayerPrefs.SetInt("orbit.screen", nf); PlayerPrefs.Save(); ApplyScreen(); }
             if (nf == 1)
-            {   // 🖥 창 크기 (09-27 사장님 「창 크기 조절 · 알트엔터 없애고 설정에서」)
+            {   // 🖥 창 비율 · 크기 (09-27 창 크기 · 09-29 비율)
+                int wr = PlayerPrefs.GetInt("orbit.winRatio", 0);
+                int nr = Pick(Loc.T("창 비율"), wr, WinRatioName);
+                if (nr != wr) { PlayerPrefs.SetInt("orbit.winRatio", nr); PlayerPrefs.Save(); ApplyScreen(); }
                 int ws = PlayerPrefs.GetInt("orbit.win", 1);
-                int nw = Pick(Loc.T("창 크기 (가로)"), ws, new[] { "1280", "1600", "1920" });
+                string[] sizes = new string[3];
+                for (int k = 0; k < 3; k++) { var s = WinSize(nr, k, 99999, 99999); sizes[k] = s.x + "×" + s.y; }   // 이름에 실제 크기
+                int nw = Pick(Loc.T("창 크기"), ws, sizes);
                 if (nw != ws) { PlayerPrefs.SetInt("orbit.win", nw); PlayerPrefs.Save(); ApplyScreen(); }
             }
             Lbl(new Rect(w.x + 24, w.yMax - 30, w.width - 48, 20), Loc.T("<size=11><color=#8a93a3>저장은 자동 · M = 소리 끄기 · Esc = 닫기</color></size>"), label);

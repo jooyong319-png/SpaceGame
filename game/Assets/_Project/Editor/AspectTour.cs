@@ -18,11 +18,13 @@ namespace SalvageRun.EditorTools
     {
         public static readonly (int w, int h, string name)[] Sizes =
         {
-            (1920, 1080, "16x9"), (1920, 1200, "16x10"), (1600, 1200, "4x3"), (1280, 1024, "5x4"),
-            (2560, 1080, "21x9"), (3840, 1080, "32x9"), (1366, 768, "1366x768"),
+            (1920, 1080, "16x9"), (2560, 1440, "16x9_qhd"), (1366, 768, "1366x768"), (1280, 720, "720p"),
+            (1920, 1200, "16x10"), (2560, 1600, "16x10_hi"), (1280, 800, "deck"),
+            (2160, 1440, "3x2"), (1600, 1200, "4x3"), (1280, 1024, "5x4"),
+            (2560, 1080, "21x9"), (3440, 1440, "21x9_uw"), (3840, 1080, "32x9"),
         };
         public static string OutDir => System.IO.Path.Combine(System.IO.Path.GetDirectoryName(System.IO.Path.GetDirectoryName(Application.dataPath)), "Builds", "aspect");
-        static int f, si, step, f0, oldIndex = -1; static bool running;
+        static int f, si, step, f0, oldIndex = -1, oldScreen; static bool running;
 
         [MenuItem("SalvageRun/화면 비율 검사 (7가지)")]
         public static void Run()
@@ -32,7 +34,7 @@ namespace SalvageRun.EditorTools
             PlayerPrefs.SetString("sweep.backup.state", PlayerPrefs.GetString("sweep.state", ""));
             PlayerPrefs.SetString("sweep.backup.meta", PlayerPrefs.GetString("sweep.meta", ""));
             PlayerPrefs.Save();
-            oldIndex = SelectedIndex();
+            oldIndex = SelectedIndex(); oldScreen = PlayerPrefs.GetInt("orbit.screen", 0);
             f = 0; si = 0; step = 0; running = true;
             EditorApplication.update -= Step; EditorApplication.update += Step;
             EditorApplication.EnterPlaymode();
@@ -84,7 +86,8 @@ namespace SalvageRun.EditorTools
                             foreach (var id in new[] { "e_shop", "a_open" }) { int i = Array.FindIndex(SweepSim.Nodes, x => x.id == id); g.sim.S.lv[i] = Math.Max(1, g.sim.S.lv[i]); }
                             foreach (var fl in new[] { "dlg:stock", "dlg:shop", "dlg:pro", "g:yoon0" }) if (!g.sim.M.flags.Contains(fl)) g.sim.M.flags.Add(fl);   // 첫 대화가 화면을 덮지 않게
                             g.sim.RollShop(); Next(); } break;
-                    case 3: if (Wait(40)) { Shot("1cockpit"); Next(); } break;
+                    case 3: if (Wait(40)) { Shot("1cockpit"); PlayerPrefs.SetInt("orbit.screen", 1); g.hud.TestSettings(); step = 15; f0 = Time.frameCount; } break;   // 설정 창(창 모드 줄까지)을 찍고 4로
+                    case 15: if (Wait(30)) { Shot("1settings"); g.hud.settingsOpen = false; PlayerPrefs.SetInt("orbit.screen", oldScreen); step = 4; f0 = Time.frameCount; } break;
                     case 4: if (Wait(3)) { g.hud.flow = 3; Next(); } break;
                     case 5: if (Wait(40)) { Shot("2tree"); Next(); } break;
                     case 6: if (Wait(3)) { g.hud.flow = 5; Next(); } break;
@@ -105,6 +108,7 @@ namespace SalvageRun.EditorTools
             EditorApplication.update -= Step; running = false;
             PlayerPrefs.SetString("sweep.state", PlayerPrefs.GetString("sweep.backup.state", ""));
             PlayerPrefs.SetString("sweep.meta", PlayerPrefs.GetString("sweep.backup.meta", ""));
+            PlayerPrefs.SetInt("orbit.screen", oldScreen);
             PlayerPrefs.Save();
             try { if (oldIndex >= 0) Select(oldIndex); } catch { }
             Debug.Log("[비율 검사] 끝 — " + OutDir);
