@@ -155,6 +155,7 @@ namespace SalvageRun.Orbit
         // 🟦 항로 홀로그램 — 행성 다섯 빛 구슬 · 열린 곳은 누르면 간다 · 판매 중이면 허가증 (두 번)
         // 🧭 항로 — B 「한 장씩 넘기기」 (09-26 사장님 · 시안 https://claude.ai/artifact/WLid5UFWSgJxQ1LM9chNDH)
         //    행성 하나를 크게 · ◀ ▶ · 휠로 넘기면 그 궤도로 바로 정해진다. 아래 점 · 특성 칩(값 · 체력 · 폭풍 · 중력 · 고리 틈 · 부착물) · 의뢰
+        GUIStyle descWrap;
         int routeBrowse = -1;                                                    // 보고 있는 칸 (열린 행성 + 다음 하나 안에서) · -1 = 지금 궤도
         void RouteHolo()
         {
@@ -194,12 +195,18 @@ namespace SalvageRun.Orbit
             if (!open) { GUI.color = new Color(1, 1, 1, fl); Lbl(big, "<size=20><b>?</b></size>", center); }
             GUI.color = new Color(1, 1, 1, fl);
             Lbl(new Rect(p.x + 6, p.y + 86, p.width - 12, 18), "<size=13><b><color=#ffdf95>" + so.name + "</color></b>" + (open ? "" : Loc.T("  <color=#ffb3a8>다음</color>")) + "</size>", center);
-            Lbl(new Rect(p.x + 6, p.y + 103, p.width - 12, 16), "<size=9><color=#7fcfe0>" + Clip(so.desc, 20) + "</color></size>", center);
+            {   // 🪐 09-30 사장님 「행성 설명 잘림」 — 20글자에서 「…」로 잘랐다. 두 줄까지 접고, 그래도 넘치면 한 치수 작게
+                if (descWrap == null) descWrap = new GUIStyle(center) { wordWrap = true };
+                var dr = new Rect(p.x + 6, p.y + 102, p.width - 12, 27);
+                string dt = "<size=9><color=#7fcfe0>" + so.desc + "</color></size>";
+                if (descWrap.CalcHeight(new GUIContent(dt), dr.width) > dr.height + 1) dt = "<size=8><color=#7fcfe0>" + so.desc + "</color></size>";
+                Lbl(dr, dt, descWrap);
+            }
             // 점 — 어디쯤인지
             float dw = 9, dx0 = p.center.x - vis.Count * dw / 2;
             for (int k = 0; k < vis.Count; k++)
             {
-                var dr = new Rect(dx0 + k * dw + 1, p.y + 121, 6, 6);
+                var dr = new Rect(dx0 + k * dw + 1, p.y + 131, 6, 6);   // 설명이 두 줄이 되어 아래로 (09-30)
                 bool on = k == routeBrowse, lk = !sim.Open(vis[k]);
                 if (lk) Frame(dr, new Color(Holo.r, Holo.g, Holo.b, 0.6f * fl), 1);
                 else { GUI.color = on ? new Color(1f, 0.87f, 0.58f, fl) : new Color(Holo.r, Holo.g, Holo.b, 0.4f * fl); GUI.DrawTexture(dr, white); }
@@ -216,27 +223,36 @@ namespace SalvageRun.Orbit
                 if (so.pull > 0) chips.Add((Loc.T("중력"), new Color(0.75f, 0.96f, 1f)));
                 if (so.gap > 0) chips.Add((Loc.T("고리 틈"), new Color(0.75f, 0.96f, 1f)));
                 chips.Add((Loc.T("부착물 ") + Mathf.RoundToInt((float)so.att * 100) + "%", new Color(0.75f, 0.96f, 1f)));
-                float lineW = 0; var widths = new List<float>();
-                foreach (var c in chips) { float cwd = label.CalcSize(new GUIContent("<size=9>" + c.Item1 + "</size>")).x + 8; widths.Add(cwd); lineW += cwd + 3; }
-                float cx = p.center.x - Mathf.Min(lineW, p.width - 12) / 2, cy = p.y + 132, x0 = cx;
+                // 🌐 09-30 영어는 칩이 세 줄로 넘쳐 아래 의뢰 줄과 겹쳤다 — 두 줄에 들어갈 때까지 칩 글자를 줄인다
+                int cfs = 9; float lineW = 0; var widths = new List<float>();
+                for (; cfs >= 7; cfs--)
+                {
+                    widths.Clear(); lineW = 0; int rows = 1; float tx = p.x + 8;
+                    foreach (var c in chips) { float cwd = label.CalcSize(new GUIContent("<size=" + cfs + ">" + c.Item1 + "</size>")).x + 8; widths.Add(cwd); lineW += cwd + 3; }
+                    float sx = p.center.x - Mathf.Min(lineW, p.width - 12) / 2; tx = sx;
+                    foreach (var wd in widths) { if (tx + wd > p.xMax - 6) { tx = p.x + 8; rows++; } tx += wd + 3; }
+                    if (rows <= 2) break;
+                }
+                cfs = Mathf.Max(cfs, 7);
+                float cx = p.center.x - Mathf.Min(lineW, p.width - 12) / 2, cy = p.y + 140, x0 = cx;
                 for (int k = 0; k < chips.Count; k++)
                 {
-                    if (cx + widths[k] > p.xMax - 6) { cx = p.x + 8; cy += 15; }
+                    if (cx + widths[k] > p.xMax - 6) { cx = p.x + 8; cy += 14; }
                     var cr = new Rect(cx, cy, widths[k], 13); var c = chips[k].Item2;
                     Frame(cr, new Color(c.r, c.g, c.b, 0.6f * fl), 1);
-                    GUI.color = new Color(1, 1, 1, fl); Lbl(new Rect(cr.x, cr.y - 2, cr.width, 16), "<size=9><color=#" + ColorUtility.ToHtmlStringRGB(c) + ">" + chips[k].Item1 + "</color></size>", center);
+                    GUI.color = new Color(1, 1, 1, fl); Lbl(new Rect(cr.x, cr.y - 2, cr.width, 16), "<size=" + cfs + "><color=#" + ColorUtility.ToHtmlStringRGB(c) + ">" + chips[k].Item1 + "</color></size>", center);
                     cx += widths[k] + 3;
                 }
             }
             GUI.color = new Color(Holo.r, Holo.g, Holo.b, 0.35f * fl);
-            for (float xx = p.x + 10; xx < p.xMax - 10; xx += 6) GUI.DrawTexture(new Rect(xx, p.y + 164, 3, 1), white);
+            for (float xx = p.x + 10; xx < p.xMax - 10; xx += 6) GUI.DrawTexture(new Rect(xx, p.y + 169, 3, 1), white);
             GUI.color = new Color(1, 1, 1, fl);
             // 아래 — 열린 행성이면 의뢰 · 다음 행성이면 항로 사러
             if (!open)
             {
                 bool nextUp = sim.HasGate && show == SweepSim.OrbitOrder[sim.Frontier + 1];
                 GUI.color = new Color(1, 1, 1, fl);
-                Lbl(new Rect(p.x + 10, p.y + 170, p.width - 20, 22), nextUp ? "<size=11><color=#ffb36b>🛰 " + (sim.GateReady ? sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + Loc.T("% — 부수면 열린다") : Loc.T("청구서 ") + sim.GateBill + Loc.T("장을 갚으면 관문 방어막이 풀린다")) + "</color></size>" : Loc.T("<size=11><color=#8a93a3>앞 행성 관문부터</color></size>"), center);   // 🛰 09-26 허가증 대신 관문
+                Lbl(new Rect(p.x + 10, p.y + 171, p.width - 20, 18), nextUp ? "<size=11><color=#ffb36b>🛰 " + (sim.GateReady ? sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + Loc.T("% — 부수면 열린다") : Loc.T("청구서 ") + sim.GateBill + Loc.T("장을 갚으면 관문 방어막이 풀린다")) + "</color></size>" : Loc.T("<size=11><color=#8a93a3>앞 행성 관문부터</color></size>"), center);   // 🛰 09-26 허가증 대신 관문
                 Lbl(new Rect(p.x + 6, p.y + 186, p.width - 12, 14), Fit(Loc.T("<color=#bff4ff>출동하면 지금 궤도 · </color><color=#ffdf95>") + SweepSim.Orbits[S.orbit].name + "</color>", 9, p.width - 14, label, 8), center);   // 🧭 다음 행성을 보고 있어도 실제로 가는 곳 (09-29)
             }
             else
@@ -244,11 +260,11 @@ namespace SalvageRun.Orbit
                 var ct = sim.CurContract;
                 if (ct != null)
                 {
-                    Lbl(new Rect(p.x + 10, p.y + 168, p.width - 64, 30), Loc.T("<size=10><color=#7fcfe0>의뢰</color> <color=#dff8ff>") + ct.Value.text + "</color>  <color=#9ff0bf>+" + (25 + 10 * sim.Lv("e_quest")) + "%</color></size>", small);
+                    Lbl(new Rect(p.x + 10, p.y + 171, p.width - 64, 28), Loc.T("<size=10><color=#7fcfe0>의뢰</color> <color=#dff8ff>") + ct.Value.text + "</color>  <color=#9ff0bf>+" + (25 + 10 * sim.Lv("e_quest")) + "%</color></size>", small);
                     GUI.color = Color.white;
-                    if (!S.rerolled && HoloBtn(new Rect(p.xMax - 52, p.y + 170, 44, 20), Loc.T("<size=10>바꾸기</size>"), Holo, true, fl)) sim.Reroll();
+                    if (!S.rerolled && HoloBtn(new Rect(p.xMax - 52, p.y + 174, 44, 20), Loc.T("<size=10>바꾸기</size>"), Holo, true, fl)) sim.Reroll();
                 }
-                else Lbl(new Rect(p.x + 10, p.y + 170, p.width - 20, 24), Loc.T("<size=10><color=#7fcfe0>의뢰는 청구서 2 뒤에 들어온다</color></size>"), small);
+                else Lbl(new Rect(p.x + 10, p.y + 172, p.width - 20, 24), Loc.T("<size=10><color=#7fcfe0>의뢰는 청구서 2 뒤에 들어온다</color></size>"), small);
             }
             GUI.color = Color.white;
         }
