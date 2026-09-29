@@ -104,6 +104,7 @@ namespace SalvageRun.Orbit
         void Update()
         {
             if (sim == null) return;
+            if (game != null && game.LoadNote != null && !lobby) { Guide(game.LoadNote); game.LoadNote = null; }   // 💾 저장을 되살렸으면 알린다 (09-29)
             double a = sim.S.cash;
             shown = a < shown ? a : shown + (a - shown) * (1 - Mathf.Exp(-Time.deltaTime * 7f));
             if (a - shown < 1) shown = a;

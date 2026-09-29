@@ -1663,3 +1663,5 @@ KESSLER // 빚 명세서	KESSLER // DEBT STATEMENT
 연료 +2초	Fuel +2s
 <color=#bff4ff>출동하면 지금 궤도 · </color><color=#ffdf95>	<color=#bff4ff>Launch goes to · </color><color=#ffdf95>
  · 오늘도 궤도는 깨끗합니다 · Space = 이어하기</color></size>	 · The orbit is clean today, too · Space = continue</color></size>
+저장이 깨져 있어 마지막으로 정상이던 저장으로 되살렸다	Your save was damaged, so the last good save was restored
+저장을 읽지 못해 새로 시작한다 — 깨진 저장은 따로 보관했다	Could not read your save, starting fresh — the damaged save was kept aside

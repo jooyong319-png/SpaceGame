@@ -138,17 +138,37 @@ namespace SalvageRun.Orbit
 
         // ───────────────────────────────── 저장
 
+        // 💾 09-29 저장 안전 — 깨진 저장을 만나면 말없이 새 게임으로 시작해, 다음 저장이 그걸 덮어써 진행이 사라졌다.
+        //    켤 때 잘 불러온 저장은 「.good」 으로 복사해 두고, 불러오기가 실패하면 그걸로 되살린다. 깨진 것은 「.broken」 으로 남긴다.
+        public string LoadNote;                                                  // 되살렸으면 조종실에 한 줄 (SweepHud 가 보인다)
         void Load()
         {
-            SweepState s = null; SweepMeta m = null;
+            string js = PlayerPrefs.GetString(StateKey, ""), jm = PlayerPrefs.GetString(MetaKey, "");
+            if (TryLoad(js, jm, out sim))
+            {
+                if (!string.IsNullOrEmpty(js) || !string.IsNullOrEmpty(jm)) { PlayerPrefs.SetString(StateKey + ".good", js); PlayerPrefs.SetString(MetaKey + ".good", jm); PlayerPrefs.Save(); }
+                return;
+            }
+            PlayerPrefs.SetString(StateKey + ".broken", js); PlayerPrefs.SetString(MetaKey + ".broken", jm);
+            string gs = PlayerPrefs.GetString(StateKey + ".good", ""), gm = PlayerPrefs.GetString(MetaKey + ".good", "");
+            if ((gs != "" || gm != "") && TryLoad(gs, gm, out sim)) LoadNote = Loc.T("저장이 깨져 있어 마지막으로 정상이던 저장으로 되살렸다");
+            else { sim = new SweepSim(null, null); LoadNote = Loc.T("저장을 읽지 못해 새로 시작한다 — 깨진 저장은 따로 보관했다"); }
+            PlayerPrefs.Save();
+            Debug.LogWarning("[저장] " + LoadNote);
+        }
+        static bool TryLoad(string js, string jm, out SweepSim sim)
+        {
+            sim = null;
             try
             {
-                string js = PlayerPrefs.GetString(StateKey, ""), jm = PlayerPrefs.GetString(MetaKey, "");
+                SweepState s = null; SweepMeta m = null;
                 if (!string.IsNullOrEmpty(jm)) { m = new SweepMeta(); JsonUtility.FromJsonOverwrite(jm, m); }
                 if (!string.IsNullOrEmpty(js)) { s = new SweepState(); JsonUtility.FromJsonOverwrite(js, s); }
+                sim = new SweepSim(s, m);
+                if (sim.S == null || sim.M == null || sim.S.lv == null) { sim = null; return false; }
+                return true;
             }
-            catch { s = null; m = null; }
-            sim = new SweepSim(s, m);
+            catch (System.Exception e) { Debug.LogWarning("[저장] 불러오기 실패 — " + e.Message); sim = null; return false; }
         }
 
         // 📝 09-26 사장님 「내 기준으로 청구서를 맞추자」 — 판이 끝날 때마다 한 줄
@@ -200,7 +220,9 @@ namespace SalvageRun.Orbit
 
         public void WipeAll()
         {
-            PlayerPrefs.DeleteKey(StateKey); PlayerPrefs.DeleteKey(MetaKey); PlayerPrefs.Save();
+            PlayerPrefs.DeleteKey(StateKey); PlayerPrefs.DeleteKey(MetaKey);
+            PlayerPrefs.DeleteKey(StateKey + ".good"); PlayerPrefs.DeleteKey(MetaKey + ".good");   // 💾 지운 진행이 「되살리기」로 돌아오지 않게
+            PlayerPrefs.Save();
             sim = new SweepSim();
         }
 
