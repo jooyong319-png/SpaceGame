@@ -83,7 +83,7 @@ namespace SalvageRun.Orbit
             {   // 📰 내일 1면 확정 — 조종실 창 위 띠 (다음 출동과 함께 발행)
                 var fr = new Rect(ox + 250, 50, 460, 24);
                 GUI.color = new Color(0.08f, 0.07f, 0.06f, 0.92f); GUI.DrawTexture(fr, white); Frame(fr, new Color(1f, 0.36f, 0.81f, 0.7f), 1); GUI.color = Color.white;
-                Lbl(fr, Loc.T("<size=12><color=#ffb3ea>★ 내일 1면</color>  ") + Clip(Market.NewsBook[S.frontPick].head.Replace(Loc.T("[소문] "), ""), 24) + Loc.T("  <color=#8a93a3>· 출동하면 발행</color></size>"), center);
+                Marquee(fr, Loc.T("<color=#ffb3ea>★ 내일 1면</color>  ") + Market.NewsBook[S.frontPick].head.Replace(Loc.T("[소문] "), "") + Loc.T("  <color=#8a93a3>· 출동하면 발행</color>"), 12, center);
             }
             if (S.front1 < 0 || S.front2 < 0 || sim.Mk == null) { frontOpen = false; return; }
             if (!frontOpen) return;                                             // 궤도일보 모니터의 「★ 내일 1면 고르기」를 눌러야 뜬다

@@ -408,8 +408,8 @@ namespace SalvageRun.Orbit
             if (il > 0)
             {
                 var nn = mk.NextNews; string who = nn.up != null ? string.Join(" ", nn.up) : string.Join(" ", nn.down);
-                string tip = Loc.T("다음 출동 중 속보") + (il >= 2 ? " · " + (nn.up != null ? Loc.T("<color=#ff5c5c>오를</color>") : Loc.T("<color=#5494ff>내릴</color>")) + Loc.T(" 쪽: ") + SecName(nn) : "") + (il >= 3 ? " · 「" + Clip(nn.head, 16) + "」" : "");
-                Lbl(new Rect(r.x + 12, y, r.width - 24, 20), Loc.T("<size=11><color=#e8c77e>내부자</color> ") + tip + "</size>", label);
+                string tip = Loc.T("다음 출동 중 속보") + (il >= 2 ? " · " + (nn.up != null ? Loc.T("<color=#ff5c5c>오를</color>") : Loc.T("<color=#5494ff>내릴</color>")) + Loc.T(" 쪽: ") + SecName(nn) : "") + (il >= 3 ? " · 「" + nn.head + "」" : "");
+                Marquee(new Rect(r.x + 12, y, r.width - 24, 20), Loc.T("<color=#e8c77e>내부자</color> ") + tip, 11, label);
                 y += 20;
             }
             // 최근 속보
@@ -417,7 +417,8 @@ namespace SalvageRun.Orbit
             for (int k = 0; k < 3 && k < MS.news.Count; k++)
             {
                 var nw = MS.news[MS.news.Count - 1 - k];
-                Lbl(new Rect(r.x + 12, y + 5 + k * 18, r.width - 24, 18), "<size=11>" + (k == 0 ? "<color=#ffdf95>" : "<color=#8a9bb3>") + Clip(Loc.T(nw.head), 30) + "</color></size>", label);
+                if (k == 0) Marquee(new Rect(r.x + 12, y + 5, r.width - 24, 18), "<color=#ffdf95>" + Loc.T(nw.head) + "</color>", 11, label);   // 맨 윗줄만 흐른다 — 셋이 다 흐르면 어지럽다
+                else Lbl(new Rect(r.x + 12, y + 5 + k * 18, r.width - 24, 18), "<size=11><color=#8a9bb3>" + Clip(Loc.T(nw.head), 30) + "</color></size>", label);
             }
         }
         static string SecName(NewsDef nn)
@@ -449,7 +450,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0.04f, 0.04f, 0.06f, 0.92f * a); GUI.DrawTexture(new Rect(b.x + 74, b.y, b.width - 74, b.height), white);
             GUI.color = new Color(1, 1, 1, a);
             Lbl(new Rect(b.x, b.y, 74, b.height), Loc.T("<size=15><b>속보</b></size>"), center);
-            Lbl(new Rect(b.x + 84, b.y + 3, b.width - 94, 22), "<size=14><b>" + Clip(Loc.T(bannerNews.head), 34) + "</b></size>", label);
+            Marquee(new Rect(b.x + 84, b.y + 3, b.width - 94, 22), "<b>" + Loc.T(bannerNews.head) + "</b>", 14, label);
             string moves = "";
             for (int i = 0; i < sim.Mk.M.st.Count; i++) { var st = sim.Mk.M.st[i]; if (st.pushLeft <= 0) continue; moves += Market.Defs[i].name + (st.push > 0 ? " <color=#ff5c5c>▲</color>  " : " <color=#5494ff>▼</color>  "); }
             Lbl(new Rect(b.x + 84, b.y + 23, b.width - 94, 20), "<size=11>" + moves + "</size>", label);

@@ -420,16 +420,18 @@ namespace SalvageRun.Orbit.Sim
         public int UpSpent { get { int t = 0; for (int i = 0; i < UpCount; i++) for (int l = 0; l < Up(i); l++) t += UpCostAt(i, l); return t; } }
         public void RefundUps() { M.credit += UpSpent; for (int i = 0; i < UpCount; i++) M.up[i] = 0; }   // 언제든 전부 돌려받아 다시 짠다
 
+        // 💳 배 값 (09-30 사장님 「배 사기가 쉽다 — 파산을 많이 한 사람이 모으게」): 파산 신용은 청구서 3장 ≈ 20 · 5장 ≈ 50 · 11장 ≈ 270
+        //    → 산탄선은 초반 파산 두세 번, 분열탄선은 청구서 11장까지 가 본 뒤. 합 790 (격납고 강화와 나눠 쓴다)
         public struct ShipDef { public string id, name, weapon, trait, desc; public int price; }
         public static readonly ShipDef[] Ships =
         {
             new ShipDef { id = "old",     name = Loc.T("낡은 청소선"), weapon = Loc.T("빔"),   trait = Loc.T("무난"), price = 0, desc = Loc.T("처음부터 있는 배. 한 점을 겨누는 빔 — 무엇 하나 튀지 않지만 무엇도 모자라지 않다") },
-            new ShipDef { id = "scatter", name = Loc.T("산탄선"),      weapon = Loc.T("산탄"), trait = Loc.T("연쇄"), price = 10, desc = Loc.T("넓게 퍼지는 산탄. 가까울수록 세고 멀수록 약하다 — 몰린 잔해를 한 번에 터뜨려 연쇄를 연다") },
-            new ShipDef { id = "harpoon", name = Loc.T("작살선"),      weapon = Loc.T("작살"), trait = Loc.T("꿰뚫기"), price = 16, desc = Loc.T("작살이 조준 방향으로 한 줄을 꿰뚫는다 — 줄 위의 잔해를 모두 맞히고, 뚫을 때마다 약해진다. 줄지어 선 잔해에 강하다") },
-            new ShipDef { id = "tesla",   name = Loc.T("전격선"),      weapon = Loc.T("전기 구체"), trait = Loc.T("지지기"), price = 24, desc = Loc.T("조준점으로 전기 구체를 던진다 — 날아가며 둘레 잔해에 번개를 튀기고, 닿으면 잠깐 머물다 펑 터진다") },   // 09-27 사장님 「레일건 말고 전기로 무언가 — 전기 구체를 범위로 던진다든가」
-            new ShipDef { id = "missile", name = Loc.T("미사일선"),    weapon = Loc.T("유도 미사일"), trait = Loc.T("쫓기"), price = 20, desc = Loc.T("누르고 있으면 작은 미사일이 줄줄이 나가 조준점 둘레의 잔해를 스스로 골라 쫓는다 — 빗나가지 않지만 한 발은 작다") },   // 09-27 사장님 「유도 미사일이 그나마 낫네」 (시안 X4byMmYEwkfh7u9rat8pML)
-            new ShipDef { id = "frost",   name = Loc.T("냉동선"),      weapon = Loc.T("서리 포"), trait = Loc.T("얼려 깨기"), price = 22, desc = Loc.T("조준점에 서리 원이 터진다 — 언 잔해는 무엇에 맞든 두 배로 아프고, 언 채 부서지면 산산조각 나 옆을 친다") },   // 09-27 사장님 「냉동이랑 분열탄선은 할만할듯」 (시안 MTRmPv5Fe9bgvb1Xcq4Tii)
-            new ShipDef { id = "cluster", name = Loc.T("분열탄선"),    weapon = Loc.T("분열 포탄"), trait = Loc.T("흩뿌리기"), price = 24, desc = Loc.T("포탄이 조준점에 떨어져 터지고 파편 넷으로 흩어진다 — 몰린 곳에 강하다. 떨어지는 사이 잔해가 움직인다") },
+            new ShipDef { id = "scatter", name = Loc.T("산탄선"),      weapon = Loc.T("산탄"), trait = Loc.T("연쇄"), price = 60, desc = Loc.T("넓게 퍼지는 산탄. 가까울수록 세고 멀수록 약하다 — 몰린 잔해를 한 번에 터뜨려 연쇄를 연다") },
+            new ShipDef { id = "harpoon", name = Loc.T("작살선"),      weapon = Loc.T("작살"), trait = Loc.T("꿰뚫기"), price = 100, desc = Loc.T("작살이 조준 방향으로 한 줄을 꿰뚫는다 — 줄 위의 잔해를 모두 맞히고, 뚫을 때마다 약해진다. 줄지어 선 잔해에 강하다") },
+            new ShipDef { id = "tesla",   name = Loc.T("전격선"),      weapon = Loc.T("전기 구체"), trait = Loc.T("지지기"), price = 170, desc = Loc.T("조준점으로 전기 구체를 던진다 — 날아가며 둘레 잔해에 번개를 튀기고, 닿으면 잠깐 머물다 펑 터진다") },   // 09-27 사장님 「레일건 말고 전기로 무언가 — 전기 구체를 범위로 던진다든가」
+            new ShipDef { id = "missile", name = Loc.T("미사일선"),    weapon = Loc.T("유도 미사일"), trait = Loc.T("쫓기"), price = 120, desc = Loc.T("누르고 있으면 작은 미사일이 줄줄이 나가 조준점 둘레의 잔해를 스스로 골라 쫓는다 — 빗나가지 않지만 한 발은 작다") },   // 09-27 사장님 「유도 미사일이 그나마 낫네」 (시안 X4byMmYEwkfh7u9rat8pML)
+            new ShipDef { id = "frost",   name = Loc.T("냉동선"),      weapon = Loc.T("서리 포"), trait = Loc.T("얼려 깨기"), price = 140, desc = Loc.T("조준점에 서리 원이 터진다 — 언 잔해는 무엇에 맞든 두 배로 아프고, 언 채 부서지면 산산조각 나 옆을 친다") },   // 09-27 사장님 「냉동이랑 분열탄선은 할만할듯」 (시안 MTRmPv5Fe9bgvb1Xcq4Tii)
+            new ShipDef { id = "cluster", name = Loc.T("분열탄선"),    weapon = Loc.T("분열 포탄"), trait = Loc.T("흩뿌리기"), price = 200, desc = Loc.T("포탄이 조준점에 떨어져 터지고 파편 넷으로 흩어진다 — 몰린 곳에 강하다. 떨어지는 사이 잔해가 움직인다") },
         };
         public int Ship => M.ship >= 0 && M.ship < Ships.Length && ShipOwned(M.ship) ? M.ship : 0;
         public bool ShipOwned(int i) => i == 0 || (M.shipsOwned & (1 << i)) != 0;

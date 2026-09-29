@@ -93,7 +93,7 @@ namespace SalvageRun.Orbit
                 Lbl(new Rect(w.x + 24, y, 140, 24), "<size=14>" + name + "</size>", label);
                 float bw = Mathf.Min(80, (w.width - 190) / opts.Length - 4);   // 단추가 넷이어도 창 안에
                 for (int k = 0; k < opts.Length; k++)
-                    if (Bt(new Rect(w.x + 170 + k * (bw + 4), y, bw, 26), "<size=12>" + (k == cur ? "<color=#ffdf95>" + opts[k] + "</color>" : opts[k]) + "</size>", k == cur ? btn : btnOff)) { cur = k; changed = true; OrbitSfx.Play("tick", 0.6f); }
+                    if (Bt(new Rect(w.x + 170 + k * (bw + 4), y, bw, 26), Fit(k == cur ? "<color=#ffdf95>" + opts[k] + "</color>" : opts[k], 12, bw - 6, k == cur ? btn : btnOff, 9), k == cur ? btn : btnOff)) { cur = k; changed = true; OrbitSfx.Play("tick", 0.6f); }
                 y += 40; return cur;
             }
             Slider(Loc.T("전체 소리"), ref vol);

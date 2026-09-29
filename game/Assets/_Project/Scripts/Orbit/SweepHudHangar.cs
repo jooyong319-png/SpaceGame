@@ -117,7 +117,7 @@ namespace SalvageRun.Orbit
             {
                 bool can = M.credit >= sd.price;
                 GUI.enabled = can;
-                if (Bt(bb, can ? Loc.T("<size=15>들여오기 · 신용 ") + sd.price + "</size>" : Loc.T("<size=13><color=#5a6475>신용 ") + sd.price + Loc.T(" 필요 (지금 ") + M.credit.ToString("0") + ")</color></size>", btnC) && sim.BuyShip(hangarPick)) { OrbitSfx.Play("buy", 1f); OrbitSfx.Play("unit", 0.8f); }
+                if (Bt(bb, can ? Fit(Loc.T("들여오기 · 신용 ") + sd.price, 15, bb.width - 12, btnC, 10) : Fit("<color=#5a6475>" + Loc.T("신용 ") + sd.price + Loc.T(" 필요 (지금 ") + M.credit.ToString("0") + ")</color>", 13, bb.width - 12, btnC, 9), btnC) && sim.BuyShip(hangarPick)) { OrbitSfx.Play("buy", 1f); OrbitSfx.Play("unit", 0.8f); }
                 GUI.enabled = true;
             }
             Lbl(new Rect(I.x, I.y + 256, I.width, 130), Loc.T("<size=10><color=#5a6475>트리의 빔 칸 셋은 배의 무기에 맞게 바뀐다.\n무기고의 보조 무기는 어느 배든 그대로.") + (hangarPick == 5 ? Loc.T("\n<color=#8fd8ff>무기고 냉동 빔 줄(강화 · 각성 · 특화 · 3단계)이 이 배의 서리 포도 세게 한다.</color>") : hangarPick == 6 ? Loc.T("\n<color=#ffa040>무기고 분열탄 줄(강화 · 각성 · 특화 · 3단계)이 이 배의 포탄도 세게 한다.</color>") : "") + "</color></size>", dsty);

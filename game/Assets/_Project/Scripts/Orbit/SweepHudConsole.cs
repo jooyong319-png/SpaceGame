@@ -93,7 +93,7 @@ namespace SalvageRun.Orbit
                 GUI.color = prog >= 1 ? new Color(0.62f, 0.94f, 0.75f, fl) : new Color(Holo.r, Holo.g, Holo.b, 0.9f * fl); GUI.DrawTexture(new Rect(x, y0 + 126, w * prog, 5), white);
                 GUI.color = new Color(1, 1, 1, fl);
                 Lbl(new Rect(x, y0 + 132, w, 18), "<size=10><color=#7fcfe0>" + Mathf.RoundToInt(prog * 100) + Loc.T("% 모였다</color></size>"), label);
-                Lbl(new Rect(x, y0 + 150, w, 36), "<size=11><color=#7fcfe0>" + Clip(b.perk, 26) + "</color></size>", small);
+                Lbl(new Rect(x, y0 + 150, w, 36), "<size=11><color=#7fcfe0>" + KWrap(b.perk, 11, w) + "</color></size>", small);   // 두 줄까지 (09-30 「…」 대신)
                 GUI.color = Color.white;
                 bool can = S.cash >= sim.BillAmount; double need = sim.BillAmount - S.cash;
                 bool loanOk = !can && sim.LoanCap > 0 && need <= sim.LoanCap;

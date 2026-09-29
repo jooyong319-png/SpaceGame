@@ -1667,3 +1667,8 @@ KESSLER // 빚 명세서	KESSLER // DEBT STATEMENT
 저장을 읽지 못해 새로 시작한다 — 깨진 저장은 따로 보관했다	Could not read your save, starting fresh — the damaged save was kept aside
 창 비율	Window ratio
 창 크기	Window size
+들여오기 · 신용 	Acquire · credit 
+신용 	Needs credit 
+<color=#ffb3ea>★ 내일 1면</color>  	<color=#ffb3ea>★ Tomorrow's front page</color>  
+  <color=#8a93a3>· 출동하면 발행</color>	  <color=#8a93a3>· published when you launch</color>
+<color=#e8c77e>내부자</color> 	<color=#e8c77e>Insider</color> 
