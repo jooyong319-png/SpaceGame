@@ -88,6 +88,7 @@ namespace SalvageRun.Orbit.Sim
         public double hx, hy, holeCd, clickCd, fuelGot, refill, fuel, max, t, next = 0.3, endT, formT = 9, rushT, rushX, rushY, chainT, holdT, ax = 480, ay = 310, refillT;
         public double ev1T = -1, ev2T = -1, stormT; public int ev1 = -1, ev2 = -1, stormLeft; public bool ev1Warn, ev2Warn, collector;
         public int shots, maxShots, chain, chainBest, packBest, broke, tier, idc;
+        public int presses; public double heldT, gateT, gateAimT;              // 🖱 09-29 사장님 손 기록 — 누른 횟수 · 누르고 있던 초 · 관문이 떠 있던 초 · 관문을 노린 초 (봇이 따라 한다)
         public bool over, holding, clean, contractOk;
         public double earnClaw, earnDrone, earnBlast, cut, toBill, bonus, interest;
         public string contractText; public int contractProg, contractTarget;     // 지난 판 의뢰 — 결산에 성공/실패를 보여 준다

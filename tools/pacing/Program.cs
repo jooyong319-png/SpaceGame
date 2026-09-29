@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using SalvageRun.Orbit.Sim;
@@ -18,6 +18,7 @@ static class Program
     static void Main(string[] args)
     {
         SweepSim.BotEarn = double.TryParse(Environment.GetEnvironmentVariable("EARN"), out double be) ? be : 3;   // 🤖 사장님은 연쇄로 봇의 약 3배를 번다 (09-26 첫 청구서 기록)
+        Hand.Load();                                                                                     // 🖱 playlog 에 사장님 손 기록이 있으면 봇이 따라 한다 (09-29)
         if (double.TryParse(Environment.GetEnvironmentVariable("DVAL"), out double dv)) SweepSim.DroneValK = dv;   // 🛸 드론 값 몫 맞춤용
         if (double.TryParse(Environment.GetEnvironmentVariable("FROSTK"), out double fk)) SweepSim.FrostK = fk;   // ❄ 냉동선 맞춤용
         if (double.TryParse(Environment.GetEnvironmentVariable("FHOLD"), out double fh)) SweepSim.FrostHold = fh;
@@ -133,11 +134,20 @@ static class Program
             int seg = Math.Min(8, sim.S.bill + 1);
             sim.StartRun();
             var R = sim.R;
-            bool gateRun = sim.GateJunk != null && sim.GateReady && !sim.S.overdue && sim.S.billDue >= 3 && rng.NextDouble() < 0.35;   // 🛰 청구서 기한이 넉넉할 때 가끔 관문만 노린다   // 🛰 사람처럼 — 트리에서 한도까지 다 샀고 청구서가 급하지 않으면 관문만 노린다
+            int hb = Math.Min(12, sim.S.bill);
+            bool gateRun = sim.GateJunk != null && sim.GateReady && !sim.S.overdue && sim.S.billDue >= 3 && rng.NextDouble() < (Hand.On ? Hand.GateAim[hb] : 0.35);   // 🖱 사장님이 관문을 노린 비율   // 🛰 청구서 기한이 넉넉할 때 가끔 관문만 노린다   // 🛰 사람처럼 — 트리에서 한도까지 다 샀고 청구서가 급하지 않으면 관문만 노린다
             long h0 = SweepSim.DbgHits, o0 = SweepSim.DbgOneShot, k0 = SweepSim.DbgKills;
-            long ticks = 0;
+            long ticks = 0; double handSeg = 0, tapHold = 0; bool segHeld = true;
+            sim.ManualFire = Hand.On; sim.FireHeld = true;                    // 🖱 손 기록이 있으면 게임처럼 수동 사격 — 누르고 있을 때만 빔
             while (!R.over)
             {
+                if (Hand.On)
+                {
+                    handSeg -= Dt; if (handSeg <= 0) { handSeg = 1; segHeld = rng.NextDouble() < Hand.Held[hb]; }   // 1초마다 「누르고 있나」를 사장님 비율로
+                    tapHold -= Dt;
+                    if (rng.NextDouble() < Hand.Rate[hb] * Dt) { tapHold = 0.1; sim.FireHeld = true; sim.PressFire(); }   // 사장님 초당 누름만큼 — 누르는 순간은 누르고 있는 것
+                    sim.FireHeld = segHeld || tapHold > 0;
+                }
                 if (++ticks > 20000) { if (!quiet) Console.WriteLine($"  ⚠ 판이 안 끝난다: 연료 {R.fuel:0.0} 붙잡음 {R.holding} 연쇄대기 {R.pend.Count} 잔해 {R.junk.Count}"); break; }
                 retarget -= Dt;
                 var gj = gateRun ? sim.GateJunk : null;
@@ -221,6 +231,7 @@ static class Program
         var rs = new List<Result>(); for (int i = 1; i <= n; i++) rs.Add(RunQuiet(i * 7 + 1));
         string Q(IEnumerable<double> xs) { var a = xs.Where(x => x >= 0).OrderBy(x => x).ToList(); if (a.Count == 0) return "   -"; return $"{a[a.Count / 2],5:0}분 ({a[a.Count / 10],3:0}~{a[a.Count * 9 / 10],3:0}) {(a.Count < n ? a.Count + "/" + n : "")}"; }
         Console.WriteLine($"📊 밸런스 — 씨앗 {n}   (가운데값 · 10%~90%)");
+        Console.WriteLine("  " + Hand.Summary());
         Console.WriteLine($"  🚀 미사일 호출 {SweepSim.DbgMisCall} · 발사 {SweepSim.DbgMisF} · 명중 {SweepSim.DbgMisH} · 맞음 {SweepSim.DbgHits} · 부숨 {SweepSim.DbgKills}");
         { double tw = SweepSim.DbgCat.Sum(); Console.WriteLine("  🔫 피해 몫  " + string.Join("  ", Enumerable.Range(0, SweepSim.DmgCatN).Select(i => SweepSim.DmgCatName[i] + " " + (SweepSim.DbgCat[i] / Math.Max(1, tw) * 100).ToString("0.0") + "%"))); }
         Console.WriteLine("  끝(빚 청산)      " + Q(rs.Select(r => r.won ? r.minutes : -1)));

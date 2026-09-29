@@ -151,20 +151,26 @@ namespace SalvageRun.Orbit
             sim = new SweepSim(s, m);
         }
 
-        // 📝 09-26 사장님 「내 기준으로 청구서를 맞추자」 — 판이 끝날 때마다 한 줄 (에디터에서만 · SalvageRun/playlog.tsv)
+        // 📝 09-26 사장님 「내 기준으로 청구서를 맞추자」 — 판이 끝날 때마다 한 줄
+        // 🖱 09-29 「내가 클릭하는 횟수 기반으로 시뮬」 — 손 기록 칸을 더하고 빌드에서도 남긴다
+        //    에디터: SalvageRun/playlog.tsv · 빌드: %USERPROFILE%/AppData/LocalLow/jooco/Orbit Sweeper/playlog.tsv
+        public static string PlayLogPath => Application.isEditor ? Application.dataPath + "/../../playlog.tsv" : Application.persistentDataPath + "/playlog.tsv";
+        const string PlayLogHead = "시각\t분\t회사\t판\t청구서\t금액\t기한\t연체\t돈\t벌이\t빚\t궤도\t관문수\t관문체력\t트리%\t연쇄\t판초\t누름\t초당누름\t누른%\t관문초\t관문노림%\t배";
         void PlayLog()
         {
-#if UNITY_EDITOR
             try
             {
                 var S = sim.S; var R = sim.R; var g = sim.GateJunk;
                 double h = 0, m = 0; for (int i = 0; i < SweepSim.NodeCount; i++) { var nd = SweepSim.Nodes[i]; if (nd.id.StartsWith("p_")) continue; h += System.Math.Min(S.lv[i], nd.max); m += nd.max; }
-                string path = Application.dataPath + "/../../playlog.tsv";
-                if (!System.IO.File.Exists(path)) System.IO.File.AppendAllText(path, Loc.T("시각\t분\t회사\t판\t청구서\t금액\t기한\t연체\t돈\t벌이\t빚\t궤도\t관문수\t관문체력\t트리%\t연쇄") + "\n");
-                System.IO.File.AppendAllText(path, System.DateTime.Now.ToString("MM-dd HH:mm") + "\t" + (sim.M.playSeconds / 60).ToString("0.0") + "\t" + sim.M.company + "\t" + S.runs + "\t" + S.bill + "\t" + System.Math.Round(sim.BillAmount) + "\t" + S.billDue + "\t" + (S.overdue ? 1 : 0) + "\t" + System.Math.Round(S.cash) + "\t" + System.Math.Round(R != null ? R.Earned : 0) + "\t" + System.Math.Round(S.debt) + "\t" + SweepSim.Orbits[S.orbit].name + "\t" + sim.ZoneOpen + "\t" + (g != null ? g.hp + "/" + g.max : "-") + "\t" + (m > 0 ? h / m * 100 : 0).ToString("0") + "\t" + (R != null ? R.chainBest : 0) + "\n");
+                string path = PlayLogPath;
+                if (System.IO.File.Exists(path)) { string head; using (var rd = new System.IO.StreamReader(path)) head = rd.ReadLine(); if (head != PlayLogHead) System.IO.File.Move(path, path.Replace(".tsv", "_old_" + System.DateTime.Now.ToString("MMdd_HHmm") + ".tsv")); }   // 칸이 바뀌면 옛 기록은 따로 보관
+                if (!System.IO.File.Exists(path)) System.IO.File.AppendAllText(path, PlayLogHead + "\n");
+                double rt = R != null ? R.t : 0;
+                string F(double v, string fmt) => v.ToString(fmt, System.Globalization.CultureInfo.InvariantCulture);
+                System.IO.File.AppendAllText(path, System.DateTime.Now.ToString("MM-dd HH:mm") + "\t" + F(sim.M.playSeconds / 60, "0.0") + "\t" + sim.M.company + "\t" + S.runs + "\t" + S.bill + "\t" + System.Math.Round(sim.BillAmount) + "\t" + S.billDue + "\t" + (S.overdue ? 1 : 0) + "\t" + System.Math.Round(S.cash) + "\t" + System.Math.Round(R != null ? R.Earned : 0) + "\t" + System.Math.Round(S.debt) + "\t" + SweepSim.Orbits[S.orbit].name + "\t" + sim.ZoneOpen + "\t" + (g != null ? g.hp + "/" + g.max : "-") + "\t" + F(m > 0 ? h / m * 100 : 0, "0") + "\t" + (R != null ? R.chainBest : 0)
+                    + "\t" + F(rt, "0.0") + "\t" + (R != null ? R.presses : 0) + "\t" + F(rt > 0 ? R.presses / rt : 0, "0.00") + "\t" + F(rt > 0 ? R.heldT / rt * 100 : 0, "0") + "\t" + F(R != null ? R.gateT : 0, "0.0") + "\t" + F(R != null && R.gateT > 0 ? R.gateAimT / R.gateT * 100 : 0, "0") + "\t" + sim.Ship + "\n");
             }
             catch (System.Exception e) { Debug.LogWarning("playlog " + e.Message); }
-#endif
         }
 
         public void Save()

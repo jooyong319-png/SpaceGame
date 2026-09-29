@@ -216,6 +216,8 @@ namespace SalvageRun.Orbit.Sim
         {
             var r = R; if (r.over) return;
             M.playSeconds += dt; r.t += dt;
+            if (FireHeld) r.heldT += dt;                                        // 🖱 손 기록 (09-29)
+            if (GateReady) { var gj = GateJunk; if (gj != null) { r.gateT += dt; double gx = gj.x - ax, gy = gj.y - ay; if (gx * gx + gy * gy < 90 * 90) r.gateAimT += dt; } }
             // 손 안 댄 시간 (idleT — 게임이 손을 대면 0으로 · 예전 게으름 보너스가 썼다)
             r.idleT += dt;
             if (r.tapCombo > 0 && r.t - r.lastPress > 1) r.tapCombo = 0;          // ★ 연타 장인 — 1초 손을 떼면 식는다 (예전 게으름 보너스 자리)

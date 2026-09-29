@@ -281,11 +281,12 @@ namespace SalvageRun.Orbit.Sim
             if (Rnd() < 0.1 * Lv("c_double") + Part("dbl")) { Fire(0); Procs(); }
         }
         // 👆 수동 사격 — 누를 때마다 조준점에 한 방 더 (위력 ×1.5 · 0.2초 간격). 무기 발동 · 전탄 게이지도 굴러간다 (09-24 사장님 37번 「클릭에 요소」)
-        public void PressFire() { var r = R; if (r == null || r.over) return; r.tapCombo = r.t - r.lastPress <= 0.3 ? Math.Min(10, r.tapCombo + 1) : 0; r.lastPress = r.t; if (r.t - r.lastShot >= 0.12) r.next = 0; }   // 👆 누르는 순간 바로 쏜다 (너무 빠른 연타는 0.12초로 막음)
+        public void PressFire() { var r = R; if (r == null || r.over) return; r.presses++; r.tapCombo = r.t - r.lastPress <= 0.3 ? Math.Min(10, r.tapCombo + 1) : 0; r.lastPress = r.t; if (r.t - r.lastShot >= 0.12) r.next = 0; }   // 👆 누르는 순간 바로 쏜다 (너무 빠른 연타는 0.12초로 막음)
         public bool ManualFire, FireHeld = true;                               // 👆 수동 공격 (설정) · 지금 누르고 있나 — 게임이 매 프레임 넣는다. 봇 · 시험은 자동
         public bool ClickShot(double x, double y)
         {
-            var r = R; if (r == null || r.over || r.clickCd > 0 || r.fuel <= 0 || ManualFire) return false;   // 수동 공격일 땐 누르는 게 곧 사격 — 따로 한 방은 없다
+            var r = R; if (r != null && !r.over && !ManualFire) r.presses++;   // 🖱 손 기록 — 자동 사격 설정에서 누른 것도 센다
+            if (r == null || r.over || r.clickCd > 0 || r.fuel <= 0 || ManualFire) return false;   // 수동 공격일 땐 누르는 게 곧 사격 — 따로 한 방은 없다
             r.clickCd = 0.3; double ox = r.ax, oy = r.ay; r.ax = x; r.ay = y;
             r.fuel = Math.Max(0, r.fuel - ClickFuel);                         // ⛽ 손으로 쏘면 한 방에 더
             clickMul = 1.3; Fire(0); clickMul = 1; Procs();
