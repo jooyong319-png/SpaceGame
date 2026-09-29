@@ -76,6 +76,23 @@ namespace SalvageRun.Orbit
         // ───────────────────────── 🔍 글자 잘림 검사 (09-28 리팩토링)
         // 글자는 모두 Lbl · 단추는 Bt 로 그린다 — GUI.Label · GUI.Button 과 똑같이 그리고, Probe 를 켜면(시험 때만)
         // 글자가 칸보다 넓거나 높아 잘리는 곳을 ProbeHits 에 모은다 (파일:줄 · 글 · 칸 크기 → 필요한 크기).
+        /// <summary>📜 한 줄 칸에 글이 넘칠 때만 천천히 흐른다 — 1초 멈춤 → 오른쪽에서 왼쪽으로 끝까지 → 1초 멈춤 → 처음으로 (09-30 사장님).
+        /// 들어가면 가만히 · 「움직임 줄이기」면 흐르지 않고 줄여서. inner 는 &lt;size&gt; 없이, size 로 크기</summary>
+        void Marquee(Rect r, string inner, int size, GUIStyle st)
+        {
+            string t = "<size=" + size + ">" + inner + "</size>";
+            float tw = st.CalcSize(new GUIContent(t)).x;
+            if (tw <= r.width) { Lbl(r, t, st); return; }
+            if (reduceMotion) { Lbl(r, Fit(inner, size, r.width, st, 7), st); return; }
+            if (marqueeSt == null) marqueeSt = new GUIStyle(label) { alignment = TextAnchor.MiddleLeft, clipping = TextClipping.Overflow, wordWrap = false };
+            marqueeSt.font = st.font;
+            float over = tw - r.width + 8, speed = 32f, hold = 1f, cycle = hold + over / speed + hold;
+            float k = Time.unscaledTime % cycle, off = k < hold ? 0 : k < hold + over / speed ? (k - hold) * speed : over;
+            GUI.BeginGroup(r);
+            GUI.Label(new Rect(4 - off, 0, tw + 8, r.height), t, marqueeSt);
+            GUI.EndGroup();
+        }
+        GUIStyle marqueeSt;
         /// <summary>스프라이트가 그림 파일의 어디를 쓰는지 (0~1) — GUI.DrawTextureWithTexCoords 로 그 부분만 그린다</summary>
         static Rect SprUV(Sprite s) { var t = s.texture; var r = s.textureRect; return new Rect(r.x / t.width, r.y / t.height, r.width / t.width, r.height / t.height); }
         public static bool Probe;

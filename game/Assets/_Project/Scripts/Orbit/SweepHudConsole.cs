@@ -156,7 +156,8 @@ namespace SalvageRun.Orbit
         // 🧭 항로 — B 「한 장씩 넘기기」 (09-26 사장님 · 시안 https://claude.ai/artifact/WLid5UFWSgJxQ1LM9chNDH)
         //    행성 하나를 크게 · ◀ ▶ · 휠로 넘기면 그 궤도로 바로 정해진다. 아래 점 · 특성 칩(값 · 체력 · 폭풍 · 중력 · 고리 틈 · 부착물) · 의뢰
         GUIStyle descWrap;
-        int routeBrowse = -1;                                                    // 보고 있는 칸 (열린 행성 + 다음 하나 안에서) · -1 = 지금 궤도
+        public void TestRoute(int k) => routeBrowse = k;                        // 에디터 시험용 — 다이얼을 k 번째 칸으로
+        int routeBrowse = -1;                                                   // 보고 있는 칸 (열린 행성 + 다음 하나 안에서) · -1 = 지금 궤도
         void RouteHolo()
         {
             var S = sim.S; var M = sim.M;
@@ -252,7 +253,9 @@ namespace SalvageRun.Orbit
             {
                 bool nextUp = sim.HasGate && show == SweepSim.OrbitOrder[sim.Frontier + 1];
                 GUI.color = new Color(1, 1, 1, fl);
-                Lbl(new Rect(p.x + 10, p.y + 171, p.width - 20, 18), nextUp ? "<size=11><color=#ffb36b>🛰 " + (sim.GateReady ? sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + Loc.T("% — 부수면 열린다") : Loc.T("청구서 ") + sim.GateBill + Loc.T("장을 갚으면 관문 방어막이 풀린다")) + "</color></size>" : Loc.T("<size=11><color=#8a93a3>앞 행성 관문부터</color></size>"), center);   // 🛰 09-26 허가증 대신 관문
+                var gr = new Rect(p.x + 10, p.y + 171, p.width - 20, 18);
+                if (nextUp) Marquee(gr, "<color=#ffb36b>🛰 " + (sim.GateReady ? sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + Loc.T("% — 부수면 열린다") : Loc.T("청구서 ") + sim.GateBill + Loc.T("장을 갚으면 관문 방어막이 풀린다")) + "</color>", 11, center);   // 🛰 09-26 허가증 대신 관문 · 📜 09-30 길면 흐른다
+                else Lbl(gr, Loc.T("<size=11><color=#8a93a3>앞 행성 관문부터</color></size>"), center);
                 Lbl(new Rect(p.x + 6, p.y + 186, p.width - 12, 14), Fit(Loc.T("<color=#bff4ff>출동하면 지금 궤도 · </color><color=#ffdf95>") + SweepSim.Orbits[S.orbit].name + "</color>", 9, p.width - 14, label, 8), center);   // 🧭 다음 행성을 보고 있어도 실제로 가는 곳 (09-29)
             }
             else
