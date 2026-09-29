@@ -211,6 +211,7 @@ namespace SalvageRun.Orbit
         void Update()
         {
             if (sim == null) { Load(); return; }
+            RunCursor();                                                        // 🖱 출동 중에만 창 안에 가두고 조준 커서 (09-29)
             float dt = Time.deltaTime;
             t += dt;
             var kb = Keyboard.current;

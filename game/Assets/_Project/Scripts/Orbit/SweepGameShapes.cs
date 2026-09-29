@@ -9,6 +9,38 @@ namespace SalvageRun.Orbit
     // ⬜ 기본 도형 · 별 — 코드로 만드는 스프라이트 (09-28 나눔)
     public partial class SweepGame
     {
+        // 🖱 09-29 사장님 「마우스 커서 문제」 1 · 2 — 출동 중에만:
+        //    1) 커서를 게임 창 안에 가둔다 (모니터 둘이면 옆으로 넘어가 누름이 끊기고, 옆을 누르면 게임이 내려갔다)
+        //    2) 윈도우 화살표 대신 작은 조준 커서 (점 + 얇은 고리) — 게임 조준경 안에 들어가 둘이 겹쳐 보이지 않게
+        //    조종실 · 설정 창 · 다른 창으로 넘어갔을 때는 원래대로.
+        static Texture2D runCursorTex;
+        bool runCursorOn;
+        void RunCursor()
+        {
+            bool want = sim != null && sim.R != null && !sim.R.over && hud != null && !hud.Blocking && !hud.settingsOpen && !hud.lobby && Application.isFocused;
+            var lockWant = want ? CursorLockMode.Confined : CursorLockMode.None;
+            if (Cursor.lockState != lockWant) Cursor.lockState = lockWant;
+            if (want == runCursorOn) return;
+            runCursorOn = want;
+            if (want) { if (runCursorTex == null) runCursorTex = MakeRunCursor(); Cursor.SetCursor(runCursorTex, new Vector2(16, 16), CursorMode.Auto); }
+            else Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto);
+        }
+        void OnDisable() { Cursor.lockState = CursorLockMode.None; Cursor.SetCursor(null, Vector2.zero, CursorMode.Auto); runCursorOn = false; }
+        static Texture2D MakeRunCursor()
+        {   // 32×32 — 가운데 점(3px) · 반지름 6 고리 · 어두운 테두리로 어느 배경에서도 보이게
+            const int N = 32; var t = new Texture2D(N, N, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, hideFlags = HideFlags.HideAndDontSave };
+            var px = new Color32[N * N]; var amber = new Color32(255, 223, 149, 255); var dark = new Color32(20, 14, 6, 220); var clear = new Color32(0, 0, 0, 0);
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    float dx = x - 15.5f, dy = y - 15.5f, d = Mathf.Sqrt(dx * dx + dy * dy);
+                    Color32 c = clear;
+                    if (d <= 2.2f) c = amber; else if (d <= 3.3f) c = dark;                          // 점 + 테두리
+                    else if (Mathf.Abs(d - 7f) <= 0.75f) c = amber; else if (Mathf.Abs(d - 7f) <= 1.7f) c = dark;   // 고리 + 테두리
+                    px[y * N + x] = c;
+                }
+            t.SetPixels32(px); t.Apply(); return t;
+        }
         // ───────────────────────────────── 그림 (단순한 도형)
 
         static float FullW(Sprite s) => s.rect.width / s.pixelsPerUnit;         // 🔴 애니메이션 크기는 판 전체(48×48) 기준 — bounds(첫 장 그림 테두리)로 재면 뒷장이 몇 배로 커졌다 (09-26 「공격할 때 너무 큰 게」)
