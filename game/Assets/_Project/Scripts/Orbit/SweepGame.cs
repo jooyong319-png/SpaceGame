@@ -151,8 +151,8 @@ namespace SalvageRun.Orbit
             }
             PlayerPrefs.SetString(StateKey + ".broken", js); PlayerPrefs.SetString(MetaKey + ".broken", jm);
             string gs = PlayerPrefs.GetString(StateKey + ".good", ""), gm = PlayerPrefs.GetString(MetaKey + ".good", "");
-            if ((gs != "" || gm != "") && TryLoad(gs, gm, out sim)) LoadNote = Loc.T("저장이 깨져 있어 마지막으로 정상이던 저장으로 되살렸다");
-            else { sim = new SweepSim(null, null); LoadNote = Loc.T("저장을 읽지 못해 새로 시작한다 — 깨진 저장은 따로 보관했다"); }
+            if ((gs != "" || gm != "") && TryLoad(gs, gm, out sim)) LoadNote = Loc.T("저장 파일 손상 — 마지막 정상 저장으로 복구");
+            else { sim = new SweepSim(null, null); LoadNote = Loc.T("저장을 읽지 못해 새로 시작 — 손상된 저장은 따로 보관"); }
             PlayerPrefs.Save();
             Debug.LogWarning("[저장] " + LoadNote);
         }

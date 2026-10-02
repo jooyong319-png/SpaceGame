@@ -108,7 +108,7 @@ namespace SalvageRun.Orbit
                 float k = Mathf.Clamp01(tt / 0.25f), sc = tt < 0.25f ? Mathf.Lerp(0.4f, 1.15f, k) : Mathf.Lerp(1.15f, 1f, Mathf.Clamp01((tt - 0.25f) / 0.2f));
                 GUI.color = new Color(1, 1, 1, Mathf.Clamp01((end - t) / 0.4f));
                 Lbl(new Rect(0, RefH * 0.42f - 50 * sc, vw, 100 * sc), "<size=" + Mathf.RoundToInt(64 * sc) + Loc.T("><b><color=#ffdf95>완납!</color></b></size>"), center);
-                Lbl(new Rect(0, RefH * 0.42f + 48, vw, 24), Loc.T("<size=14><color=#ffe9b0>케슬러 금융에 진 빚을 다 갚았다</color></size>"), center);
+                Lbl(new Rect(0, RefH * 0.42f + 48, vw, 24), Loc.T("<size=14><color=#ffe9b0>케슬러 금융에 진 빚 전액 상환</color></size>"), center);
             }
             GUI.color = Color.white;
         }

@@ -23,8 +23,8 @@ namespace SalvageRun.Orbit
             if (st == NodeSt.Locked && SweepSim.Ring4(n.id) && sim.Lv("p_jup") <= 0) return Loc.T("목성 항로 먼저");
             if (st == NodeSt.Locked && z > sim.ZoneOpen) return SweepSim.ZoneName[z] + Loc.T(" 항로 먼저");
             if (st == NodeSt.Hidden) return Loc.T("앞 칸 먼저");
-            if (SweepSim.KeyNodes.Contains(n.id) && sim.S.keys < 1) return Loc.T("열쇠가 없다");
-            return Loc.T("돈이 모자라다 · ") + KNum.Fmt(sim.TileCost(i) - sim.S.cash);
+            if (SweepSim.KeyNodes.Contains(n.id) && sim.S.keys < 1) return Loc.T("열쇠 없음");
+            return Loc.T("돈 부족 · ") + KNum.Fmt(sim.TileCost(i) - sim.S.cash);
         }
         void BuyFxDraw()
         {
@@ -63,8 +63,8 @@ namespace SalvageRun.Orbit
             for (int w = 1; w < SweepSim.ProcBase.Length; w++) if (sim.ProcChance(w) > 0) list.Add(w);
             var b = new Rect(r.x, r.y, 190, 26 + 18 * System.Math.Max(1, list.Count));
             GUI.color = new Color(0.07f, 0.08f, 0.11f, 0.94f); GUI.DrawTexture(b, white); Frame(b, new Color(0.25f, 0.28f, 0.34f), 1); GUI.color = Color.white;
-            Lbl(new Rect(b.x + 8, b.y + 3, 180, 20), Loc.T("<size=12><color=#8a9bb3>공격 때 함께 터진다</color></size>"), label);
-            if (list.Count == 0) Lbl(new Rect(b.x + 8, b.y + 22, 180, 18), Loc.T("<size=12><color=#5f6878>산 무기가 없다</color></size>"), label);
+            Lbl(new Rect(b.x + 8, b.y + 3, 180, 20), Loc.T("<size=12><color=#8a9bb3>공격 시 함께 발동</color></size>"), label);
+            if (list.Count == 0) Lbl(new Rect(b.x + 8, b.y + 22, 180, 18), Loc.T("<size=12><color=#5f6878>구매한 무기 없음</color></size>"), label);
             for (int i = 0; i < list.Count; i++)
             {
                 int w = list[i]; var c = SweepGame.WeaponCol(w);
@@ -91,7 +91,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0, 0, 0, 0.6f); GUI.DrawTexture(new Rect(w.x + 4, w.y + 6, w.width, w.height), white);
             GUI.color = new Color(0.08f, 0.07f, 0.06f, 0.96f); GUI.DrawTexture(w, white); Frame(w, new Color(1f, 0.36f, 0.81f), 2);
             GUI.color = Color.white;
-            Lbl(new Rect(w.x, w.y + 6, w.width, 22), Loc.T("<size=14><b><color=#ffb3ea>★ 내일 궤도일보 1면을 고른다</color></b></size>"), center);
+            Lbl(new Rect(w.x, w.y + 6, w.width, 22), Loc.T("<size=14><b><color=#ffb3ea>★ 내일 궤도일보 1면 선택</color></b></size>"), center);
             for (int k = 0; k < 2; k++)
             {
                 var nd = Market.NewsBook[k == 0 ? S.front1 : S.front2];

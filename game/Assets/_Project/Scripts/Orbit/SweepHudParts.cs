@@ -104,7 +104,7 @@ namespace SalvageRun.Orbit
             GUI.color = Th.scan; for (float yy = 0; yy < RefH; yy += 4) GUI.DrawTexture(new Rect(0, yy, vw, 1), white);
             GUI.color = Color.white;
             var w = new Rect(ox + 50, 14, 860, 572);
-            Lbl(new Rect(w.x, w.y, 900, 34), Loc.T("<size=24><b><color=#ffdf95>부품 가게</color></b></size>  <size=12><color=#8a9bb3>진열은 출동하고 오면 바뀐다 · 카드에 올리면 끼울 자리가 깜빡인다</color></size>"), label);
+            Lbl(new Rect(w.x, w.y, 900, 34), Loc.T("<size=24><b><color=#ffdf95>부품 가게</color></b></size>  <size=12><color=#8a9bb3>진열은 출동 후 교체 · 카드에 올리면 장착할 칸이 깜빡임</color></size>"), label);
             Lbl(new Rect(w.x, w.y + 6, w.width, 24), Loc.T("<size=14><color=#8a9bb3>돈</color> <color=#ffdf95>") + KNum.Fmt(S.cash) + Loc.T("</color>   <color=#d8ccff>열쇠 ") + S.keys + "</color></size>", cost);
             // 🚀 내 청소선 — 그림 위에 부품 칸 다섯 (09-25 사장님 「어디에 들어가는지 이해가 어렵다」 · 시안 https://claude.ai/artifact/6bRbq2eUNE6dXqsSgqvHND)
             if (shipTex == null) shipTex = Resources.Load<Texture2D>("ship/hull");
@@ -169,7 +169,7 @@ namespace SalvageRun.Orbit
                 if (S.shop == null || k >= S.shop.Count)
                 {
                     GUI.color = new Color(0.045f, 0.05f, 0.065f); GUI.DrawTexture(r, white); Frame(r, new Color(0.13f, 0.14f, 0.17f), 1); GUI.color = Color.white;
-                    Lbl(r, Loc.T("<size=13><color=#3f4652>팔렸다</color></size>"), center);
+                    Lbl(r, Loc.T("<size=13><color=#3f4652>판매 완료</color></size>"), center);
                     continue;
                 }
                 int id = S.shop[k]; bool key = id == Parts.Key, cn = SweepSim.IsCons(id), sale = k == S.shopSale;
@@ -194,11 +194,11 @@ namespace SalvageRun.Orbit
                 if (itx != null) { GUI.color = new Color(1, 1, 1, 0.08f); GUI.DrawTexture(new Rect(r.x + 8, r.y + 46, 48, 48), texDisc); GUI.color = Color.white; GUI.DrawTexture(new Rect(r.x + 6, r.y + 44, 52, 52), itx); }
                 int nmFs = 15; while (nmFs > 9 &&label.CalcSize(new GUIContent("<size=" + nmFs + "><b>" + nm + "</b></size>")).x > r.width - 68) nmFs--;   // 🌐 긴 이름은 글자를 줄인다
                 Lbl(new Rect(r.x + 62, r.y + 44, r.width - 68, 22), "<size=" + nmFs + "><b><color=#ffffff>" + nm + "</color></b></size>", label);
-                string desc = key ? Loc.T("◆ 보라 테두리 핵심 칸 하나를 연다") : cn ? SweepSim.ConsDesc[id - SweepSim.Cons0] : Parts.Defs[id].desc;
+                string desc = key ? Loc.T("◆ 보라 테두리 핵심 칸 하나 해금") : cn ? SweepSim.ConsDesc[id - SweepSim.Cons0] : Parts.Defs[id].desc;
                 Lbl(new Rect(r.x + 62, r.y + 66, r.width - 68, 42), "<size=11><color=#c8d0dc>" + desc + "</color></size>", small);
                 // 지금 것 → 바뀌는 것
                 GUI.color = new Color(0.2f, 0.23f, 0.29f); GUI.DrawTexture(new Rect(r.x + 10, r.y + 112, r.width - 20, 1), white); GUI.color = Color.white;
-                string cmp = key ? Loc.T("<color=#8a9bb3>정비고 ◆ 칸에 쓴다 · 가진 열쇠 ") + S.keys + "</color>" : cn ? Loc.T("<color=#8a9bb3>사 두면 <color=#9ff0bf>다음 출동 때 저절로</color> 쓰인다 · 한 번 쓰면 끝</color>") : PartCompare(id);
+                string cmp = key ? Loc.T("<color=#8a9bb3>정비고 ◆ 칸에 사용 · 가진 열쇠 ") + S.keys + "</color>" : cn ? Loc.T("<color=#8a9bb3>구매해 두면 <color=#9ff0bf>다음 출동 때 자동</color> 사용 · 1회용</color>") : PartCompare(id);
                 Lbl(new Rect(r.x + 10, r.y + 116, r.width - 20, 58), "<size=11>" + cmp + "</size>", small);
                 double price = sim.ShelfPrice(k); bool can = S.cash >= price;
                 var bb = new Rect(r.x + 10, r.yMax - 40, r.width - 20, 30);
@@ -263,7 +263,7 @@ namespace SalvageRun.Orbit
                 double shown = k == "fuel" || k == "combo" ? d : d * 100;
                 outp.Add("<color=" + (d > 0 ? "#9ff0bf" : "#ff9b8f") + ">" + fn[0] + (k == "fee0" ? (d > 0 ? Loc.T(" 켜짐") : Loc.T(" 꺼짐")) : " " + (d > 0 ? "+" : "−") + System.Math.Abs(shown).ToString("0.##") + fn[1]) + "</color>");
             }
-            if (cur == id) return Loc.T("<color=#8a9bb3>지금 끼운 것과 같다</color>");
+            if (cur == id) return Loc.T("<color=#8a9bb3>지금 장착한 것과 같음</color>");
             string head = cur >= 0 ? Loc.T("<color=#8a9bb3>지금 <color=#8a7f99>") + Parts.Defs[cur].name + Loc.T("</color> 빠짐</color>\n") : Loc.T("<color=#8a9bb3>빈 칸에 끼움</color>\n");
             return head + (outp.Count > 0 ? string.Join(" · ", outp) : Loc.T("<color=#8a9bb3>달라지는 것 없음</color>"));
         }
@@ -273,8 +273,8 @@ namespace SalvageRun.Orbit
         void ShopTip(int id, Rect card)
         {
             var sb = new System.Text.StringBuilder();
-            if (id == Parts.Key) sb.Append(Loc.T("<color=#d8ccff>양자 열쇠</color>") + "\n\n" + Loc.T("정비고에서 보라 테두리 ◆ 핵심 칸을 하나 연다. 핵심 칸은 돈만으로는 못 산다.") + "\n" + Loc.T("가진 열쇠 ") + sim.S.keys + Loc.T("개"));
-            else if (SweepSim.IsCons(id)) sb.Append("<color=#9ff0bf>" + SweepSim.ConsName[id - SweepSim.Cons0] + Loc.T("</color>  <color=#8a93a3>다음 출동 한 번용</color>") + "\n\n" + SweepSim.ConsHelp[id - SweepSim.Cons0] + "\n\n" + Loc.T("<color=#8a93a3>칸에 끼우지 않는다. 사 두면 다음 출동을 시작할 때 저절로 쓰이고 사라진다.</color>"));
+            if (id == Parts.Key) sb.Append(Loc.T("<color=#d8ccff>양자 열쇠</color>") + "\n\n" + Loc.T("정비고의 보라 테두리 ◆ 핵심 칸 하나 해금. 핵심 칸은 돈만으로 구매 불가.") + "\n" + Loc.T("가진 열쇠 ") + sim.S.keys + Loc.T("개"));
+            else if (SweepSim.IsCons(id)) sb.Append("<color=#9ff0bf>" + SweepSim.ConsName[id - SweepSim.Cons0] + Loc.T("</color>  <color=#8a93a3>다음 출동 한 번용</color>") + "\n\n" + SweepSim.ConsHelp[id - SweepSim.Cons0] + "\n\n" + Loc.T("<color=#8a93a3>칸에 장착하지 않음. 구매해 두면 다음 출동 시작 때 자동으로 사용되고 사라짐.</color>"));
             else
             {
                 var d = Parts.Defs[id];
@@ -286,7 +286,7 @@ namespace SalvageRun.Orbit
                     if (d.k[i] == "crit") h += Loc.T(" (지금 ×") + sim.CritX + ")";
                     sb.Append("<color=#ffdf95>" + v + "</color>  " + h + "\n");
                 }
-                sb.Append("\n" + "<color=#8a93a3>" + Parts.SlotName[d.slot] + Loc.T(" 칸에 하나만 끼운다. 이미 끼운 게 있으면 바뀐다 — 빠지는 것은 사라진다.</color>"));
+                sb.Append("\n" + "<color=#8a93a3>" + Parts.SlotName[d.slot] + Loc.T(" 칸에 하나만 장착. 이미 장착한 게 있으면 교체 — 빠지는 부품은 사라짐.</color>"));
             }
             if (tipStyle == null) tipStyle = new GUIStyle(small) { wordWrap = true, richText = true, fontSize = 12 };
             float tw = 300, th = tipStyle.CalcHeight(new GUIContent(sb.ToString()), tw - 24) + 22;

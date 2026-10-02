@@ -283,7 +283,7 @@ namespace SalvageRun.Orbit
                 var pz = new Rect(g.x + g.width / 2 - 150, g.y + 6, 300, 40);
                 GUI.color = new Color(0.1f, 0.08f, 0.03f, 0.82f); GUI.DrawTexture(pz, white); Frame(pz, new Color(1f, 0.81f, 0.43f, 0.8f), 1); GUI.color = Color.white;
                 Lbl(new Rect(pz.x, pz.y + 3, pz.width, 18), Loc.T("<size=13><b><color=#ffcf6e>■ 시세 멈춤</color></b></size>"), center);
-                Lbl(new Rect(pz.x, pz.y + 20, pz.width, 16), Loc.T("<size=10><color=#c8b88a>출동하면 다시 움직인다 · 지금 사 두면 출동 중에 오르내린다</color></size>"), center);
+                Lbl(new Rect(pz.x, pz.y + 20, pz.width, 16), Loc.T("<size=10><color=#c8b88a>출동하면 다시 변동 · 지금 매수하면 출동 중 시세 변동</color></size>"), center);
             }
 
             // ── 아래 — 내 잔고
@@ -333,7 +333,7 @@ namespace SalvageRun.Orbit
                 var card = new Rect(X0 + 480 - 180, 230, 360, 150);
                 GUI.color = new Color(0.07f, 0.09f, 0.12f); GUI.DrawTexture(card, white); Frame(card, SweepGame.Amber, 2);
                 Lbl(new Rect(card.x, card.y + 14, card.width, 30), Loc.T("<size=20><b><color=#ffdf95>잠김 · 증권 계좌 없음</color></b></size>"), center);
-                Lbl(new Rect(card.x, card.y + 48, card.width, 24), Loc.T("<size=12><color=#c8d0dc>정비고에서 [증권 계좌] 칸을 사면 열린다</color></size>"), center);
+                Lbl(new Rect(card.x, card.y + 48, card.width, 24), Loc.T("<size=12><color=#c8d0dc>정비고에서 [증권 계좌] 칸 구매 시 해금</color></size>"), center);
                 if (Bt(new Rect(card.x + 90, card.y + 90, 180, 40), Loc.T("<size=14>‹ 정비고로</size>"), btn)) GoFlow(3);
             }
         }

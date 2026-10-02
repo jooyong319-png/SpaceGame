@@ -23,7 +23,7 @@ namespace SalvageRun.Orbit
             if (donutRun != R) { donutRun = R; donutK = -1; }
             dmgItems.Clear();
             double tot = 0; for (int i = 0; i < SweepSim.DmgCatN; i++) tot += R.dmgBy[i];
-            if (tot <= 0) { Lbl(new Rect(RT.x + 18, RT.y + 44, RT.width - 36, 20), Loc.T("<size=12><color=#5a6475>이번 판엔 피해를 못 넣었다</color></size>"), label); return; }
+            if (tot <= 0) { Lbl(new Rect(RT.x + 18, RT.y + 44, RT.width - 36, 20), Loc.T("<size=12><color=#5a6475>이번 판 피해 없음</color></size>"), label); return; }
             double etc = 0;
             for (int i = 0; i < SweepSim.DmgCatN; i++)
             {

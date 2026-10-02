@@ -33,7 +33,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0.25f, 0.08f, 0.3f, 0.95f * Mathf.Clamp01(lottoToast)); GUI.DrawTexture(tr, white); GUI.color = new Color(1, 1, 1, Mathf.Clamp01(lottoToast));
             Frame(tr, SweepGame.Mag, 2);
             Lbl(new Rect(tr.x, tr.y + 5, tr.width, 24), Loc.T("<size=16><b>궤도 로또 ") + S.lottoLastRound + Loc.T("회 당첨 번호  ") + S.lottoLast[0] + " · " + S.lottoLast[1] + " · " + S.lottoLast[2] + "</b></size>", center);
-            Lbl(new Rect(tr.x, tr.y + 31, tr.width, 22), "<size=14>" + (S.lottoLastWin > 0 ? "<color=#6fcf97>" + S.lottoLastHit + Loc.T("개 맞음 · +") + KNum.Fmt(S.lottoLastWin) + "</color>" : Loc.T("<color=#ee7766>꽝 — 하나도 못 맞혔다</color>")) + "</size>", center);
+            Lbl(new Rect(tr.x, tr.y + 31, tr.width, 22), "<size=14>" + (S.lottoLastWin > 0 ? "<color=#6fcf97>" + S.lottoLastHit + Loc.T("개 맞음 · +") + KNum.Fmt(S.lottoLastWin) + "</color>" : Loc.T("<color=#ee7766>꽝 — 맞힌 번호 없음</color>")) + "</size>", center);
             GUI.color = Color.white;
         }
 
@@ -113,10 +113,10 @@ namespace SalvageRun.Orbit
                 if (scIcon[k] != null) GUI.DrawTexture(new Rect(pr.x, pr.y + 2, 26, 26), scIcon[k], ScaleMode.ScaleToFit);
                 Lbl(new Rect(pr.x + 28, pr.y + 5, 64, 20), "<color=" + (k == 5 ? "#ffdf95" : "#c9b3d6") + ">" + Fit(pay[k], 11, 62, label) + "</color>", label);   // 🌐 영어 Firepower +30% 는 칸보다 넓다
             }
-            Lbl(new Rect(r.x + 24, r.y + 360, r.width - 48, 18), Loc.T("<size=10><color=#8a7a96>× = 판 벌이 · 부품은 가게 진열에서 하나 공짜로 끼운다 · 황금은 부품도 하나</color></size>"), label);
+            Lbl(new Rect(r.x + 24, r.y + 360, r.width - 48, 18), Loc.T("<size=10><color=#8a7a96>× = 판 벌이 · 부품은 가게 진열에서 하나 무료 장착 · 황금은 부품도 하나</color></size>"), label);
             if (scGrid != null && !scDone && revealed == ScCells) { scDone = true; scDoneT = Time.unscaledTime; scGot = sim.ScratchClaim(); if (scWin != -1) { OrbitSfx.Play("buy", 1f); OrbitSfx.Play("clank", 0.7f); game.creditPulse = 1; } else OrbitSfx.PlayPitch("tick", 0.6f, 0.7f); }
             bool can = sim.ScratchLeft > 0 && S.cash >= sim.ScratchCost;
-            string buyTxt = can ? "<size=16>" + (scGrid == null ? Loc.T("한 장 사기") : Loc.T("한 장 더")) + " · " + (sim.ScratchCost <= 0 ? Loc.T("공짜") : KNum.Fmt(sim.ScratchCost)) + "</size>" : "<size=12>" + (sim.ScratchLeft <= 0 ? Loc.T("오늘 표는 다 썼다 — 출동하면 다시") : Loc.T("돈이 모자라다")) + "</size>";
+            string buyTxt = can ? "<size=16>" + (scGrid == null ? Loc.T("복권 1장 구매") : Loc.T("한 장 더")) + " · " + (sim.ScratchCost <= 0 ? Loc.T("공짜") : KNum.Fmt(sim.ScratchCost)) + "</size>" : "<size=12>" + (sim.ScratchLeft <= 0 ? Loc.T("오늘 표 소진 — 출동하면 다시 충전") : Loc.T("돈 부족")) + "</size>";
             if (scGrid != null && !scDone)
             {
                 Lbl(new Rect(r.x, r.yMax - 96, r.width, 22), Loc.T("<size=13><color=#b89ac6>누른 채 문질러 긁기</color></size>"), center);
@@ -149,7 +149,7 @@ namespace SalvageRun.Orbit
                 if (Bt(nb, GUIContent.none, GUIStyle.none)) { if (on) lottoPick.Remove(n); else if (lottoPick.Count < 3) lottoPick.Add(n); OrbitSfx.Play("tick", 0.4f); }
             }
             bool can = lottoPick.Count == 3 && S.lotto.Count < 3 && S.cash >= sim.LottoPrice;
-            if (Bt(new Rect(r.x + 400, r.y + 116, 170, 44), can ? Loc.T("<size=14>이 번호로 사기</size>") : "<size=12>" + (S.lotto.Count >= 3 ? Loc.T("이번 회는 3장까지") : lottoPick.Count < 3 ? Loc.T("번호 셋을 고르세요") : Loc.T("돈이 모자라다")) + "</size>", can ? btnC : btnOffC) && can)
+            if (Bt(new Rect(r.x + 400, r.y + 116, 170, 44), can ? Loc.T("<size=14>이 번호로 구매</size>") : "<size=12>" + (S.lotto.Count >= 3 ? Loc.T("이번 회는 3장까지") : lottoPick.Count < 3 ? Loc.T("번호 셋을 고르세요") : Loc.T("돈 부족")) + "</size>", can ? btnC : btnOffC) && can)
             { lottoPick.Sort(); if (sim.LottoBuy(lottoPick[0], lottoPick[1], lottoPick[2])) { OrbitSfx.Play("buy", 0.6f); lottoPick.Clear(); } }
             if (Bt(new Rect(r.x + 400, r.y + 166, 170, 34), Loc.T("<size=12>자동 고르기</size>"), btnOff))
             { lottoPick.Clear(); while (lottoPick.Count < 3) { int n = Random.Range(1, 13); if (!lottoPick.Contains(n)) lottoPick.Add(n); } OrbitSfx.Play("tick", 0.5f); }
@@ -165,7 +165,7 @@ namespace SalvageRun.Orbit
             if (S.lottoLast != null)
             {
                 Lbl(new Rect(r.x + 20, r.y + 330, r.width - 40, 22), Loc.T("<size=13>지난 ") + S.lottoLastRound + Loc.T("회 당첨 번호  <b><color=#f3c8ff>") + S.lottoLast[0] + " · " + S.lottoLast[1] + " · " + S.lottoLast[2] + "</color></b></size>", label);
-                Lbl(new Rect(r.x + 20, r.y + 354, r.width - 40, 22), "<size=12>" + (S.lottoLastHit < 0 ? Loc.T("<color=#8a9bb3>그 회엔 표가 없었다</color>") : S.lottoLastWin > 0 ? "<color=#6fcf97>" + S.lottoLastHit + Loc.T("개 맞음 · +") + KNum.Fmt(S.lottoLastWin) + "</color>" : Loc.T("<color=#ee7766>꽝</color>")) + "</size>", label);
+                Lbl(new Rect(r.x + 20, r.y + 354, r.width - 40, 22), "<size=12>" + (S.lottoLastHit < 0 ? Loc.T("<color=#8a9bb3>그 회차엔 표 없음</color>") : S.lottoLastWin > 0 ? "<color=#6fcf97>" + S.lottoLastHit + Loc.T("개 맞음 · +") + KNum.Fmt(S.lottoLastWin) + "</color>" : Loc.T("<color=#ee7766>꽝</color>")) + "</size>", label);
             }
         }
 
@@ -189,7 +189,7 @@ namespace SalvageRun.Orbit
             paperHead.fontSize = 24; Lbl(new Rect(r.x, r.y + 16, r.width, 36), Loc.T("대출 계약서"), new GUIStyle(paperHead) { alignment = TextAnchor.UpperCenter });
             paperSmall.fontSize = 11; Lbl(new Rect(r.x + 20, r.y + 62, r.width - 40, 18), Loc.T("채권자 케슬러 금융 · 채무자 주식회사 궤도 청소부 (") + sim.M.company + Loc.T("대)"), paperSmall);
             string[] k = { Loc.T("빌리는 돈"), Loc.T("갚을 돈"), Loc.T("갚는 법"), Loc.T("쓰는 곳") };
-            string[] v = { KNum.Fmt(pendLoan), KNum.Fmt(pendLoan * SweepSim.LoanMult) + "  (" + SweepSim.LoanMult + Loc.T("배)"), Loc.T("판 수입의 ") + (sim.Lv("e_guard") > 0 ? 20 : 30) + Loc.T("%가 자동으로"), pendPay ? Loc.T("청구서를 바로 갚는다") : Loc.T("돈으로 들어온다") };
+            string[] v = { KNum.Fmt(pendLoan), KNum.Fmt(pendLoan * SweepSim.LoanMult) + "  (" + SweepSim.LoanMult + Loc.T("배)"), Loc.T("판 수입의 ") + (sim.Lv("e_guard") > 0 ? 20 : 30) + Loc.T("%가 자동으로"), pendPay ? Loc.T("청구서 즉시 납부") : Loc.T("돈으로 입금") };
             for (int i = 0; i < 4; i++)
             {
                 float y = r.y + 92 + i * 34;
@@ -247,7 +247,7 @@ namespace SalvageRun.Orbit
                 }
             }
             else if (Bt(new Rect(r.xMax - 120, r.yMax - 52, 100, 34), Loc.T("취소"), btnOff)) { pendLoan = 0; if (pendPay) loanOpen = false; }
-            if (!done) Lbl(new Rect(r.x + 20, r.yMax - 50, 260, 30), Loc.T("<size=11><color=#8a7f6a>서명하면 도장이 찍히고 돈이 들어온다</color></size>"), paperBody);
+            if (!done) Lbl(new Rect(r.x + 20, r.yMax - 50, 260, 30), Loc.T("<size=11><color=#8a7f6a>서명하면 도장과 함께 입금</color></size>"), paperBody);
         }
 
         void LoanWin()
@@ -259,7 +259,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0.05f, 0.06f, 0.09f, 0.99f); GUI.DrawTexture(r, white); GUI.color = Color.white;
             Frame(r, new Color(0.62f, 0.5f, 0.3f), 2);
             title.fontSize = 22; Lbl(new Rect(r.x, r.y + 12, r.width, 30), Loc.T("<color=#ffdf95>케슬러 금융 — 대출 창구</color>"), title);
-            Lbl(new Rect(r.x, r.y + 44, r.width, 18), Loc.T("<size=12>받은 돈의 ") + SweepSim.LoanMult + Loc.T("배를 갚는다 · 빚이 있으면 판 수입의 ") + Mathf.RoundToInt((float)(sim.Lv("e_guard") > 0 ? 20 : 30)) + Loc.T("%가 자동으로 빠져나간다</size>"), center);
+            Lbl(new Rect(r.x, r.y + 44, r.width, 18), Loc.T("<size=12>받은 돈의 ") + SweepSim.LoanMult + Loc.T("배 상환 · 빚이 있으면 판 수입의 ") + Mathf.RoundToInt((float)(sim.Lv("e_guard") > 0 ? 20 : 30)) + Loc.T("% 자동 차감</size>"), center);
             // 숫자 셋
             float cx = r.x + 24, cw = (r.width - 48) / 3;
             string[] k = { Loc.T("지금 빚"), Loc.T("대출 한도"), Loc.T("가진 돈") };
@@ -282,14 +282,14 @@ namespace SalvageRun.Orbit
             if (Bt(new Rect(cx + 340, by, 168, 36), (S.debt > 0 ? Loc.T("<size=12>빚 갚기 −") + KNum.Fmt(System.Math.Min(S.cash, S.debt)) + "</size>" : Loc.T("<size=12>갚을 빚 없음</size>")), btnC)) Repay();
             GUI.enabled = true;
             Lbl(new Rect(cx + 4, by + 38, 500, 20), S.bill >= SweepSim.Bills.Length - 1
-                ? Loc.T("<size=11><color=#ff9b8f>마지막 할부(완납)엔 대출이 안 된다 — 제힘으로 갚거나, 못 갚으면 파산</color></size>")
+                ? Loc.T("<size=11><color=#ff9b8f>마지막 할부(완납)엔 대출 불가 — 직접 갚거나, 못 갚으면 파산</color></size>")
                 : Loc.T("<size=11>받으면 빚 +") + KNum.Fmt(quarter * SweepSim.LoanMult) + Loc.T(" · 한도 = 지금 청구서 − 남은 원금</size>"), small);
             // 내역
             float hy = by + 64;
             Lbl(new Rect(cx + 4, hy - 2, 300, 22), Loc.T("내역"), label);
             GUI.DrawTexture(new Rect(cx + 4, hy + 20, r.width - 56, 1), texBar);
             var log = S.loanLog;
-            if (log == null || log.Count == 0) Lbl(new Rect(cx + 4, hy + 28, 400, 18), Loc.T("<size=12>아직 없다</size>"), small);
+            if (log == null || log.Count == 0) Lbl(new Rect(cx + 4, hy + 28, 400, 18), Loc.T("<size=12>아직 없음</size>"), small);
             else
                 for (int i = 0; i < 8 && i < log.Count; i++)
                 {

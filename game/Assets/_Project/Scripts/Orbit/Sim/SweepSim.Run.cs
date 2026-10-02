@@ -339,7 +339,7 @@ namespace SalvageRun.Orbit.Sim
                 // ⛽ 09-26 사장님 「궤도 따라 쭉 움직이면서 밖으로 — 안 먹으면 없어진다 · 빠르게」 — 조준점을 대야 먹는다
                 p.a += (1.4 + 0.3 * Lv("s_speed")) * dt; p.rr += (Bo + 90 - Orbits[S.orbit].bi * 0.8) / 5.0 * dt;   // 09-27 사장님 「연료 보급 가시성이 안 좋다」 — 2.2 · 3.6초 → 1.4 · 5초
                 p.x = EX + Math.Cos(p.a) * p.rr; p.y = EY + Math.Sin(p.a) * p.rr * Tilt;
-                if (p.rr > Bo + 90) { p.got = true; Emit(SwEv.Pop, p.x, p.y, 0, 1, Loc.T("보급을 놓쳤다")); continue; }
+                if (p.rr > Bo + 90) { p.got = true; Emit(SwEv.Pop, p.x, p.y, 0, 1, Loc.T("보급 놓침")); continue; }
                 double dx = r.ax - p.x, dy = r.ay - p.y, d = Math.Sqrt(dx * dx + dy * dy);
                 if (d <= 40)
                 {
@@ -356,7 +356,7 @@ namespace SalvageRun.Orbit.Sim
             var hosts = R.junk.FindAll(d => !d.dead && IsHost(d.k) && d.att == Att.None);
             hosts.Sort((p, q) => Types[q.k].val.CompareTo(Types[p.k].val));
             for (int i = 0; i < Math.Min(6, hosts.Count); i++) { hosts[i].att = Att.Tag; Emit(SwEv.Ring, hosts[i].x, hosts[i].y, 18, 1); }
-            Emit(SwEv.Collector, 0, 0, 0, 0, Loc.T("추심선이 압류 딱지를 붙이고 간다 — 부수면 빚이 준다"));
+            Emit(SwEv.Collector, 0, 0, 0, 0, Loc.T("추심선의 압류 딱지 — 부수면 빚 감소"));
         }
 
         void Motion(double dt)

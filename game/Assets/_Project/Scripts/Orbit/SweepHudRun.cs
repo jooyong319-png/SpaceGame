@@ -76,7 +76,7 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(1f, 0.72f - (i % 3) * 0.08f, 0.45f, (0.25f + (i % 4) * 0.1f) * a); GUI.DrawTexture(new Rect(x, y, len, i % 5 == 0 ? 3 : 2), white);
             }
             GUI.color = Color.white;
-            if (ph > 14 && ph < 19.5f) Lbl(new Rect(0, 40, vw, 26), Loc.T("<size=18><color=#ffb080><b>모래 폭풍</b></color></size>  <size=13><color=#ffd0b0>값 ×1.5 · 잔해가 몰려온다</color></size>"), center);
+            if (ph > 14 && ph < 19.5f) Lbl(new Rect(0, 40, vw, 26), Loc.T("<size=18><color=#ffb080><b>모래 폭풍</b></color></size>  <size=13><color=#ffd0b0>값 ×1.5 · 잔해가 몰려옴</color></size>"), center);
         }
 
         // 🚀 출발 1.3초 — 조종실 선체가 커지며 밖으로 날아가고, 별 줄기가 쏟아지고, 행성 이름이 뜬다 (사장님 「출발 후가 2% 빠진 느낌」)
@@ -210,7 +210,7 @@ namespace SalvageRun.Orbit
                         GUI.color = new Color(0.6f, 0.9f, 1f, 0.55f + 0.25f * sp); GUI.DrawTexture(new Rect(gx - 80, gy - 80, 160, 160), texRing);
                         GUI.color = Color.white;
                         Lbl(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), "<size=11><color=#ffb36b>🛰 " + sim.GateName + Loc.T("</color> <color=#9fdcff>· 방어막</color></size>"), label);
-                        Lbl(new Rect(gr.x + 8, gr.y + 14, gr.width - 16, 16), Loc.T("<size=10><color=#9fdcff>청구서 ") + sim.GateBill + Loc.T("장을 갚으면 풀린다</color></size>"), label);
+                        Lbl(new Rect(gr.x + 8, gr.y + 14, gr.width - 16, 16), Loc.T("<size=10><color=#9fdcff>청구서 ") + sim.GateBill + Loc.T("장 납부 시 해제</color></size>"), label);
                         goto gateDone;
                     }
                     float gk = Mathf.Clamp01((float)gj.hp / Mathf.Max(1, gj.max));
@@ -273,9 +273,9 @@ namespace SalvageRun.Orbit
             string hint = null;
             if (R.clean) hint = null; else
             if (CoachBox()) hint = null; else
-            if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = manualFire ? Loc.T("왼쪽 단추를 누르고 있는 동안 청소선이 쏜다 — 잔해 위를 겨누자") : Loc.T("궤도 위에 커서를 대면 청소선이 빔을 쏜다 — 처음엔 한 점씩");
-            else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = Loc.T("블랙홀이 열렸다 — 쏠 때 가끔 저절로 열려 빨아들인다");
-            else if (sim.DronesOn && !sim.M.flags.Contains("hint_drone") && R.t < 8) hint = Loc.T("드론은 알아서 줍는다 — 한 방에 부서지는 것만");
+            if (!sim.M.flags.Contains("hint_claw") && R.t < 12) hint = manualFire ? Loc.T("왼쪽 단추를 누르고 있으면 청소선이 발사 — 잔해 위를 조준") : Loc.T("궤도 위에 커서를 대면 청소선이 빔 발사 — 처음엔 한 점씩");
+            else if (sim.BombsOn && !sim.M.flags.Contains("hint_bomb") && R.t < 14) hint = Loc.T("블랙홀 해금 — 공격 시 가끔 자동으로 열려 잔해 흡수");
+            else if (sim.DronesOn && !sim.M.flags.Contains("hint_drone") && R.t < 8) hint = Loc.T("드론 자동 수집 — 한 번에 부서지는 잔해만");
             else if (sim.S.orbit > 0 && !sim.M.flags.Contains("hint_p" + sim.S.orbit) && R.t < 8) hint = PlanetHint[sim.S.orbit];   // 새 행성 첫 판
             if (hint != null)
             {   // 궤도 · 포대 위에서도 읽히게 — 글자 폭만큼 어두운 띠 (09-26 밤 둘러보기)
@@ -390,10 +390,10 @@ namespace SalvageRun.Orbit
             y += 22;
             float bw = (r.width - 24 - 12) / 6f;
             string[] bl = { "10%", "25%", "50%", Loc.T("전부") }; float[] bf = { 0.1f, 0.25f, 0.5f, 1f };
-            if (!sim.R.over) Lbl(new Rect(r.x + 12, y, r.width - 24, 28), Loc.T("<size=12><color=#8a9bb3>출동 중엔 시세만 본다 — 사고팔기는 조종실 증권에서</color></size>"), center);   // 🔒 출동 중 사고팔기 금지 (09-24 사장님 「팔기도 막아」)
+            if (!sim.R.over) Lbl(new Rect(r.x + 12, y, r.width - 24, 28), Loc.T("<size=12><color=#8a9bb3>출동 중엔 시세 확인만 — 거래는 조종실 증권에서</color></size>"), center);   // 🔒 출동 중 사고팔기 금지 (09-24 사장님 「팔기도 막아」)
             else
             {
-                for (int k = 0; k < 4; k++) if (Bt(new Rect(r.x + 12 + k * (bw + 2), y, bw, 28), Loc.T("<size=12><color=#9ff0bf>사기 ") + bl[k] + "</color></size>", btn)) TradeBuy(si, bf[k], new Vector2(r.x + 12 + k * (bw + 2) + bw / 2, y + 14));
+                for (int k = 0; k < 4; k++) if (Bt(new Rect(r.x + 12 + k * (bw + 2), y, bw, 28), Loc.T("<size=12><color=#9ff0bf>매수 ") + bl[k] + "</color></size>", btn)) TradeBuy(si, bf[k], new Vector2(r.x + 12 + k * (bw + 2) + bw / 2, y + 14));
                 GUI.enabled = ss.shares > 0 && GUI.enabled;
                 if (Bt(new Rect(r.x + 12 + 4 * (bw + 2) + 6, y, bw, 28), Loc.T("<size=12><color=#ffb3a8>절반 팔기</color></size>"), btn)) TradeSell(si, 0.5, new Vector2(r.x + 12 + 4 * (bw + 2) + 6 + bw / 2, y + 14));
                 if (Bt(new Rect(r.x + 12 + 5 * (bw + 2) + 6, y, bw, 28), Loc.T("<size=12><color=#ffb3a8>전부 팔기</color></size>"), btn)) TradeSell(si, 1, new Vector2(r.x + 12 + 5 * (bw + 2) + 6 + bw / 2, y + 14));

@@ -28,21 +28,21 @@ namespace SalvageRun.Orbit.Sim
         public static readonly OrbitDef[] Orbits =
         {
             new OrbitDef { name = Loc.T("지구"), desc = Loc.T("기본 궤도"),                         bi = 150, bo = 296, mult = 1, att = 0.10, spin = 1,    hp = 1,   sell = 0, permit = 0,       mix = new double[] { 60, 22, 4, 2, 5, 4, 1.2 },  nMin = 127, nMax = 212, forms = new[] { 0, 0 },       events = new[] { 0, 1 } },
-            new OrbitDef { name = Loc.T("달"),   desc = Loc.T("느린 궤도 · 금고 위성이 많다"),       bi = 118, bo = 277, mult = 1.5, att = 0.15, spin = 0.6,  hp = 1.1, sell = 2, permit = 800,     mix = new double[] { 48, 22, 6, 9, 5, 4, 1.2 },  nMin = 144, nMax = 244, forms = new[] { 0, 1 },       events = new[] { 0, 3 } },
+            new OrbitDef { name = Loc.T("달"),   desc = Loc.T("느린 궤도 · 금고 위성 많음"),       bi = 118, bo = 277, mult = 1.5, att = 0.15, spin = 0.6,  hp = 1.1, sell = 2, permit = 800,     mix = new double[] { 48, 22, 6, 9, 5, 4, 1.2 },  nMin = 144, nMax = 244, forms = new[] { 0, 1 },       events = new[] { 0, 3 } },
             new OrbitDef { name = Loc.T("화성"), desc = Loc.T("모래 폭풍 · 얼음 껍질"),             bi = 132, bo = 314, mult = 2.2, att = 0.25, spin = 1.1,  hp = 1.3, sell = 3, permit = 15000,    storm = true, mix = new double[] { 48, 22, 12, 3, 5, 7, 1.5 }, nMin = 172, nMax = 316, forms = new[] { 1, 2, 0 }, events = new[] { 2, 1 } },
-            new OrbitDef { name = Loc.T("목성"), desc = Loc.T("중력이 잔해를 안쪽에 모은다 · 장갑판"), bi = 188, bo = 357, mult = 4.5, att = 0.30, spin = 1.3,  hp = 1.6, sell = 5, permit = 2000000,  pull = 9, mix = new double[] { 40, 18, 10, 6, 5, 8, 2.5 }, nMin = 238, nMax = 392, forms = new[] { 3, 4, 1 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = Loc.T("목성"), desc = Loc.T("잔해를 안쪽으로 모으는 중력 · 장갑판"), bi = 188, bo = 357, mult = 4.5, att = 0.30, spin = 1.3,  hp = 1.6, sell = 5, permit = 2000000,  pull = 9, mix = new double[] { 40, 18, 10, 6, 5, 8, 2.5 }, nMin = 238, nMax = 392, forms = new[] { 3, 4, 1 }, events = new[] { 3, 4 } },
             new OrbitDef { name = Loc.T("토성"), desc = Loc.T("두 겹 고리 · 케이블 망"),            bi = 150, bo = 345, mult = 6.5, att = 0.30, spin = 0.9,  hp = 2.0, sell = 6, permit = 6000000, gap = 0.28, mix = new double[] { 38, 18, 8, 8, 5, 6, 3 }, nMin = 257, nMax = 415, forms = new[] { 2, 2, 3, 4 }, events = new[] { 3, 4 } },
             new OrbitDef { name = Loc.T("소행성대"), desc = Loc.T("암석 무리 · 단단한 잔해 · 광석"),     bi = 140, bo = 330, mult = 3.2, att = 0.28, spin = 1.2,  hp = 1.45, sell = 4, permit = 200000,   mix = new double[] { 44, 20, 12, 4, 5, 7, 2 },   nMin = 205, nMax = 350, forms = new[] { 1, 3, 0 }, events = new[] { 2, 3 } },
             new OrbitDef { name = Loc.T("천왕성"), desc = Loc.T("옆으로 누운 궤도 · 얼음 결정"),       bi = 180, bo = 380, mult = 10, att = 0.35, spin = 0.8,  hp = 2.8, sell = 8, permit = 15000000, pull = 6, mix = new double[] { 34, 18, 10, 9, 5, 8, 4 }, nMin = 280, nMax = 440, forms = new[] { 2, 3, 4 }, events = new[] { 3, 4 } },
             new OrbitDef { name = Loc.T("해왕성"), desc = Loc.T("초속 폭풍 · 무거운 잔해"),           bi = 175, bo = 390, mult = 15, att = 0.38, spin = 1.4,  hp = 3.8, sell = 10, permit = 30000000, storm = true, mix = new double[] { 32, 16, 10, 10, 5, 9, 5 }, nMin = 300, nMax = 460, forms = new[] { 3, 4, 2 }, events = new[] { 4, 3 } },
             new OrbitDef { name = Loc.T("카이퍼 벨트"), desc = Loc.T("태양계 끝 · 고대 탐사선 · 혜성"),   bi = 150, bo = 400, mult = 24, att = 0.40, spin = 0.6,  hp = 5.2, sell = 14, permit = 60000000, gap = 0.2, mix = new double[] { 30, 16, 10, 12, 5, 9, 6 }, nMin = 320, nMax = 480, forms = new[] { 4, 3, 2, 1 }, events = new[] { 3, 4 } },
-            new OrbitDef { name = Loc.T("오르트 구름"), desc = Loc.T("얼음 혜성 떼 · 단단하고 느리다"),   bi = 155, bo = 410, mult = 24, att = 0.42, spin = 0.5,  hp = 7.2, sell = 18, permit = 60000000, mix = new double[] { 30, 16, 10, 12, 5, 9, 6 }, nMin = 320, nMax = 480, forms = new[] { 4, 3, 2, 1 }, events = new[] { 3, 4 } },
-            new OrbitDef { name = Loc.T("태양권 계면"), desc = Loc.T("태양풍이 부딪히는 경계 · 잔해가 출렁인다"),   bi = 160, bo = 420, mult = 24, att = 0.44, spin = 1.6,  hp = 9.6, sell = 22, permit = 60000000, storm = true, mix = new double[] { 30, 16, 10, 12, 5, 9, 6 }, nMin = 320, nMax = 480, forms = new[] { 4, 3, 2, 1 }, events = new[] { 3, 4 } },
-            new OrbitDef { name = Loc.T("성간 공간"), desc = Loc.T("태양 빛이 닿지 않는 곳 · 드문드문하지만 값이 가장 크다"),   bi = 165, bo = 430, mult = 24, att = 0.46, spin = 0.4,  hp = 13, sell = 28, permit = 60000000, mix = new double[] { 30, 16, 10, 12, 5, 9, 6 }, nMin = 320, nMax = 480, forms = new[] { 4, 3, 2, 1 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = Loc.T("오르트 구름"), desc = Loc.T("얼음 혜성 떼 · 단단하고 느림"),   bi = 155, bo = 410, mult = 24, att = 0.42, spin = 0.5,  hp = 7.2, sell = 18, permit = 60000000, mix = new double[] { 30, 16, 10, 12, 5, 9, 6 }, nMin = 320, nMax = 480, forms = new[] { 4, 3, 2, 1 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = Loc.T("태양권 계면"), desc = Loc.T("태양풍이 부딪히는 경계 · 출렁이는 잔해"),   bi = 160, bo = 420, mult = 24, att = 0.44, spin = 1.6,  hp = 9.6, sell = 22, permit = 60000000, storm = true, mix = new double[] { 30, 16, 10, 12, 5, 9, 6 }, nMin = 320, nMax = 480, forms = new[] { 4, 3, 2, 1 }, events = new[] { 3, 4 } },
+            new OrbitDef { name = Loc.T("성간 공간"), desc = Loc.T("태양 빛이 닿지 않는 곳 · 드문드문하지만 값이 가장 큼"),   bi = 165, bo = 430, mult = 24, att = 0.46, spin = 0.4,  hp = 13, sell = 28, permit = 60000000, mix = new double[] { 30, 16, 10, 12, 5, 9, 6 }, nMin = 320, nMax = 480, forms = new[] { 4, 3, 2, 1 }, events = new[] { 3, 4 } },
         };
         public static readonly string[] FormNames = { Loc.T("무리"), Loc.T("탱크 사슬"), Loc.T("케이블 망"), Loc.T("호송대"), Loc.T("난파 구역") };
         public static readonly string[] EventNames = { Loc.T("연료 보급선"), Loc.T("충돌 사고"), Loc.T("파편 폭풍"), Loc.T("금고 호송대"), Loc.T("대충돌") };
-        public static readonly string[] EventHint = { Loc.T("왼쪽에서 연료통 하나 · 부수면 연료가 찬다"), Loc.T("오른쪽 위에 파편 서른 · 뭉쳤을 때 쓸면 연쇄"), Loc.T("왼쪽에서 고철이 쏟아진다 · 길목을 막아라"), Loc.T("금고 위성 줄이 지나간다 · 놓치기 전에"), Loc.T("오른쪽 위에 파편 예순 · 폭탄 위성도 섞였다") };   // 09-26 사장님 「뭐가 되는 건데?」
+        public static readonly string[] EventHint = { Loc.T("왼쪽에서 연료통 하나 · 부수면 연료 충전"), Loc.T("오른쪽 위에 파편 서른 · 뭉쳤을 때 쓸면 연쇄"), Loc.T("왼쪽에서 고철 쏟아짐 · 길목 차단"), Loc.T("금고 위성 행렬 통과 · 놓치기 전에"), Loc.T("오른쪽 위에 파편 60개 · 폭탄 위성 섞임") };   // 09-26 사장님 「뭐가 되는 건데?」
         public const double FuelIdle = 0.5, ShotFuel = 0.5, ClickFuel = 0.4, VolleyFuel = 2;   // ⛽ 연료 — 가만히 · 쏠 때(간격 비례) · 클릭 한 방 · 전탄
         bool TargetNear(double x, double y)
         {   // 조준점 근처에 부술 잔해가 있나 — 없으면 주 무기가 쉰다
@@ -56,52 +56,52 @@ namespace SalvageRun.Orbit.Sim
         // 🔴 정비고 네 칸 × 아홉 = 36칸 (사장님 09-23: "강화하는 것도 더 넓히고 더 많게"). depth = 행(0~4) · lane = 열(0~4)
         public static readonly Node[] Nodes =
         {
-            N("c_pow", "claw", Loc.T("빔 위력"), Loc.T("한 방 피해 +1 (단계마다) — 단단한 잔해를 덜 쳐도 부순다"), new string[0], 1, 3, 1.6, 12, 0, 2),
-            N("c_rad", "claw", Loc.T("빔 범위"), Loc.T("빔이 한 점이 아니라 원으로 — 반지름 25에서 단계마다 +5 · 원 안이 한꺼번에 맞는다"), new[] { "c_pow" }, 1, 9, 1.7, 8, 1, 3),
+            N("c_pow", "claw", Loc.T("빔 위력"), Loc.T("1회 피해 +1 (단계마다) — 단단한 잔해를 더 적은 타격으로 파괴"), new string[0], 1, 3, 1.6, 12, 0, 2),
+            N("c_rad", "claw", Loc.T("빔 범위"), Loc.T("빔이 점에서 원으로 — 반지름 25, 단계마다 +5 · 원 안을 한꺼번에 타격"), new[] { "c_pow" }, 1, 9, 1.7, 8, 1, 3),
             N("c_spd", "claw", Loc.T("빔 증폭"), Loc.T("빔 화력 +8% (단계마다)"), new[] { "c_pow" }, 2, 40, 1.6, 7, 1, 1),
-            N("c_fuel", "claw", Loc.T("연료 탱크"), Loc.T("연료 용량 +3% (단계마다) — 쏠 수 있는 양 · 판 길이가 늘어난다"), new[] { "c_rad" }, 1, 20, 1.6, 10, 2, 4),
+            N("c_fuel", "claw", Loc.T("연료 탱크"), Loc.T("연료 용량 +3% (단계마다) — 쏠 수 있는 양 · 판 길이 증가"), new[] { "c_rad" }, 1, 20, 1.6, 10, 2, 4),
             N("c_crit", "claw", Loc.T("치명타"), Loc.T("치명 확률 +5% (단계마다) — 치명이면 피해 ×3"), new[] { "c_spd" }, 3, 600, 1.6, 6, 3, 0),
             N("c_double", "claw", Loc.T("한 발 더"), Loc.T("쏠 때 10% 확률로 같은 자리에 한 발 더 (단계마다 +10%) · 연료는 한 발 값만"), new[] { "c_spd" }, 3, 900, 1.7, 5, 3, 2),
-            N("c_magnet", "claw", Loc.T("견인 빔"), Loc.T("조준점 둘레(단계마다 +20)의 작은 조각을 끌어당긴다"), new[] { "c_rad", "c_fuel" }, 3, 1200, 1.8, 3, 3, 4),
-            N("c_over", "claw", Loc.T("과부하"), Loc.T("연료가 5초 남으면 두 배 빠르게 쏜다"), new[] { "c_crit", "c_double" }, 4, 3000, 1, 1, 4, 1),
-            N("d_n", "drone", Loc.T("드론 격납고"), Loc.T("드론이 생긴다 — 첫 칸 두 대, 그 뒤 한 대씩 더 · 한 방에 부서지는 잔해를 알아서 부순다"), new string[0], 1, 60, 2.2, 8, 0, 2),
-            N("d_spd", "drone", Loc.T("드론 속도"), Loc.T("드론이 한 번 줍고 다시 가는 간격 −10% (단계마다)"), new[] { "d_n" }, 2, 300, 1.6, 6, 1, 1),
-            N("d_reach", "drone", Loc.T("드론 거리"), Loc.T("드론이 잔해를 찾는 거리 80에서 +15 (단계마다)"), new[] { "d_n" }, 3, 660, 1.6, 5, 1, 3),
+            N("c_magnet", "claw", Loc.T("견인 빔"), Loc.T("조준점 둘레(단계마다 +20)의 작은 조각을 끌어당김"), new[] { "c_rad", "c_fuel" }, 3, 1200, 1.8, 3, 3, 4),
+            N("c_over", "claw", Loc.T("과부하"), Loc.T("연료가 5초 남으면 공격 속도 2배"), new[] { "c_crit", "c_double" }, 4, 3000, 1, 1, 4, 1),
+            N("d_n", "drone", Loc.T("드론 격납고"), Loc.T("드론 해금 — 첫 칸 2대, 이후 단계마다 1대씩 추가 · 한 번에 부서지는 잔해를 자동으로 파괴"), new string[0], 1, 60, 2.2, 8, 0, 2),
+            N("d_spd", "drone", Loc.T("드론 속도"), Loc.T("드론 수집 간격 −10% (단계마다)"), new[] { "d_n" }, 2, 300, 1.6, 6, 1, 1),
+            N("d_reach", "drone", Loc.T("드론 거리"), Loc.T("드론 탐색 거리 80, 단계마다 +15"), new[] { "d_n" }, 3, 660, 1.6, 5, 1, 3),
             N("d_mag", "drone", Loc.T("드론 수거"), Loc.T("드론이 부순 잔해 값 +25% (단계마다)"), new[] { "d_spd" }, 3, 900, 1.6, 5, 2, 0),
-            N("d_sig", "drone", Loc.T("신호 증폭"), Loc.T("깜빡이는 신호기가 붙은 잔해를 부수면 드론이 그리로 몰려든다 — 3초에서 +2초 (단계마다)"), new[] { "d_spd", "d_reach" }, 3, 700, 1.7, 3, 2, 2),
-            N("d_grade", "drone", Loc.T("드론 등급"), Loc.T("드론이 더 큰 잔해도 한 방에 줍는다 — 조각 → 죽은 위성 → 금고 위성 → 로켓 동체"), new[] { "d_reach" }, 5, 4500, 2.0, 3, 2, 4),
-            N("d_fix", "drone", Loc.T("급유 드론"), Loc.T("드론이 연료를 채워 준다 — 연료 +1초 (단계마다)"), new[] { "d_mag" }, 4, 2000, 1.8, 3, 3, 1),
-            N("d_pair", "drone", Loc.T("편대"), Loc.T("드론이 한 번에 두 개씩 친다"), new[] { "d_mag", "d_grade" }, 6, 18000, 1, 1, 3, 3),
+            N("d_sig", "drone", Loc.T("신호 증폭"), Loc.T("깜빡이는 신호기 잔해를 부수면 드론이 그쪽으로 집결 — 3초, 단계마다 +2초"), new[] { "d_spd", "d_reach" }, 3, 700, 1.7, 3, 2, 2),
+            N("d_grade", "drone", Loc.T("드론 등급"), Loc.T("드론이 더 큰 잔해도 한 번에 수집 — 조각 → 죽은 위성 → 금고 위성 → 로켓 동체"), new[] { "d_reach" }, 5, 4500, 2.0, 3, 2, 4),
+            N("d_fix", "drone", Loc.T("급유 드론"), Loc.T("드론이 연료 보충 — 연료 +1초 (단계마다)"), new[] { "d_mag" }, 4, 2000, 1.8, 3, 3, 1),
+            N("d_pair", "drone", Loc.T("편대"), Loc.T("드론이 한 번에 2개씩 공격"), new[] { "d_mag", "d_grade" }, 6, 18000, 1, 1, 3, 3),
             N("d_fact", "drone", Loc.T("드론 공장"), Loc.T("드론 +1대 (단계마다)"), new[] { "d_pair" }, 6, 30000, 2.5, 2, 4, 2),
-            N("b_n", "bh", Loc.T("블랙홀"), Loc.T("쏠 때 가끔 블랙홀이 저절로 열려 둘레 잔해를 빨아들였다가 터진다 — 단계마다 더 자주"), new string[0], 1, 400, 2.6, 4, 0, 1),
-            N("c_find", "bh", Loc.T("연료 보급"), Loc.T("판마다 연료 보급선이 궤도를 돌며 나간다 (단계마다 +1) — 조준점을 대면 연료 +4초, 놓치면 사라진다"), new string[0], 3, 240, 1.8, 5, 0, 3),
+            N("b_n", "bh", Loc.T("블랙홀"), Loc.T("공격 시 가끔 블랙홀이 자동으로 열려 둘레 잔해를 흡수한 뒤 폭발 — 단계마다 더 자주"), new string[0], 1, 400, 2.6, 4, 0, 1),
+            N("c_find", "bh", Loc.T("연료 보급"), Loc.T("판마다 연료 보급선이 궤도를 순회 (단계마다 +1) — 조준점을 대면 연료 +4초, 놓치면 소멸"), new string[0], 3, 240, 1.8, 5, 0, 3),
             N("s_speed", "bh", Loc.T("블랙홀 빈도"), Loc.T("블랙홀이 열리는 확률 +0.25% (단계마다)"), new[] { "b_n" }, 3, 500, 1.6, 4, 1, 2),
-            N("b_pr", "bh", Loc.T("흡입 반경"), Loc.T("블랙홀이 빨아들이는 범위 260에서 +30 (단계마다) — 큰 잔해 · 장갑판도 빨려 든다"), new[] { "b_n" }, 3, 600, 1.6, 6, 1, 0),
+            N("b_pr", "bh", Loc.T("흡입 반경"), Loc.T("블랙홀 흡수 범위 260, 단계마다 +30 — 큰 잔해 · 장갑판도 흡수"), new[] { "b_n" }, 3, 600, 1.6, 6, 1, 0),
             N("b_cap", "bh", Loc.T("블랙홀 용량"), Loc.T("블랙홀이 터지기 전까지 삼킬 수 있는 잔해 40개 → 단계마다 +15개"), new[] { "b_n" }, 3, 660, 1.6, 6, 2, 1),
-            N("b_pf", "bh", Loc.T("흡입 세기"), Loc.T("빨아들이는 힘 +25% (단계마다) — 멀리 있는 잔해도 빨리 끌려온다"), new[] { "b_pr" }, 4, 1800, 1.6, 5, 2, 0),
+            N("b_pf", "bh", Loc.T("흡입 세기"), Loc.T("흡수력 +25% (단계마다) — 먼 잔해도 빠르게 끌려옴"), new[] { "b_pr" }, 4, 1800, 1.6, 5, 2, 0),
             N("b_br", "bh", Loc.T("폭발 반경"), Loc.T("모든 폭발(블랙홀 · 무기 · 폭탄) 범위 +15% (단계마다)"), new[] { "b_cap" }, 4, 1800, 1.6, 6, 3, 1),
             N("b_chain", "bh", Loc.T("폭발 번짐"), Loc.T("무기 폭발(기뢰 · 분열탄 · 번개 각성 …)이 옆으로 또 터질 확률 +7% · 번지는 한도 +15 (단계마다)"), new[] { "b_br" }, 4, 2700, 1.6, 8, 3, 3),
-            N("b_pack", "bh", Loc.T("압축 보너스"), Loc.T("블랙홀은 많이 삼킬수록 터질 때 값이 붙는다 — 하나마다 +2%, 단계마다 +1.2% 더"), new[] { "b_chain", "b_pf" }, 5, 7500, 1.7, 5, 4, 2),
-            N("o_wide", "eco", Loc.T("궤도 확장"), Loc.T("궤도 폭 +10% (단계마다) — 잔해도 그만큼 는다"), new string[0], 1, 20, 1.9, 6, 0, 4),
+            N("b_pack", "bh", Loc.T("압축 보너스"), Loc.T("블랙홀이 많이 삼킬수록 폭발 값 증가 — 하나마다 +2%, 단계마다 +1.2% 추가"), new[] { "b_chain", "b_pf" }, 5, 7500, 1.7, 5, 4, 2),
+            N("o_wide", "eco", Loc.T("궤도 확장"), Loc.T("궤도 폭 +10% (단계마다) — 잔해도 그만큼 증가"), new string[0], 1, 20, 1.9, 6, 0, 4),
             N("e_val", "eco", Loc.T("고철 시세"), Loc.T("부순 것 값 ×1.25 (단계마다 곱한다) — 지구에선 한 칸, 관문을 부술 때마다 한 칸 더"), new string[0], 1, 120, 1.9, 10, 0, 2),
             N("e_vault", "eco", Loc.T("금고 감별"), Loc.T("금고 위성이 나올 확률 +50% (단계마다)"), new[] { "e_val" }, 2, 360, 1.6, 6, 1, 0),
             N("e_att", "eco", Loc.T("부착물 감별"), Loc.T("잔해에 돈 주머니 · 기폭 장치 같은 부착물이 붙을 확률 +40% (단계마다)"), new[] { "e_val" }, 3, 1200, 1.7, 5, 1, 2),
-            N("e_quest", "eco", Loc.T("의뢰 게시판"), Loc.T("출동마다 의뢰 카드 — 해내면 판 수입이 오른다 · 단계마다 보상 +10%"), new[] { "e_val" }, 1, 250, 2.4, 4, 1, 4),
+            N("e_quest", "eco", Loc.T("의뢰 게시판"), Loc.T("출동마다 의뢰 카드 — 성공 시 판 수입 증가 · 단계마다 보상 +10%"), new[] { "e_val" }, 1, 250, 2.4, 4, 1, 4),
             N("e_talk", "eco", Loc.T("청구서 협상"), Loc.T("청구서 기한 +1판 (단계마다)"), new[] { "e_vault" }, 4, 3600, 3.0, 2, 2, 0),
             N("e_tip", "eco", Loc.T("제보망"), Loc.T("블랙박스(특종) 나올 확률 +10% (단계마다)"), new[] { "e_att" }, 3, 1500, 1.8, 3, 2, 2),
             N("e_save", "eco", Loc.T("적금"), Loc.T("판이 끝날 때 가진 돈에 이자 2% (단계마다) — 한 판 벌이만큼까지"), new[] { "e_val" }, 4, 2500, 1.9, 5, 2, 4),
             N("e_guard", "eco", Loc.T("상환 조절"), Loc.T("판 벌이에서 빚 갚는 데 떼 가는 몫 30% → 20%"), new[] { "e_talk", "e_tip" }, 5, 9000, 1, 1, 3, 1),
             N("e_used", "eco", Loc.T("중고 거래"), Loc.T("정비고 모든 칸 값 −5%"), new[] { "e_save" }, 4, 6000, 2.0, 3, 3, 3),
             // 📈 증권 줄기 (09-23 사장님 「진짜 주식처럼 · 정비소에서 이점을」) — 맨 끝에 붙여 옛 저장의 칸 순서를 안 흔든다 (경매 칸 자리를 그대로 썼다)
-            N("a_open", "eco", Loc.T("증권 계좌"), Loc.T("궤도 증권이 열린다 — 조종실에서 사고팔고, 출동 중엔 S 로 시세만 본다"), new[] { "e_val" }, 2, 500, 1, 1, 1, 1),
-            N("a_auto", "eco", Loc.T("개미의 기도"), Loc.T("내가 산 종목이 조금씩 더 오르는 쪽으로 움직인다"), new[] { "a_open" }, 2, 800, 1, 1, 1, 1),
-            N("a_read", "eco", Loc.T("내부자 정보"), Loc.T("다음 속보를 미리 안다 — 시간 · 업종 · 제목"), new[] { "a_auto" }, 2, 1500, 2.5, 3, 1, 1),
-            N("a_ins", "eco", Loc.T("행운의 부적"), Loc.T("내 종목에 걸릴 나쁜 속보를 피해 간다 (60 · 70 · 80%)"), new[] { "a_read" }, 3, 4000, 2.5, 3, 1, 1),
-            N("a_big", "eco", Loc.T("큰손 계좌"), Loc.T("수수료가 줄고 배당이 붙는다"), new[] { "a_ins" }, 4, 20000, 3, 3, 1, 1),
+            N("a_open", "eco", Loc.T("증권 계좌"), Loc.T("궤도 증권 해금 — 조종실에서 거래, 출동 중엔 S로 시세 확인"), new[] { "e_val" }, 2, 500, 1, 1, 1, 1),
+            N("a_auto", "eco", Loc.T("개미의 기도"), Loc.T("보유 종목이 조금씩 더 오르는 쪽으로 움직임"), new[] { "a_open" }, 2, 800, 1, 1, 1, 1),
+            N("a_read", "eco", Loc.T("내부자 정보"), Loc.T("다음 속보 미리 확인 — 시간 · 업종 · 제목"), new[] { "a_auto" }, 2, 1500, 2.5, 3, 1, 1),
+            N("a_ins", "eco", Loc.T("행운의 부적"), Loc.T("내 종목에 걸릴 나쁜 속보 회피 (60 · 70 · 80%)"), new[] { "a_read" }, 3, 4000, 2.5, 3, 1, 1),
+            N("a_big", "eco", Loc.T("큰손 계좌"), Loc.T("수수료 감소 · 배당 추가"), new[] { "a_ins" }, 4, 20000, 3, 3, 1, 1),
             // 🪐 항로 (09-24 사장님 「청구서로 늘리는 방식 말고 정비고에서 통일」) — 옛 허가증. 값은 허가증 값 그대로
-            N("p_moon", "route", Loc.T("달 항로"), Loc.T("달 궤도에 갈 수 있다 — 값 ×3 · 느린 궤도 · 금고 위성이 많다"), new string[0], 1, 800, 1, 1, 0, 0),
+            N("p_moon", "route", Loc.T("달 항로"), Loc.T("달 궤도 해금 — 값 ×3 · 느린 궤도 · 금고 위성 많음"), new string[0], 1, 800, 1, 1, 0, 0),
             N("p_mars", "route", Loc.T("화성 항로"), Loc.T("화성 궤도 — 값 ×9 · 모래 폭풍 · 얼음 껍질 · 큰 잔해"), new[] { "p_moon" }, 1, 15000, 1, 1, 0, 0),
-            N("p_jup", "route", Loc.T("목성 항로"), Loc.T("목성 궤도 — 값 ×81 · 중력이 안쪽으로 모은다 · 장갑판"), new[] { "p_belt" }, 1, 2000000, 1, 1, 0, 0),
+            N("p_jup", "route", Loc.T("목성 항로"), Loc.T("목성 궤도 — 값 ×81 · 안쪽으로 모으는 중력 · 장갑판"), new[] { "p_belt" }, 1, 2000000, 1, 1, 0, 0),
             N("p_sat", "route", Loc.T("토성 항로"), Loc.T("토성 궤도 — 값 ×243 · 두 겹 고리 · 케이블 망"), new[] { "p_jup" }, 1, 6000000, 1, 1, 0, 0),
             N("p_belt", "route", Loc.T("소행성대 항로"), Loc.T("화성과 목성 사이 소행성대 — 값 ×27 · 단단한 암석 · 광석"), new[] { "p_mars" }, 1, 200000, 1, 1, 0, 0),
             N("p_ura", "route", Loc.T("천왕성 항로"), Loc.T("천왕성 궤도 — 값 ×729 · 옆으로 누운 궤도 · 얼음 결정"), new[] { "p_sat" }, 1, 15000000, 1, 1, 0, 0),
@@ -125,58 +125,58 @@ namespace SalvageRun.Orbit.Sim
             N("w_mag_x", "arm", Loc.T("✦ 자석 펄스 3단계"), Loc.T("발동 확률 ×2 · 위력 ×2 (목성 항로 뒤)"), new[] { "w_mag_e" }, 1, 8000000, 1, 1, 0, 0),
             N("w_rail_x", "arm", Loc.T("✦ 레일건 3단계"), Loc.T("발동 확률 ×2 · 위력 ×2 (목성 항로 뒤)"), new[] { "w_rail_e" }, 1, 8000000, 1, 1, 0, 0),
             // ⚔ 무기고 (09-24 설계서 2단계) — 지금 빔 칸(화력 · 크기 · 연사 · 치명 · 두 번)은 모든 무기 공통
-            N("w_hub", "arm", Loc.T("무기고"), Loc.T("처음부터 열려 있다 — 여기서 뻗은 무기를 사면 쏠 때 확률로 함께 터진다"), new string[0], 1, 300, 1, 1, 0, 0),
-            N("w_laser", "arm", Loc.T("레이저"), Loc.T("공격 때 12% — 조준점을 0.7초 동안 태운다"), new[] { "w_hub" }, 1, 2500, 1, 1, 0, 0),
-            N("w_laser_u", "arm", Loc.T("레이저 강화"), Loc.T("첫 칸: 확률 ×1.5 · 태우는 원 +40% / 둘째 칸: 계속 쬘수록 뜨거워진다 (최대 +80%)"), new[] { "w_laser" }, 1, 6000, 4, 2, 0, 0),
-            N("w_laser_a", "arm", Loc.T("레이저 각성"), Loc.T("태우는 원 +50% · 장갑판도 녹인다"), new[] { "w_laser_u" }, 1, 60000, 1, 1, 0, 0),
-            N("w_chain", "arm", Loc.T("번개"), Loc.T("공격 때 10% — 조준점에서 옆으로 다섯 번 튄다"), new[] { "w_laser" }, 1, 5000, 1, 1, 0, 0),
-            N("w_chain_u", "arm", Loc.T("번개 강화"), Loc.T("첫 칸: 확률 ×1.5 · 두 번 더 튄다 / 둘째 칸: 튈수록 세진다"), new[] { "w_chain" }, 1, 9000, 4, 2, 0, 0),
-            N("w_chain_a", "arm", Loc.T("번개 각성"), Loc.T("튄 자리마다 작은 폭발 — 연쇄로 이어진다"), new[] { "w_chain_u" }, 1, 90000, 1, 1, 0, 0),
+            N("w_hub", "arm", Loc.T("무기고"), Loc.T("처음부터 열림 — 여기서 뻗은 무기를 구매하면 공격 시 확률로 함께 발동"), new string[0], 1, 300, 1, 1, 0, 0),
+            N("w_laser", "arm", Loc.T("레이저"), Loc.T("공격 시 12% — 조준점을 0.7초 동안 태움"), new[] { "w_hub" }, 1, 2500, 1, 1, 0, 0),
+            N("w_laser_u", "arm", Loc.T("레이저 강화"), Loc.T("첫 칸: 확률 ×1.5 · 태우는 원 +40% / 둘째 칸: 오래 쬘수록 더 뜨거움 (최대 +80%)"), new[] { "w_laser" }, 1, 6000, 4, 2, 0, 0),
+            N("w_laser_a", "arm", Loc.T("레이저 각성"), Loc.T("태우는 원 +50% · 장갑판도 녹임"), new[] { "w_laser_u" }, 1, 60000, 1, 1, 0, 0),
+            N("w_chain", "arm", Loc.T("번개"), Loc.T("공격 시 10% — 조준점에서 옆으로 5번 튐"), new[] { "w_laser" }, 1, 5000, 1, 1, 0, 0),
+            N("w_chain_u", "arm", Loc.T("번개 강화"), Loc.T("첫 칸: 확률 ×1.5 · 2번 더 튐 / 둘째 칸: 튈수록 강해짐"), new[] { "w_chain" }, 1, 9000, 4, 2, 0, 0),
+            N("w_chain_a", "arm", Loc.T("번개 각성"), Loc.T("튄 자리마다 작은 폭발 — 연쇄로 이어짐"), new[] { "w_chain_u" }, 1, 90000, 1, 1, 0, 0),
             // 🔩 부품 거래 · ◆ 핵심 칸 (09-24 설계서 3단계)
-            N("e_shop", "eco", Loc.T("부품 거래"), Loc.T("부품 가게가 열린다 — 청소선 부품 칸 다섯에 사서 끼운다 · 진열은 출동마다 바뀐다"), new[] { "e_save" }, 1, 1500, 1, 1, 0, 0),
+            N("e_shop", "eco", Loc.T("부품 거래"), Loc.T("부품 가게 해금 — 청소선 부품 칸 5개에 구매해서 장착 · 진열은 출동마다 교체"), new[] { "e_save" }, 1, 1500, 1, 1, 0, 0),
             N("k_claw", "claw", Loc.T("◆ 과열 사격"), Loc.T("모든 무기 화력 +40% — 대신 연료 −15%"), new[] { "c_over" }, 1, 30000, 1, 1, 0, 0),
             N("k_drone", "drone", Loc.T("◆ 벌떼"), Loc.T("드론 +4대 — 대신 드론이 부순 값 −25%"), new[] { "d_fact" }, 1, 60000, 1, 1, 0, 0),
-            N("k_bh", "bh", Loc.T("◆ 쌍둥이 블랙홀"), Loc.T("블랙홀이 터지면 그 자리에 한 번 더 열린다 — 대신 여는 확률 −30%"), new[] { "s_speed" }, 1, 40000, 1, 1, 0, 0),
+            N("k_bh", "bh", Loc.T("◆ 쌍둥이 블랙홀"), Loc.T("블랙홀이 터지면 그 자리에 한 번 더 열림 — 대신 열리는 확률 −30%"), new[] { "s_speed" }, 1, 40000, 1, 1, 0, 0),
             N("k_eco", "eco", Loc.T("◆ 큰손"), Loc.T("모든 값 +25% — 대신 청구서 +10%"), new[] { "e_used" }, 1, 80000, 1, 1, 0, 0),
             N("k_route", "route", Loc.T("◆ 궤도 공명"), Loc.T("행성 값 배수 +15% — 대신 잔해 체력 +20%"), new[] { "p_sat" }, 1, 150000, 1, 1, 0, 0),
             N("w_slot2", "arm", Loc.T("◆ 무기 공명"), Loc.T("모든 무기의 발동 확률 ×1.5"), new[] { "w_chain" }, 1, 50000, 1, 1, 0, 0),
             // ★ 신기한 칸 (09-24 설계서 4단계) — 판 밖(주식 · 뉴스 · 행성)과 판을 잇는다
-            N("q_insider", "eco", Loc.T("★ 내부자 거래"), Loc.T("공격이 맞을 때 가끔(0.5%) 내가 산 종목 하나가 +1% — 「누군가 청소선을 보고 샀다」"), new[] { "a_read" }, 1, 30000, 1, 1, 0, 0),
-            N("q_rage", "eco", Loc.T("★ 물린 개미의 분노"), Loc.T("내 주식이 손해일수록 화력이 오른다 (손해 % 만큼 · 최대 +50%)"), new[] { "a_big" }, 1, 120000, 1, 1, 0, 0),
-            N("q_front", "eco", Loc.T("★ 1면 조작"), Loc.T("출동이 끝나면 궤도일보 1면을 둘 중에서 고른다 — 고른 기사가 주가를 움직인다"), new[] { "e_tip" }, 1, 50000, 1, 1, 0, 0),
-            N("q_debt", "eco", Loc.T("★ 빚쟁이의 근성"), Loc.T("빚이 많을수록 화력이 오른다 (최대 +15%)"), new[] { "e_guard" }, 1, 60000, 1, 1, 0, 0),
-            N("q_meteor", "bh", Loc.T("★ 운석 호출"), Loc.T("잔해를 80개 부술 때마다 운석이 떨어져 크게 터진다 — 궤도일보 1면 · 연료공사 주가 ↓"), new[] { "b_chain" }, 1, 150000, 1, 1, 0, 0),
-            N("q_sling", "bh", Loc.T("★ 중력 새총"), Loc.T("블랙홀이 터질 때 빨아들인 잔해를 사방으로 쏘아 보낸다"), new[] { "b_pack" }, 1, 250000, 1, 1, 0, 0),
-            N("q_tour", "route", Loc.T("★ 관광 명소"), Loc.T("한 판에 연쇄 100을 넘기면 관광객이 몰린다 — 토성 고리 관광 주가 ↑"), new[] { "p_sat" }, 1, 3000000, 1, 1, 0, 0),
-            N("q_rock", "route", Loc.T("★ 떠돌이 소행성"), Loc.T("가끔 소행성이 궤도에 끼어든다 — 부수면 열쇠(40%) 또는 돈 뭉치"), new[] { "p_jup" }, 1, 500000, 1, 1, 0, 0),
-            N("q_gold", "hull", Loc.T("★ 황금 잔해"), Loc.T("가끔 금빛 잔해가 섞인다 — 값 ×3 · 부수면 공짜 즉석 복권 (한 판 3장까지)"), new[] { "o_wide" }, 1, 40000, 1, 1, 0, 0),
-            N("q_lazy", "drone", Loc.T("★ 연타 장인"), Loc.T("0.3초 안에 다시 누를 때마다 화력 +3% (최대 +30%) · 1초 손을 떼면 식는다"), new[] { "d_fix" }, 1, 80000, 1, 1, 0, 0),
+            N("q_insider", "eco", Loc.T("★ 내부자 거래"), Loc.T("공격 적중 시 가끔(0.5%) 보유 종목 하나 +1% — 「누군가 청소선을 보고 샀다」"), new[] { "a_read" }, 1, 30000, 1, 1, 0, 0),
+            N("q_rage", "eco", Loc.T("★ 물린 개미의 분노"), Loc.T("내 주식 손해가 클수록 화력 증가 (손해 % 만큼 · 최대 +50%)"), new[] { "a_big" }, 1, 120000, 1, 1, 0, 0),
+            N("q_front", "eco", Loc.T("★ 1면 조작"), Loc.T("출동이 끝나면 궤도일보 1면을 둘 중 선택 — 고른 기사가 주가에 영향"), new[] { "e_tip" }, 1, 50000, 1, 1, 0, 0),
+            N("q_debt", "eco", Loc.T("★ 빚쟁이의 근성"), Loc.T("빚이 많을수록 화력 증가 (최대 +15%)"), new[] { "e_guard" }, 1, 60000, 1, 1, 0, 0),
+            N("q_meteor", "bh", Loc.T("★ 운석 호출"), Loc.T("잔해 80개 파괴마다 운석 낙하 · 대폭발 — 궤도일보 1면 · 연료공사 주가 ↓"), new[] { "b_chain" }, 1, 150000, 1, 1, 0, 0),
+            N("q_sling", "bh", Loc.T("★ 중력 새총"), Loc.T("블랙홀 폭발 시 흡수한 잔해를 사방으로 발사"), new[] { "b_pack" }, 1, 250000, 1, 1, 0, 0),
+            N("q_tour", "route", Loc.T("★ 관광 명소"), Loc.T("한 판에 연쇄 100을 넘기면 관광객 몰림 — 토성 고리 관광 주가 ↑"), new[] { "p_sat" }, 1, 3000000, 1, 1, 0, 0),
+            N("q_rock", "route", Loc.T("★ 떠돌이 소행성"), Loc.T("가끔 소행성 출현 — 부수면 열쇠(40%) 또는 돈 뭉치"), new[] { "p_jup" }, 1, 500000, 1, 1, 0, 0),
+            N("q_gold", "hull", Loc.T("★ 황금 잔해"), Loc.T("가끔 금빛 잔해 출현 — 값 ×3 · 부수면 공짜 즉석 복권 (한 판 3장까지)"), new[] { "o_wide" }, 1, 40000, 1, 1, 0, 0),
+            N("q_lazy", "drone", Loc.T("★ 연타 장인"), Loc.T("0.3초 안에 다시 누를 때마다 화력 +3% (최대 +30%) · 1초 손을 떼면 초기화"), new[] { "d_fix" }, 1, 80000, 1, 1, 0, 0),
             // ⚔ 무기 여섯 더 (09-24 설계서 4단계)
-            N("w_vac", "arm", Loc.T("진공 청소기"), Loc.T("공격 때 8% — 조준점에 소용돌이, 0.7초 동안 빨아들인다 · 삼킨 것은 값 +30%"), new[] { "w_chain" }, 1, 12000, 1, 1, 0, 0),
+            N("w_vac", "arm", Loc.T("진공 청소기"), Loc.T("공격 시 8% — 조준점에 소용돌이, 0.7초 동안 흡수 · 삼킨 잔해 값 +30%"), new[] { "w_chain" }, 1, 12000, 1, 1, 0, 0),
             N("w_vac_u", "arm", Loc.T("진공 청소기 강화"), Loc.T("첫 칸: 확률 ×1.5 · 소용돌이 +30% / 둘째 칸: 삼킨 것 값 +60%"), new[] { "w_vac" }, 1, 24000, 4, 2, 0, 0),
-            N("w_vac_a", "arm", Loc.T("진공 청소기 각성"), Loc.T("가득 차면(25개) 압축 고철탄을 조준점에 쏜다"), new[] { "w_vac_u" }, 1, 120000, 1, 1, 0, 0),
-            N("w_mine", "arm", Loc.T("기뢰"), Loc.T("공격 때 8% — 조준 자리에 기뢰를 깐다 · 잔해가 지나가면 쾅 (3개까지)"), new[] { "w_vac" }, 1, 30000, 1, 1, 0, 0),
+            N("w_vac_a", "arm", Loc.T("진공 청소기 각성"), Loc.T("가득 차면(25개) 압축 고철탄을 조준점에 발사"), new[] { "w_vac_u" }, 1, 120000, 1, 1, 0, 0),
+            N("w_mine", "arm", Loc.T("기뢰"), Loc.T("공격 시 8% — 조준점에 기뢰 설치 · 잔해가 지나가면 폭발 (3개까지)"), new[] { "w_vac" }, 1, 30000, 1, 1, 0, 0),
             N("w_mine_u", "arm", Loc.T("기뢰 강화"), Loc.T("첫 칸: 확률 ×1.5 · 기뢰 +2 / 둘째 칸: 폭발 반경 +40%"), new[] { "w_mine" }, 1, 60000, 4, 2, 0, 0),
-            N("w_mine_a", "arm", Loc.T("기뢰 각성"), Loc.T("기뢰끼리 레이저 울타리로 이어진다"), new[] { "w_mine_u" }, 1, 300000, 1, 1, 0, 0),
-            N("w_frz", "arm", Loc.T("냉동 빔"), Loc.T("공격 때 8% — 조준점에 서리 원, 0.7초 동안 얼린다 · 언 것은 두 배 · 부서지면 산산조각"), new[] { "w_mine" }, 1, 80000, 1, 1, 0, 0),
-            N("w_frz_u", "arm", Loc.T("냉동 빔 강화"), Loc.T("첫 칸: 확률 ×1.5 · 더 오래 언다 / 둘째 칸: 언 것 ×2.5"), new[] { "w_frz" }, 1, 160000, 4, 2, 0, 0),
-            N("w_frz_a", "arm", Loc.T("냉동 빔 각성"), Loc.T("산산조각 파편도 옆을 얼린다 (끝없는 연쇄)"), new[] { "w_frz_u" }, 1, 800000, 1, 1, 0, 0),
-            N("w_clus", "arm", Loc.T("분열탄"), Loc.T("공격 때 6% — 조준점에 떨어져 파편 여섯으로 흩어진다"), new[] { "w_frz" }, 1, 250000, 1, 1, 0, 0),
-            N("w_clus_u", "arm", Loc.T("분열탄 강화"), Loc.T("첫 칸: 확률 ×1.5 · 파편 +3 / 둘째 칸: 파편이 가까운 잔해를 노린다"), new[] { "w_clus" }, 1, 500000, 4, 2, 0, 0),
-            N("w_clus_a", "arm", Loc.T("분열탄 각성"), Loc.T("파편이 한 번 더 셋으로 갈라진다"), new[] { "w_clus_u" }, 1, 2500000, 1, 1, 0, 0),
+            N("w_mine_a", "arm", Loc.T("기뢰 각성"), Loc.T("기뢰끼리 레이저 울타리로 연결"), new[] { "w_mine_u" }, 1, 300000, 1, 1, 0, 0),
+            N("w_frz", "arm", Loc.T("냉동 빔"), Loc.T("공격 시 8% — 조준점에 서리 원, 0.7초 동안 빙결 · 언 잔해 피해 2배 · 부서지면 산산조각"), new[] { "w_mine" }, 1, 80000, 1, 1, 0, 0),
+            N("w_frz_u", "arm", Loc.T("냉동 빔 강화"), Loc.T("첫 칸: 확률 ×1.5 · 빙결 시간 증가 / 둘째 칸: 언 잔해 ×2.5"), new[] { "w_frz" }, 1, 160000, 4, 2, 0, 0),
+            N("w_frz_a", "arm", Loc.T("냉동 빔 각성"), Loc.T("산산조각 파편도 옆을 빙결 (끝없는 연쇄)"), new[] { "w_frz_u" }, 1, 800000, 1, 1, 0, 0),
+            N("w_clus", "arm", Loc.T("분열탄"), Loc.T("공격 시 6% — 조준점에 떨어져 파편 6개로 분열"), new[] { "w_frz" }, 1, 250000, 1, 1, 0, 0),
+            N("w_clus_u", "arm", Loc.T("분열탄 강화"), Loc.T("첫 칸: 확률 ×1.5 · 파편 +3 / 둘째 칸: 파편이 가까운 잔해를 추적"), new[] { "w_clus" }, 1, 500000, 4, 2, 0, 0),
+            N("w_clus_a", "arm", Loc.T("분열탄 각성"), Loc.T("파편이 한 번 더 3개로 분열"), new[] { "w_clus_u" }, 1, 2500000, 1, 1, 0, 0),
             N("w_mag", "arm", Loc.T("자석 펄스"), Loc.T("공격 때 5% — 주변 잔해를 한 점으로 끌어모은 뒤 쾅"), new[] { "w_clus" }, 1, 800000, 1, 1, 0, 0),
-            N("w_mag_u", "arm", Loc.T("자석 펄스 강화"), Loc.T("첫 칸: 확률 ×1.5 · 끌림 반경 +40% / 둘째 칸: 모인 만큼 크게 터진다"), new[] { "w_mag" }, 1, 1600000, 4, 2, 0, 0),
-            N("w_mag_a", "arm", Loc.T("자석 펄스 각성"), Loc.T("모인 자리에 블랙홀이 열린다"), new[] { "w_mag_u" }, 1, 8000000, 1, 1, 0, 0),
-            N("w_rail", "arm", Loc.T("레일건"), Loc.T("공격 때 4% — 한 줄로 관통, 엄청 세고 장갑도 뚫는다"), new[] { "w_mag" }, 1, 3000000, 1, 1, 0, 0),
+            N("w_mag_u", "arm", Loc.T("자석 펄스 강화"), Loc.T("첫 칸: 확률 ×1.5 · 끌림 반경 +40% / 둘째 칸: 모인 만큼 큰 폭발"), new[] { "w_mag" }, 1, 1600000, 4, 2, 0, 0),
+            N("w_mag_a", "arm", Loc.T("자석 펄스 각성"), Loc.T("모인 자리에 블랙홀 생성"), new[] { "w_mag_u" }, 1, 8000000, 1, 1, 0, 0),
+            N("w_rail", "arm", Loc.T("레일건"), Loc.T("공격 시 4% — 한 줄 관통, 매우 강하고 장갑도 관통"), new[] { "w_mag" }, 1, 3000000, 1, 1, 0, 0),
             N("w_rail_u", "arm", Loc.T("레일건 강화"), Loc.T("첫 칸: 확률 ×1.5 / 둘째 칸: 뚫을수록 +15%"), new[] { "w_rail" }, 1, 6000000, 4, 2, 0, 0),
-            N("w_rail_a", "arm", Loc.T("레일건 각성"), Loc.T("띠 끝에서 튕겨 한 번 더 쏜다"), new[] { "w_rail_u" }, 1, 30000000, 1, 1, 0, 0),
+            N("w_rail_a", "arm", Loc.T("레일건 각성"), Loc.T("띠 끝에서 튕겨 한 번 더 발사"), new[] { "w_rail_u" }, 1, 30000000, 1, 1, 0, 0),
             // ◆ 교차 핵심 (두 방향을 다 키워야 닿는다 · 열쇠) · ∞ 무한 칸 (3막의 돈이 계속 쓸 곳)
             N("x_claw_arm", "claw", Loc.T("◆ 교차: 사격 통제"), Loc.T("모든 무기 치명 +10% · 치명타는 ×4 (청소선 × 무기고)"), new[] { "c_magnet", "w_hub" }, 1, 400000, 1, 1, 0, 0),
-            N("x_arm_drone", "drone", Loc.T("◆ 교차: 드론 사수"), Loc.T("드론이 쏠 때도 블랙홀이 열리고 내부자 거래가 터진다 · 드론 피해 ×2 (무기고 × 드론)"), new[] { "d_grade", "w_hub" }, 1, 600000, 1, 1, 0, 0),
-            N("x_drone_bh", "drone", Loc.T("◆ 교차: 블랙홀 견인"), Loc.T("블랙홀이 열려 있는 동안 드론이 두 배 빠르다 (드론 × 블랙홀)"), new[] { "d_fix", "b_n" }, 1, 500000, 1, 1, 0, 0),
-            N("x_bh_eco", "bh", Loc.T("◆ 교차: 파산 보험"), Loc.T("파산하면 돈의 10% 와 제일 좋은 부품 하나를 다음 대로 가져간다 (블랙홀 × 경영)"), new[] { "k_bh", "e_save" }, 1, 800000, 1, 1, 0, 0),
+            N("x_arm_drone", "drone", Loc.T("◆ 교차: 드론 사수"), Loc.T("드론 공격으로도 블랙홀 · 내부자 거래 발동 · 드론 피해 ×2 (무기고 × 드론)"), new[] { "d_grade", "w_hub" }, 1, 600000, 1, 1, 0, 0),
+            N("x_drone_bh", "drone", Loc.T("◆ 교차: 블랙홀 견인"), Loc.T("블랙홀이 열려 있는 동안 드론 속도 2배 (드론 × 블랙홀)"), new[] { "d_fix", "b_n" }, 1, 500000, 1, 1, 0, 0),
+            N("x_bh_eco", "bh", Loc.T("◆ 교차: 파산 보험"), Loc.T("파산 시 돈의 10%와 가장 좋은 부품 하나를 다음 대로 승계 (블랙홀 × 경영)"), new[] { "k_bh", "e_save" }, 1, 800000, 1, 1, 0, 0),
             N("x_eco_route", "eco", Loc.T("◆ 교차: 행성 투자"), Loc.T("지금 궤도 행성의 종목(달 · 화성 · 목성 · 토성)을 들고 있으면 그 판 값 +20% (경영 × 항로)"), new[] { "e_tip", "p_mars" }, 1, 700000, 1, 1, 0, 0),
-            N("x_route_claw", "claw", Loc.T("◆ 교차: 궤도 폭격"), Loc.T("행성이 멀수록 화력이 오른다 (달 +5% · 화성 +10% · 목성 +20% · 토성부터 +35%) (항로 × 청소선)"), new[] { "c_double", "p_moon" }, 1, 900000, 1, 1, 0, 0),
+            N("x_route_claw", "claw", Loc.T("◆ 교차: 궤도 폭격"), Loc.T("행성이 멀수록 화력 증가 (달 +5% · 화성 +10% · 목성 +20% · 토성부터 +35%) (항로 × 청소선)"), new[] { "c_double", "p_moon" }, 1, 900000, 1, 1, 0, 0),
             N("i_claw", "claw", Loc.T("✦ 화력 증폭"), Loc.T("모든 무기 화력 +10% (단계마다 · 5단계)"), new[] { "k_claw" }, 1, 2000000, 2.0, 5, 0, 0),
             N("i_drone", "drone", Loc.T("✦ 드론 증폭"), Loc.T("드론이 부순 잔해 값 +10% (단계마다 · 5단계)"), new[] { "k_drone" }, 1, 2000000, 2.0, 5, 0, 0),
             N("i_bh", "bh", Loc.T("✦ 블랙홀 증폭"), Loc.T("블랙홀 확률 +0.2% (단계마다 · 5단계)"), new[] { "k_bh" }, 1, 2000000, 2.0, 5, 0, 0),
@@ -184,7 +184,7 @@ namespace SalvageRun.Orbit.Sim
             N("i_route", "route", Loc.T("✦ 궤도 증폭"), Loc.T("행성 값 배수 +5% (단계마다 · 5단계)"), new[] { "k_route" }, 1, 2000000, 2.0, 5, 0, 0),
             // ⚠️ 새 칸은 늘 맨 뒤에 — 저장은 칸 번호로 레벨을 들고 있다 (09-25 중간에 끼웠다가 옛 저장이 밀린 일)
             // ◇ 무기 특화 — 단계마다 효과가 커진다 (09-24 사장님 38번 「강화가 너무 적다 · 효과가 추가」)
-            N("w_laser_e", "arm", Loc.T("레이저 특화"), Loc.T("태우는 점 +20% · 위력 +15% — 3단계: 태운 자리가 가끔 터진다"), new[] { "w_laser_a" }, 1, 18000, 4, 3, 0, 0),
+            N("w_laser_e", "arm", Loc.T("레이저 특화"), Loc.T("태우는 점 +20% · 위력 +15% — 3단계: 태운 자리가 가끔 폭발"), new[] { "w_laser_a" }, 1, 18000, 4, 3, 0, 0),
             N("w_chain_e", "arm", Loc.T("번개 특화"), Loc.T("튀는 수 +2"), new[] { "w_chain_a" }, 1, 27000, 4, 3, 0, 0),
             N("w_vac_e", "arm", Loc.T("진공 청소기 특화"), Loc.T("흡입 원 +20% · 삼킨 것 값 +20%"), new[] { "w_vac_a" }, 1, 72000, 4, 3, 0, 0),
             N("w_mine_e", "arm", Loc.T("기뢰 특화"), Loc.T("기뢰 +1개 · 폭발 +15%"), new[] { "w_mine_a" }, 1, 180000, 4, 3, 0, 0),
@@ -197,11 +197,11 @@ namespace SalvageRun.Orbit.Sim
             N("l_luck", "eco", Loc.T("행운의 긁개"), Loc.T("즉석 복권 당첨 확률 +50% (단계마다)"), new[] { "l_more" }, 1, 2000, 3, 3, 0, 0),
             N("l_free", "eco", Loc.T("첫 장은 공짜"), Loc.T("판마다 즉석 복권 두 장이 공짜"), new[] { "l_luck" }, 1, 1500, 1, 1, 0, 0),
             N("l_jack", "eco", Loc.T("잭팟"), Loc.T("즉석 복권 돈 당첨 ×3 · 둘이 같으면 표값 두 배"), new[] { "l_luck" }, 1, 30000, 1, 1, 0, 0),
-            N("v_volley", "arm", Loc.T("🚀 전탄 발사"), Loc.T("출동 중 게이지가 차면 Space · 계기판 단추 — 산 무기가 모두 한꺼번에 쏜다. 단계마다 더 오래 · 더 촘촘히 · 게이지가 빨리 찬다 (무기 둘부터)"), new[] { "w_hub" }, 1, 4000, 4, 3, 0, 0),   // 09-26 사장님 「전탄 발사도 트리에 · 기본은 안 좋게 · 지금이 최종」
+            N("v_volley", "arm", Loc.T("🚀 전탄 발사"), Loc.T("출동 중 게이지가 차면 Space · 계기판 단추 — 보유한 무기 전부 동시 발사. 단계마다 더 오래 · 더 촘촘히 · 게이지 충전 빨라짐 (무기 2개부터)"), new[] { "w_hub" }, 1, 4000, 4, 3, 0, 0),   // 09-26 사장님 「전탄 발사도 트리에 · 기본은 안 좋게 · 지금이 최종」
             // 🪐 09-27 행성 셋 더 — 맨 뒤에만 (저장 규칙)
-            N("p_oort", "route", Loc.T("오르트 구름 항로"), Loc.T("태양계 바깥 얼음 혜성 떼 — 값 ×19683 · 단단하고 느리다"), new[] { "p_kui" }, 1, 120000000, 1, 1, 0, 0),
-            N("p_helio", "route", Loc.T("태양권 계면 항로"), Loc.T("태양풍이 부딪히는 경계 — 값 ×59049 · 잔해가 출렁인다"), new[] { "p_oort" }, 1, 240000000, 1, 1, 0, 0),
-            N("p_inter", "route", Loc.T("성간 공간 항로"), Loc.T("태양 빛이 닿지 않는 곳 — 값 ×177147 · 드문드문 · 가장 비싸다"), new[] { "p_helio" }, 1, 480000000, 1, 1, 0, 0),
+            N("p_oort", "route", Loc.T("오르트 구름 항로"), Loc.T("태양계 바깥 얼음 혜성 떼 — 값 ×19683 · 단단하고 느림"), new[] { "p_kui" }, 1, 120000000, 1, 1, 0, 0),
+            N("p_helio", "route", Loc.T("태양권 계면 항로"), Loc.T("태양풍이 부딪히는 경계 — 값 ×59049 · 출렁이는 잔해"), new[] { "p_oort" }, 1, 240000000, 1, 1, 0, 0),
+            N("p_inter", "route", Loc.T("성간 공간 항로"), Loc.T("태양 빛이 닿지 않는 곳 — 값 ×177147 · 드문드문 · 가장 비쌈"), new[] { "p_helio" }, 1, 480000000, 1, 1, 0, 0),
         };
         public const int NodeCount = 134;
         /// <summary>◆ 핵심 칸 — 돈 + 열쇠 하나 (부품 가게에서 산다). 각성도 여기</summary>
@@ -425,13 +425,13 @@ namespace SalvageRun.Orbit.Sim
         public struct ShipDef { public string id, name, weapon, trait, desc; public int price; }
         public static readonly ShipDef[] Ships =
         {
-            new ShipDef { id = "old",     name = Loc.T("낡은 청소선"), weapon = Loc.T("빔"),   trait = Loc.T("무난"), price = 0, desc = Loc.T("처음부터 있는 배. 한 점을 겨누는 빔 — 무엇 하나 튀지 않지만 무엇도 모자라지 않다") },
-            new ShipDef { id = "scatter", name = Loc.T("산탄선"),      weapon = Loc.T("산탄"), trait = Loc.T("연쇄"), price = 30, desc = Loc.T("넓게 퍼지는 산탄. 가까울수록 세고 멀수록 약하다 — 몰린 잔해를 한 번에 터뜨려 연쇄를 연다") },
-            new ShipDef { id = "harpoon", name = Loc.T("작살선"),      weapon = Loc.T("작살"), trait = Loc.T("꿰뚫기"), price = 50, desc = Loc.T("작살이 조준 방향으로 한 줄을 꿰뚫는다 — 줄 위의 잔해를 모두 맞히고, 뚫을 때마다 약해진다. 줄지어 선 잔해에 강하다") },
-            new ShipDef { id = "tesla",   name = Loc.T("전격선"),      weapon = Loc.T("전기 구체"), trait = Loc.T("지지기"), price = 85, desc = Loc.T("조준점으로 전기 구체를 던진다 — 날아가며 둘레 잔해에 번개를 튀기고, 닿으면 잠깐 머물다 펑 터진다") },   // 09-27 사장님 「레일건 말고 전기로 무언가 — 전기 구체를 범위로 던진다든가」
-            new ShipDef { id = "missile", name = Loc.T("미사일선"),    weapon = Loc.T("유도 미사일"), trait = Loc.T("쫓기"), price = 60, desc = Loc.T("누르고 있으면 작은 미사일이 줄줄이 나가 조준점 둘레의 잔해를 스스로 골라 쫓는다 — 빗나가지 않지만 한 발은 작다") },   // 09-27 사장님 「유도 미사일이 그나마 낫네」 (시안 X4byMmYEwkfh7u9rat8pML)
-            new ShipDef { id = "frost",   name = Loc.T("냉동선"),      weapon = Loc.T("서리 포"), trait = Loc.T("얼려 깨기"), price = 70, desc = Loc.T("조준점에 서리 원이 터진다 — 언 잔해는 무엇에 맞든 두 배로 아프고, 언 채 부서지면 산산조각 나 옆을 친다") },   // 09-27 사장님 「냉동이랑 분열탄선은 할만할듯」 (시안 MTRmPv5Fe9bgvb1Xcq4Tii)
-            new ShipDef { id = "cluster", name = Loc.T("분열탄선"),    weapon = Loc.T("분열 포탄"), trait = Loc.T("흩뿌리기"), price = 100, desc = Loc.T("포탄이 조준점에 떨어져 터지고 파편 넷으로 흩어진다 — 몰린 곳에 강하다. 떨어지는 사이 잔해가 움직인다") },
+            new ShipDef { id = "old",     name = Loc.T("낡은 청소선"), weapon = Loc.T("빔"),   trait = Loc.T("무난"), price = 0, desc = Loc.T("처음부터 있는 배. 한 점을 겨누는 빔 — 특출난 건 없지만 모자란 것도 없음") },
+            new ShipDef { id = "scatter", name = Loc.T("산탄선"),      weapon = Loc.T("산탄"), trait = Loc.T("연쇄"), price = 30, desc = Loc.T("넓게 퍼지는 산탄. 가까울수록 강하고 멀수록 약함 — 몰린 잔해를 한 번에 터뜨려 연쇄 시작") },
+            new ShipDef { id = "harpoon", name = Loc.T("작살선"),      weapon = Loc.T("작살"), trait = Loc.T("꿰뚫기"), price = 50, desc = Loc.T("조준 방향으로 한 줄을 꿰뚫는 작살 — 줄 위 잔해를 모두 타격, 관통할수록 약해짐. 줄지어 선 잔해에 강함") },
+            new ShipDef { id = "tesla",   name = Loc.T("전격선"),      weapon = Loc.T("전기 구체"), trait = Loc.T("지지기"), price = 85, desc = Loc.T("조준점으로 전기 구체 투척 — 날아가며 둘레 잔해에 번개, 도착하면 잠시 머문 뒤 폭발") },   // 09-27 사장님 「레일건 말고 전기로 무언가 — 전기 구체를 범위로 던진다든가」
+            new ShipDef { id = "missile", name = Loc.T("미사일선"),    weapon = Loc.T("유도 미사일"), trait = Loc.T("쫓기"), price = 60, desc = Loc.T("누르고 있으면 작은 미사일이 연속 발사되어 조준점 둘레 잔해를 스스로 추적 — 빗나가지 않지만 한 발이 약함") },   // 09-27 사장님 「유도 미사일이 그나마 낫네」 (시안 X4byMmYEwkfh7u9rat8pML)
+            new ShipDef { id = "frost",   name = Loc.T("냉동선"),      weapon = Loc.T("서리 포"), trait = Loc.T("얼려 깨기"), price = 70, desc = Loc.T("조준점에 서리 원 폭발 — 언 잔해는 모든 피해 2배, 언 채 부서지면 산산조각 나 주변 타격") },   // 09-27 사장님 「냉동이랑 분열탄선은 할만할듯」 (시안 MTRmPv5Fe9bgvb1Xcq4Tii)
+            new ShipDef { id = "cluster", name = Loc.T("분열탄선"),    weapon = Loc.T("분열 포탄"), trait = Loc.T("흩뿌리기"), price = 100, desc = Loc.T("포탄이 조준점에 떨어져 폭발 후 파편 4개로 분열 — 몰린 곳에 강함. 낙하 중 잔해가 움직임") },
         };
         public int Ship => M.ship >= 0 && M.ship < Ships.Length && ShipOwned(M.ship) ? M.ship : 0;
         public bool ShipOwned(int i) => i == 0 || (M.shipsOwned & (1 << i)) != 0;
@@ -440,13 +440,13 @@ namespace SalvageRun.Orbit.Sim
         // 🎨 트리 칸 이름 · 설명 — 배마다 (산탄선이면 빔 칸이 산탄 칸으로 읽힌다 · 09-26)
         static readonly System.Collections.Generic.Dictionary<string, string[]> ScatterNode = new System.Collections.Generic.Dictionary<string, string[]>
         {
-            { "c_pow", new[] { Loc.T("산탄 위력"), Loc.T("알 하나 피해 +1 (단계마다) — 가까이 쏠수록 더 세다") } },
+            { "c_pow", new[] { Loc.T("산탄 위력"), Loc.T("알 하나 피해 +1 (단계마다) — 가까이 쏠수록 강함") } },
             { "c_rad", new[] { Loc.T("산탄 퍼짐"), Loc.T("퍼지는 원 반지름 +6 (단계마다) — 처음부터 38") } },
             { "c_spd", new[] { Loc.T("산탄 증폭"), Loc.T("산탄 화력 +8% (단계마다)") } },
         };
         static readonly System.Collections.Generic.Dictionary<string, string[]> HarpoonNode = new System.Collections.Generic.Dictionary<string, string[]>
         {
-            { "c_pow", new[] { Loc.T("작살 위력"), Loc.T("작살 피해 +1 (단계마다) — 뚫을 때마다 20%씩 약해진다") } },
+            { "c_pow", new[] { Loc.T("작살 위력"), Loc.T("작살 피해 +1 (단계마다) — 관통할 때마다 20%씩 약해짐") } },
             { "c_rad", new[] { Loc.T("작살 관통"), Loc.T("한 번에 꿰뚫는 수 +1 · 30 더 멀리 (단계마다) — 처음 3개") } },
             { "c_spd", new[] { Loc.T("작살 증폭"), Loc.T("작살 화력 +8% (단계마다)") } },
         };
@@ -458,7 +458,7 @@ namespace SalvageRun.Orbit.Sim
         };
         static readonly System.Collections.Generic.Dictionary<string, string[]> FrostNode = new System.Collections.Generic.Dictionary<string, string[]>
         {
-            { "c_pow", new[] { Loc.T("서리 위력"), Loc.T("서리 피해 +1 (단계마다) — 언 잔해는 두 배로 아프다") } },
+            { "c_pow", new[] { Loc.T("서리 위력"), Loc.T("서리 피해 +1 (단계마다) — 언 잔해 피해 2배") } },
             { "c_rad", new[] { Loc.T("서리 원"), Loc.T("서리 원 반지름 +6 (단계마다) — 처음 44") } },
             { "c_spd", new[] { Loc.T("냉기 증폭"), Loc.T("서리 화력 +8% (단계마다)") } },
         };

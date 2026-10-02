@@ -50,7 +50,7 @@ namespace SalvageRun.Orbit
         public bool CockpitView => (flow >= 2 && flow <= 5) && sim != null && sim.R.over && !sim.M.careerOpen && !sim.M.won;   // 조종실 — 카메라가 물러나 지구가 창 가운데 (09-23 부활)
         public int flow;                         // 0 출동 중 · 1 결산 · 2 조종실 · 3 정비고(왼쪽 끝) · 5 부품 가게(정비고 오른쪽) · 4 증권(오른쪽 방)
         static readonly Color[] BranchCol = { SweepGame.Amber, SweepGame.Cyan, SweepGame.Violet, SweepGame.Green };
-        static readonly string[] BayDesc = { Loc.T("조준점 하나 → 넓은 착탄 → 한 번에 여럿"), Loc.T("알아서 줍는다 — 한 방에 부서지는 것만"), Loc.T("블랙홀 스킬 · 지구에서 연료 보급"), Loc.T("돈 · 청구서 · 대출 · 기사") };
+        static readonly string[] BayDesc = { Loc.T("조준점 하나 → 넓은 착탄 → 한 번에 여럿"), Loc.T("자동 수집 — 한 번에 부서지는 잔해만"), Loc.T("블랙홀 스킬 · 지구에서 연료 보급"), Loc.T("돈 · 청구서 · 대출 · 기사") };
         public static readonly Rect Win = new Rect(200, 44, 560, 344);
 
         static string Clip(string s, int n) { if (Loc.En) n = n * 17 / 10; return s.Length <= n ? s : s.Substring(0, n - 1) + "…"; }   // 🌐 영어 글자는 한글보다 좁다

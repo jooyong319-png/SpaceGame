@@ -53,9 +53,9 @@ namespace SalvageRun.Orbit
                 int min = Mathf.RoundToInt((float)sim.M.playSeconds / 60f);
                 string info = Loc.T("궤도 청소부 ") + sim.M.company + Loc.T("대 · 청구서 ") + Mathf.Min(sim.S.bill + 1, SweepSim.Bills.Length) + "/" + SweepSim.Bills.Length + " · " + (min >= 60 ? min / 60 + Loc.T("시간 ") + min % 60 + Loc.T("분") : min + Loc.T("분"));
                 if (Btn(Loc.T("이어하기"), info, true)) LobbyContinue();
-                if (Btn(Loc.T("새로 시작"), Loc.T("처음부터 — 지금 회사와 기록이 지워진다"), false)) { wipeAsk = true; OrbitSfx.Play("tick", 0.7f); }
+                if (Btn(Loc.T("새로 시작"), Loc.T("처음부터 — 지금 회사와 기록 삭제"), false)) { wipeAsk = true; OrbitSfx.Play("tick", 0.7f); }
             }
-            else if (Btn(Loc.T("시작하기"), Loc.T("빚내서 산 청소선 한 척 — 궤도를 치운다"), true)) LobbyContinue();
+            else if (Btn(Loc.T("시작하기"), Loc.T("빚내서 산 청소선 한 척으로 궤도 청소"), true)) LobbyContinue();
             if (Btn(Loc.T("설정"), null, false)) { settingsOpen = true; OrbitSfx.Play("tick", 0.6f); }
             if (Btn(Loc.T("끝내기"), null, false)) { game.Save(); Application.Quit(); }
             Lbl(new Rect(x, RefH - 34, 500, 18), "<size=11><color=#5f6878>v" + Application.version + Loc.T(" · 오늘도 궤도는 깨끗합니다 · Space = 이어하기</color></size>"), label);   // 🏷 버전은 빌드 설정(bundleVersion) 한 곳에서 (09-29)
@@ -72,7 +72,7 @@ namespace SalvageRun.Orbit
             var w = new Rect(vw / 2 - 230, RefH / 2 - 130, 460, 250);
             GUI.color = new Color(0.06f, 0.05f, 0.05f, 0.98f); GUI.DrawTexture(w, white); Frame(w, new Color(1f, 0.42f, 0.35f), 2); GUI.color = Color.white;
             Lbl(new Rect(w.x, w.y + 18, w.width, 30), Loc.T("<size=20><b><color=#ffb3a8>정말 처음부터 할까요?</color></b></size>"), center);
-            Lbl(new Rect(w.x + 30, w.y + 60, w.width - 60, 20), Loc.T("<size=13>아래가 모두 지워지고 되돌릴 수 없다</size>"), center);
+            Lbl(new Rect(w.x + 30, w.y + 60, w.width - 60, 20), Loc.T("<size=13>아래 내용이 모두 삭제되며 되돌릴 수 없음</size>"), center);
             string lost = Loc.T("주식회사 궤도 청소부 (") + M.company + Loc.T("대) · 청구서 ") + Mathf.Min(sim.S.bill + 1, SweepSim.Bills.Length) + "/" + SweepSim.Bills.Length + Loc.T("\n모은 기사 ") + M.news.Count + Loc.T(" · 특종 ") + M.scoops + (M.legend > 0 ? " · ★ " + M.legend : "") + (M.bestDepth > 0 ? Loc.T(" · 무한 궤도 ") + M.bestDepth + Loc.T("층") : "") + Loc.T("\n최고 연쇄 ") + M.bestChain;
             Lbl(new Rect(w.x + 30, w.y + 88, w.width - 60, 70), "<size=13><color=#c8d0dc>" + lost + "</color></size>", center);
             var al = btn.alignment; btn.alignment = TextAnchor.MiddleCenter;

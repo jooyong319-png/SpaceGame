@@ -15,14 +15,14 @@ namespace SalvageRun.Orbit.Sim
         public static readonly string[] TraitDesc =
         {
             "",
-            Loc.T("줄지어 도는 위성 — 하나를 부수면 줄 전체가 차례로 터진다"),
-            Loc.T("느린 큰 금고 — 값 ×3, 부서지며 둘레 조각까지 부순다"),
-            Loc.T("폭풍 동안만 나타나는 탐사차 — 값 ×5, 폭풍이 끝나면 묻힌다"),
-            Loc.T("큰 광맥 소행성 — 맞을 때마다 광석을 흘린다"),
-            Loc.T("붉은 소용돌이 — 안의 잔해 값 ×2, 대신 천천히 빨려 든다"),
-            Loc.T("고리 얼음 덩이 — 부수면 둘레를 얼린다(한 방에 깨짐)"),
-            Loc.T("결정 공명 — 결정 하나를 부수면 같은 결정이 모두 깨진다"),
-            Loc.T("돌풍 — 가끔 잔해가 한쪽으로 쏠린다"),
+            Loc.T("줄지어 도는 위성 — 하나를 부수면 줄 전체가 차례로 폭발"),
+            Loc.T("느린 큰 금고 — 값 ×3, 부서지면 둘레 조각까지 파괴"),
+            Loc.T("폭풍 동안만 나타나는 탐사차 — 값 ×5, 폭풍이 끝나면 묻힘"),
+            Loc.T("큰 광맥 소행성 — 맞을 때마다 광석을 흘림"),
+            Loc.T("붉은 소용돌이 — 안의 잔해 값 ×2, 대신 천천히 빨려 듦"),
+            Loc.T("고리 얼음 덩이 — 부수면 둘레 빙결 (한 번에 깨짐)"),
+            Loc.T("결정 공명 — 결정 하나를 부수면 같은 결정 전부 파괴"),
+            Loc.T("돌풍 — 가끔 잔해가 한쪽으로 쏠림"),
             Loc.T("혜성 통과 — 꼬리에 닿은 잔해가 부서지고, 머리를 맞히면 열쇠"),
         };
         public static int TraitOf(int orbit) { switch (orbit) { case 0: return 1; case 1: return 2; case 2: return 3; case 5: return 4; case 3: return 5; case 4: return 6; case 6: return 7; case 7: return 8; case 9: return 9; case 10: return 8; case 11: return 7; case 8: return 9; default: return 0; } }
@@ -70,7 +70,7 @@ namespace SalvageRun.Orbit.Sim
                     if (!StormOn && r.roverUp)
                     {
                         r.roverUp = false;
-                        foreach (var d in r.junk) if (!d.dead && d.sig == 3) { d.dead = true; Emit(SwEv.Pop, d.x, d.y, 0, 3, Loc.T("탐사차가 모래에 묻혔다")); }
+                        foreach (var d in r.junk) if (!d.dead && d.sig == 3) { d.dead = true; Emit(SwEv.Pop, d.x, d.y, 0, 3, Loc.T("탐사차가 모래에 묻힘")); }
                     }
                     break;
                 case 5:   // 목성 — 대적점이 궤도를 따라 돌고, 안의 잔해를 끌어들인다
@@ -103,7 +103,7 @@ namespace SalvageRun.Orbit.Sim
                     else if ((r.gustT -= dt) <= 0)
                     {
                         r.gustT = Rnd(9, 12); r.gustLeft = 3.5; r.gustA = Rnd(0, Math.PI * 2);
-                        Emit(SwEv.Pop, EX, EY, 0, 3, Loc.T("★ 돌풍 — 잔해가 한쪽으로 쏠린다"));
+                        Emit(SwEv.Pop, EX, EY, 0, 3, Loc.T("★ 돌풍 — 잔해가 한쪽으로 쏠림"));
                         Emit(SwEv.TraitFx, EX + Math.Cos(r.gustA) * SpotRr, EY + Math.Sin(r.gustA) * SpotRr * Tilt, r.gustA, 8);
                     }
                     break;

@@ -24,7 +24,7 @@ namespace SalvageRun.Orbit
             }
             float y = RefH - 22;
             float x = sim.R.over ? ox + 14 : 14;
-            if (breaking) { GUI.DrawTexture(new Rect(x, y + 2, 34, 15), texRed); Lbl(new Rect(x, y, 34, 18), Loc.T("<color=#ffffff>속보</color>"), center); x += 40; }
+            if (breaking) { string bk = Loc.T("<color=#ffffff>속보</color>"); float bw = Mathf.Max(34, center.CalcSize(new GUIContent(bk)).x + 8); GUI.DrawTexture(new Rect(x, y + 2, bw, 15), texRed); Lbl(new Rect(x, y, bw, 18), bk, center); x += bw + 6; }   // 🌐 영어 Breaking 은 딱지보다 넓다
             Lbl(new Rect(x, y, 700, 18), Loc.T("궤도일보 · ") + line, dim);
         }
 
@@ -47,7 +47,7 @@ namespace SalvageRun.Orbit
             }
             GUI.EndScrollView();
             int scoops = 0; foreach (var it in M.news) if (it.kind == "scoop") scoops++;
-            Lbl(new Rect(box.x + 12, box.yMax - 30, 300, 18), Loc.T("모은 기사 ") + total + Loc.T(" · 특종 ") + scoops + Loc.T(" / 6 · 파산해도 남는다"), small);
+            Lbl(new Rect(box.x + 12, box.yMax - 30, 300, 18), Loc.T("모은 기사 ") + total + Loc.T(" · 특종 ") + scoops + Loc.T(" / 6 · 파산해도 유지"), small);
             // 전문
             if (newsSel < 0 && total > 0) { newsSel = total - 1; M.news[newsSel].read = true; }
             var pr = new Rect(box.x + 322, box.y + 10, box.width - 332, box.height - 20);

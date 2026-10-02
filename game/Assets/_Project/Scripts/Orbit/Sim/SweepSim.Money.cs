@@ -93,7 +93,7 @@ namespace SalvageRun.Orbit.Sim
             double R0 = ShopBase, jack = Lv("l_jack") > 0 ? 3 : 1, got = 0;       // 잭팟 ×3 (09-27 ×2 에서)
             switch (w)
             {
-                case -2: got = scratchPaid * (Lv("l_jack") > 0 ? 2 : 1); ScratchText = Lv("l_jack") > 0 ? Loc.T("둘이 같다 — 잭팟! 표값 두 배") : Loc.T("둘이 같다 — 표값 돌려받기"); break;
+                case -2: got = scratchPaid * (Lv("l_jack") > 0 ? 2 : 1); ScratchText = Lv("l_jack") > 0 ? Loc.T("둘이 같음 — 잭팟! 표값 2배") : Loc.T("둘이 같음 — 표값 환불"); break;
                 case 0: got = R0 * 0.2 * jack; ScratchText = Loc.T("고철 셋 — 판 벌이 × 0.2"); break;
                 case 1: S.nDmg += 30; ScratchText = Loc.T("위성 셋 — 다음 판 화력 +30%"); break;
                 case 2: got = R0 * 1 * jack; ScratchText = Loc.T("금고 셋 — 판 벌이 × 1"); break;
@@ -192,7 +192,7 @@ namespace SalvageRun.Orbit.Sim
         public static readonly string[] ConsName = { Loc.T("연료 캔"), Loc.T("복권 묶음"), Loc.T("과부하 탄창"), Loc.T("감정 할인권") };
         public static readonly string[] ConsDesc = { Loc.T("다음 판 연료 +10초"), Loc.T("공짜 즉석 복권 +3장"), Loc.T("다음 판 화력 +20%"), Loc.T("다음 판 모든 값 +15%") };
         static readonly double[] ConsPrice = { 0.12, 0.1, 0.22, 0.25 };   // 09-26 밤 절반으로
-        public static readonly string[] ConsHelp = { Loc.T("다음 출동 한 판만 연료가 10초 늘어난다. 끝나면 사라진다"), Loc.T("공짜 즉석 복권 세 장을 받는다. 조종실 복권기에서 긁는다 — 표값이 안 든다"), Loc.T("다음 출동 한 판 동안 모든 무기 화력이 20% 세진다"), Loc.T("다음 출동 한 판 동안 부순 것 값이 전부 15% 더 붙는다") };   // 📖 가게 카드 자세히
+        public static readonly string[] ConsHelp = { Loc.T("다음 출동 한 판만 연료 +10초. 이후 사라짐"), Loc.T("공짜 즉석 복권 3장. 조종실 복권기에서 긁기 — 표값 없음"), Loc.T("다음 출동 한 판 동안 모든 무기 화력 +20%"), Loc.T("다음 출동 한 판 동안 부순 잔해 값 +15%") };   // 📖 가게 카드 자세히
         public static bool IsCons(int id) => id >= Cons0 && id < Cons0 + ConsName.Length;
         public double PartPrice(int id)
         {

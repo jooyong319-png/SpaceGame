@@ -86,7 +86,7 @@ namespace SalvageRun.Orbit
                 Lbl(new Rect(r.x + 104, r.y + rh / 2, r.width - 108, 20), (Loc.En ? "<size=10>" : "<size=11>") + (Loc.En && !own ? "" : "<color=#8d99b8>" + d.weapon + " · </color>") + (own ? (sim.Ship == i ? Loc.T("<color=#6fe3a0>타는 중</color>") : Loc.T("<color=#8d99b8>보유</color>")) : Loc.T("<color=#ffdf95>신용 ") + d.price + "</color>") + "</size>", label);
                 if (Bt(r, GUIContent.none, GUIStyle.none)) { hangarPick = i; OrbitSfx.Play("tick", 0.5f); }
             }
-            if (SweepSim.Ships.Length < 5) Lbl(new Rect(L.x, L.y + SweepSim.Ships.Length * 76 + 6, L.width, 60), Loc.T("<size=11><color=#5a6475>배는 차례로 더 들어온다</color></size>"), label);
+            if (SweepSim.Ships.Length < 5) Lbl(new Rect(L.x, L.y + SweepSim.Ships.Length * 76 + 6, L.width, 60), Loc.T("<size=11><color=#5a6475>새 배는 차례로 입고</color></size>"), label);
 
             // 오른쪽 — 고른 배
             var sd = SweepSim.Ships[hangarPick]; bool mine = sim.ShipOwned(hangarPick);
@@ -103,7 +103,7 @@ namespace SalvageRun.Orbit
             var dsty = new GUIStyle(label) { wordWrap = true };
             int dfs = Loc.En ? 11 : 12;   // 🌐 영어 설명은 길다 — 한 치수 작게
             Lbl(new Rect(I.x, I.y + 62, I.width, 70), "<size=" + dfs + "><color=#c4cce2>" + KWrap(sd.desc, dfs, I.width - 6) + "</color></size>", dsty);
-            string[] lab = { Loc.T("한 방"), Loc.T("넓이"), Loc.T("연쇄") };
+            string[] lab = { Loc.T("피해"), Loc.T("넓이"), Loc.T("연쇄") };
             for (int k = 0; k < 3; k++)
             {
                 float yy = I.y + 134 + k * 20;
@@ -112,21 +112,21 @@ namespace SalvageRun.Orbit
                 GUI.color = Color.white;
             }
             var bb = new Rect(I.x, I.y + 206, 220, 40);
-            if (mine) Lbl(bb, "<size=13><color=#6fe3a0>" + (hangarPick == sim.Ship ? Loc.T("지금 타는 배") : Loc.T("보유 — 아래 [출발]로 이 배를 탄다")) + "</color></size>", label);
+            if (mine) Lbl(bb, "<size=13><color=#6fe3a0>" + (hangarPick == sim.Ship ? Loc.T("지금 타는 배") : Loc.T("보유 중 — 아래 [출발]로 이 배 탑승")) + "</color></size>", label);
             else
             {
                 bool can = M.credit >= sd.price;
                 GUI.enabled = can;
-                if (Bt(bb, can ? Fit(Loc.T("들여오기 · 신용 ") + sd.price, 15, bb.width - 12, btnC, 10) : Fit("<color=#5a6475>" + Loc.T("신용 ") + sd.price + Loc.T(" 필요 (지금 ") + M.credit.ToString("0") + ")</color>", 13, bb.width - 12, btnC, 9), btnC) && sim.BuyShip(hangarPick)) { OrbitSfx.Play("buy", 1f); OrbitSfx.Play("unit", 0.8f); }
+                if (Bt(bb, can ? Fit(Loc.T("구매 · 신용 ") + sd.price, 15, bb.width - 12, btnC, 10) : Fit("<color=#5a6475>" + Loc.T("신용 ") + sd.price + Loc.T(" 필요 (지금 ") + M.credit.ToString("0") + ")</color>", 13, bb.width - 12, btnC, 9), btnC) && sim.BuyShip(hangarPick)) { OrbitSfx.Play("buy", 1f); OrbitSfx.Play("unit", 0.8f); }
                 GUI.enabled = true;
             }
-            Lbl(new Rect(I.x, I.y + 256, I.width, 130), Loc.T("<size=10><color=#5a6475>트리의 빔 칸 셋은 배의 무기에 맞게 바뀐다.\n무기고의 보조 무기는 어느 배든 그대로.") + (hangarPick == 5 ? Loc.T("\n<color=#8fd8ff>무기고 냉동 빔 줄(강화 · 각성 · 특화 · 3단계)이 이 배의 서리 포도 세게 한다.</color>") : hangarPick == 6 ? Loc.T("\n<color=#ffa040>무기고 분열탄 줄(강화 · 각성 · 특화 · 3단계)이 이 배의 포탄도 세게 한다.</color>") : "") + "</color></size>", dsty);
+            Lbl(new Rect(I.x, I.y + 256, I.width, 130), Loc.T("<size=10><color=#5a6475>트리의 빔 칸 셋은 배의 무기에 맞게 바뀐다.\n무기고의 보조 무기는 어느 배든 그대로.") + (hangarPick == 5 ? Loc.T("\n<color=#8fd8ff>무기고 냉동 빔 줄(강화 · 각성 · 특화 · 3단계)이 이 배의 서리 포도 강화.</color>") : hangarPick == 6 ? Loc.T("\n<color=#ffa040>무기고 분열탄 줄(강화 · 각성 · 특화 · 3단계)이 이 배의 포탄도 강화.</color>") : "") + "</color></size>", dsty);
         }
 
         void HangarUps(Rect body)
         {
             var M = sim.M;
-            Lbl(new Rect(body.x + 14, body.y + 8, body.width - 28, 20), Loc.T("<size=11><color=#8d99b8>회사가 바뀌어도 남는다 · 단계마다 값이 오른다 · 언제든 전부 되돌려 받아 다시 짤 수 있다</color></size>"), label);
+            Lbl(new Rect(body.x + 14, body.y + 8, body.width - 28, 20), Loc.T("<size=11><color=#8d99b8>회사가 바뀌어도 유지 · 단계마다 값 상승 · 언제든 전액 환불 후 다시 구성 가능</color></size>"), label);
             float cw = (body.width - 24 - 3 * 8) / 4, ch = 96;   // 82 → 96: 아래 「신용 N」 줄이 반쯤 잘렸다 (09-28)
             for (int i = 0; i < SweepSim.UpCount; i++)
             {
@@ -145,7 +145,7 @@ namespace SalvageRun.Orbit
                 Lbl(new Rect(r.x + 64, r.y + 67, r.width - 68, 24), max ? Loc.T("<size=11><color=#6fe3a0>최대</color></size>") : "<size=11><color=" + (can ? "#ffdf95" : "#ff8a7a") + Loc.T(">신용 ") + c + "</color></size>", label);
                 if (Bt(r, GUIContent.none, GUIStyle.none) && can && sim.BuyUp(i)) OrbitSfx.Play("buy", 0.8f);
             }
-            Lbl(new Rect(body.x + 14, body.yMax - 24, body.width - 28, 20), Loc.T("<size=10><color=#5a6475>신용은 파산할 때 받는다 — 갚은 청구서가 많을수록 많이 (쌓인 신용 × ") + SweepSim.CreditK + ")</color></size>", label);
+            Lbl(new Rect(body.x + 14, body.yMax - 24, body.width - 28, 20), Loc.T("<size=10><color=#5a6475>신용은 파산 시 지급 — 갚은 청구서가 많을수록 많이 (쌓인 신용 × ") + SweepSim.CreditK + ")</color></size>", label);
         }
     }
 }

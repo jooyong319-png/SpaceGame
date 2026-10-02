@@ -125,9 +125,9 @@ namespace SalvageRun.Orbit
             bool stuck = sim.CanBankrupt && S.overdue && S.cash + sim.LoanCap < sim.BillAmount;   // 대출 한도로도 모자라다
             if (stuck)
             {
-                Panel2(RB, Loc.T("<color=#ff9b8f>대출 한도로도 못 갚는다</color>"));
+                Panel2(RB, Loc.T("<color=#ff9b8f>대출 한도로도 납부 불가</color>"));
                 Lbl(new Rect(RB.x + 16, RB.y + 30, RB.width - 32, 20), Loc.T("<size=13>파산하면 빚이 사라지고 <color=#ffdf95>신용 +") + S.creditPending * SweepSim.CreditK + "</color></size>", label);
-                Lbl(new Rect(RB.x + 16, RB.y + 50, RB.width - 32, 20), Loc.T("<size=13>격납고에서 신용으로 새 배 · 영구 강화를 산다</size>"), label);
+                Lbl(new Rect(RB.x + 16, RB.y + 50, RB.width - 32, 20), Loc.T("<size=13>격납고에서 신용으로 새 배 · 영구 강화 구매</size>"), label);
                 var bb = new Rect(RB.x + 16, RB.y + 76, RB.width - 32, 34);
                 if (Bt(bb, bankruptArmed ? Loc.T("<color=#ffb3a8>정말? 한 번 더 누르면 파산</color>") : Loc.T("<color=#ffb3a8>파산하고 새 회사로 ▸</color>"), btn))
                 {

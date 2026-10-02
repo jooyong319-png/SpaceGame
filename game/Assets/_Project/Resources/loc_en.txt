@@ -6,7 +6,7 @@
 안정	Stable
 지구 연료공사	Earth Fuel Corp
 연료	Fuel
-경기를 탄다	Cyclical
+경기 민감	Cyclical
 청소선 조선	Sweeper Shipyard
 조선	Shipbuilding
 성장주	Growth
@@ -15,7 +15,7 @@
 무난	Steady
 화성 제련소	Mars Smelter
 화성	Mars
-요동친다	Volatile
+변동 큼	Volatile
 목성 선박	Jupiter Shipping
 목성	Jupiter
 대박 아니면 쪽박	Boom or bust
@@ -129,21 +129,21 @@
 모든 값 +15% · 부착물 +50%	All value +15% · Attachments +50%
 연쇄 목걸이	Chain Necklace
 연쇄 보너스 상한 +150 · 치명 +6%	Chain bonus cap +150 · Crit +6%
-화력 — 한 방에 깎는 체력. 큰 잔해 · 장갑판을 덜 쳐도 부순다	Firepower — HP removed per hit. Breaks big wrecks and armor in fewer hits
-화력 — 한 방에 깎는 체력 (연사는 없앴다 — 이 부품도 화력으로 친다)	Firepower — HP removed per hit (rapid fire was removed — this part counts as firepower too)
-크기 — 한 방이 덮는 넓이 (집게 원 · 레이저 굵기 · 번개 거리). 뭉친 잔해를 한 번에	Size — area one shot covers (beam circle · laser width · lightning reach). Clears clusters at once
-연료 — 한 판에 쓸 수 있는 연료. 늘면 판이 길어지고, 줄면 짧아진다	Fuel — how much you can fire per run. More fuel means longer runs
-치명 — 이 확률로 한 방이 몇 배로 들어간다	Crit — at this chance a hit deals multiple damage
+화력 — 1회 공격 피해. 큰 잔해 · 장갑판을 더 적은 타격으로 파괴	Firepower — HP removed per hit. Breaks big wrecks and armor in fewer hits
+화력 — 1회 공격 피해 (연사 삭제 — 이 부품도 화력으로 계산)	Firepower — HP removed per hit (rapid fire was removed — this part counts as firepower too)
+크기 — 1회 공격 범위 (집게 원 · 레이저 굵기 · 번개 거리). 뭉친 잔해를 한 번에	Size — area one shot covers (beam circle · laser width · lightning reach). Clears clusters at once
+연료 — 한 판에 쓸 수 있는 연료. 많을수록 판이 길어짐	Fuel — how much you can fire per run. More fuel means longer runs
+치명 — 이 확률로 피해 몇 배	Crit — at this chance a hit deals multiple damage
 한 발 더 — 쏠 때마다 이 확률로 같은 자리에 한 번 더	Extra shot — each shot has this chance to fire again at the same spot
-드론 몫 — 드론이 부순 잔해 값이 이만큼 더 붙는다	Drone earnings — debris broken by drones is worth this much more
+드론 몫 — 드론이 부순 잔해 값 추가	Drone earnings — debris broken by drones is worth this much more
 모든 값 — 무엇을 부수든 받는 돈이 이만큼 더	All value — everything you break pays this much more
 금고 위성 — 노란 금고 위성을 부술 때 받는 돈이 더	Vault satellites — the yellow vault satellites pay more
 부착물 — 잔해에 붙은 금 · 연료통 같은 부착물이 더 자주 · 더 비싸게	Attachments — gold, fuel pods and other attachments appear more often and pay more
-빚 상환 몫 — 빚이 있을 때 판 수입에서 떼 가는 비율이 줄어든다 (빚이 없으면 효과 없음)	Debt share — lowers the cut taken from run earnings while in debt (no effect without debt)
-수수료 0 — 증권에서 사고팔 때 수수료가 안 붙는다	Zero fees — no fee when trading on the Exchange
-배당 — 가진 주식 값의 이만큼을 판마다 돈으로 받는다	Dividend — every run you get this share of your stock value as cash
-연쇄 보너스 상한 — 연쇄가 길수록 붙는 값 배수의 천장이 올라간다	Chain bonus cap — raises the ceiling of the value bonus from long chains
-블랙홀 — 칠 때마다 이 확률로 블랙홀이 저절로 열려 주변을 빨아들인다	Black hole — each shot has this chance to open a black hole that pulls in nearby debris
+빚 상환 몫 — 빚이 있을 때 판 수입에서 떼 가는 비율 감소 (빚이 없으면 효과 없음)	Debt share — lowers the cut taken from run earnings while in debt (no effect without debt)
+수수료 0 — 증권 거래 수수료 없음	Zero fees — no fee when trading on the Exchange
+배당 — 판마다 보유 주식 값의 이 비율만큼 돈 지급	Dividend — every run you get this share of your stock value as cash
+연쇄 보너스 상한 — 긴 연쇄의 값 배수 상한 증가	Chain bonus cap — raises the ceiling of the value bonus from long chains
+블랙홀 — 공격마다 이 확률로 블랙홀이 자동으로 열려 주변을 흡수	Black hole — each shot has this chance to open a black hole that pulls in nearby debris
 조각	Scrap
 죽은 위성	Dead Satellite
 로켓 동체	Rocket Body
@@ -153,9 +153,9 @@
 큰 잔해	Large Wreck
 지구	Earth
 기본 궤도	Home orbit
-느린 궤도 · 금고 위성이 많다	Slow orbit · lots of vault satellites
+느린 궤도 · 금고 위성 많음	Slow orbit · lots of vault satellites
 모래 폭풍 · 얼음 껍질	Dust storms · ice shells
-중력이 잔해를 안쪽에 모은다 · 장갑판	Gravity pulls debris inward · armor plates
+잔해를 안쪽으로 모으는 중력 · 장갑판	Gravity pulls debris inward · armor plates
 토성	Saturn
 두 겹 고리 · 케이블 망	Double rings · cable nets
 소행성대	Asteroid Belt
@@ -167,11 +167,11 @@
 카이퍼 벨트	Kuiper Belt
 태양계 끝 · 고대 탐사선 · 혜성	Edge of the system · ancient probes · comets
 오르트 구름	Oort Cloud
-얼음 혜성 떼 · 단단하고 느리다	Icy comet swarms · tough and slow
+얼음 혜성 떼 · 단단하고 느림	Icy comet swarms · tough and slow
 태양권 계면	Heliopause
-태양풍이 부딪히는 경계 · 잔해가 출렁인다	Where the solar wind hits the edge · debris sways
+태양풍이 부딪히는 경계 · 출렁이는 잔해	Where the solar wind hits the edge · debris sways
 성간 공간	Interstellar Space
-태양 빛이 닿지 않는 곳 · 드문드문하지만 값이 가장 크다	Beyond the sunlight · sparse but the most valuable
+태양 빛이 닿지 않는 곳 · 드문드문하지만 값이 가장 큼	Beyond the sunlight · sparse but the most valuable
 무리	Swarm
 탱크 사슬	Tank Chain
 케이블 망	Cable Net
@@ -182,65 +182,65 @@
 파편 폭풍	Debris Storm
 금고 호송대	Vault Convoy
 대충돌	Great Collision
-왼쪽에서 연료통 하나 · 부수면 연료가 찬다	A fuel canister from the left · break it to refuel
+왼쪽에서 연료통 하나 · 부수면 연료 충전	A fuel canister from the left · break it to refuel
 오른쪽 위에 파편 서른 · 뭉쳤을 때 쓸면 연쇄	Thirty fragments top right · sweep them while clumped for a chain
-왼쪽에서 고철이 쏟아진다 · 길목을 막아라	Scrap pours in from the left · block the path
-금고 위성 줄이 지나간다 · 놓치기 전에	A line of vault satellites passes · get them before they leave
-오른쪽 위에 파편 예순 · 폭탄 위성도 섞였다	Sixty fragments top right · bomb satellites mixed in
+왼쪽에서 고철 쏟아짐 · 길목 차단	Scrap pours in from the left · block the path
+금고 위성 행렬 통과 · 놓치기 전에	A line of vault satellites passes · get them before they leave
+오른쪽 위에 파편 60개 · 폭탄 위성 섞임	Sixty fragments top right · bomb satellites mixed in
 빔 위력	Beam Power
-한 방 피해 +1 (단계마다) — 단단한 잔해를 덜 쳐도 부순다	Damage per hit +1 (per level) — break tough debris in fewer hits
+1회 피해 +1 (단계마다) — 단단한 잔해를 더 적은 타격으로 파괴	Damage per hit +1 (per level) — break tough debris in fewer hits
 빔 범위	Beam Range
-빔이 한 점이 아니라 원으로 — 반지름 25에서 단계마다 +5 · 원 안이 한꺼번에 맞는다	The beam becomes a circle, not a point — radius 25, +5 per level · everything inside is hit
+빔이 점에서 원으로 — 반지름 25, 단계마다 +5 · 원 안을 한꺼번에 타격	The beam becomes a circle, not a point — radius 25, +5 per level · everything inside is hit
 빔 증폭	Beam Boost
 빔 화력 +8% (단계마다)	Beam firepower +8% (per level)
 연료 탱크	Fuel Tank
-연료 용량 +3% (단계마다) — 쏠 수 있는 양 · 판 길이가 늘어난다	Fuel capacity +3% (per level) — more shots · longer runs
+연료 용량 +3% (단계마다) — 쏠 수 있는 양 · 판 길이 증가	Fuel capacity +3% (per level) — more shots · longer runs
 치명타	Critical Hit
 치명 확률 +5% (단계마다) — 치명이면 피해 ×3	Crit chance +5% (per level) — crits deal ×3 damage
 한 발 더	Extra Shot
 쏠 때 10% 확률로 같은 자리에 한 발 더 (단계마다 +10%) · 연료는 한 발 값만	10% chance to fire again at the same spot (+10% per level) · costs fuel only once
 견인 빔	Tractor Beam
-조준점 둘레(단계마다 +20)의 작은 조각을 끌어당긴다	Pulls small scrap around the aim point (+20 range per level)
+조준점 둘레(단계마다 +20)의 작은 조각을 끌어당김	Pulls small scrap around the aim point (+20 range per level)
 과부하	Overdrive
-연료가 5초 남으면 두 배 빠르게 쏜다	Fires twice as fast when 5 seconds of fuel remain
+연료가 5초 남으면 공격 속도 2배	Fires twice as fast when 5 seconds of fuel remain
 드론 격납고	Drone Bay
-드론이 생긴다 — 첫 칸 두 대, 그 뒤 한 대씩 더 · 한 방에 부서지는 잔해를 알아서 부순다	Unlocks drones — two at first, one more per level · they break one-hit debris on their own
+드론 해금 — 첫 칸 2대, 이후 단계마다 1대씩 추가 · 한 번에 부서지는 잔해를 자동으로 파괴	Unlocks drones — two at first, +1 per level · auto-break debris that dies in one hit
 드론 속도	Drone Speed
-드론이 한 번 줍고 다시 가는 간격 −10% (단계마다)	Drone pickup interval −10% (per level)
+드론 수집 간격 −10% (단계마다)	Drone pickup interval −10% (per level)
 드론 거리	Drone Reach
-드론이 잔해를 찾는 거리 80에서 +15 (단계마다)	Drone search range 80, +15 per level
+드론 탐색 거리 80, 단계마다 +15	Drone search range 80, +15 per level
 드론 수거	Drone Salvage
 드론이 부순 잔해 값 +25% (단계마다)	Debris broken by drones is worth +25% (per level)
 신호 증폭	Signal Boost
-깜빡이는 신호기가 붙은 잔해를 부수면 드론이 그리로 몰려든다 — 3초에서 +2초 (단계마다)	Breaking debris with a blinking beacon draws drones to it — 3s, +2s per level
+깜빡이는 신호기 잔해를 부수면 드론이 그쪽으로 집결 — 3초, 단계마다 +2초	Breaking debris with a blinking beacon draws drones to it — 3s, +2s per level
 드론 등급	Drone Grade
-드론이 더 큰 잔해도 한 방에 줍는다 — 조각 → 죽은 위성 → 금고 위성 → 로켓 동체	Drones can one-hit bigger debris — scrap → dead satellite → vault satellite → rocket body
+드론이 더 큰 잔해도 한 번에 수집 — 조각 → 죽은 위성 → 금고 위성 → 로켓 동체	Drones collect bigger debris in one hit — scrap → dead satellite → vault satellite → rocket body
 급유 드론	Refuel Drone
-드론이 연료를 채워 준다 — 연료 +1초 (단계마다)	Drones top up your fuel — fuel +1s (per level)
+드론이 연료 보충 — 연료 +1초 (단계마다)	Drones top up your fuel — fuel +1s (per level)
 편대	Formation
-드론이 한 번에 두 개씩 친다	Drones hit two targets at once
+드론이 한 번에 2개씩 공격	Drones hit two targets at once
 드론 공장	Drone Factory
 드론 +1대 (단계마다)	+1 drone (per level)
 블랙홀	Black Hole
-쏠 때 가끔 블랙홀이 저절로 열려 둘레 잔해를 빨아들였다가 터진다 — 단계마다 더 자주	Firing sometimes opens a black hole that pulls in nearby debris, then bursts — more often per level
+공격 시 가끔 블랙홀이 자동으로 열려 둘레 잔해를 흡수한 뒤 폭발 — 단계마다 더 자주	Firing sometimes opens a black hole that pulls in nearby debris, then bursts — more often per level
 연료 보급	Fuel Supply
-판마다 연료 보급선이 궤도를 돌며 나간다 (단계마다 +1) — 조준점을 대면 연료 +4초, 놓치면 사라진다	Each run a fuel supply pod circles the orbit (+1 per level) — aim at it for +4s fuel, or it's gone
+판마다 연료 보급선이 궤도를 순회 (단계마다 +1) — 조준점을 대면 연료 +4초, 놓치면 소멸	Each run a fuel supply pod circles the orbit (+1 per level) — aim at it for +4s fuel, or it's gone
 블랙홀 빈도	Black Hole Rate
 블랙홀이 열리는 확률 +0.25% (단계마다)	Black hole chance +0.25% (per level)
 흡입 반경	Pull Radius
-블랙홀이 빨아들이는 범위 260에서 +30 (단계마다) — 큰 잔해 · 장갑판도 빨려 든다	Black hole pull range 260, +30 per level — even large wrecks and armor get pulled in
+블랙홀 흡수 범위 260, 단계마다 +30 — 큰 잔해 · 장갑판도 흡수	Black hole pull range 260, +30 per level — even large wrecks and armor get pulled in
 블랙홀 용량	Black Hole Capacity
 블랙홀이 터지기 전까지 삼킬 수 있는 잔해 40개 → 단계마다 +15개	Debris a black hole can swallow before bursting: 40, +15 per level
 흡입 세기	Pull Strength
-빨아들이는 힘 +25% (단계마다) — 멀리 있는 잔해도 빨리 끌려온다	Pull force +25% (per level) — far debris comes in faster
+흡수력 +25% (단계마다) — 먼 잔해도 빠르게 끌려옴	Pull force +25% (per level) — far debris comes in faster
 폭발 반경	Blast Radius
 모든 폭발(블랙홀 · 무기 · 폭탄) 범위 +15% (단계마다)	All explosions (black hole · weapons · bombs) +15% radius (per level)
 폭발 번짐	Blast Spread
 무기 폭발(기뢰 · 분열탄 · 번개 각성 …)이 옆으로 또 터질 확률 +7% · 번지는 한도 +15 (단계마다)	Weapon blasts (mines · cluster · lightning awakening …) +7% chance to set off another · spread limit +15 (per level)
 압축 보너스	Compression Bonus
-블랙홀은 많이 삼킬수록 터질 때 값이 붙는다 — 하나마다 +2%, 단계마다 +1.2% 더	The more a black hole swallows, the more its burst pays — +2% per item, +1.2% more per level
+블랙홀이 많이 삼킬수록 폭발 값 증가 — 하나마다 +2%, 단계마다 +1.2% 추가	The more a black hole swallows, the more its burst pays — +2% per item, +1.2% more per level
 궤도 확장	Wider Orbit
-궤도 폭 +10% (단계마다) — 잔해도 그만큼 는다	Orbit width +10% (per level) — and that much more debris
+궤도 폭 +10% (단계마다) — 잔해도 그만큼 증가	Orbit width +10% (per level) — and that much more debris
 고철 시세	Scrap Market
 부순 것 값 ×1.25 (단계마다 곱한다) — 지구에선 한 칸, 관문을 부술 때마다 한 칸 더	Value of everything ×1.25 (multiplies per level) — one level on Earth, one more per gate broken
 금고 감별	Vault Spotting
@@ -248,7 +248,7 @@
 부착물 감별	Attachment Spotting
 잔해에 돈 주머니 · 기폭 장치 같은 부착물이 붙을 확률 +40% (단계마다)	Chance of attachments like money pouches and detonators +40% (per level)
 의뢰 게시판	Job Board
-출동마다 의뢰 카드 — 해내면 판 수입이 오른다 · 단계마다 보상 +10%	A job card every run — complete it for bonus income · reward +10% per level
+출동마다 의뢰 카드 — 성공 시 판 수입 증가 · 단계마다 보상 +10%	A job card every run — complete it for bonus income · reward +10% per level
 청구서 협상	Bill Negotiation
 청구서 기한 +1판 (단계마다)	Bill due date +1 run (per level)
 제보망	Tip Network
@@ -260,21 +260,21 @@
 중고 거래	Used Parts
 정비고 모든 칸 값 −5%	All Workshop nodes −5% cost
 증권 계좌	Brokerage Account
-궤도 증권이 열린다 — 조종실에서 사고팔고, 출동 중엔 S 로 시세만 본다	Opens the Orbit Exchange — trade in the cockpit, press S during a run to view prices
+궤도 증권 해금 — 조종실에서 거래, 출동 중엔 S로 시세 확인	Opens the Orbit Exchange — trade in the cockpit, press S during a run to view prices
 개미의 기도	Ant's Prayer
-내가 산 종목이 조금씩 더 오르는 쪽으로 움직인다	Stocks you own drift a little more upward
+보유 종목이 조금씩 더 오르는 쪽으로 움직임	Stocks you own drift a little more upward
 내부자 정보	Insider Info
-다음 속보를 미리 안다 — 시간 · 업종 · 제목	Know the next breaking news in advance — time · sector · headline
+다음 속보 미리 확인 — 시간 · 업종 · 제목	Know the next breaking news in advance — time · sector · headline
 행운의 부적	Lucky Charm
-내 종목에 걸릴 나쁜 속보를 피해 간다 (60 · 70 · 80%)	Dodge bad news hitting your stocks (60 · 70 · 80%)
+내 종목에 걸릴 나쁜 속보 회피 (60 · 70 · 80%)	Dodge bad news hitting your stocks (60 · 70 · 80%)
 큰손 계좌	Whale Account
-수수료가 줄고 배당이 붙는다	Lower fees and dividends
+수수료 감소 · 배당 추가	Lower fees and dividends
 달 항로	Moon Route
-달 궤도에 갈 수 있다 — 값 ×3 · 느린 궤도 · 금고 위성이 많다	Unlocks lunar orbit — value ×3 · slow orbit · many vault satellites
+달 궤도 해금 — 값 ×3 · 느린 궤도 · 금고 위성 많음	Unlocks lunar orbit — value ×3 · slow orbit · many vault satellites
 화성 항로	Mars Route
 화성 궤도 — 값 ×9 · 모래 폭풍 · 얼음 껍질 · 큰 잔해	Mars orbit — value ×9 · dust storms · ice shells · large wrecks
 목성 항로	Jupiter Route
-목성 궤도 — 값 ×81 · 중력이 안쪽으로 모은다 · 장갑판	Jupiter orbit — value ×81 · gravity pulls inward · armor plates
+목성 궤도 — 값 ×81 · 안쪽으로 모으는 중력 · 장갑판	Jupiter orbit — value ×81 · gravity pulls inward · armor plates
 토성 항로	Saturn Route
 토성 궤도 — 값 ×243 · 두 겹 고리 · 케이블 망	Saturn orbit — value ×243 · double rings · cable nets
 소행성대 항로	Asteroid Belt Route
@@ -311,27 +311,27 @@
 ✦ 자석 펄스 3단계	✦ Magnet Pulse Tier 3
 ✦ 레일건 3단계	✦ Railgun Tier 3
 무기고	Arsenal
-처음부터 열려 있다 — 여기서 뻗은 무기를 사면 쏠 때 확률로 함께 터진다	Open from the start — weapons bought from here have a chance to fire along with your shots
+처음부터 열림 — 여기서 뻗은 무기를 구매하면 공격 시 확률로 함께 발동	Open from the start — weapons bought from here have a chance to fire along with your shots
 레이저	Laser
-공격 때 12% — 조준점을 0.7초 동안 태운다	12% on attack — burns the aim point for 0.7s
+공격 시 12% — 조준점을 0.7초 동안 태움	12% on attack — burns the aim point for 0.7s
 레이저 강화	Laser Upgrade
-첫 칸: 확률 ×1.5 · 태우는 원 +40% / 둘째 칸: 계속 쬘수록 뜨거워진다 (최대 +80%)	First: chance ×1.5 · burn circle +40% / Second: heats up the longer it burns (up to +80%)
+첫 칸: 확률 ×1.5 · 태우는 원 +40% / 둘째 칸: 오래 쬘수록 더 뜨거움 (최대 +80%)	First: chance ×1.5 · burn circle +40% / Second: heats up the longer it burns (up to +80%)
 레이저 각성	Laser Awakening
-태우는 원 +50% · 장갑판도 녹인다	Burn circle +50% · melts armor plates too
+태우는 원 +50% · 장갑판도 녹임	Burn circle +50% · melts armor plates too
 번개	Lightning
-공격 때 10% — 조준점에서 옆으로 다섯 번 튄다	10% on attack — jumps sideways five times from the aim point
+공격 시 10% — 조준점에서 옆으로 5번 튐	10% on attack — jumps sideways five times from the aim point
 번개 강화	Lightning Upgrade
-첫 칸: 확률 ×1.5 · 두 번 더 튄다 / 둘째 칸: 튈수록 세진다	First: chance ×1.5 · two more jumps / Second: stronger with each jump
+첫 칸: 확률 ×1.5 · 2번 더 튐 / 둘째 칸: 튈수록 강해짐	First: chance ×1.5 · two more jumps / Second: stronger with each jump
 번개 각성	Lightning Awakening
-튄 자리마다 작은 폭발 — 연쇄로 이어진다	A small blast at every jump — carries the chain
+튄 자리마다 작은 폭발 — 연쇄로 이어짐	A small blast at every jump — carries the chain
 부품 거래	Parts Trade
-부품 가게가 열린다 — 청소선 부품 칸 다섯에 사서 끼운다 · 진열은 출동마다 바뀐다	Opens the Parts Shop — buy parts for your sweeper's five slots · stock changes every run
+부품 가게 해금 — 청소선 부품 칸 5개에 구매해서 장착 · 진열은 출동마다 교체	Opens the Parts Shop — buy parts for your sweeper's five slots · stock changes every run
 ◆ 과열 사격	◆ Overheat Fire
 모든 무기 화력 +40% — 대신 연료 −15%	All weapon firepower +40% — but fuel −15%
 ◆ 벌떼	◆ Swarm
 드론 +4대 — 대신 드론이 부순 값 −25%	+4 drones — but drone earnings −25%
 ◆ 쌍둥이 블랙홀	◆ Twin Black Hole
-블랙홀이 터지면 그 자리에 한 번 더 열린다 — 대신 여는 확률 −30%	A burst black hole opens once more on the spot — but opening chance −30%
+블랙홀이 터지면 그 자리에 한 번 더 열림 — 대신 열리는 확률 −30%	A burst black hole opens once more on the spot — but opening chance −30%
 ◆ 큰손	◆ Big Spender
 모든 값 +25% — 대신 청구서 +10%	All value +25% — but bills +10%
 ◆ 궤도 공명	◆ Orbital Resonance
@@ -339,73 +339,73 @@
 ◆ 무기 공명	◆ Weapon Resonance
 모든 무기의 발동 확률 ×1.5	Trigger chance of all weapons ×1.5
 ★ 내부자 거래	★ Insider Trading
-공격이 맞을 때 가끔(0.5%) 내가 산 종목 하나가 +1% — 「누군가 청소선을 보고 샀다」	Sometimes (0.5%) a hit bumps one of your stocks +1% — "someone saw the sweeper and bought"
+공격 적중 시 가끔(0.5%) 보유 종목 하나 +1% — 「누군가 청소선을 보고 샀다」	Sometimes (0.5%) a hit bumps one of your stocks +1% — "someone saw the sweeper and bought"
 ★ 물린 개미의 분노	★ Bagholder's Rage
-내 주식이 손해일수록 화력이 오른다 (손해 % 만큼 · 최대 +50%)	The more your stocks are down, the higher your firepower (by the loss % · up to +50%)
+내 주식 손해가 클수록 화력 증가 (손해 % 만큼 · 최대 +50%)	The more your stocks are down, the higher your firepower (by the loss % · up to +50%)
 ★ 1면 조작	★ Front Page Rigging
-출동이 끝나면 궤도일보 1면을 둘 중에서 고른다 — 고른 기사가 주가를 움직인다	After a run, pick tomorrow's Orbit Daily front page from two — the story moves prices
+출동이 끝나면 궤도일보 1면을 둘 중 선택 — 고른 기사가 주가에 영향	After a run, pick tomorrow's Orbit Daily front page from two — the story moves prices
 ★ 빚쟁이의 근성	★ Debtor's Grit
-빚이 많을수록 화력이 오른다 (최대 +15%)	The more debt, the higher your firepower (up to +15%)
+빚이 많을수록 화력 증가 (최대 +15%)	The more debt, the higher your firepower (up to +15%)
 ★ 운석 호출	★ Meteor Call
-잔해를 80개 부술 때마다 운석이 떨어져 크게 터진다 — 궤도일보 1면 · 연료공사 주가 ↓	Every 80 debris broken, a meteor falls and explodes big — front page news · Fuel Corp stock ↓
+잔해 80개 파괴마다 운석 낙하 · 대폭발 — 궤도일보 1면 · 연료공사 주가 ↓	Every 80 debris broken, a meteor falls and explodes big — front page news · Fuel Corp stock ↓
 ★ 중력 새총	★ Gravity Slingshot
-블랙홀이 터질 때 빨아들인 잔해를 사방으로 쏘아 보낸다	When a black hole bursts, it fires the swallowed debris in all directions
+블랙홀 폭발 시 흡수한 잔해를 사방으로 발사	When a black hole bursts, it fires the swallowed debris in all directions
 ★ 관광 명소	★ Tourist Spot
-한 판에 연쇄 100을 넘기면 관광객이 몰린다 — 토성 고리 관광 주가 ↑	Pass a 100 chain in one run and tourists flock in — Saturn Ring Tours stock ↑
+한 판에 연쇄 100을 넘기면 관광객 몰림 — 토성 고리 관광 주가 ↑	Pass a 100 chain in one run and tourists flock in — Saturn Ring Tours stock ↑
 ★ 떠돌이 소행성	★ Rogue Asteroid
-가끔 소행성이 궤도에 끼어든다 — 부수면 열쇠(40%) 또는 돈 뭉치	Sometimes an asteroid drifts in — break it for a key (40%) or a wad of cash
+가끔 소행성 출현 — 부수면 열쇠(40%) 또는 돈 뭉치	Sometimes an asteroid drifts in — break it for a key (40%) or a wad of cash
 ★ 황금 잔해	★ Golden Debris
-가끔 금빛 잔해가 섞인다 — 값 ×3 · 부수면 공짜 즉석 복권 (한 판 3장까지)	Golden debris sometimes appears — value ×3 · breaking one gives a free scratch ticket (up to 3 per run)
+가끔 금빛 잔해 출현 — 값 ×3 · 부수면 공짜 즉석 복권 (한 판 3장까지)	Golden debris sometimes appears — value ×3 · breaking one gives a free scratch ticket (up to 3 per run)
 ★ 연타 장인	★ Rapid Tapper
-0.3초 안에 다시 누를 때마다 화력 +3% (최대 +30%) · 1초 손을 떼면 식는다	Each re-press within 0.3s adds +3% firepower (up to +30%) · cools off after 1s
+0.3초 안에 다시 누를 때마다 화력 +3% (최대 +30%) · 1초 손을 떼면 초기화	Each re-press within 0.3s adds +3% firepower (up to +30%) · cools off after 1s
 진공 청소기	Vacuum
-공격 때 8% — 조준점에 소용돌이, 0.7초 동안 빨아들인다 · 삼킨 것은 값 +30%	8% on attack — a vortex at the aim point sucks for 0.7s · swallowed debris +30% value
+공격 시 8% — 조준점에 소용돌이, 0.7초 동안 흡수 · 삼킨 잔해 값 +30%	8% on attack — a vortex at the aim point sucks for 0.7s · swallowed debris +30% value
 진공 청소기 강화	Vacuum Upgrade
 첫 칸: 확률 ×1.5 · 소용돌이 +30% / 둘째 칸: 삼킨 것 값 +60%	First: chance ×1.5 · vortex +30% / Second: swallowed value +60%
 진공 청소기 각성	Vacuum Awakening
-가득 차면(25개) 압축 고철탄을 조준점에 쏜다	When full (25), fires a compressed scrap shell at the aim point
+가득 차면(25개) 압축 고철탄을 조준점에 발사	When full (25), fires a compressed scrap shell at the aim point
 기뢰	Mine
-공격 때 8% — 조준 자리에 기뢰를 깐다 · 잔해가 지나가면 쾅 (3개까지)	8% on attack — drops a mine at the aim point · boom when debris passes (up to 3)
+공격 시 8% — 조준점에 기뢰 설치 · 잔해가 지나가면 폭발 (3개까지)	8% on attack — drops a mine at the aim point · boom when debris passes (up to 3)
 기뢰 강화	Mine Upgrade
 첫 칸: 확률 ×1.5 · 기뢰 +2 / 둘째 칸: 폭발 반경 +40%	First: chance ×1.5 · +2 mines / Second: blast radius +40%
 기뢰 각성	Mine Awakening
-기뢰끼리 레이저 울타리로 이어진다	Mines link up with laser fences
+기뢰끼리 레이저 울타리로 연결	Mines link up with laser fences
 냉동 빔	Freeze Beam
-공격 때 8% — 조준점에 서리 원, 0.7초 동안 얼린다 · 언 것은 두 배 · 부서지면 산산조각	8% on attack — a frost circle freezes for 0.7s · frozen takes ×2 · shatters when broken
+공격 시 8% — 조준점에 서리 원, 0.7초 동안 빙결 · 언 잔해 피해 2배 · 부서지면 산산조각	8% on attack — a frost circle freezes for 0.7s · frozen takes ×2 · shatters when broken
 냉동 빔 강화	Freeze Beam Upgrade
-첫 칸: 확률 ×1.5 · 더 오래 언다 / 둘째 칸: 언 것 ×2.5	First: chance ×1.5 · freezes longer / Second: frozen takes ×2.5
+첫 칸: 확률 ×1.5 · 빙결 시간 증가 / 둘째 칸: 언 잔해 ×2.5	First: chance ×1.5 · freezes longer / Second: frozen takes ×2.5
 냉동 빔 각성	Freeze Beam Awakening
-산산조각 파편도 옆을 얼린다 (끝없는 연쇄)	Shatter shards freeze their neighbors too (endless chain)
+산산조각 파편도 옆을 빙결 (끝없는 연쇄)	Shatter shards freeze their neighbors too (endless chain)
 분열탄	Cluster Bomb
-공격 때 6% — 조준점에 떨어져 파편 여섯으로 흩어진다	6% on attack — lands at the aim point and splits into six fragments
+공격 시 6% — 조준점에 떨어져 파편 6개로 분열	6% on attack — lands at the aim point and splits into six fragments
 분열탄 강화	Cluster Bomb Upgrade
-첫 칸: 확률 ×1.5 · 파편 +3 / 둘째 칸: 파편이 가까운 잔해를 노린다	First: chance ×1.5 · +3 fragments / Second: fragments seek nearby debris
+첫 칸: 확률 ×1.5 · 파편 +3 / 둘째 칸: 파편이 가까운 잔해를 추적	First: chance ×1.5 · +3 fragments / Second: fragments seek nearby debris
 분열탄 각성	Cluster Bomb Awakening
-파편이 한 번 더 셋으로 갈라진다	Fragments split into three once more
+파편이 한 번 더 3개로 분열	Fragments split into three once more
 자석 펄스	Magnet Pulse
 공격 때 5% — 주변 잔해를 한 점으로 끌어모은 뒤 쾅	5% on attack — pulls nearby debris into one point, then boom
 자석 펄스 강화	Magnet Pulse Upgrade
-첫 칸: 확률 ×1.5 · 끌림 반경 +40% / 둘째 칸: 모인 만큼 크게 터진다	First: chance ×1.5 · pull radius +40% / Second: bigger blast the more it gathers
+첫 칸: 확률 ×1.5 · 끌림 반경 +40% / 둘째 칸: 모인 만큼 큰 폭발	First: chance ×1.5 · pull radius +40% / Second: bigger blast the more it gathers
 자석 펄스 각성	Magnet Pulse Awakening
-모인 자리에 블랙홀이 열린다	A black hole opens where debris gathered
+모인 자리에 블랙홀 생성	A black hole opens where debris gathered
 레일건	Railgun
-공격 때 4% — 한 줄로 관통, 엄청 세고 장갑도 뚫는다	4% on attack — pierces a whole line, hits very hard and goes through armor
+공격 시 4% — 한 줄 관통, 매우 강하고 장갑도 관통	4% on attack — pierces a whole line, hits very hard and goes through armor
 레일건 강화	Railgun Upgrade
 첫 칸: 확률 ×1.5 / 둘째 칸: 뚫을수록 +15%	First: chance ×1.5 / Second: +15% per target pierced
 레일건 각성	Railgun Awakening
-띠 끝에서 튕겨 한 번 더 쏜다	Bounces off the end and fires once more
+띠 끝에서 튕겨 한 번 더 발사	Bounces off the end and fires once more
 ◆ 교차: 사격 통제	◆ Cross: Fire Control
 모든 무기 치명 +10% · 치명타는 ×4 (청소선 × 무기고)	All weapons crit +10% · crits deal ×4 (Sweeper × Arsenal)
 ◆ 교차: 드론 사수	◆ Cross: Drone Gunner
-드론이 쏠 때도 블랙홀이 열리고 내부자 거래가 터진다 · 드론 피해 ×2 (무기고 × 드론)	Drone shots also open black holes and trigger insider trading · drone damage ×2 (Arsenal × Drones)
+드론 공격으로도 블랙홀 · 내부자 거래 발동 · 드론 피해 ×2 (무기고 × 드론)	Drone shots also open black holes and trigger insider trading · drone damage ×2 (Arsenal × Drones)
 ◆ 교차: 블랙홀 견인	◆ Cross: Black Hole Tow
-블랙홀이 열려 있는 동안 드론이 두 배 빠르다 (드론 × 블랙홀)	Drones are twice as fast while a black hole is open (Drones × Black Hole)
+블랙홀이 열려 있는 동안 드론 속도 2배 (드론 × 블랙홀)	Drones are twice as fast while a black hole is open (Drones × Black Hole)
 ◆ 교차: 파산 보험	◆ Cross: Bankruptcy Insurance
-파산하면 돈의 10% 와 제일 좋은 부품 하나를 다음 대로 가져간다 (블랙홀 × 경영)	On bankruptcy, carry 10% of your cash and your best part to the next company (Black Hole × Business)
+파산 시 돈의 10%와 가장 좋은 부품 하나를 다음 대로 승계 (블랙홀 × 경영)	On bankruptcy, carry 10% of your cash and your best part to the next company (Black Hole × Business)
 ◆ 교차: 행성 투자	◆ Cross: Planet Investing
 지금 궤도 행성의 종목(달 · 화성 · 목성 · 토성)을 들고 있으면 그 판 값 +20% (경영 × 항로)	Holding the current planet's stock (Moon · Mars · Jupiter · Saturn) gives +20% value that run (Business × Routes)
 ◆ 교차: 궤도 폭격	◆ Cross: Orbital Bombardment
-행성이 멀수록 화력이 오른다 (달 +5% · 화성 +10% · 목성 +20% · 토성부터 +35%) (항로 × 청소선)	Farther planets raise firepower (Moon +5% · Mars +10% · Jupiter +20% · Saturn and beyond +35%) (Routes × Sweeper)
+행성이 멀수록 화력 증가 (달 +5% · 화성 +10% · 목성 +20% · 토성부터 +35%) (항로 × 청소선)	Farther planets raise firepower (Moon +5% · Mars +10% · Jupiter +20% · Saturn and beyond +35%) (Routes × Sweeper)
 ✦ 화력 증폭	✦ Firepower Amp
 모든 무기 화력 +10% (단계마다 · 5단계)	All weapon firepower +10% (per level · 5 levels)
 ✦ 드론 증폭	✦ Drone Amp
@@ -417,7 +417,7 @@
 ✦ 궤도 증폭	✦ Orbit Amp
 행성 값 배수 +5% (단계마다 · 5단계)	Planet value multiplier +5% (per level · 5 levels)
 레이저 특화	Laser Mastery
-태우는 점 +20% · 위력 +15% — 3단계: 태운 자리가 가끔 터진다	Burn spot +20% · power +15% — level 3: burned spots sometimes explode
+태우는 점 +20% · 위력 +15% — 3단계: 태운 자리가 가끔 폭발	Burn spot +20% · power +15% — level 3: burned spots sometimes explode
 번개 특화	Lightning Mastery
 튀는 수 +2	+2 jumps
 진공 청소기 특화	Vacuum Mastery
@@ -441,13 +441,13 @@
 잭팟	Jackpot
 즉석 복권 돈 당첨 ×3 · 둘이 같으면 표값 두 배	Scratch ticket cash prizes ×3 · a pair refunds double
 🚀 전탄 발사	🚀 Full Salvo
-출동 중 게이지가 차면 Space · 계기판 단추 — 산 무기가 모두 한꺼번에 쏜다. 단계마다 더 오래 · 더 촘촘히 · 게이지가 빨리 찬다 (무기 둘부터)	During a run, when the gauge fills press Space or the console button — all your weapons fire at once. Each level: longer · denser · faster gauge (needs two weapons)
+출동 중 게이지가 차면 Space · 계기판 단추 — 보유한 무기 전부 동시 발사. 단계마다 더 오래 · 더 촘촘히 · 게이지 충전 빨라짐 (무기 2개부터)	During a run, when the gauge fills press Space or the console button — all your weapons fire at once. Each level: longer · denser · faster gauge (needs two weapons)
 오르트 구름 항로	Oort Cloud Route
-태양계 바깥 얼음 혜성 떼 — 값 ×19683 · 단단하고 느리다	Icy comet swarms beyond the system — value ×19683 · tough and slow
+태양계 바깥 얼음 혜성 떼 — 값 ×19683 · 단단하고 느림	Icy comet swarms beyond the system — value ×19683 · tough and slow
 태양권 계면 항로	Heliopause Route
-태양풍이 부딪히는 경계 — 값 ×59049 · 잔해가 출렁인다	Where the solar wind hits the edge — value ×59049 · debris sways
+태양풍이 부딪히는 경계 — 값 ×59049 · 출렁이는 잔해	Where the solar wind hits the edge — value ×59049 · debris sways
 성간 공간 항로	Interstellar Route
-태양 빛이 닿지 않는 곳 — 값 ×177147 · 드문드문 · 가장 비싸다	Beyond the sunlight — value ×177147 · sparse · the most valuable
+태양 빛이 닿지 않는 곳 — 값 ×177147 · 드문드문 · 가장 비쌈	Beyond the sunlight — value ×177147 · sparse · the most valuable
 집게 빔	Claw Beam
 청소기	Vacuum
 자석	Magnet
@@ -514,39 +514,39 @@
 새 회사 시작 열쇠 +1	Start keys +1 per company
 낡은 청소선	Old Sweeper
 빔	Beam
-처음부터 있는 배. 한 점을 겨누는 빔 — 무엇 하나 튀지 않지만 무엇도 모자라지 않다	The ship you start with. A beam aimed at one point — nothing flashy, nothing lacking
+처음부터 있는 배. 한 점을 겨누는 빔 — 특출난 건 없지만 모자란 것도 없음	The ship you start with. A beam aimed at one point — nothing flashy, nothing lacking
 산탄선	Scatter Ship
 산탄	Scatter
 연쇄	Chain
-넓게 퍼지는 산탄. 가까울수록 세고 멀수록 약하다 — 몰린 잔해를 한 번에 터뜨려 연쇄를 연다	A wide scatter shot. Stronger up close, weaker far away — pops clustered debris at once to start chains
+넓게 퍼지는 산탄. 가까울수록 강하고 멀수록 약함 — 몰린 잔해를 한 번에 터뜨려 연쇄 시작	A wide scatter shot. Stronger up close, weaker far away — pops clustered debris at once to start chains
 작살선	Harpoon Ship
 작살	Harpoon
 꿰뚫기	Pierce
-작살이 조준 방향으로 한 줄을 꿰뚫는다 — 줄 위의 잔해를 모두 맞히고, 뚫을 때마다 약해진다. 줄지어 선 잔해에 강하다	A harpoon pierces a line in the aim direction — hits everything on the line, weakening with each hit. Great against debris in a row
+조준 방향으로 한 줄을 꿰뚫는 작살 — 줄 위 잔해를 모두 타격, 관통할수록 약해짐. 줄지어 선 잔해에 강함	A harpoon pierces a line in the aim direction — hits everything on the line, weakening with each hit. Great against debris in a row
 전격선	Tesla Ship
 전기 구체	Electric Orb
 지지기	Zap
-조준점으로 전기 구체를 던진다 — 날아가며 둘레 잔해에 번개를 튀기고, 닿으면 잠깐 머물다 펑 터진다	Throws an electric orb at the aim point — zaps nearby debris in flight, lingers on arrival, then bursts
+조준점으로 전기 구체 투척 — 날아가며 둘레 잔해에 번개, 도착하면 잠시 머문 뒤 폭발	Throws an electric orb at the aim point — zaps nearby debris in flight, lingers on arrival, then bursts
 미사일선	Missile Ship
 유도 미사일	Homing Missiles
 쫓기	Seek
-누르고 있으면 작은 미사일이 줄줄이 나가 조준점 둘레의 잔해를 스스로 골라 쫓는다 — 빗나가지 않지만 한 발은 작다	Hold to launch a stream of small missiles that pick and chase debris around the aim point — never miss, but each is small
+누르고 있으면 작은 미사일이 연속 발사되어 조준점 둘레 잔해를 스스로 추적 — 빗나가지 않지만 한 발이 약함	Hold to launch a stream of small missiles that pick and chase debris around the aim point — never miss, but each is small
 냉동선	Frost Ship
 서리 포	Frost Cannon
 얼려 깨기	Freeze & Shatter
-조준점에 서리 원이 터진다 — 언 잔해는 무엇에 맞든 두 배로 아프고, 언 채 부서지면 산산조각 나 옆을 친다	A frost circle bursts at the aim point — frozen debris takes double from everything and shatters into its neighbors when broken
+조준점에 서리 원 폭발 — 언 잔해는 모든 피해 2배, 언 채 부서지면 산산조각 나 주변 타격	A frost circle bursts at the aim point — frozen debris takes double from everything and shatters into its neighbors when broken
 분열탄선	Cluster Ship
 분열 포탄	Cluster Shell
 흩뿌리기	Scatter
-포탄이 조준점에 떨어져 터지고 파편 넷으로 흩어진다 — 몰린 곳에 강하다. 떨어지는 사이 잔해가 움직인다	A shell lands at the aim point, bursts and splits into four fragments — strong on clusters. Debris moves while it falls
+포탄이 조준점에 떨어져 폭발 후 파편 4개로 분열 — 몰린 곳에 강함. 낙하 중 잔해가 움직임	A shell lands at the aim point, bursts and splits into four fragments — strong on clusters. Debris moves while it falls
 산탄 위력	Scatter Power
-알 하나 피해 +1 (단계마다) — 가까이 쏠수록 더 세다	Pellet damage +1 (per level) — stronger at close range
+알 하나 피해 +1 (단계마다) — 가까이 쏠수록 강함	Pellet damage +1 (per level) — stronger at close range
 산탄 퍼짐	Scatter Spread
 퍼지는 원 반지름 +6 (단계마다) — 처음부터 38	Spread circle radius +6 (per level) — starts at 38
 산탄 증폭	Scatter Boost
 산탄 화력 +8% (단계마다)	Scatter firepower +8% (per level)
 작살 위력	Harpoon Power
-작살 피해 +1 (단계마다) — 뚫을 때마다 20%씩 약해진다	Harpoon damage +1 (per level) — weakens 20% per pierce
+작살 피해 +1 (단계마다) — 관통할 때마다 20%씩 약해짐	Harpoon damage +1 (per level) — weakens 20% per pierce
 작살 관통	Harpoon Pierce
 한 번에 꿰뚫는 수 +1 · 30 더 멀리 (단계마다) — 처음 3개	Pierces +1 target · reaches 30 farther (per level) — starts at 3
 작살 증폭	Harpoon Boost
@@ -558,7 +558,7 @@
 미사일 증폭	Missile Boost
 미사일 화력 +8% (단계마다)	Missile firepower +8% (per level)
 서리 위력	Frost Power
-서리 피해 +1 (단계마다) — 언 잔해는 두 배로 아프다	Frost damage +1 (per level) — frozen debris takes double
+서리 피해 +1 (단계마다) — 언 잔해 피해 2배	Frost damage +1 (per level) — frozen debris takes double
 서리 원	Frost Circle
 서리 원 반지름 +6 (단계마다) — 처음 44	Frost circle radius +6 (per level) — starts at 44
 냉기 증폭	Cold Boost
@@ -668,10 +668,10 @@
 공짜 즉석 복권 +3장	+3 free scratch tickets
 다음 판 화력 +20%	Next run firepower +20%
 다음 판 모든 값 +15%	Next run all value +15%
-다음 출동 한 판만 연료가 10초 늘어난다. 끝나면 사라진다	Adds 10 seconds of fuel for the next run only. Gone after that
-공짜 즉석 복권 세 장을 받는다. 조종실 복권기에서 긁는다 — 표값이 안 든다	Get three free scratch tickets. Scratch them at the cockpit lottery machine — no ticket cost
-다음 출동 한 판 동안 모든 무기 화력이 20% 세진다	All weapons deal 20% more for the next run only
-다음 출동 한 판 동안 부순 것 값이 전부 15% 더 붙는다	Everything you break is worth 15% more for the next run only
+다음 출동 한 판만 연료 +10초. 이후 사라짐	Adds 10 seconds of fuel for the next run only. Gone after that
+공짜 즉석 복권 3장. 조종실 복권기에서 긁기 — 표값 없음	Get three free scratch tickets. Scratch them at the cockpit lottery machine — no ticket cost
+다음 출동 한 판 동안 모든 무기 화력 +20%	All weapons deal 20% more for the next run only
+다음 출동 한 판 동안 부순 잔해 값 +15%	Everything you break is worth 15% more for the next run only
  납부 완료 — 	 paid — 
  · 열쇠 +1	 · key +1
 궤도 청소부 (	Orbit Sweeper (#
@@ -784,10 +784,10 @@
 떠돌이 소행성이 궤도에 끼어들었다!	A rogue asteroid drifted into orbit!
 지구 보급 — 폭탄	Earth supply — bomb
 지구 보급 — 연료	Earth supply — fuel
-보급을 놓쳤다	Missed the supply
+보급 놓침	Missed the supply
 블랙홀!	Black hole!
 연료 +4초	Fuel +4s
-추심선이 압류 딱지를 붙이고 간다 — 부수면 빚이 준다	A collector ship leaves seizure tags — break them to reduce your bill
+추심선의 압류 딱지 — 부수면 빚 감소	A collector ship leaves seizure tags — break them to reduce your bill
 중력 폭탄 하나에 잔해 	One gravity bomb, 
 개 — 제조사 「그렇게 쓰라고 만든 게 아닌데」	 debris — maker: "that's not what we built it for"
 민간 청소선이 중력 폭탄 하나로 잔해 	A civilian sweeper gathered 
@@ -827,17 +827,17 @@
 결정 공명	Crystal Resonance
 돌풍	Gust
 혜성 통과	Comet Pass
-줄지어 도는 위성 — 하나를 부수면 줄 전체가 차례로 터진다	Satellites in a line — break one and the whole line pops in turn
-느린 큰 금고 — 값 ×3, 부서지며 둘레 조각까지 부순다	Slow big vault — value ×3, breaks nearby scrap as it shatters
-폭풍 동안만 나타나는 탐사차 — 값 ×5, 폭풍이 끝나면 묻힌다	A rover that appears only during storms — value ×5, buried when the storm ends
-큰 광맥 소행성 — 맞을 때마다 광석을 흘린다	Big ore asteroid — drops ore every time it's hit
-붉은 소용돌이 — 안의 잔해 값 ×2, 대신 천천히 빨려 든다	Red vortex — debris inside ×2 value, but slowly sucked in
-고리 얼음 덩이 — 부수면 둘레를 얼린다(한 방에 깨짐)	Ring ice chunk — freezes its surroundings when broken (breaks in one hit)
-결정 공명 — 결정 하나를 부수면 같은 결정이 모두 깨진다	Crystal resonance — break one crystal and all matching crystals shatter
-돌풍 — 가끔 잔해가 한쪽으로 쏠린다	Gust — debris sometimes drifts to one side
+줄지어 도는 위성 — 하나를 부수면 줄 전체가 차례로 폭발	Satellites in a line — break one and the whole line pops in turn
+느린 큰 금고 — 값 ×3, 부서지면 둘레 조각까지 파괴	Slow big vault — value ×3, breaks nearby scrap as it shatters
+폭풍 동안만 나타나는 탐사차 — 값 ×5, 폭풍이 끝나면 묻힘	A rover that appears only during storms — value ×5, buried when the storm ends
+큰 광맥 소행성 — 맞을 때마다 광석을 흘림	Big ore asteroid — drops ore every time it's hit
+붉은 소용돌이 — 안의 잔해 값 ×2, 대신 천천히 빨려 듦	Red vortex — debris inside ×2 value, but slowly sucked in
+고리 얼음 덩이 — 부수면 둘레 빙결 (한 번에 깨짐)	Ring ice chunk — freezes its surroundings when broken (breaks in one hit)
+결정 공명 — 결정 하나를 부수면 같은 결정 전부 파괴	Crystal resonance — break one crystal and all matching crystals shatter
+돌풍 — 가끔 잔해가 한쪽으로 쏠림	Gust — debris sometimes drifts to one side
 혜성 통과 — 꼬리에 닿은 잔해가 부서지고, 머리를 맞히면 열쇠	Comet pass — debris touching the tail breaks; hit the head for a key
-탐사차가 모래에 묻혔다	The rover was buried in sand
-★ 돌풍 — 잔해가 한쪽으로 쏠린다	★ Gust — debris drifts to one side
+탐사차가 모래에 묻힘	The rover was buried in sand
+★ 돌풍 — 잔해가 한쪽으로 쏠림	★ Gust — debris drifts to one side
 결정 공명 ×	Crystal resonance ×
 혜성에서 열쇠 +1!	Key +1 from the comet!
 혜성 조각 +	Comet fragment +
@@ -875,7 +875,7 @@
 <size=11><color=#8a93a3>연쇄</color></size>	<size=11><color=#8a93a3>Chain</color></size>
 <size=10><color=#8a93a3>최고 	<size=10><color=#8a93a3>Best 
 케슬러!	Kessler!
-<size=18><color=#ffb080><b>모래 폭풍</b></color></size>  <size=13><color=#ffd0b0>값 ×1.5 · 잔해가 몰려온다</color></size>	<size=18><color=#ffb080><b>Dust Storm</b></color></size>  <size=13><color=#ffd0b0>Value ×1.5 · debris rushes in</color></size>
+<size=18><color=#ffb080><b>모래 폭풍</b></color></size>  <size=13><color=#ffd0b0>값 ×1.5 · 잔해가 몰려옴</color></size>	<size=18><color=#ffb080><b>Dust Storm</b></color></size>  <size=13><color=#ffd0b0>Value ×1.5 · debris rushes in</color></size>
 청산 출동	Clearance Run
  궤도	 Orbit
 출동 	Run 
@@ -892,7 +892,7 @@
  <color=#ee7766>빚 상환 	 <color=#ee7766>Debt cut 
 </color> <color=#9fdcff>· 방어막</color></size>	</color> <color=#9fdcff>· Shield</color></size>
 <size=10><color=#9fdcff>청구서 	<size=10><color=#9fdcff>Unlocks after bill 
-장을 갚으면 풀린다</color></size>	 is paid</color></size>
+장 납부 시 해제</color></size>	 is paid</color></size>
 <size=10><color=#5fa37d>이번 판</color></size>	<size=10><color=#5fa37d>This Run</color></size>
 블랙홀 <color=#b69cff>자동 	Black hole <color=#b69cff>auto 
   <color=#b69cff>● 열림</color>	  <color=#b69cff>● Open</color>
@@ -901,17 +901,17 @@
 ><color=#ffdf95><b>의뢰</b></color>  	><color=#ffdf95><b>Job</b></color>  
 <color=#6fcf97><b>성공! 판 수입 +	<color=#6fcf97><b>Done! Run income +
 <color=#8a93a3>성공하면 +	<color=#8a93a3>If done +
-왼쪽 단추를 누르고 있는 동안 청소선이 쏜다 — 잔해 위를 겨누자	Your sweeper fires while you hold the left button — aim at the debris
-궤도 위에 커서를 대면 청소선이 빔을 쏜다 — 처음엔 한 점씩	Point the cursor at the orbit and the sweeper fires its beam — one point at a time at first
-블랙홀이 열렸다 — 쏠 때 가끔 저절로 열려 빨아들인다	A black hole opened — it sometimes opens on its own when you fire and pulls debris in
-드론은 알아서 줍는다 — 한 방에 부서지는 것만	Drones pick things up on their own — only what breaks in one hit
+왼쪽 단추를 누르고 있으면 청소선이 발사 — 잔해 위를 조준	Your sweeper fires while you hold the left button — aim at the debris
+궤도 위에 커서를 대면 청소선이 빔 발사 — 처음엔 한 점씩	Point the cursor at the orbit and the sweeper fires its beam — one point at a time at first
+블랙홀 해금 — 공격 시 가끔 자동으로 열려 잔해 흡수	A black hole opened — it sometimes opens on its own when you fire and pulls debris in
+드론 자동 수집 — 한 번에 부서지는 잔해만	Drones auto-collect — only debris that breaks in one hit
 시험 속도 ×3	Test speed ×3
 로	 
 으로	 
 를	 
 을	 
 조준점 하나 → 넓은 착탄 → 한 번에 여럿	One aim point → wide impact → many at once
-알아서 줍는다 — 한 방에 부서지는 것만	Pick things up on their own — only what breaks in one hit
+자동 수집 — 한 번에 부서지는 잔해만	Auto-collect — only debris that breaks in one hit
 블랙홀 스킬 · 지구에서 연료 보급	Black hole skill · fuel supply from Earth
 돈 · 청구서 · 대출 · 기사	Cash · bills · loans · news
 연료 바닥!	Out of fuel!
@@ -929,9 +929,9 @@
 <color=#6fcf97>성공 +	<color=#6fcf97>Done +
 <color=#ee7766>실패 	<color=#ee7766>Failed 
 <color=#ee7766>빚 상환으로 떼인 것 -	<color=#ee7766>Taken for debt -
-<color=#ff9b8f>대출 한도로도 못 갚는다</color>	<color=#ff9b8f>Can't pay even with the loan limit</color>
+<color=#ff9b8f>대출 한도로도 납부 불가</color>	<color=#ff9b8f>Can't pay even with the loan limit</color>
 <size=13>파산하면 빚이 사라지고 <color=#ffdf95>신용 +	<size=13>Going bankrupt clears the debt and gives <color=#ffdf95>credit +
-<size=13>격납고에서 신용으로 새 배 · 영구 강화를 산다</size>	<size=13>Spend credit in the Hangar on new ships · permanent upgrades</size>
+<size=13>격납고에서 신용으로 새 배 · 영구 강화 구매</size>	<size=13>Spend credit in the Hangar on new ships · permanent upgrades</size>
 <color=#ffb3a8>정말? 한 번 더 누르면 파산</color>	<color=#ffb3a8>Really? Press again to go bankrupt</color>
 <color=#ffb3a8>파산하고 새 회사로 ▸</color>	<color=#ffb3a8>Go bankrupt, start a new company ▸</color>
 다음 청구서	Next Bill
@@ -956,7 +956,7 @@
 <color=#f2c14e>정비 	<color=#f2c14e>Workshop 
 칸</color>	 nodes</color>
 정비고로	To Workshop
-<color=#f2c14e>살 칸 	<color=#f2c14e>Buyable 
+<color=#f2c14e>구매 가능 	<color=#f2c14e>Buyable 
 증권 하러 가기	Go trade stocks
 <color=#5f6878>잠김</color>	<color=#5f6878>Locked</color>
 납부일	Due Day
@@ -968,7 +968,7 @@ Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 	Space = launch
 <size=16><b>궤도 로또 	<size=16><b>Orbit Lotto draw 
 회 당첨 번호  	 winning numbers  
 개 맞음 · +	 matched · +
-<color=#ee7766>꽝 — 하나도 못 맞혔다</color>	<color=#ee7766>No luck — not a single match</color>
+<color=#ee7766>꽝 — 맞힌 번호 없음</color>	<color=#ee7766>No luck — not a single match</color>
 <size=18><b><color=#f3c8ff>즉석 복권</color></b></size>	<size=18><b><color=#f3c8ff>Scratch Ticket</color></b></size>
 <size=13><color=#8a9bb3>돈</color> 	<size=13><color=#8a9bb3>Cash</color> 
 닫기	Close
@@ -982,12 +982,12 @@ Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 	Space = launch
 <size=18><color=#5a2050>한 장 사서 긁어 보세요</color></size>	<size=18><color=#5a2050>Buy a ticket and scratch it</color></size>
 <size=13><color=#7a5a86>긁기</color></size>	<size=13><color=#7a5a86>Scratch</color></size>
 화력 +30%	Firepower +30%
-<size=10><color=#8a7a96>× = 판 벌이 · 부품은 가게 진열에서 하나 공짜로 끼운다 · 황금은 부품도 하나</color></size>	<size=10><color=#8a7a96>× = run income · Part = one free item from the shop · Gold also gives a part</color></size>
-한 장 사기	Buy a ticket
+<size=10><color=#8a7a96>× = 판 벌이 · 부품은 가게 진열에서 하나 무료 장착 · 황금은 부품도 하나</color></size>	<size=10><color=#8a7a96>× = run income · Part = one free item from the shop · Gold also gives a part</color></size>
+복권 1장 구매	Buy a ticket
 한 장 더	One more
 공짜	Free
-오늘 표는 다 썼다 — 출동하면 다시	No tickets left today — launch to get more
-돈이 모자라다	Not enough cash
+오늘 표 소진 — 출동하면 다시 충전	No tickets left today — launch to get more
+돈 부족	Not enough cash
 <size=13><color=#b89ac6>누른 채 문질러 긁기</color></size>	<size=13><color=#b89ac6>Hold and rub to scratch</color></size>
 <size=14>한 번에 다 긁기</size>	<size=14>Scratch it all</size>
 <size=22><color=#8a93a3>꽝</color></size>	<size=22><color=#8a93a3>No luck</color></size>
@@ -995,7 +995,7 @@ Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 	Space = launch
 회</b> · <color=#ffdf95>출동 다녀오면 바로 추첨</color></size>	</b> · <color=#ffdf95>drawn right after your next run</color></size>
 <size=11><color=#8a9bb3>1~12 중 셋 · 한 장 	<size=11><color=#8a9bb3>Pick 3 of 1–12 · ticket 
  · 한 회 3장까지 · 셋 다 ×60 · 둘 ×2 · 하나 ×0.3</color></size>	 · up to 3 per draw · all three ×60 · two ×2 · one ×0.3</color></size>
-<size=14>이 번호로 사기</size>	<size=14>Buy these numbers</size>
+<size=14>이 번호로 구매</size>	<size=14>Buy these numbers</size>
 이번 회는 3장까지	Up to 3 tickets per draw
 번호 셋을 고르세요	Pick three numbers
 <size=12>자동 고르기</size>	<size=12>Quick pick</size>
@@ -1003,7 +1003,7 @@ Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 	Space = launch
 <size=12><color=#5f4f66>빈 칸</color></size>	<size=12><color=#5f4f66>Empty</color></size>
 <size=13>지난 	<size=13>Last draw # 
 회 당첨 번호  <b><color=#f3c8ff>	 winning numbers  <b><color=#f3c8ff>
-<color=#8a9bb3>그 회엔 표가 없었다</color>	<color=#8a9bb3>No tickets that draw</color>
+<color=#8a9bb3>그 회차엔 표 없음</color>	<color=#8a9bb3>No tickets that draw</color>
 <color=#ee7766>꽝</color>	<color=#ee7766>No luck</color>
 대출 계약서	Loan Agreement
 채권자 케슬러 금융 · 채무자 주식회사 궤도 청소부 (	Creditor Kessler Finance · Debtor Orbit Sweeper Inc. (#
@@ -1015,29 +1015,29 @@ Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 	Space = launch
 배)	×)
 판 수입의 	 
 %가 자동으로	% of run income, automatically
-청구서를 바로 갚는다	Pays the bill right away
-돈으로 들어온다	Goes to your cash
+청구서 즉시 납부	Pays the bill right away
+돈으로 입금	Goes to your cash
 서명	Signature
 <color=#8a7f6a>여기를 마우스로 그어 서명하세요</color>	<color=#8a7f6a>Drag the mouse here to sign</color>
 <size=26><b><color=#c42420>승인</color></b></size>	<size=26><b><color=#c42420>APPROVED</color></b></size>
 <size=10><color=#c42420>케슬러 금융</color></size>	<size=10><color=#c42420>Kessler Finance</color></size>
 취소	Cancel
-<size=11><color=#8a7f6a>서명하면 도장이 찍히고 돈이 들어온다</color></size>	<size=11><color=#8a7f6a>Sign to get stamped and receive the cash</color></size>
+<size=11><color=#8a7f6a>서명하면 도장과 함께 입금</color></size>	<size=11><color=#8a7f6a>Sign to get stamped and receive the cash</color></size>
 <color=#ffdf95>케슬러 금융 — 대출 창구</color>	<color=#ffdf95>Kessler Finance — Loan Desk</color>
 <size=12>받은 돈의 	<size=12>Repay 
-배를 갚는다 · 빚이 있으면 판 수입의 	× what you borrow · while in debt, 
-%가 자동으로 빠져나간다</size>	% of run income is taken automatically</size>
+배 상환 · 빚이 있으면 판 수입의 	× what you borrow · while in debt, 
+% 자동 차감</size>	% of run income is taken automatically</size>
 지금 빚	Current debt
 가진 돈	Cash on hand
 <size=12>대출 +	<size=12>Borrow +
 <size=12>한도까지 +	<size=12>Max +
 <size=12>빚 갚기 −	<size=12>Repay −
 <size=12>갚을 빚 없음</size>	<size=12>No debt to repay</size>
-<size=11><color=#ff9b8f>마지막 할부(완납)엔 대출이 안 된다 — 제힘으로 갚거나, 못 갚으면 파산</color></size>	<size=11><color=#ff9b8f>No loans for the final installment — pay it yourself, or go bankrupt</color></size>
+<size=11><color=#ff9b8f>마지막 할부(완납)엔 대출 불가 — 직접 갚거나, 못 갚으면 파산</color></size>	<size=11><color=#ff9b8f>No loans for the final installment — pay it yourself, or go bankrupt</color></size>
 <size=11>받으면 빚 +	<size=11>Borrowing adds debt +
  · 한도 = 지금 청구서 − 남은 원금</size>	 · limit = current bill − remaining principal</size>
 내역	History
-<size=12>아직 없다</size>	<size=12>Nothing yet</size>
+<size=12>아직 없음</size>	<size=12>Nothing yet</size>
 <color=#ffdf95>대출 +	<color=#ffdf95>Loan +
 </color>  → 빚 +	</color>  → debt +
 <color=#6fcf97>판 수입에서 상환 −	<color=#6fcf97>Repaid from run income −
@@ -1054,8 +1054,8 @@ Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 	Space = launch
 <size=11><color=#8a9bb3>돈 	<size=11><color=#8a9bb3>Cash 
  · 수수료 	 · fee 
 전부	All
-<size=12><color=#8a9bb3>출동 중엔 시세만 본다 — 사고팔기는 조종실 증권에서</color></size>	<size=12><color=#8a9bb3>During a run you can only watch prices — trade at the Exchange in the cockpit</color></size>
-<size=12><color=#9ff0bf>사기 	<size=12><color=#9ff0bf>Buy 
+<size=12><color=#8a9bb3>출동 중엔 시세 확인만 — 거래는 조종실 증권에서</color></size>	<size=12><color=#8a9bb3>During a run you can only watch prices — trade at the Exchange in the cockpit</color></size>
+<size=12><color=#9ff0bf>매수 	<size=12><color=#9ff0bf>Buy 
 <size=12><color=#ffb3a8>절반 팔기</color></size>	<size=12><color=#ffb3a8>Sell half</color></size>
 <size=12><color=#ffb3a8>전부 팔기</color></size>	<size=12><color=#ffb3a8>Sell all</color></size>
 다음 출동 중 속보	News during next run
@@ -1065,17 +1065,17 @@ Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 	Space = launch
 <size=11><color=#e8c77e>내부자</color> 	<size=11><color=#e8c77e>Insider</color> 
 <size=15><b>속보</b></size>	<size=15><b>Breaking</b></size>
 <size=9><color=#8a7fb0>공격 	<size=9><color=#8a7fb0>Attack 
-달 — 궤도가 느리다 · 금고 위성이 많으니 노려 보자	Moon — slow orbit · lots of vault satellites, go for them
-화성 — 판 중간에 모래 폭풍이 온다 · 얼음 껍질은 먼저 깨 두자	Mars — a dust storm hits mid-run · crack the ice shells first
-목성 — 중력이 잔해를 안쪽으로 모은다 · 안쪽 가장자리에 블랙홀을	Jupiter — gravity pulls debris inward · open black holes on the inner edge
-토성 — 고리가 두 겹 · 가운데 틈은 비어 있다	Saturn — double rings · the gap in the middle is empty
-소행성대 — 단단한 암석과 광석이 많다	Asteroid Belt — lots of hard rock and ore
+달 — 느린 궤도 · 금고 위성이 많아 노려 볼 만함	Moon — slow orbit · lots of vault satellites, go for them
+화성 — 판 중간에 모래 폭풍 · 얼음 껍질은 먼저 깨 둘 것	Mars — a dust storm hits mid-run · crack the ice shells first
+목성 — 잔해를 안쪽으로 모으는 중력 · 블랙홀은 안쪽 가장자리에	Jupiter — gravity pulls debris inward · open black holes on the inner edge
+토성 — 고리가 두 겹 · 가운데 틈은 비어 있음	Saturn — double rings · the gap in the middle is empty
+소행성대 — 단단한 암석과 광석 많음	Asteroid Belt — lots of hard rock and ore
 천왕성 — 옆으로 누운 궤도 · 얼음 결정	Uranus — sideways orbit · ice crystals
-해왕성 — 초속 폭풍이 잔해를 흩는다	Neptune — supersonic storms scatter debris
+해왕성 — 초속 폭풍이 잔해를 흩뜨림	Neptune — supersonic storms scatter debris
 카이퍼 벨트 — 태양계 끝 · 고대 탐사선과 혜성	Kuiper Belt — edge of the system · ancient probes and comets
-오르트 구름 — 얼음 혜성 떼가 단단하다 · 혜성 머리를 맞히면 열쇠	Oort Cloud — icy comet swarms are tough · hit a comet head for a key
-태양권 계면 — 태양풍이 불면 잔해가 한쪽으로 쏠린다 · 폭풍 땐 값 ×1.5	Heliopause — solar wind pushes debris to one side · value ×1.5 during storms
-성간 공간 — 드문드문하지만 하나하나가 비싸다 · 결정 하나를 깨면 같은 결정이 모두	Interstellar Space — sparse, but each piece is worth a lot · break one crystal and all matching ones break
+오르트 구름 — 단단한 얼음 혜성 떼 · 혜성 머리를 맞히면 열쇠	Oort Cloud — icy comet swarms are tough · hit a comet head for a key
+태양권 계면 — 태양풍이 불면 잔해가 한쪽으로 쏠림 · 폭풍 땐 값 ×1.5	Heliopause — solar wind pushes debris to one side · value ×1.5 during storms
+성간 공간 — 드문드문하지만 하나하나가 비쌈 · 결정 하나를 깨면 같은 결정 전부	Interstellar Space — sparse, but each piece is worth a lot · break one crystal and all matching ones break
 청구서 · 	Bill · 
   <color=#ff8a7a>오늘 납부일</color>	  <color=#ff8a7a>Due today</color>
   <color=#ffb3a8>빚 	  <color=#ffb3a8>Debt 
@@ -1083,7 +1083,7 @@ Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 	Space = launch
   <color=#6fcf97>▶ 대출 	  <color=#6fcf97>▶ loan 
 궤도일보	Orbit Daily
 <size=10><b>장착 중</b></size>	<size=10><b>Equipped</b></size>
-전탄 발사가 생겼다 — 출동 중 게이지가 차면 Space · 계기판 가운데 단추 (무기 둘부터)	Full Salvo unlocked — when the gauge fills during a run, press Space or the center console button (needs two weapons)
+전탄 발사 해금 — 출동 중 게이지가 차면 Space · 계기판 가운데 단추 (무기 2개부터)	Full Salvo unlocked — when the gauge fills during a run, press Space or the center console button (needs two weapons)
 핵심 해금!	Key unlock!
 해금!	Unlocked!
  먼저	 first
@@ -1092,36 +1092,36 @@ Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 	Space = launch
 <size=10><b><color=#ffdf95>추천</color></b></size>	<size=10><b><color=#ffdf95>Suggested</color></b></size>
 </color> 한 줄 	</color> up to 
 칸까지 · <color=#ffb36b>🛰 청구서 	 per line · <color=#ffb36b>🛰 pay bill 
-장을 갚으면 	 and the 
- 방어막이 풀린다</color></size>	 shield drops</color></size>
+장 납부 시 	 and the 
+ 방어막 해제</color></size>	 shield drops</color></size>
 칸까지 · <color=#ffb36b>🛰 	 per line · <color=#ffb36b>🛰 
 %</color> <color=#8a93a3>부수면 	%</color> <color=#8a93a3>break it for 
 </color> <color=#8a93a3>— 마지막 항로 · 한도 없음</color></size>	</color> <color=#8a93a3>— final route · no limit</color></size>
 <size=11><b><color=#ff9b8f>먼저 이 칸</color></b></size>	<size=11><b><color=#ff9b8f>Buy this first</color></b></size>
-<size=11>칸에 마우스를 올리면 무엇인지 보인다 · 빛나는 칸을 누르면 산다 · 휠 = 확대 · 끌기 = 이동</size>	<size=11>Hover a node to see what it is · click a glowing node to buy · wheel = zoom · drag = move</size>
+<size=11>칸에 마우스를 올리면 설명 표시 · 빛나는 칸을 누르면 구매 · 휠 = 확대 · 끌기 = 이동</size>	<size=11>Hover a node to see what it is · click a glowing node to buy · wheel = zoom · drag = move</size>
 <color=#d9b98a>청소선</color>	<color=#d9b98a>Sweeper</color>
-여기서 다섯 갈래로 뻗는다	Branches out five ways from here
-」 사면 무엇인지 보인다	」 to reveal
-앞 칸을 사면 무엇인지 보인다	Buy the previous node to reveal
+여기서 다섯 갈래로 뻗어 나감	Branches out five ways from here
+」 구매 시 공개	」 to reveal
+앞 칸 구매 시 공개	Buy the previous node to reveal
 <color=#8a93a3>지금</color>  <color=#ffdf95>	<color=#8a93a3>Now</color>  <color=#ffdf95>
-번 삼 · 계속 살 수 있다</color>	 bought · can keep buying</color>
-<color=#6fcf97>샀다</color>	<color=#6fcf97>Owned</color>
+번 구매 · 반복 구매 가능</color>	 bought · repeatable</color>
+<color=#6fcf97>보유 중</color>	<color=#6fcf97>Owned</color>
 장을 갚으면 나타나는 	 is paid, revealing the 
- 관문을 부수면 열린다	 gate — break it to unlock
+ 관문을 부수면 해금	 gate — break it to unlock
 앞 항로부터	Previous route first
 <color=#ffb36b>행성 한도 — 	<color=#ffb36b>Planet limit — break 
  부수면 한 칸 더</color>	 for one more node</color>
- 항로를 열면 열린다</color>	 route to unlock</color>
+ 항로를 열면 해금</color>	 route to unlock</color>
 <color=#ff9b8f>목성 항로를 열면 — 외행성 면허</color>	<color=#ff9b8f>Opens with the Jupiter Route — outer planet license</color>
 <color=#ff9b8f>청구서 	<color=#ff9b8f>Pay bill 
-을 갚으면 열린다</color>	 to unlock</color>
-」 먼저 사야 열린다	」 first to unlock
-앞 칸을 먼저 사야 한다	Buy the previous node first
+을 갚으면 해금</color>	 to unlock</color>
+」 먼저 구매 필요	」 first to unlock
+앞 칸 먼저 구매 필요	Buy the previous node first
 </color>  <color=#ff9b8f>+ 열쇠 1 (없음)</color>	</color>  <color=#ff9b8f>+ 1 key (none)</color>
   <color=#d8ccff>+ 열쇠 1</color>	  <color=#d8ccff>+ 1 key</color>
 열쇠 0 — 청구서를 갚거나 파산하면 +1	0 keys — +1 from paying a bill or going bankrupt
 가진 열쇠 	Keys 
- · ◆ 핵심 칸은 파산해도 남는다	 · ◆ key nodes survive bankruptcy
+ · ◆ 핵심 칸은 파산해도 유지	 · ◆ key nodes survive bankruptcy
 <color=#ffffff>속보</color>	<color=#ffffff>Breaking</color>
 궤도일보 · 	Orbit Daily · 
 궤도일보 — 기사 목록	Orbit Daily — Archive
@@ -1131,7 +1131,7 @@ Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 	Space = launch
 <color=#f2c14e>우리</color>	<color=#f2c14e>Us</color>
 모은 기사 	Articles 
  · 특종 	 · scoops 
- / 6 · 파산해도 남는다	 / 6 · kept after bankruptcy
+ / 6 · 파산해도 유지	 / 6 · kept after bankruptcy
 일째 · 	 · day 
 대 시절	 era
 특종	Scoop
@@ -1266,7 +1266,7 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 기록 닫기	Close log
 건너뛰기 ▸▸	Skip ▸▸
 <size=12><color=#8a93a3>기록 — 이 장면에서 지나간 대사 · 누르면 닫힘</color></size>	<size=12><color=#8a93a3>Log — lines from this scene · click to close</color></size>
-<size=12><color=#5a6475>이번 판엔 피해를 못 넣었다</color></size>	<size=12><color=#5a6475>No damage dealt this run</color></size>
+<size=12><color=#5a6475>이번 판 피해 없음</color></size>	<size=12><color=#5a6475>No damage dealt this run</color></size>
 기타	Other
 <size=11><color=#8a93a3>총 피해</color></size>	<size=11><color=#8a93a3>Total damage</color></size>
 >격납고</color></b></size>   <size=13>	>Hangar</color></b></size>   <size=13>
@@ -1282,23 +1282,23 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 <color=#6fe3a0>타는 중</color>	<color=#6fe3a0>Active</color>
 <color=#8d99b8>보유</color>	<color=#8d99b8>Owned</color>
 <color=#ffdf95>신용 	<color=#ffdf95>Credit 
-<size=11><color=#5a6475>배는 차례로 더 들어온다</color></size>	<size=11><color=#5a6475>More ships arrive over time</color></size>
+<size=11><color=#5a6475>새 배는 차례로 입고</color></size>	<size=11><color=#5a6475>More ships arrive over time</color></size>
 <size=10><color=#5a6475>조종실 미리보기</color></size>	<size=10><color=#5a6475>Cockpit preview</color></size>
 <size=12><color=#e7ecf8>기본 무기 · 	<size=12><color=#e7ecf8>Main weapon · 
-한 방	Hit
+피해	Damage
 넓이	Area
 지금 타는 배	Currently flying
-보유 — 아래 [출발]로 이 배를 탄다	Owned — press [Launch] below to fly this ship
-<size=15>들여오기 · 신용 	<size=15>Acquire · credit 
+보유 중 — 아래 [출발]로 이 배 탑승	Owned — press [Launch] below to fly this ship
+<size=15>구매 · 신용 	<size=15>Buy · credit 
 <size=13><color=#5a6475>신용 	<size=13><color=#5a6475>Needs credit 
  필요 (지금 	 (you have 
 <size=10><color=#5a6475>트리의 빔 칸 셋은 배의 무기에 맞게 바뀐다.\n무기고의 보조 무기는 어느 배든 그대로.	<size=10><color=#5a6475>The tree's three beam nodes change to fit the ship's weapon.\nArsenal side weapons stay the same on any ship.
-\n<color=#8fd8ff>무기고 냉동 빔 줄(강화 · 각성 · 특화 · 3단계)이 이 배의 서리 포도 세게 한다.</color>	\n<color=#8fd8ff>The Arsenal freeze beam line (upgrade · awakening · mastery · tier 3) also powers this ship's frost cannon.</color>
-\n<color=#ffa040>무기고 분열탄 줄(강화 · 각성 · 특화 · 3단계)이 이 배의 포탄도 세게 한다.</color>	\n<color=#ffa040>The Arsenal cluster bomb line (upgrade · awakening · mastery · tier 3) also powers this ship's shells.</color>
-<size=11><color=#8d99b8>회사가 바뀌어도 남는다 · 단계마다 값이 오른다 · 언제든 전부 되돌려 받아 다시 짤 수 있다</color></size>	<size=11><color=#8d99b8>Kept across companies · price rises per level · refund everything anytime to rebuild</color></size>
+\n<color=#8fd8ff>무기고 냉동 빔 줄(강화 · 각성 · 특화 · 3단계)이 이 배의 서리 포도 강화.</color>	\n<color=#8fd8ff>The Arsenal freeze beam line (upgrade · awakening · mastery · tier 3) also powers this ship's frost cannon.</color>
+\n<color=#ffa040>무기고 분열탄 줄(강화 · 각성 · 특화 · 3단계)이 이 배의 포탄도 강화.</color>	\n<color=#ffa040>The Arsenal cluster bomb line (upgrade · awakening · mastery · tier 3) also powers this ship's shells.</color>
+<size=11><color=#8d99b8>회사가 바뀌어도 유지 · 단계마다 값 상승 · 언제든 전액 환불 후 다시 구성 가능</color></size>	<size=11><color=#8d99b8>Kept across companies · price rises per level · refund everything anytime to rebuild</color></size>
 <size=11><color=#6fe3a0>최대</color></size>	<size=11><color=#6fe3a0>MAX</color></size>
 >신용 	>Credit 
-<size=10><color=#5a6475>신용은 파산할 때 받는다 — 갚은 청구서가 많을수록 많이 (쌓인 신용 × 	<size=10><color=#5a6475>Credit is earned on bankruptcy — more bills paid, more credit (accrued credit × 
+<size=10><color=#5a6475>신용은 파산 시 지급 — 갚은 청구서가 많을수록 많이 (쌓인 신용 × 	<size=10><color=#5a6475>Credit is earned on bankruptcy — more bills paid, more credit (accrued credit × 
 궤도 청소부	Orbit Sweeper
 <color=#ffdf95>궤도 청소부</color>	<color=#ffdf95>Orbit Sweeper</color>
 궤도 청소부 	Orbit Sweeper 
@@ -1306,14 +1306,14 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 시간 	Time 
 이어하기	Continue
 새로 시작	New Game
-처음부터 — 지금 회사와 기록이 지워진다	Start over — wipes company and records
+처음부터 — 지금 회사와 기록 삭제	Start over — wipes company and records
 시작하기	Start
-빚내서 산 청소선 한 척 — 궤도를 치운다	One sweeper bought on debt — clean up the orbit
+빚내서 산 청소선 한 척으로 궤도 청소	One sweeper bought on debt — clean up the orbit
 설정	Settings
 끝내기	Quit
 <size=11><color=#5f6878>v0.9 · 오늘도 궤도는 깨끗합니다 · Space = 이어하기</color></size>	<size=11><color=#5f6878>v0.9 · The orbit is clean today, too · Space = continue</color></size>
 <size=20><b><color=#ffb3a8>정말 처음부터 할까요?</color></b></size>	<size=20><b><color=#ffb3a8>Really start over?</color></b></size>
-<size=13>아래가 모두 지워지고 되돌릴 수 없다</size>	<size=13>Everything below will be erased and can't be undone</size>
+<size=13>아래 내용이 모두 삭제되며 되돌릴 수 없음</size>	<size=13>Everything below will be erased and can't be undone</size>
 대) · 청구서 	) · bill 
 \n모은 기사 	\nArticles 
  · 무한 궤도 	 · Endless Orbit 
@@ -1330,7 +1330,7 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 <size=15>구입</size>	<size=15>Buy</size>
 <size=12>돈 모자람</size>	<size=12>Not enough cash</size>
 <size=15>취소</size>	<size=15>Cancel</size>
-<size=24><b><color=#ffdf95>부품 가게</color></b></size>  <size=12><color=#8a9bb3>진열은 출동하고 오면 바뀐다 · 카드에 올리면 끼울 자리가 깜빡인다</color></size>	<size=24><b><color=#ffdf95>Parts Shop</color></b></size>  <size=12><color=#8a9bb3>Stock changes after each run · hover a card to see its slot blink</color></size>
+<size=24><b><color=#ffdf95>부품 가게</color></b></size>  <size=12><color=#8a9bb3>진열은 출동 후 교체 · 카드에 올리면 장착할 칸이 깜빡임</color></size>	<size=24><b><color=#ffdf95>Parts Shop</color></b></size>  <size=12><color=#8a9bb3>Stock changes after each run · hover a card to see its slot blink</color></size>
 <size=14><color=#8a9bb3>돈</color> <color=#ffdf95>	<size=14><color=#8a9bb3>Cash</color> <color=#ffdf95>
 </color>   <color=#d8ccff>열쇠 	</color>   <color=#d8ccff>Keys 
 <size=11><color=#8a9bb3>내 청소선 · 부품 칸 다섯</color></size>	<size=11><color=#8a9bb3>My sweeper · five part slots</color></size>
@@ -1342,14 +1342,14 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 <size=11><color=#8a9bb3>다음 출동 때 쓰일 것</color>  	<size=11><color=#8a9bb3>Used on next run</color>  
 <color=#3f4652>없음</color>	<color=#3f4652>None</color>
 <size=11><color=#8a9bb3>오늘의 진열</color></size>	<size=11><color=#8a9bb3>Today's stock</color></size>
-<size=13><color=#3f4652>팔렸다</color></size>	<size=13><color=#3f4652>Sold</color></size>
+<size=13><color=#3f4652>판매 완료</color></size>	<size=13><color=#3f4652>Sold</color></size>
 열쇠 +1 · 핵심 칸 하나	Key +1 · one key node
 다음 출동 한 번용	Next run only
 에 끼움	 slot
 <size=11><b>오늘의 반값</b></size>	<size=11><b>Half price today</b></size>
-◆ 보라 테두리 핵심 칸 하나를 연다	◆ Opens one key node
-<color=#8a9bb3>정비고 ◆ 칸에 쓴다 · 가진 열쇠 	<color=#8a9bb3>Used on ◆ Workshop nodes · keys held 
-<color=#8a9bb3>사 두면 <color=#9ff0bf>다음 출동 때 저절로</color> 쓰인다 · 한 번 쓰면 끝</color>	<color=#8a9bb3>Buy now and it's <color=#9ff0bf>used automatically next run</color> · single use</color>
+◆ 보라 테두리 핵심 칸 하나 해금	◆ Opens one key node
+<color=#8a9bb3>정비고 ◆ 칸에 사용 · 가진 열쇠 	<color=#8a9bb3>Used on ◆ Workshop nodes · keys held 
+<color=#8a9bb3>구매해 두면 <color=#9ff0bf>다음 출동 때 자동</color> 사용 · 1회용</color>	<color=#8a9bb3>Buy now and it's <color=#9ff0bf>used automatically next run</color> · single use</color>
  <color=#ffb0a0>(반값)</color>	 <color=#ffb0a0>(half)</color>
 >구입 · 	>Buy · 
  — 돈 모자람</color></size>	 · need cash</color></size>
@@ -1369,19 +1369,19 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 연쇄 상한	Chain cap
  켜짐	 on
  꺼짐	 off
-<color=#8a9bb3>지금 끼운 것과 같다</color>	<color=#8a9bb3>Same as what's equipped</color>
+<color=#8a9bb3>지금 장착한 것과 같음</color>	<color=#8a9bb3>Same as what's equipped</color>
 <color=#8a9bb3>지금 <color=#8a7f99>	<color=#8a9bb3>Now <color=#8a7f99>
 </color> 빠짐</color>\n	</color> is removed</color>\n
 <color=#8a9bb3>빈 칸에 끼움</color>\n	<color=#8a9bb3>Goes into an empty slot</color>\n
 <color=#8a9bb3>달라지는 것 없음</color>	<color=#8a9bb3>No change</color>
 <color=#d8ccff>양자 열쇠</color>	<color=#d8ccff>Quantum Key</color>
-정비고에서 보라 테두리 ◆ 핵심 칸을 하나 연다. 핵심 칸은 돈만으로는 못 산다.	Opens one purple-bordered ◆ key node in the Workshop. Key nodes can't be bought with cash alone.
+정비고의 보라 테두리 ◆ 핵심 칸 하나 해금. 핵심 칸은 돈만으로 구매 불가.	Opens one purple-bordered ◆ key node in the Workshop. Key nodes can't be bought with cash alone.
 개	 
 </color>  <color=#8a93a3>다음 출동 한 번용</color>	</color>  <color=#8a93a3>Next run only</color>
-<color=#8a93a3>칸에 끼우지 않는다. 사 두면 다음 출동을 시작할 때 저절로 쓰이고 사라진다.</color>	<color=#8a93a3>Doesn't go in a slot. Buy it and it's used automatically when your next run starts, then gone.</color>
+<color=#8a93a3>칸에 장착하지 않음. 구매해 두면 다음 출동 시작 때 자동으로 사용되고 사라짐.</color>	<color=#8a93a3>Doesn't go in a slot. Buy it and it's used automatically when your next run starts, then gone.</color>
  칸</color>	 slot</color>
  (지금 ×	 (now ×
- 칸에 하나만 끼운다. 이미 끼운 게 있으면 바뀐다 — 빠지는 것은 사라진다.</color>	 slot holds only one. If something is equipped it's replaced — the removed part is gone.</color>
+ 칸에 하나만 장착. 이미 장착한 게 있으면 교체 — 빠지는 부품은 사라짐.</color>	 slot holds only one. If something is equipped it's replaced — the removed part is gone.</color>
 케슬러 금융 윤 대리야. 청소선 할부 시작이다. 첫 청구서는 연료비.	Yoon from Kessler Finance. Your sweeper installments start now. First bill: fuel.
 어, 갚았네? …다음 것도 부탁해.	Oh, you paid? …Please do the next one too.
 할부 1회 확인. 생각보다 성실하네.	Installment 1 confirmed. More diligent than I thought.
@@ -1406,7 +1406,7 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
  / 5번	 / 5
 조종실로	To Cockpit
 정비고	Workshop
-시세는 출동 중에만 움직인다 · 여기서 사 두고, 출동 중엔 S로 보며 판다	Prices only move during runs · buy here, watch with S during a run, then sell
+시세는 출동 중에만 변동 · 여기서 매수하고, 출동 중엔 S로 보며 매도	Prices only move during runs · buy here, watch with S during a run, then sell
 <size=11><color=#ffc2b8>빚 명세서</color></size>	<size=11><color=#ffc2b8>Debt Statement</color></size>
 <size=12><b><color=#bff4ff>KESSLER // 청구</color></b></size>	<size=12><b><color=#bff4ff>KESSLER // BILL</color></b></size>
 <size=12><color=#d8ccff>무한 궤도</color></size>	<size=12><color=#d8ccff>Endless Orbit</color></size>
@@ -1414,7 +1414,7 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 <size=11><color=#bff4ff>최고 	<size=11><color=#bff4ff>Best 
 층 · ★ 	F · ★ 
 <size=11><color=#7fcfe0>판이 끝날 때마다 한 층 아래로\n층마다 체력 ×1.25 · 값 ×1.2\n5층마다 열쇠 +1</color></size>	<size=11><color=#7fcfe0>One floor deeper after every run\nHP ×1.25 · value ×1.2 per floor\nKey +1 every 5 floors</color></size>
-<size=22><color=#9ff0bf>빚 청산!</color></size>\n<size=12><color=#bff4ff>청산 출동만 남았다</color></size>	<size=22><color=#9ff0bf>Debt Cleared!</color></size>\n<size=12><color=#bff4ff>Only the clearance run remains</color></size>
+<size=22><color=#9ff0bf>빚 청산!</color></size>\n<size=12><color=#bff4ff>청산 출동만 남음</color></size>	<size=22><color=#9ff0bf>Debt Cleared!</color></size>\n<size=12><color=#bff4ff>Only the clearance run remains</color></size>
 <size=12><color=#7fcfe0>청구서는 끝</color></size>	<size=12><color=#7fcfe0>No more bills</color></size>
 <size=11><color=#7fcfe0>남은 빚</color></size>	<size=11><color=#7fcfe0>Remaining debt</color></size>
 <size=11><color=#bff4ff>다 갚으면 청산 출동</color></size>	<size=11><color=#bff4ff>Clear it for the clearance run</color></size>
@@ -1423,12 +1423,12 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 >오늘 납부일</color></b></size>	>Due today</color></b></size>
 <size=12><color=#bff4ff>기한 ▸ 	<size=12><color=#bff4ff>Due ▸ 
 판</color></size>	 runs</color></size>
-% 모였다</color></size>	% saved</color></size>
+% 확보</color></size>	% saved</color></size>
 납부	Pay
 대출로	Loan
  빌려 납부 · 빚 +	 borrowed to pay · debt +
- 모자라다</color>	 short</color>
-<color=#9ff0bf>지금 낼 수 있다</color>	<color=#9ff0bf>You can pay now</color>
+ 부족</color>	 short</color>
+<color=#9ff0bf>지금 납부 가능</color>	<color=#9ff0bf>You can pay now</color>
 <color=#7fcfe0>대출 한도 부족</color>	<color=#7fcfe0>Loan limit too low</color>
 6초	6s
 30초	30s
@@ -1473,9 +1473,9 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 받을 돈 	You get 
 <size=10><color=#9ff0bf>●</color> <color=#c8d0dc>매매는 조종실에서만 · 출동 중엔 잠김</color></size>	<size=10><color=#9ff0bf>●</color> <color=#c8d0dc>Cockpit-only trading · locked on runs</color></size>
 <size=13><b><color=#ffcf6e>■ 시세 멈춤</color></b></size>	<size=13><b><color=#ffcf6e>■ Prices frozen</color></b></size>
-<size=10><color=#c8b88a>출동하면 다시 움직인다 · 지금 사 두면 출동 중에 오르내린다</color></size>	<size=10><color=#c8b88a>Resumes on launch · buy now to ride the swings</color></size>
+<size=10><color=#c8b88a>출동하면 다시 변동 · 지금 매수하면 출동 중 시세 변동</color></size>	<size=10><color=#c8b88a>Resumes on launch · buy now to ride the swings</color></size>
 내 잔고	My Holdings
-보유	Held
+보유	Holdings
 평균가	Avg price
 현재가	Price
 평가금액	Value
@@ -1486,7 +1486,7 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 <size=12><color=#5f6878>보유 종목 없음 — 왼쪽에서 종목을 고르고 오른쪽에서 매수</color></size>	<size=12><color=#5f6878>No holdings — pick a stock on the left and buy on the right</color></size>
 종목 · 휠로 넘기기</color></size>	stocks · scroll with the wheel</color></size>
 <size=20><b><color=#ffdf95>잠김 · 증권 계좌 없음</color></b></size>	<size=20><b><color=#ffdf95>Locked · no brokerage account</color></b></size>
-<size=12><color=#c8d0dc>정비고에서 [증권 계좌] 칸을 사면 열린다</color></size>	<size=12><color=#c8d0dc>Buy the [Brokerage Account] node in the Workshop to open</color></size>
+<size=12><color=#c8d0dc>정비고에서 [증권 계좌] 칸 구매 시 해금</color></size>	<size=12><color=#c8d0dc>Buy the [Brokerage Account] node in the Workshop to open</color></size>
 <size=14>‹ 정비고로</size>	<size=14>‹ To Workshop</size>
 <size=12><b><color=#bff4ff>NAV // 항로</color></b></size>	<size=12><b><color=#bff4ff>NAV // ROUTE</color></b></size>
 <size=12><color=#bff4ff>청산 출동 — 항로 고정</color></size>	<size=12><color=#bff4ff>Clearance run — route locked</color></size>
@@ -1497,12 +1497,12 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 중력	Gravity
 고리 틈	Ring gap
 부착물 	Attachments 
-% — 부수면 열린다	% — break it to open
-장을 갚으면 관문 방어막이 풀린다	 paid, the gate shield drops
+% — 부수면 해금	% — break it to open
+장 납부 시 관문 방어막 해제	 paid, the gate shield drops
 <size=11><color=#8a93a3>앞 행성 관문부터</color></size>	<size=11><color=#8a93a3>Previous planet's gate first</color></size>
 <size=10><color=#7fcfe0>의뢰</color> <color=#dff8ff>	<size=10><color=#7fcfe0>Job</color> <color=#dff8ff>
 <size=10>바꾸기</size>	<size=10>Swap</size>
-<size=10><color=#7fcfe0>의뢰는 청구서 2 뒤에 들어온다</color></size>	<size=10><color=#7fcfe0>Jobs arrive after bill 2</color></size>
+<size=10><color=#7fcfe0>의뢰는 청구서 2장 이후 시작</color></size>	<size=10><color=#7fcfe0>Jobs arrive after bill 2</color></size>
 <size=22><b><color=#e8fbff>복권</color></b></size>	<size=22><b><color=#e8fbff>Lottery</color></b></size>
 <size=10><color=#7fcfe0>즉석 복권 	<size=10><color=#7fcfe0>Scratch tickets 
 장</color></size>	</color></size>
@@ -1516,7 +1516,7 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 일째</color></size>	 day</color></size>
 <size=10><color=#ff5a3a>●</color> <color=#ffab3d>새 	<size=10><color=#ff5a3a>●</color> <color=#ffab3d>new 
 속보 ▸ 	Breaking ▸ 
-오늘은 조용하다	Quiet today
+오늘은 조용함	Quiet today
 궤도 청소부 영업 중	Orbit Sweeper is open for business
 <size=11><b><color=#ffd6f2>★ 내일 1면 고르기 ▸</color></b></size>	<size=11><b><color=#ffd6f2>★ Pick front page ▸</color></b></size>
 >누르면 신문 ▸</color></size>	>Click for the paper ▸</color></size>
@@ -1533,8 +1533,8 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 지금 파산	Bankrupt now
 파산	Bankrupt
 🛰 관문 붕괴	🛰 Gate destroyed
-외행성 면허 — 정비고 바깥 고리 16칸이 열렸다 · 곱하기 칸 · 무기 3단계	Outer planet license — the Workshop's 16-node outer ring is open · multiplier nodes · weapon tier 3
-심우주 — 해왕성 너머 카이퍼 벨트까지 · 마지막 청구서가 기다린다	Deep space — past Neptune to the Kuiper Belt · the final bill awaits
+외행성 면허 — 정비고 바깥 고리 16칸 해금 · 곱하기 칸 · 무기 3단계	Outer planet license — the Workshop's 16-node outer ring is open · multiplier nodes · weapon tier 3
+심우주 — 해왕성 너머 카이퍼 벨트까지 · 마지막 청구서 대기 중	Deep space — past Neptune to the Kuiper Belt · the final bill awaits
  · 열쇠 +1 · 정비고 한 칸씩 더	 · key +1 · one more Workshop node per line
 자동 상환 · 판 수입 30%	Auto-repay · 30% of run income
 KESSLER // 빚 명세서	KESSLER // DEBT STATEMENT
@@ -1543,7 +1543,7 @@ KESSLER // 빚 명세서	KESSLER // DEBT STATEMENT
 완납	Paid off
 상환	Repaid
 ><b><color=#ffdf95>완납!</color></b></size>	><b><color=#ffdf95>Paid off!</color></b></size>
-<size=14><color=#ffe9b0>케슬러 금융에 진 빚을 다 갚았다</color></size>	<size=14><color=#ffe9b0>You paid off everything owed to Kessler Finance</color></size>
+<size=14><color=#ffe9b0>케슬러 금융에 진 빚 전액 상환</color></size>	<size=14><color=#ffe9b0>You paid off everything owed to Kessler Finance</color></size>
 <color=#ffdf95>개미의 기도</color> <color=	<color=#ffdf95>Ant's Prayer</color> <color=
 >내 종목 ↑</color>	>my stocks ↑</color>
 <color=#3f4652>개미의 기도 · 잠김</color>	<color=#3f4652>Ant's Prayer · locked</color>
@@ -1560,13 +1560,13 @@ KESSLER // 빚 명세서	KESSLER // DEBT STATEMENT
 목성 항로 먼저	Jupiter Route first
  항로 먼저	 route first
 앞 칸 먼저	Previous node first
-열쇠가 없다	No key
-돈이 모자라다 · 	Not enough cash · 
-<size=12><color=#8a9bb3>공격 때 함께 터진다</color></size>	<size=12><color=#8a9bb3>Fire along with your attacks</color></size>
-<size=12><color=#5f6878>산 무기가 없다</color></size>	<size=12><color=#5f6878>No weapons bought</color></size>
+열쇠 없음	No key
+돈 부족 · 	Not enough cash · 
+<size=12><color=#8a9bb3>공격 시 함께 발동</color></size>	<size=12><color=#8a9bb3>Fire along with your attacks</color></size>
+<size=12><color=#5f6878>구매한 무기 없음</color></size>	<size=12><color=#5f6878>No weapons owned</color></size>
 <size=12><color=#ffb3ea>★ 내일 1면</color>  	<size=12><color=#ffb3ea>★ Tomorrow's front page</color>  
   <color=#8a93a3>· 출동하면 발행</color></size>	  <color=#8a93a3>· published when you launch</color></size>
-<size=14><b><color=#ffb3ea>★ 내일 궤도일보 1면을 고른다</color></b></size>	<size=14><b><color=#ffb3ea>★ Pick tomorrow's Orbit Daily front page</color></b></size>
+<size=14><b><color=#ffb3ea>★ 내일 궤도일보 1면 선택</color></b></size>	<size=14><b><color=#ffb3ea>★ Pick tomorrow's Orbit Daily front page</color></b></size>
 궤도일보 1면	Orbit Daily front page
 1면 확정!	Front page set!
 체결	Filled
@@ -1587,8 +1587,8 @@ KESSLER // 빚 명세서	KESSLER // DEBT STATEMENT
 붕괴! 	Collapse! 
 개 흩어짐	 scattered
 케슬러 연쇄	Kessler Cascade
-게임을 다시 켜면 바뀐다	Restart the game to apply
-한 방 	Hit 
+게임을 다시 켜면 적용	Restart the game to apply
+피해 	Damage 
 반지름 	Radius 
 한 점	Point
 열림	Open
@@ -1600,7 +1600,7 @@ KESSLER // 빚 명세서	KESSLER // DEBT STATEMENT
 없음	None
 굵기 +50%	Width +50%
 굵기 +50% · 열 축적	Width +50% · heat buildup
-7번 튄다	Bounces 7 times
+7번 튐	Bounces 7 times
 7번 · 튈수록 ×1.2	7 bounces · ×1.2 per bounce
 각성!	Awakened!
 부품 가게 열림	Parts Shop open
@@ -1614,7 +1614,7 @@ KESSLER // 빚 명세서	KESSLER // DEBT STATEMENT
 발동률 ×1.5	Proc rate ×1.5
 초 · 초당 	s · shots/s 
 발	 
-열림 — 항로 다이얼에서 고른다	Open — pick it on the route dial
+열림 — 항로 다이얼에서 선택	Open — pick it on the route dial
 내 종목 봉마다 +0.08% 쪽으로	My stocks drift +0.08% per candle
 다음 속보까지 시간	Time to next breaking news
 + 업종	+ sector
@@ -1651,8 +1651,8 @@ KESSLER // 빚 명세서	KESSLER // DEBT STATEMENT
 빚 갚는 몫 −	Debt repay share −
 주식 수수료 0	Stock fee 0
 배당 +	Dividend +
-둘이 같다 — 잭팟! 표값 두 배	A pair — jackpot! Double the ticket price
-둘이 같다 — 표값 돌려받기	A pair — ticket price refunded
+둘이 같음 — 잭팟! 표값 2배	A pair — jackpot! Double the ticket price
+둘이 같음 — 표값 환불	A pair — ticket price refunded
 고철 셋 — 판 벌이 × 0.2	Three scrap — run earnings × 0.2
 위성 셋 — 다음 판 화력 +30%	Three satellites — next run firepower +30%
 금고 셋 — 판 벌이 × 1	Three vaults — run earnings × 1
@@ -1663,12 +1663,27 @@ KESSLER // 빚 명세서	KESSLER // DEBT STATEMENT
 연료 +2초	Fuel +2s
 <color=#bff4ff>출동하면 지금 궤도 · </color><color=#ffdf95>	<color=#bff4ff>Launch goes to · </color><color=#ffdf95>
  · 오늘도 궤도는 깨끗합니다 · Space = 이어하기</color></size>	 · The orbit is clean today, too · Space = continue</color></size>
-저장이 깨져 있어 마지막으로 정상이던 저장으로 되살렸다	Your save was damaged, so the last good save was restored
-저장을 읽지 못해 새로 시작한다 — 깨진 저장은 따로 보관했다	Could not read your save, starting fresh — the damaged save was kept aside
+저장 파일 손상 — 마지막 정상 저장으로 복구	Your save was damaged, so the last good save was restored
+저장을 읽지 못해 새로 시작 — 손상된 저장은 따로 보관	Could not read your save, starting fresh — the damaged save was kept aside
 창 비율	Window ratio
 창 크기	Window size
-들여오기 · 신용 	Acquire · credit 
+구매 · 신용 	Buy · credit 
 신용 	Needs credit 
 <color=#ffb3ea>★ 내일 1면</color>  	<color=#ffb3ea>★ Tomorrow's front page</color>  
   <color=#8a93a3>· 출동하면 발행</color>	  <color=#8a93a3>· published when you launch</color>
 <color=#e8c77e>내부자</color> 	<color=#e8c77e>Insider</color> 
+승인	OK
+보유 칸	Owned
+구매 가능	Available
+아직 · 잠김	Not yet · locked
+<size=11><color=#8a93a3>휠 = 확대 · 끌기 = 이동 · Shift+누르기 = 다섯 번</color></size>	<size=11><color=#8a93a3>Wheel = zoom · Drag = move · Shift+click = ×5</color></size>
+<color=#e8f1fb>청소선</color>	<color=#e8f1fb>Sweeper</color>
+여기서 다섯 갈래로 뻗어 나감. 칸에 마우스를 올리면 여기에 설명 표시 — 꺾쇠가 움직이는 칸은 지금 구매 가능.	Five branches grow from here. Hover a tile to see it here — tiles with moving corner marks are available now.
+지금 	Now 
+구매 후 	After: 
+<color=#ff9b8f>+ 열쇠 1 (없음)</color>	<color=#ff9b8f>+ 1 key (you have none)</color>
+돈이 	Short by 
+ 부족	 short
+구매 · 	Buy · 
+돈 	Cash 
+보유 중	Owned

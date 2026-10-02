@@ -68,7 +68,7 @@ namespace SalvageRun.Orbit
             }
             else if (M.cleanReady)
             {
-                Lbl(new Rect(x, y0 + 50, w, 70), Loc.T("<size=22><color=#9ff0bf>빚 청산!</color></size>\n<size=12><color=#bff4ff>청산 출동만 남았다</color></size>"), center);
+                Lbl(new Rect(x, y0 + 50, w, 70), Loc.T("<size=22><color=#9ff0bf>빚 청산!</color></size>\n<size=12><color=#bff4ff>청산 출동만 남음</color></size>"), center);
             }
             else if (S.bill >= SweepSim.Bills.Length)
             {
@@ -92,7 +92,7 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(Holo.r, Holo.g, Holo.b, 0.15f * fl); GUI.DrawTexture(new Rect(x, y0 + 126, w, 5), white);
                 GUI.color = prog >= 1 ? new Color(0.62f, 0.94f, 0.75f, fl) : new Color(Holo.r, Holo.g, Holo.b, 0.9f * fl); GUI.DrawTexture(new Rect(x, y0 + 126, w * prog, 5), white);
                 GUI.color = new Color(1, 1, 1, fl);
-                Lbl(new Rect(x, y0 + 132, w, 18), "<size=10><color=#7fcfe0>" + Mathf.RoundToInt(prog * 100) + Loc.T("% 모였다</color></size>"), label);
+                Lbl(new Rect(x, y0 + 132, w, 18), "<size=10><color=#7fcfe0>" + Mathf.RoundToInt(prog * 100) + Loc.T("% 확보</color></size>"), label);
                 Lbl(new Rect(x, y0 + 150, w, 36), "<size=11><color=#7fcfe0>" + KWrap(b.perk, 11, w) + "</color></size>", small);   // 두 줄까지 (09-30 「…」 대신)
                 GUI.color = Color.white;
                 bool can = S.cash >= sim.BillAmount; double need = sim.BillAmount - S.cash;
@@ -102,7 +102,7 @@ namespace SalvageRun.Orbit
                 if (HoloBtn(new Rect(x + bw + 6, y0 + 190, bw, 32), Loc.T("대출로"), HoloRed, loanOk, fl)) RequestLoan(need, true);
                 GUI.color = new Color(1, 1, 1, fl);
                 bool loanOv = new Rect(x + bw + 6, y0 + 190, bw, 32).Contains(Event.current.mousePosition);
-                string foot = loanOk ? (loanOv ? "<color=#ffc2b8>" + KNum.Fmt(need) + Loc.T(" 빌려 납부 · 빚 +") + KNum.Fmt(need * SweepSim.LoanMult) + "</color>" : "<color=#7fcfe0>" + KNum.Fmt(need) + Loc.T(" 모자라다</color>")) : can ? Loc.T("<color=#9ff0bf>지금 낼 수 있다</color>") : Loc.T("<color=#7fcfe0>대출 한도 부족</color>");   // 빚 얼마는 [대출로]에 올렸을 때만 (정돈 11)
+                string foot = loanOk ? (loanOv ? "<color=#ffc2b8>" + KNum.Fmt(need) + Loc.T(" 빌려 납부 · 빚 +") + KNum.Fmt(need * SweepSim.LoanMult) + "</color>" : "<color=#7fcfe0>" + KNum.Fmt(need) + Loc.T(" 부족</color>")) : can ? Loc.T("<color=#9ff0bf>지금 납부 가능</color>") : Loc.T("<color=#7fcfe0>대출 한도 부족</color>");   // 빚 얼마는 [대출로]에 올렸을 때만 (정돈 11)
                 Lbl(new Rect(x - 6, y0 + 224, w + 12, 18), "<size=10>" + foot + "</size>", center);
                 GUI.color = Color.white;
             }
@@ -254,7 +254,7 @@ namespace SalvageRun.Orbit
                 bool nextUp = sim.HasGate && show == SweepSim.OrbitOrder[sim.Frontier + 1];
                 GUI.color = new Color(1, 1, 1, fl);
                 var gr = new Rect(p.x + 10, p.y + 171, p.width - 20, 18);
-                if (nextUp) Marquee(gr, "<color=#ffb36b>🛰 " + (sim.GateReady ? sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + Loc.T("% — 부수면 열린다") : Loc.T("청구서 ") + sim.GateBill + Loc.T("장을 갚으면 관문 방어막이 풀린다")) + "</color>", 11, center);   // 🛰 09-26 허가증 대신 관문 · 📜 09-30 길면 흐른다
+                if (nextUp) Marquee(gr, "<color=#ffb36b>🛰 " + (sim.GateReady ? sim.GateName + " " + Mathf.CeilToInt((float)sim.GateLeft * 100) + Loc.T("% — 부수면 해금") : Loc.T("청구서 ") + sim.GateBill + Loc.T("장 납부 시 관문 방어막 해제")) + "</color>", 11, center);   // 🛰 09-26 허가증 대신 관문 · 📜 09-30 길면 흐른다
                 else Lbl(gr, Loc.T("<size=11><color=#8a93a3>앞 행성 관문부터</color></size>"), center);
                 Lbl(new Rect(p.x + 6, p.y + 186, p.width - 12, 14), Fit(Loc.T("<color=#bff4ff>출동하면 지금 궤도 · </color><color=#ffdf95>") + SweepSim.Orbits[S.orbit].name + "</color>", 9, p.width - 14, label, 8), center);   // 🧭 다음 행성을 보고 있어도 실제로 가는 곳 (09-29)
             }
@@ -267,7 +267,7 @@ namespace SalvageRun.Orbit
                     GUI.color = Color.white;
                     if (!S.rerolled && HoloBtn(new Rect(p.xMax - 52, p.y + 174, 44, 20), Loc.T("<size=10>바꾸기</size>"), Holo, true, fl)) sim.Reroll();
                 }
-                else Lbl(new Rect(p.x + 10, p.y + 172, p.width - 20, 24), Loc.T("<size=10><color=#7fcfe0>의뢰는 청구서 2 뒤에 들어온다</color></size>"), small);
+                else Lbl(new Rect(p.x + 10, p.y + 172, p.width - 20, 24), Loc.T("<size=10><color=#7fcfe0>의뢰는 청구서 2장 이후 시작</color></size>"), small);
             }
             GUI.color = Color.white;
         }
@@ -336,7 +336,7 @@ namespace SalvageRun.Orbit
             int unread = sim.Unread;
             Lbl(new Rect(r.x + 10, r.y + 6, r.width - 20, 18), (Loc.En ? "<size=10><color=#ffab3d>NEWS · Day " + S.runs + "</color></size>" : "<size=10><color=#ffab3d>ORBIT NEWS · " + S.runs + "일째</color></size>"), label);
             if (unread > 0) Lbl(new Rect(r.x + 10, r.y + 6, r.width - 20, 18), Loc.T("<size=10><color=#ff5a3a>●</color> <color=#ffab3d>새 ") + unread + "</color></size>", ledR);
-            string a = M.news.Count > 0 ? (unread > 0 ? Loc.T("속보 ▸ ") : "") + Loc.T(M.news[M.news.Count - 1].head) : Loc.T("오늘은 조용하다");
+            string a = M.news.Count > 0 ? (unread > 0 ? Loc.T("속보 ▸ ") : "") + Loc.T(M.news[M.news.Count - 1].head) : Loc.T("오늘은 조용함");
             string b = M.news.Count > 1 ? Loc.T(M.news[M.news.Count - 2].head) + (M.news.Count > 2 ? "  ▸  " + Loc.T(M.news[M.news.Count - 3].head) : "") : Loc.T("궤도 청소부 영업 중");
             LedStrip(new Rect(r.x + 8, r.y + 26, r.width - 16, 34), a, 15, 38f);
             LedStrip(new Rect(r.x + 8, r.y + 66, r.width - 16, 26), b, 12, 26f);
@@ -492,7 +492,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(1, 1, 1, k);
             string hex = ColorUtility.ToHtmlStringRGB(ac);
             string t1 = actN == 1 ? Loc.T("🛰 관문 붕괴") : actN == 2 ? Loc.T("2막 · 외행성") : Loc.T("3막 · 심우주");
-            string t2 = actN == 2 ? Loc.T("외행성 면허 — 정비고 바깥 고리 16칸이 열렸다 · 곱하기 칸 · 무기 3단계") : Loc.T("심우주 — 해왕성 너머 카이퍼 벨트까지 · 마지막 청구서가 기다린다");
+            string t2 = actN == 2 ? Loc.T("외행성 면허 — 정비고 바깥 고리 16칸 해금 · 곱하기 칸 · 무기 3단계") : Loc.T("심우주 — 해왕성 너머 카이퍼 벨트까지 · 마지막 청구서 대기 중");
             Lbl(new Rect(0, cy - 48, vw, 60), "<size=40><b><color=#" + hex + ">" + t1 + "</color></b></size>", center);
             if (actN == 1) t2 = (actSub ?? "") + Loc.T(" · 열쇠 +1 · 정비고 한 칸씩 더");
             Lbl(new Rect(0, cy + 16, vw, 26), "<size=15><color=#dfe6ef>" + t2 + "</color></size>", center);

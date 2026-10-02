@@ -46,10 +46,10 @@ namespace SalvageRun.Orbit.Sim
         {
             new StockDef { id = "kes",   name = Loc.T("케슬러 금융"),   sector = Loc.T("금융"), desc = Loc.T("안정 · 배당"),     mu = 0.0010, vol = 0.016, div = 0.0012 },
             new StockDef { id = "ins",   name = Loc.T("궤도 보험"),     sector = Loc.T("금융"), desc = Loc.T("안정"),            mu = 0.0010, vol = 0.022, div = 0.0006 },
-            new StockDef { id = "fuel",  name = Loc.T("지구 연료공사"), sector = Loc.T("연료"), desc = Loc.T("경기를 탄다"),     mu = 0.0012, vol = 0.032, div = 0 },
+            new StockDef { id = "fuel",  name = Loc.T("지구 연료공사"), sector = Loc.T("연료"), desc = Loc.T("경기 민감"),     mu = 0.0012, vol = 0.032, div = 0 },
             new StockDef { id = "ship",  name = Loc.T("청소선 조선"),   sector = Loc.T("조선"), desc = Loc.T("성장주"),          mu = 0.0020, vol = 0.042, div = 0 },
             new StockDef { id = "moon",  name = Loc.T("달 기지 조합"),  sector = Loc.T("달"),   desc = Loc.T("무난"),            mu = 0.0015, vol = 0.034, div = 0 },
-            new StockDef { id = "mars",  name = Loc.T("화성 제련소"),   sector = Loc.T("화성"), desc = Loc.T("요동친다"),        mu = 0.0018, vol = 0.055, div = 0 },
+            new StockDef { id = "mars",  name = Loc.T("화성 제련소"),   sector = Loc.T("화성"), desc = Loc.T("변동 큼"),        mu = 0.0018, vol = 0.055, div = 0 },
             new StockDef { id = "jup",   name = Loc.T("목성 선박"),     sector = Loc.T("목성"), desc = Loc.T("대박 아니면 쪽박"), mu = 0.0008, vol = 0.085, div = 0 },
             new StockDef { id = "sat",   name = Loc.T("토성 고리 관광"), sector = Loc.T("관광"), desc = Loc.T("테마주"),          mu = 0.0012, vol = 0.07,  div = 0 },
         };

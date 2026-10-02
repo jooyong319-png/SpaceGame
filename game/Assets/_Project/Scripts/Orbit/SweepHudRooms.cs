@@ -70,7 +70,7 @@ namespace SalvageRun.Orbit
                     if (NavTab(false, Loc.T("정비고"), "", SweepGame.Amber)) GoFlow(3);
                     if (NavTab(true, Loc.T("조종실로"), "", SweepGame.Amber)) GoFlow(2);
                 }
-                else { StockRoom(); if (flow == 4 && sim.StockOpen) GuideOnce("stock", Loc.T("시세는 출동 중에만 움직인다 · 여기서 사 두고, 출동 중엔 S로 보며 판다")); }
+                else { StockRoom(); if (flow == 4 && sim.StockOpen) GuideOnce("stock", Loc.T("시세는 출동 중에만 변동 · 여기서 매수하고, 출동 중엔 S로 보며 매도")); }
             }
             GUI.matrix = m0;
         }
