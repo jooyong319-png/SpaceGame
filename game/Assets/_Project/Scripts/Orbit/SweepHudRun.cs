@@ -342,13 +342,16 @@ namespace SalvageRun.Orbit
             Lbl(new Rect(r.x + 12, r.y + 6, 200, 24), Loc.T("<size=16><b><color=#9ff0bf>궤도 증권</color></b></size>"), label);
             Lbl(new Rect(r.x + 12, r.y + 6, r.width - 24, 24), Loc.T("<size=12><color=#8a9bb3>평가</color> ") + KNum.Fmt(tv) + (tc > 0 ? "  " + (tv >= tc ? "<color=#ff5c5c>+" : "<color=#5494ff>") + ((tv / tc - 1) * 100).ToString("0.0") + "%</color>" : "") + "</size>", cost);
             // 종목 여덟 — 이름 · 가격 · 최근 20봉 등락 · 보유 표시
-            for (int i = 0; i < MS.st.Count; i++)
+            var vis = new List<int>(); for (int i = 0; i < MS.st.Count; i++) if (sim.StockListed(i)) vis.Add(i);   // 상장된 종목만 (10-02)
+            if (!sim.StockListed(MS.sel)) MS.sel = 0;
+            float rowH = Mathf.Min(23, 184f / Mathf.Max(1, vis.Count));
+            for (int vi = 0; vi < vis.Count; vi++)
             {
-                var st = MS.st[i]; var d = Market.Defs[i];
-                var row = new Rect(r.x + 8, r.y + 34 + i * 23, r.width - 16, 22);
+                int i = vis[vi]; var st = MS.st[i]; var d = Market.Defs[i];
+                var row = new Rect(r.x + 8, r.y + 34 + vi * rowH, r.width - 16, rowH - 1);
                 bool sel = MS.sel == i;
                 if (sel) { GUI.color = new Color(0.2f, 0.35f, 0.26f, 0.6f); GUI.DrawTexture(row, white); GUI.color = Color.white; }
-                RowFx(i, row); if (i < 8) stockRowPos[i] = new Vector2(row.xMax - 50, row.center.y);
+                RowFx(i, row); if (i < stockRowPos.Length) stockRowPos[i] = new Vector2(row.xMax - 50, row.center.y);
                 double ch = mk.Change(i, 20);
                 string arrow = st.pushLeft > 0 ? (st.push > 0 ? " <color=#ff5c5c>▲</color>" : " <color=#5494ff>▼</color>") : "";
                 Lbl(new Rect(row.x + 6, row.y + 1, 170, 20), "<size=13>" + (st.shares > 0 ? "<color=#ffdf95>● </color>" : "") + d.name + "</size>" + arrow, label);
@@ -393,8 +396,9 @@ namespace SalvageRun.Orbit
             if (!sim.R.over) Lbl(new Rect(r.x + 12, y, r.width - 24, 28), Loc.T("<size=12><color=#8a9bb3>출동 중엔 시세 확인만 — 거래는 조종실 증권에서</color></size>"), center);   // 🔒 출동 중 사고팔기 금지 (09-24 사장님 「팔기도 막아」)
             else
             {
+                bool en0 = GUI.enabled; GUI.enabled = en0 && sim.StockBuyOpen;          // 매수는 [증권 계좌] 칸 뒤 (10-02)
                 for (int k = 0; k < 4; k++) if (Bt(new Rect(r.x + 12 + k * (bw + 2), y, bw, 28), Loc.T("<size=12><color=#9ff0bf>매수 ") + bl[k] + "</color></size>", btn)) TradeBuy(si, bf[k], new Vector2(r.x + 12 + k * (bw + 2) + bw / 2, y + 14));
-                GUI.enabled = ss.shares > 0 && GUI.enabled;
+                GUI.enabled = ss.shares > 0 && en0;
                 if (Bt(new Rect(r.x + 12 + 4 * (bw + 2) + 6, y, bw, 28), Loc.T("<size=12><color=#ffb3a8>절반 팔기</color></size>"), btn)) TradeSell(si, 0.5, new Vector2(r.x + 12 + 4 * (bw + 2) + 6 + bw / 2, y + 14));
                 if (Bt(new Rect(r.x + 12 + 5 * (bw + 2) + 6, y, bw, 28), Loc.T("<size=12><color=#ffb3a8>전부 팔기</color></size>"), btn)) TradeSell(si, 1, new Vector2(r.x + 12 + 5 * (bw + 2) + 6 + bw / 2, y + 14));
             }

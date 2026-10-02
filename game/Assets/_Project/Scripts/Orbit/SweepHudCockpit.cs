@@ -137,7 +137,7 @@ namespace SalvageRun.Orbit
             int canN = 0; for (int b = 0; b < 4; b++) canN += CanCount(b);
             if (sim.ShopOpen) { if (NavTab(false, Loc.T("부품 가게"), canN > 0 ? Loc.T("<color=#f2c14e>정비 ") + canN + Loc.T("칸</color>") : "", SweepGame.Amber)) GoFlow(5); }   // 한 칸씩 — 정비고 ‹ 가게 ‹ 조종실 › 증권 (09-25 사장님: 곧장 정비고로 가니 이상하다)
             else if (NavTab(false, Loc.T("정비고로"), canN > 0 ? Loc.T("<color=#f2c14e>구매 가능 ") + canN + "</color>" : "", SweepGame.Amber)) GoFlow(3);
-            if (NavTab(true, Loc.T("증권 하러 가기"), sim.StockOpen ? "" : Loc.T("<color=#5f6878>잠김</color>"), new Color(0.62f, 0.94f, 0.75f))) GoFlow(4);
+            if (NavTab(true, Loc.T("증권 하러 가기"), newStockBadge > 0 ? Loc.T("<color=#ff8a7a>새 주식 ") + newStockBadge + "</color>" : "", new Color(0.62f, 0.94f, 0.75f))) GoFlow(4);
 
             // ⑥ 항로 — 조종대 오른쪽 홀로그램 (행성 다섯 · 의뢰)
             RouteHolo();

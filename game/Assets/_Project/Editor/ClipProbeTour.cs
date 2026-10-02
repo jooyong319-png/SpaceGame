@@ -41,7 +41,7 @@ namespace SalvageRun.EditorTools
         static void Build()
         {
             acts = new List<System.Action<SweepGame>>();
-            string[] scenes = { "pro", "stock", "shop", "news", "fuel", "ev0", "ev1", "ev2", "ev3", "ev4", "gate", "chain", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11", "b12" };
+            string[] scenes = { "pro", "pro2", "re1", "re2", "stock", "shop", "news", "fuel", "ev0", "ev1", "ev2", "ev3", "ev4", "gate", "chain", "b1", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9", "b10", "b11", "b12" };
             for (int lang = 0; lang < 2; lang++)
             {
                 int L = lang;

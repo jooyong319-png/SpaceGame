@@ -1687,3 +1687,49 @@ KESSLER // 빚 명세서	KESSLER // DEBT STATEMENT
 구매 · 	Buy · 
 돈 	Cash 
 보유 중	Owned
+
+소행성 광업	Belt Mining
+소행성대	Belt
+광산주	Mining
+심우주 탐사	Deep Space Survey
+심우주	Deep space
+꿈의 주식	Moonshot
+소행성 광업, 백금 광맥 채굴 시작	Belt Mining starts digging a platinum vein
+소행성대 깊은 곳에서 백금 덩어리가 줄줄이 나왔다.	Chunks of platinum keep coming out of the deep belt.
+소행성 채굴선 충돌 — 광구 폐쇄	Mining ships collide — claim shut down
+채굴선 두 척이 암석 사이에서 부딪혔다. 광구가 닫혔다.	Two mining ships crashed between the rocks. The claim is closed.
+[소문] 소행성대 희토류 독점?	[Rumor] Belt rare-earth monopoly?
+확인되지 않은 소문. 소행성 광업이 희토류 광구를 통째로 샀다는 말.	Unconfirmed. Word is Belt Mining bought up every rare-earth claim.
+심우주 탐사, 외계 신호 해독	Deep Space Survey decodes alien signal
+천왕성 너머에서 잡힌 신호의 첫 줄을 풀었다고 밝혔다.	The company says it cracked the first line of a signal caught beyond Uranus.
+심우주 탐사선 통신 두절	Deep space probe goes silent
+해왕성 궤도를 지나던 탐사선과 연락이 끊겼다.	Contact was lost with a probe passing Neptune's orbit.
+[소문] 심우주 탐사, 외행성 독점 계약?	[Rumor] Deep Space Survey outer-planet monopoly?
+확인되지 않은 소문. 외행성 탐사권을 혼자 따냈다는 이야기.	Unconfirmed. Talk is they won every outer-planet survey right.
+, 항로 개통 호재	: new route opens, stock rallies
+ 항로가 열렸다 — 민간 청소선이 관문을 치웠다.	 route is open — a civilian sweeper cleared the gate.
+ 항로 · 열쇠 +1 · 공로주 	 route · key +1 · reward stock 
+<size=14><color=#ffdf95>공로주 지급</color></size>	<size=14><color=#ffdf95>Reward Stock</color></size>
+<color=#ff5c5c>호재 — 항로 개통 · 다음 출동 동안 상승</color>\n<color=#8a93a3>증권에서 매도 가능</color>	<color=#ff5c5c>Good news — new route · rises next run</color>\n<color=#8a93a3>Sell anytime at the Exchange</color>
+매수 잠김	Buy locked
+<color=#c8b88a>정비고 [증권 계좌] 칸 구매 시 직접 매수 해금</color>	<color=#c8b88a>Buy the [Brokerage Account] node to unlock buying</color>
+han|궤도 증권 한 주임입니다! 케슬러 사은품 주식, 잘 들어와 있네요 대표님.	han|Han from Orbit Exchange! Your Kessler gift shares arrived safely, boss.
+han|종목은 여덟 개 — 먼 항로가 열리면 새로 상장되는 것도 있어요. 전부 궤도 일이랑 엮여 있어요. 목성을 많이 치우면 *목성 선박*이 오르고, 운석이 떨어지면 *지구 연료공사*가 휘청해요.	han|Eight stocks — more get listed as far routes open. All tied to orbit work. Clean up Jupiter and *Jupiter Shipping* climbs; drop a meteor and *Earth Fuel Corp* wobbles.
+han|지금은 *매도만* 돼요. 직접 사시려면 정비고 *[증권 계좌]* 칸부터. 관문을 부수면 그 행성 *공로주*도 들어와요.	han|For now you can only *sell*. To buy, get the *[Brokerage Account]* node in the Workshop first. Break a gate and you get that planet's *reward stock* too.
+직접 매수 해금 — 증권에서 원하는 종목 매수 가능	Buying unlocked — buy any stock at the Exchange
+<color=#9ff0bf>주식 매도 시 납부 가능</color>	<color=#9ff0bf>Payable if you sell stock</color>
+청소선 할부 계약서	Sweeper Installment Contract
+물건	Item
+완납 시	When paid off
+ 1척	 ×1
+12장 · 첫 장 	12 bills · first: 
+청소선 소유권 이전	Ship ownership transfers to you
+<color=#b8432f>계약 사은품 — 케슬러 그룹 주식</color>	<color=#b8432f>Signing gift — Kessler Group shares</color>
+평가 	Value 
+<size=16>서명</size>	<size=16>Sign</size>
+<size=11><color=#8a7f6a>서명하면 도장과 함께 사은품 주식 지급</color></size>	<size=11><color=#8a7f6a>Sign to get stamped and receive the gift shares</color></size>
+yoon|그럼 계약서부터. 여기 서명.	yoon|Contract first, then. Sign here.
+yoon|그건 사은품. 우리 그룹 주식이야. *증권* 쪽에서 언제든 팔 수 있어 — 청구서 낼 때 보태든가.	yoon|That's a gift. Our group's shares. Sell them anytime at the *Exchange* — put it toward a bill, whatever.
+yoon|또 왔네. 같은 배, 같은 조건. 서명만 해.	yoon|You again. Same ship, same terms. Just sign.
+yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영업이거든.	yoon|Same gift, too. We hand out our shares even when you go bust — that's sales.
+<color=#ff8a7a>새 주식 	<color=#ff8a7a>New shares 

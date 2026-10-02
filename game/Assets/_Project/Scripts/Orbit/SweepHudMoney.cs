@@ -231,7 +231,7 @@ namespace SalvageRun.Orbit
                 float sc = Mathf.Lerp(2.2f, 1f, k2);
                 var c = new Vector2(r.xMax - 110, r.y + 300);
                 var m = GUI.matrix;
-                GUIUtility.RotateAroundPivot(-14, c); GUIUtility.ScaleAroundPivot(new Vector2(sc, sc), c);
+                GUI.matrix = m * Matrix4x4.TRS(c, Quaternion.Euler(0, 0, -14), new Vector3(sc, sc, 1)) * Matrix4x4.TRS(-c, Quaternion.identity, Vector3.one);   // 화면 배율(GUI.matrix) 위에서 돌린다 — RotateAroundPivot 은 배율이 걸리면 자리가 어긋났다 (10-02)
                 GUI.color = new Color(0.78f, 0.14f, 0.12f, 0.85f * k2);
                 GUI.DrawTexture(new Rect(c.x - 52, c.y - 52, 104, 104), texRing);
                 GUI.DrawTexture(new Rect(c.x - 44, c.y - 44, 88, 88), texRing);
@@ -315,5 +315,118 @@ namespace SalvageRun.Orbit
 
 
 
-    }
+    
+        // ✍ 청소선 할부 계약서 — 새 회사마다 (10-02 사장님 「사은품 주식」 · 시안 XbhugR76DmgJ5myAa7iz41)
+        // 처음 회사: 윤 대리 첫 인사 끝 → 계약서 (마우스로 그어 서명) → pro2. 파산 뒤: re1 → 계약서 ([서명] 단추 한 번) → re2.
+        // 종이 · 도장 = 대출 계약서와 같다. 서명하면 사은품 주식이 오른쪽 [증권] 탭으로 날아간다.
+        bool hireOpen; float hireSignT = -1, hireFlyT = -1; int hireCo = -1, newStockBadge;
+        public void TestHire(bool stamped = false) { sim.S.hired = false; hireOpen = true; hireSignT = -1; signPts.Clear(); signLen = 0; signing = false; if (stamped) { for (int i = 0; i < 30; i++) signPts.Add(new Vector2(vw / 2 - 150 + i * 9, 375 + Mathf.Sin(i * 0.9f) * 18)); hireSignT = Time.unscaledTime; } }   // 에디터 시험용
+        bool HireTrigger()
+        {
+            var S = sim.S;
+            if (S.hired) return false;
+            if (S.runs > 0 || S.bill > 0) { S.hired = true; return false; }   // 옛 저장 — 이미 일하던 회사는 건너뛴다
+            if (flow != 2) return false;
+            if (hireOpen) return true;
+            if (!sim.M.flags.Contains("g:yoon0")) return false;                 // 첫 인사(pro)가 먼저 — RadioBox 가 띄운다
+            if (sim.M.company > 1 && hireCo != sim.M.company) { hireCo = sim.M.company; DlgStart("re1", true); return true; }
+            hireOpen = true; hireSignT = -1; signPts.Clear(); signLen = 0; signing = false; OrbitSfx.Play("tick", 0.6f, 0.05f, 0.02f);
+            return true;
+        }
+        void HireWin()
+        {
+            bool quick = sim.M.company > 1;
+            GUI.DrawTexture(new Rect(0, 0, vw, RefH), texDim);
+            var r = new Rect(vw / 2 - 220, 26, 440, 520);
+            GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(r.x + 6, r.y + 8, r.width, r.height), white); GUI.color = Color.white;
+            GUI.DrawTexture(r, texPaper);
+            GUI.DrawTexture(new Rect(r.x + 20, r.y + 58, r.width - 40, 2), texInk);
+            paperHead.fontSize = 24; Lbl(new Rect(r.x, r.y + 16, r.width, 36), Loc.T("청소선 할부 계약서"), new GUIStyle(paperHead) { alignment = TextAnchor.UpperCenter });
+            paperSmall.fontSize = 11; Lbl(new Rect(r.x + 20, r.y + 62, r.width - 40, 18), Loc.T("채권자 케슬러 금융 · 채무자 주식회사 궤도 청소부 (") + sim.M.company + Loc.T("대)"), paperSmall);
+            string[] k = { Loc.T("물건"), Loc.T("청구서"), Loc.T("완납 시") };
+            string[] v = { SweepSim.Ships[sim.Ship].name + Loc.T(" 1척"), Loc.T("12장 · 첫 장 ") + SweepSim.Bills[0].t + " " + KNum.Fmt(sim.BillAmount), Loc.T("청소선 소유권 이전") };
+            for (int i = 0; i < 3; i++)
+            {
+                float y = r.y + 90 + i * 32;
+                paperBody.fontSize = 14; Lbl(new Rect(r.x + 30, y, 110, 24), k[i], paperBody);
+                Lbl(new Rect(r.x + 140, y, r.width - 170, 24), Fit(v[i], 15, r.width - 170, paperBody, 11), paperBody);
+                GUI.color = new Color(0, 0, 0, 0.12f); GUI.DrawTexture(new Rect(r.x + 30, y + 26, r.width - 60, 1), white); GUI.color = Color.white;
+            }
+            // 사은품 — 빨간 테
+            var gb = new Rect(r.x + 30, r.y + 196, r.width - 60, 30 + 22 * SweepSim.HireGift.Length);
+            GUI.color = new Color(0.72f, 0.26f, 0.18f); Frame(gb, GUI.color, 2); GUI.color = Color.white;
+            paperSmall.fontSize = 12; Lbl(new Rect(gb.x + 10, gb.y + 6, gb.width - 20, 18), Loc.T("<color=#b8432f>계약 사은품 — 케슬러 그룹 주식</color>"), paperSmall);
+            for (int i = 0; i < SweepSim.HireGift.Length; i++)
+            {
+                int si = System.Array.FindIndex(Market.Defs, x => x.id == SweepSim.HireGift[i].id);
+                paperBody.fontSize = 14; Lbl(new Rect(gb.x + 10, gb.y + 26 + i * 22, 200, 20), si >= 0 ? Market.Defs[si].name : "", paperBody);
+                Lbl(new Rect(gb.x + 10, gb.y + 26 + i * 22, gb.width - 20, 20), Loc.T("평가 ") + KNum.Fmt(SweepSim.HireGift[i].amt), new GUIStyle(paperBody) { alignment = TextAnchor.UpperRight });
+            }
+            hireGiftPos = new Vector2(gb.center.x, gb.center.y);
+            // 서명
+            var sa = new Rect(r.x + 40, r.y + 316, r.width - 80, 100);
+            var ev = Event.current; bool done = hireSignT >= 0;
+            if (!quick)
+            {
+                GUI.color = new Color(0, 0, 0, 0.04f); GUI.DrawTexture(sa, white); GUI.color = Color.white;
+                GUI.DrawTexture(new Rect(sa.x, sa.yMax - 22, sa.width, 2), texInk);
+                paperSmall.fontSize = 11; Lbl(new Rect(sa.x, sa.yMax - 18, 200, 16), Loc.T("서명"), paperSmall);
+                if (!done)
+                {
+                    if (ev.type == EventType.MouseDown && ev.button == 0 && sa.Contains(ev.mousePosition)) { signing = true; signPts.Add(new Vector2(-1, -1)); signPts.Add(ev.mousePosition); ev.Use(); }
+                    else if (ev.type == EventType.MouseDrag && signing)
+                    {
+                        var q = new Vector2(Mathf.Clamp(ev.mousePosition.x, sa.x, sa.xMax), Mathf.Clamp(ev.mousePosition.y, sa.y, sa.yMax));
+                        var last = signPts[signPts.Count - 1];
+                        if ((q - last).sqrMagnitude > 4) { signLen += (q - last).magnitude; signPts.Add(q); if (signPts.Count % 6 == 0) OrbitSfx.Play("tick", 0.15f, 0.04f, 0.3f); }
+                        ev.Use();
+                    }
+                    else if (ev.type == EventType.MouseUp && signing) { signing = false; ev.Use(); if (signLen > 140) { hireSignT = Time.unscaledTime; OrbitSfx.Play("clank", 0.9f); } }
+                    if (signPts.Count == 0) Lbl(new Rect(sa.x, sa.y + 22, sa.width, 24), Loc.T("<color=#8a7f6a>여기를 마우스로 그어 서명하세요</color>"), new GUIStyle(paperBody) { alignment = TextAnchor.UpperCenter });
+                }
+                for (int i = 1; i < signPts.Count; i++)
+                    if (signPts[i - 1].x >= 0 && signPts[i].x >= 0) Line(signPts[i - 1], signPts[i], new Color(0.1f, 0.14f, 0.35f), 2.6f);
+            }
+            else if (!done && Bt(new Rect(r.center.x - 70, sa.y + 30, 140, 40), Loc.T("<size=16>서명</size>"), btn)) { hireSignT = Time.unscaledTime; OrbitSfx.Play("clank", 0.9f); }
+            if (!done) Lbl(new Rect(r.x + 20, r.yMax - 40, r.width - 40, 30), Loc.T("<size=11><color=#8a7f6a>서명하면 도장과 함께 사은품 주식 지급</color></size>"), paperBody);
+            if (done)
+            {
+                float k2 = Mathf.Clamp01((Time.unscaledTime - hireSignT) / 0.18f), sc = Mathf.Lerp(2.2f, 1f, k2);
+                var c = new Vector2(r.xMax - 110, r.y + 360);
+                var m = GUI.matrix;
+                GUI.matrix = m * Matrix4x4.TRS(c, Quaternion.Euler(0, 0, -14), new Vector3(sc, sc, 1)) * Matrix4x4.TRS(-c, Quaternion.identity, Vector3.one);   // 화면 배율(GUI.matrix) 위에서 돌린다 — RotateAroundPivot 은 배율이 걸리면 자리가 어긋났다 (10-02)
+                GUI.color = new Color(0.78f, 0.14f, 0.12f, 0.85f * k2);
+                GUI.DrawTexture(new Rect(c.x - 52, c.y - 52, 104, 104), texRing);
+                GUI.DrawTexture(new Rect(c.x - 44, c.y - 44, 88, 88), texRing);
+                Lbl(new Rect(c.x - 60, c.y - 20, 120, 40), Loc.T("<size=26><b><color=#c42420>승인</color></b></size>"), center);
+                Lbl(new Rect(c.x - 60, c.y + 14, 120, 20), Loc.T("<size=10><color=#c42420>케슬러 금융</color></size>"), center);
+                GUI.matrix = m; GUI.color = Color.white;
+                if (Time.unscaledTime - hireSignT > 1.0f)
+                {
+                    sim.SignHire(); OrbitSfx.Play("buy", 0.8f);
+                    hireOpen = false; hireSignT = -1; signPts.Clear(); hireFlyT = Time.unscaledTime; newStockBadge = SweepSim.HireGift.Length;
+                    DlgStart(quick ? "re2" : "pro2", quick); game.Save();
+                }
+            }
+        }
+        Vector2 hireGiftPos;
+        /// <summary>사은품 주식 칩이 계약서에서 오른쪽 [증권] 탭으로 날아간다 (0.8초 · 둘이 조금씩 어긋나게)</summary>
+        void HireFly()
+        {
+            if (hireFlyT < 0) return;
+            float e = Time.unscaledTime - hireFlyT; if (e > 1.3f) { hireFlyT = -1; return; }
+            var to = new Vector2(Mathf.Min(vw - 21, ox + 964 + 21), 300);
+            for (int i = 0; i < SweepSim.HireGift.Length; i++)
+            {
+                float t = Mathf.Clamp01((e - i * 0.16f) / 0.8f); if (t <= 0 || t >= 1) continue;
+                float u = reduceMotion ? 1 : t * t * (3 - 2 * t);
+                var p = Vector2.Lerp(hireGiftPos + new Vector2(0, i * 22), to, u) - new Vector2(0, Mathf.Sin(u * Mathf.PI) * 40);
+                int si = System.Array.FindIndex(Market.Defs, x => x.id == SweepSim.HireGift[i].id);
+                string tx = "<size=12><color=#bff4d8>" + (si >= 0 ? Market.Defs[si].name : "") + " +" + KNum.Fmt(SweepSim.HireGift[i].amt) + "</color></size>";
+                float w = center.CalcSize(new GUIContent(tx)).x + 16; var rr = new Rect(p.x - w / 2, p.y - 12, w, 24);
+                GUI.color = new Color(0.04f, 0.1f, 0.08f, 0.95f); GUI.DrawTexture(rr, white); Frame(rr, new Color(0.44f, 0.81f, 0.59f), 1.5f); GUI.color = Color.white;
+                Lbl(rr, tx, center);
+            }
+        }
+}
 }

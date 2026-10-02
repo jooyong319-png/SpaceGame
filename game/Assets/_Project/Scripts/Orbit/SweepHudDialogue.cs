@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using SalvageRun.Orbit.Sim;
@@ -35,13 +35,19 @@ namespace SalvageRun.Orbit
                         Loc.T("yoon|지구 궤도가 쓰레기로 꽉 찼어. 위성 하나가 부서지면 그 파편이 또 다른 걸 부수고… 업계에선 그걸 *케슬러 현상*이라고 불러."),
                         Loc.T("yoon|…이름이 우리 회사랑 같은 건 우연이야. 아마도."),
                         Loc.T("yoon|청구서는 *열두 장*. 다 갚으면 이 배는 네 거다."),
+                        Loc.T("yoon|그럼 계약서부터. 여기 서명.") } },
+                    { "pro2", new[] {                                             // ✍ 계약서에 서명한 뒤 (10-02)
+                        Loc.T("yoon|그건 사은품. 우리 그룹 주식이야. *증권* 쪽에서 언제든 팔 수 있어 — 청구서 낼 때 보태든가."),
                         Loc.T("yoon|가운데 노란 단추가 *출동*. 쏘는 법은 나가면 무전으로 알려 줄게. 잔해를 부수면 돈이 되고."),
                         Loc.T("yoon|첫 청구서는 연료비. 다섯 판 안에. …기대는 안 할게.") } },
+                    { "re1", new[] { Loc.T("yoon|또 왔네. 같은 배, 같은 조건. 서명만 해.") } },          // ✍ 파산 뒤 새 회사 — 계약서 앞
+                    { "re2", new[] { Loc.T("yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영업이거든.") } },   // 계약서 뒤
                     { "stock", new[] {
-                        Loc.T("han|궤도 증권 한 주임입니다! 계좌 개설 축하드려요, 대표님."),
-                        Loc.T("han|종목은 여덟 개. 전부 궤도 일이랑 엮여 있어요. 목성을 많이 치우면 *목성 선박*이 오르고, 운석이 떨어지면 *지구 연료공사*가 휘청해요."),
+                        Loc.T("han|궤도 증권 한 주임입니다! 케슬러 사은품 주식, 잘 들어와 있네요 대표님."),
+                        Loc.T("han|종목은 여덟 개 — 먼 항로가 열리면 새로 상장되는 것도 있어요. 전부 궤도 일이랑 엮여 있어요. 목성을 많이 치우면 *목성 선박*이 오르고, 운석이 떨어지면 *지구 연료공사*가 휘청해요."),
                         Loc.T("han|중요한 거 하나! 시세는 *대표님이 출동해 있을 때만* 움직여요. 조종실에 계실 땐 장이 멈춰 있어요. 위에 「시세 멈춤」 보이시죠?"),
                         Loc.T("han|사고파는 건 여기, *조종실에서만*. 출동 중엔 S 키로 시세만 볼 수 있어요."),
+                        Loc.T("han|지금은 *매도만* 돼요. 직접 사시려면 정비고 *[증권 계좌]* 칸부터. 관문을 부수면 그 행성 *공로주*도 들어와요."),
                         Loc.T("han|왼쪽 아래 속보요. ▲면 오르고 ▼면 내려요. 속보보다 먼저 사 두면… 그게 투자죠."),
                         Loc.T("han|아, 너무 자주 사고팔면 수수료가 다 저희 몫이에요. 헤헤.") } },
                     { "shop", new[] {
@@ -171,11 +177,11 @@ namespace SalvageRun.Orbit
                 return;
             }
             if (sim.M.won) return;
+            if (HireTrigger()) return;                                          // ✍ 새 회사 — 할부 계약서부터 (10-02)
             if (flow == 2 && dlgQueue.Count > 0) { var q = dlgQueue[0]; dlgQueue.RemoveAt(0); DlgStart(q); return; }
             if (flow == 2 && sim.S.runs > 0) DlgStart("fuel");
             if (dlgId == null && flow == 2 && sim.S.runs > 0 && sim.GateReady) DlgStart("gate");
             if (dlgId != null) return;
-            if (flow == 3 && sim.StockOpen && !sim.M.flags.Contains("dlg:stock")) { GoFlow(4); return; }   // 📈 09-26 사장님 「증권을 열면 아예 증권 페이지로 가면서 알려 주게」
             if (flow == 4 && sim.StockOpen) DlgStart("stock");
             else if (flow == 5 && sim.ShopOpen) DlgStart("shop");
             else if (newsOpen) DlgStart("news");

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace SalvageRun.Orbit.Sim
@@ -35,7 +35,7 @@ namespace SalvageRun.Orbit.Sim
         public int nextNews = -1; public float nextNewsT;                 // 다음 속보 (내부자 정보가 미리 본다)
     }
 
-    public struct StockDef { public string id, name, sector, desc; public double mu, vol, div; }
+    public struct StockDef { public string id, name, sector, desc; public double mu, vol, div; public int orbit; }   // orbit = 이 행성 항로가 열려야 상장 (0 = 처음부터)
     public struct NewsDef { public string head, body; public string[] up, down; public float size; public bool rumor; }
 
     public class Market
@@ -52,6 +52,9 @@ namespace SalvageRun.Orbit.Sim
             new StockDef { id = "mars",  name = Loc.T("화성 제련소"),   sector = Loc.T("화성"), desc = Loc.T("변동 큼"),        mu = 0.0018, vol = 0.055, div = 0 },
             new StockDef { id = "jup",   name = Loc.T("목성 선박"),     sector = Loc.T("목성"), desc = Loc.T("대박 아니면 쪽박"), mu = 0.0008, vol = 0.085, div = 0 },
             new StockDef { id = "sat",   name = Loc.T("토성 고리 관광"), sector = Loc.T("관광"), desc = Loc.T("테마주"),          mu = 0.0012, vol = 0.07,  div = 0 },
+            // 🛰 10-02 관문 공로주 — 먼 항로가 열리면 상장 (wiki/plan-stocks.md) · 뒤에 붙인다 (옛 저장의 보유 주식 순서가 그대로)
+            new StockDef { id = "belt",  name = Loc.T("소행성 광업"),   sector = Loc.T("소행성대"), desc = Loc.T("광산주"),     mu = 0.0016, vol = 0.05,  div = 0, orbit = 5 },
+            new StockDef { id = "deep",  name = Loc.T("심우주 탐사"),   sector = Loc.T("심우주"), desc = Loc.T("꿈의 주식"),     mu = 0.0014, vol = 0.075, div = 0, orbit = 6 },
         };
         // 🗞 증권 속보 — up / down 은 종목 id 또는 업종 이름. size = 몇 봉에 걸쳐 오를 · 내릴 총 크기
         public static readonly NewsDef[] NewsBook =
@@ -77,6 +80,12 @@ namespace SalvageRun.Orbit.Sim
             new NewsDef { head = Loc.T("[소문] 화성 금맥 발견?"), body = Loc.T("확인되지 않은 소문. 화성 제련소가 금맥을 찾았다는 이야기가 돈다."), up = new[] { "mars" }, size = 0.3f, rumor = true },
             new NewsDef { head = Loc.T("[소문] 목성 선박 부도 임박?"), body = Loc.T("확인되지 않은 소문. 목성 선박이 돈이 말랐다는 말이 돈다."), down = new[] { "jup" }, size = 0.35f, rumor = true },
             new NewsDef { head = Loc.T("[소문] 달 기지 새 광산?"), body = Loc.T("확인되지 않은 소문. 달 뒷면에서 새 광맥이 나왔다고 한다."), up = new[] { "moon" }, size = 0.25f, rumor = true },
+            new NewsDef { head = Loc.T("소행성 광업, 백금 광맥 채굴 시작"), body = Loc.T("소행성대 깊은 곳에서 백금 덩어리가 줄줄이 나왔다."), up = new[] { "belt" }, size = 0.22f },
+            new NewsDef { head = Loc.T("소행성 채굴선 충돌 — 광구 폐쇄"), body = Loc.T("채굴선 두 척이 암석 사이에서 부딪혔다. 광구가 닫혔다."), down = new[] { "belt", "ins" }, size = 0.24f },
+            new NewsDef { head = Loc.T("[소문] 소행성대 희토류 독점?"), body = Loc.T("확인되지 않은 소문. 소행성 광업이 희토류 광구를 통째로 샀다는 말."), up = new[] { "belt" }, size = 0.3f, rumor = true },
+            new NewsDef { head = Loc.T("심우주 탐사, 외계 신호 해독"), body = Loc.T("천왕성 너머에서 잡힌 신호의 첫 줄을 풀었다고 밝혔다."), up = new[] { "deep" }, size = 0.35f },
+            new NewsDef { head = Loc.T("심우주 탐사선 통신 두절"), body = Loc.T("해왕성 궤도를 지나던 탐사선과 연락이 끊겼다."), down = new[] { "deep" }, size = 0.32f },
+            new NewsDef { head = Loc.T("[소문] 심우주 탐사, 외행성 독점 계약?"), body = Loc.T("확인되지 않은 소문. 외행성 탐사권을 혼자 따냈다는 이야기."), up = new[] { "deep" }, size = 0.35f, rumor = true },
             new NewsDef { head = Loc.T("[소문] 토성 관광 정부 지원금?"), body = Loc.T("확인되지 않은 소문. 관광 업계에 지원금이 풀린다는 말."), up = new[] { "sat" }, size = 0.3f, rumor = true },
         };
 
@@ -88,10 +97,10 @@ namespace SalvageRun.Orbit.Sim
             M = m ?? new MarketState();
             if (M.seed == 0) M.seed = 1;
             rng = new Random(M.seed * 7919 + (int)M.clock);
-            if (M.st.Count != Defs.Length)
-            {
-                M.st.Clear();
-                for (int i = 0; i < Defs.Length; i++)
+            if (M.st.Count > Defs.Length) M.st.Clear();
+            if (M.st.Count < Defs.Length)
+            {   // 모자란 종목만 뒤에 붙인다 — 새 종목이 늘어도 옛 저장의 보유 주식은 그대로 (10-02)
+                for (int i = M.st.Count; i < Defs.Length; i++)
                 {
                     var s = new StockState { price = 40 + rng.NextDouble() * 160 };
                     // 지난 봉 40개를 미리 — 처음 열어도 차트가 있다
@@ -125,7 +134,10 @@ namespace SalvageRun.Orbit.Sim
             StartCandle(s);
         }
 
-        void RollNews() { M.nextNews = rng.Next(NewsBook.Length); M.nextNewsT = 1e9f; M.newsT = 0; }   // 다음 속보는 정해 두고, 언제 터질지는 출동이 시작될 때 정한다 (ArmNews)
+        /// <summary>상장된 종목인가 — 시뮬레이션이 정한다 (항로가 열려야 상장). 상장 전 종목의 속보는 고르지 않는다</summary>
+        public Func<int, bool> Listed = _ => true;
+        bool NewsOk(int k) { var nd = NewsBook[k]; for (int i = 0; i < Defs.Length; i++) if (!Listed(i) && (Hits(i, nd.up) || Hits(i, nd.down))) return false; return true; }
+        void RollNews() { int k = rng.Next(NewsBook.Length); for (int t = 0; t < 20 && !NewsOk(k); t++) k = rng.Next(NewsBook.Length); M.nextNews = k; M.nextNewsT = 1e9f; M.newsT = 0; }   // 다음 속보는 정해 두고, 언제 터질지는 출동이 시작될 때 정한다 (ArmNews)
         /// <summary>📰 출동마다 속보 하나 — 출동 5~14초 사이에 터진다 (09-26 사장님 「미리 알아도 출발한 뒤엔 못 사서 의미가 없다」 → 출발 전에 사 두게)</summary>
         public void ArmNews(double t) { if (M.nextNews < 0) RollNews(); M.newsT = 0; M.nextNewsT = (float)t; }
 
@@ -205,6 +217,8 @@ namespace SalvageRun.Orbit.Sim
             if (s.shares < 1e-9) { s.shares = 0; s.cost = 0; }
             return got;
         }
+        /// <summary>주식을 거저 준다 — 금액만큼 지금 값으로 (사은품 · 공로주 · 10-02). 평균가 계산에는 받은 값으로 들어간다</summary>
+        public void Gift(int i, double money) { if (money <= 0) return; var s = M.st[i]; s.shares += money / s.price; s.cost += money; }
         public double Value(int i) => M.st[i].shares * M.st[i].price;
         public double TotalValue() { double v = 0; for (int i = 0; i < M.st.Count; i++) v += Value(i); return v; }
         public double Change(int i, int candles)

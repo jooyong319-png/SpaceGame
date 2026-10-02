@@ -14,8 +14,8 @@ namespace SalvageRun.Orbit
         struct FxText { public string txt; public Vector2 p; public float t0; public Color c; public bool stamp, played; }
         readonly List<FxCoin> fxCoins = new List<FxCoin>();
         readonly List<FxText> fxTexts = new List<FxText>();
-        readonly Vector2[] stockRowPos = new Vector2[8];
-        readonly float[] rowFlash = new float[8]; readonly bool[] rowFlashUp = new bool[8]; readonly int[] rowHist = new int[8];
+        readonly Vector2[] stockRowPos = new Vector2[Market.Defs.Length];
+        readonly float[] rowFlash = new float[Market.Defs.Length]; readonly bool[] rowFlashUp = new bool[Market.Defs.Length]; readonly int[] rowHist = new int[Market.Defs.Length];
         Vector2 stockCashPos = new Vector2(480, 16);
         float bigAt = -9; bool bigPlayed; string bigTxt, bigSub; readonly Vector4[] rain = new Vector4[40];
         const float CoinFly = 0.45f;
@@ -71,7 +71,7 @@ namespace SalvageRun.Orbit
         void RowTick()
         {
             var ms = sim.Mk.M.st;
-            for (int i = 0; i < ms.Count && i < 8; i++)
+            for (int i = 0; i < ms.Count && i < rowHist.Length; i++)
             {
                 int n = ms[i].hist.Count;
                 if (rowHist[i] != n) { if (rowHist[i] != 0 && n > 0) { var c = ms[i].hist[n - 1]; rowFlash[i] = 0.45f; rowFlashUp[i] = c.c >= c.o; } rowHist[i] = n; }
@@ -81,7 +81,7 @@ namespace SalvageRun.Orbit
         /// <summary>종목 줄 바탕 — 봉 번쩍 + 속보 여파가 남아 있으면 불(급등) · 얼음(급락) 테두리</summary>
         void RowFx(int i, Rect row)
         {
-            if (i >= 8) return;
+            if (i >= rowFlash.Length) return;
             if (rowFlash[i] > 0) { var c = rowFlashUp[i] ? UpCol : DnCol; GUI.color = new Color(c.r, c.g, c.b, rowFlash[i] * 0.5f); GUI.DrawTexture(row, white); GUI.color = Color.white; }
             var st = sim.Mk.M.st[i];
             if (st.pushLeft > 0)
@@ -242,5 +242,24 @@ namespace SalvageRun.Orbit
             if (sim.Rage > 0.005) Chip(Loc.T("<size=12><color=#ff8a7a>분노 화력 <b>+") + Mathf.RoundToInt((float)sim.Rage * 100) + "%</b></color></size>", true);
             for (int k = 0; k < Mathf.Min(3, myIdx.Count); k++) { int i = myIdx[k]; Chip("<size=12>" + Clip(Market.Defs[i].name, 7) + " <b>" + PctTxt(MyPct(i)) + (Hot(i) ? " ▲" : "") + "</b></size>", Hot(i)); }
         }
-    }
+    
+        // 📈 공로주 카드 — 관문이 부서지면 오른쪽 위에서 들어와 4초 (10-02 · 시안 FZdzHK3LpK8q7TgnsfpXt8)
+        int giftSeen; float giftT0 = -99;
+        void GiftCard()
+        {
+            if (sim == null) return;
+            if (sim.GiftSeq != giftSeen) { if (giftSeen != 0 || sim.GiftSeq == 1) giftT0 = Time.unscaledTime; giftSeen = sim.GiftSeq; }
+            float e = Time.unscaledTime - giftT0; if (e > 4.5f || sim.GiftStock < 0) return;
+            float k = reduceMotion ? 1 : Mathf.Clamp01(e / 0.35f), a = Mathf.Clamp01((4.5f - e) / 0.5f);
+            k = 1 - (1 - k) * (1 - k);
+            var r = new Rect(vw - 12 - 280 + (1 - k) * 320, 92, 280, 96);
+            GUI.color = new Color(0.05f, 0.07f, 0.11f, 0.96f * a); GUI.DrawTexture(r, white); Frame(r, new Color(1f, 0.87f, 0.58f, a), 1.5f);
+            GUI.color = new Color(1, 1, 1, a);
+            Lbl(new Rect(r.x + 14, r.y + 8, r.width - 28, 20), Loc.T("<size=14><color=#ffdf95>공로주 지급</color></size>"), label);
+            Lbl(new Rect(r.x + 14, r.y + 30, r.width - 28, 24), "<size=15>" + Market.Defs[sim.GiftStock].name + "</size>", label);
+            Lbl(new Rect(r.x + 14, r.y + 30, r.width - 28, 24), "<size=17><b><color=#e8d8c0>+" + KNum.Fmt(sim.GiftAmt) + "</color></b></size>", cost);
+            Lbl(new Rect(r.x + 14, r.y + 58, r.width - 28, 32), Fit(Loc.T("<color=#ff5c5c>호재 — 항로 개통 · 다음 출동 동안 상승</color>\n<color=#8a93a3>증권에서 매도 가능</color>"), 11, r.width - 28, small, 9), small);
+            GUI.color = Color.white;
+        }
+}
 }

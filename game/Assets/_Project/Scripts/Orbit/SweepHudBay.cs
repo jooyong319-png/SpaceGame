@@ -361,7 +361,7 @@ namespace SalvageRun.Orbit
                     BuyAnim(k, cash0 - sim.S.cash >= 1 ? "-" + KNum.Short(cash0 - sim.S.cash) : null);
                     if (n.id == "e_shop") { roomGo = 5; roomGoAt = Time.unscaledTime + 0.5f; }                // 🧭 09-27 사장님 「증권 · 가게 스킬 열리면 바로 거기 가게」 — 사는 효과를 보고 그 방으로
                     else if (n.id == "v_volley" && sim.S.lv[t.stat] == 1) Guide(Loc.T("전탄 발사 해금 — 출동 중 게이지가 차면 Space · 계기판 가운데 단추 (무기 2개부터)"));
-                    else if (n.id == "a_open") { roomGo = 4; roomGoAt = Time.unscaledTime + 0.5f; }
+                    else if (n.id == "a_open") { roomGo = 4; roomGoAt = Time.unscaledTime + 0.5f; Guide(Loc.T("직접 매수 해금 — 증권에서 원하는 종목 매수 가능")); }
                     nodePulse[t.stat] = 1; OrbitSfx.Play("buy", 0.7f, 0.01f, 0.15f); lastBuyBranch = n.branch; panelK = k;
                     if (SweepSim.KeyNodes.Contains(n.id)) BuyFx(pc, new Color(0.71f, 0.61f, 1f), true, Loc.T("핵심 해금!"));   // 핵심 칸만 큰 글자 — 나머지는 도장으로
                 }

@@ -103,6 +103,7 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(1, 1, 1, fl);
                 bool loanOv = new Rect(x + bw + 6, y0 + 190, bw, 32).Contains(Event.current.mousePosition);
                 string foot = loanOk ? (loanOv ? "<color=#ffc2b8>" + KNum.Fmt(need) + Loc.T(" 빌려 납부 · 빚 +") + KNum.Fmt(need * SweepSim.LoanMult) + "</color>" : "<color=#7fcfe0>" + KNum.Fmt(need) + Loc.T(" 부족</color>")) : can ? Loc.T("<color=#9ff0bf>지금 납부 가능</color>") : Loc.T("<color=#7fcfe0>대출 한도 부족</color>");   // 빚 얼마는 [대출로]에 올렸을 때만 (정돈 11)
+                if (!can && !loanOv && sim.Mk != null && sim.S.cash + sim.Mk.TotalValue() * (1 - sim.StockFee) >= sim.BillAmount) foot = Loc.T("<color=#9ff0bf>주식 매도 시 납부 가능</color>");   // 📈 10-02 주식이 청구서 돈
                 Lbl(new Rect(x - 6, y0 + 224, w + 12, 18), "<size=10>" + foot + "</size>", center);
                 GUI.color = Color.white;
             }

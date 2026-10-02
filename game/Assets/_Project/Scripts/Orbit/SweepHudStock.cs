@@ -68,21 +68,24 @@ namespace SalvageRun.Orbit
             L(ls.x + 8, ls.y + 4, 80, Loc.T("<size=10><color=#5f6878>종목</color></size>"));
             Rt(ls.x, ls.y + 4, ls.width - 62, Loc.T("<size=10><color=#5f6878>현재가</color></size>"));
             Rt(ls.x, ls.y + 4, ls.width - 8, Loc.T("<size=10><color=#5f6878>등락</color></size>"));
-            for (int i = 0; i < MS.st.Count; i++)
+            var vis = new List<int>(); for (int i = 0; i < MS.st.Count; i++) if (sim.StockListed(i)) vis.Add(i);   // 상장된 종목만 (10-02)
+            if (!sim.StockListed(MS.sel)) MS.sel = 0;
+            float rowH = vis.Count <= 8 ? 38 : 32;                                  // 열 줄이면 조금 좁게 — 속보 칸을 남긴다
+            for (int vi = 0; vi < vis.Count; vi++)
             {
-                var st = MS.st[i]; var d = Market.Defs[i];
-                var row = new Rect(ls.x + 4, ls.y + 24 + i * 38, ls.width - 8, 36);
+                int i = vis[vi]; var st = MS.st[i]; var d = Market.Defs[i];
+                var row = new Rect(ls.x + 4, ls.y + 24 + vi * rowH, ls.width - 8, rowH - 2);
                 if (MS.sel == i) { GUI.color = new Color(0.11f, 0.15f, 0.21f); GUI.DrawTexture(row, white); GUI.color = Color.white; }
                 else if (row.Contains(Event.current.mousePosition)) { GUI.color = new Color(1, 1, 1, 0.04f); GUI.DrawTexture(row, white); GUI.color = Color.white; }
-                RowFx(i, row); if (i < 8) stockRowPos[i] = new Vector2(row.xMax - 40, row.center.y);
+                RowFx(i, row); if (i < stockRowPos.Length) stockRowPos[i] = new Vector2(row.xMax - 40, row.center.y);
                 double ch = mk.Change(i, 20);
                 string arrow = st.pushLeft > 0 ? (st.push > 0 ? " <color=" + UpHex + ">▲</color>" : " <color=" + DnHex + ">▼</color>") : "";
                 L(row.x + 4, row.y + 1, 150, (Loc.En ? "<size=10>" : "<size=12>") + (st.shares > 0 ? "<color=#ffdf95>● </color>" : "") + d.name + arrow + "</size>");
-                L(row.x + 4, row.y + 18, 150, "<size=9><color=#5f6878>" + d.sector + " · " + d.desc + "</color></size>");
+                L(row.x + 4, row.y + rowH - 20, 150, "<size=9><color=#5f6878>" + d.sector + " · " + d.desc + "</color></size>");
                 Rt(row.x, row.y + 1, row.width - 52, "<size=12>" + Tone(ch, Px(st.price)) + "</size>");
                 Rt(row.x, row.y + 1, row.width - 4, "<size=11>" + Tone(ch, (ch >= 0 ? "+" : "") + (ch * 100).ToString("0.0") + "%") + "</size>");
                 // 작은 선 차트 (최근 20봉)
-                float sx = row.x + row.width - 104, sw = 48, sy = row.y + 20, sh = 12;
+                float sx = row.x + row.width - 104, sw = 48, sy = row.y + rowH - 18, sh = 12;
                 int n0 = Mathf.Max(0, st.hist.Count - 20); float lo = float.MaxValue, hi = float.MinValue;
                 for (int k = n0; k < st.hist.Count; k++) { lo = Mathf.Min(lo, st.hist[k].c); hi = Mathf.Max(hi, st.hist[k].c); }
                 if (st.hist.Count - n0 > 1 && hi > lo)
@@ -93,10 +96,10 @@ namespace SalvageRun.Orbit
                     }
                 if (Bt(row, GUIContent.none, GUIStyle.none)) { MS.sel = i; OrbitSfx.Play("tick", 0.4f); }
             }
-            float ny = ls.y + 24 + 8 * 38 + 6;
+            float ny = ls.y + 24 + vis.Count * rowH + 6;
             GUI.color = LineC; GUI.DrawTexture(new Rect(ls.x + 6, ny, ls.width - 12, 1), white); GUI.color = Color.white;
             L(ls.x + 8, ny + 4, 120, Loc.T("<size=11><b><color=#ff8a7a>속보</color></b></size>"));
-            int nShow = sim.Lv("a_read") > 0 && open ? 4 : 5;                    // 내부자 줄이 있으면 넷만 — 다섯째가 겹쳤다
+            int nShow = Mathf.Max(1, Mathf.FloorToInt((ls.yMax - (sim.Lv("a_read") > 0 && open ? 40 : 4) - (ny + 24)) / 30f));   // 남은 높이만큼 — 내부자 줄 · 종목 열 줄이면 줄어든다
             for (int k = 0; k < nShow && k < MS.news.Count; k++)
             {
                 var nw = MS.news[MS.news.Count - 1 - k];
@@ -265,18 +268,21 @@ namespace SalvageRun.Orbit
             Rt(ob.x, oy, ob.width - 10, "<size=10><color=#8a9bb3>" + (ordSide == 0 ? Loc.T("약 ") + (shBuy >= 10000 ? KNum.Short(shBuy) : shBuy.ToString("#,0.#")) + Loc.T("주") : Loc.T("받을 돈 ") + KNum.Fmt(got)) + "</color></size>");
             oy += 18;
             var go = new Rect(ob.x + 8, oy, ob.width - 16, 34);
-            bool can = ordSide == 0 ? money >= 1 : ss.shares > 0;
+            newStockBadge = 0;                                                     // 증권을 봤다
+            bool buyLock = ordSide == 0 && !sim.StockBuyOpen;                       // 📈 10-02 매수는 [증권 계좌] 칸 뒤 · 매도는 처음부터
+            bool can = buyLock ? false : ordSide == 0 ? money >= 1 : ss.shares > 0;
             bool gov = can && go.Contains(Event.current.mousePosition);
             GUI.color = !can ? new Color(0.12f, 0.13f, 0.16f) : ordSide == 0 ? (gov ? new Color(0.9f, 0.25f, 0.25f) : new Color(0.77f, 0.17f, 0.17f)) : (gov ? new Color(0.25f, 0.5f, 1f) : new Color(0.18f, 0.4f, 0.85f));
             GUI.DrawTexture(go, white); GUI.color = Color.white;
-            Lbl(go, "<size=15><b>" + (can ? "<color=#ffffff>" : "<color=#5f6878>") + (ordSide == 0 ? Loc.T("매수") : Loc.T("매도")) + "</color></b></size>", center);
+            Lbl(go, "<size=15><b>" + (can ? "<color=#ffffff>" : "<color=#5f6878>") + (buyLock ? Loc.T("매수 잠김") : ordSide == 0 ? Loc.T("매수") : Loc.T("매도")) + "</color></b></size>", center);
             if (Bt(go, GUIContent.none, GUIStyle.none) && can)
             {
                 if (ordSide == 0) TradeBuy(si, ordFrac, go.center);
                 else TradeSell(si, ordFrac, go.center);
             }
 
-            if (open) Lbl(new Rect(ob.x + 4, go.yMax + 3, ob.width - 8, 18), Loc.T("<size=10><color=#9ff0bf>●</color> <color=#c8d0dc>매매는 조종실에서만 · 출동 중엔 잠김</color></size>"), center);
+            if (buyLock) Lbl(new Rect(ob.x + 4, go.yMax + 3, ob.width - 8, 18), Fit(Loc.T("<color=#c8b88a>정비고 [증권 계좌] 칸 구매 시 직접 매수 해금</color>"), 10, ob.width - 8, center, 8), center);
+            else if (open) Lbl(new Rect(ob.x + 4, go.yMax + 3, ob.width - 8, 18), Loc.T("<size=10><color=#9ff0bf>●</color> <color=#c8d0dc>매매는 조종실에서만 · 출동 중엔 잠김</color></size>"), center);
             // ⏸ 차트 위 — 지금은 멈춰 있다
             if (open)
             {

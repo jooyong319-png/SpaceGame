@@ -49,6 +49,8 @@ static class Program
     static Result Run(int seed, bool verbose)
     {
         var sim = new SweepSim(null, null, seed);
+        sim.AutoSellGifts = true;                                          // 📈 공로주 · 사은품은 받자마자 판다 (10-02 · 돈 보상과 같게)
+        bool hire = Environment.GetEnvironmentVariable("HIRE") != "0";   // HIRE=0 → 사은품 없이 (전후 비교용)
         if (int.TryParse(Environment.GetEnvironmentVariable("SHIP"), out int forceShip)) { sim.M.shipsOwned = 127; sim.M.ship = forceShip; }   // 🚀 배 비교용 (SHIP=0 빔 · 1 산탄 · 2 작살)
         var rng = new Random(seed * 31 + 1);
         double ax = 600, ay = 360, tx = 600, ty = 360, retarget = 0, shopClock = 0;
@@ -61,6 +63,7 @@ static class Program
         void Mark() { if (rec.billAt[sim.S.bill] < 0) for (int k = 0; k <= sim.S.bill; k++) if (rec.billAt[k] < 0) rec.billAt[k] = Min(); for (int pi = 0; pi < 12; pi++) if (rec.planetAt[pi] < 0 && sim.Open(pi)) rec.planetAt[pi] = Min(); }
         for (int guard = 0; guard < 400 && !sim.M.won; guard++)
         {
+            if (hire && !sim.S.hired) sim.SignHire();                       // ✍ 새 회사 — 할부 계약서 사은품
             Mark();
             // ── 정비소
             if (sim.M.careerOpen)

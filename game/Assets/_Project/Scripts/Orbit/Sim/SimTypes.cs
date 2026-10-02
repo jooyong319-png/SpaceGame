@@ -43,6 +43,7 @@ namespace SalvageRun.Orbit.Sim
         public double cash, billAmount = -1, creditPending, startedAt, debt;   // debt = 갚아야 할 빚 (대출 × 배수)
         public int runs, orbit, bill, billDue = 5, overRuns, contract = -1;
         public bool overdue, rerolled;
+        public bool hired;                                               // ✍ 할부 계약서에 서명했나 — 사은품 주식 (회사마다 · 10-02)
         public int[] lv = new int[SweepSim.NodeCount];
         public int planets = 1;                                          // 연 행성 (비트) — 지구는 늘
         public MarketState market;                                       // 📈 궤도 증권 — 회사마다 (파산하면 새 장)

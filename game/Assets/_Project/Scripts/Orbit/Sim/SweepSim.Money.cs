@@ -33,14 +33,15 @@ namespace SalvageRun.Orbit.Sim
         }
         // 📈 궤도 증권 — 규칙은 Market.cs. 여기선 돈 · 칸과 잇는다
         public Market Mk;
-        public bool StockOpen => Lv("a_open") > 0;
+        public bool StockOpen => true;                                           // 📈 10-02 증권 화면 · 시세 · 매도는 처음부터 (사은품 · 공로주를 팔 수 있게 · wiki/plan-stocks.md)
+        public bool StockBuyOpen => Lv("a_open") > 0;                           // [증권 계좌] 칸 = 직접 매수
         public double StockFee => Part("fee0") > 0 ? 0 : new[] { 0.01, 0.006, 0.003, 0 }[Math.Min(3, Lv("a_big"))];
         public double StockDiv => 0.0003 * Lv("a_big") + Part("div");
         public double LuckAt => new[] { 0, 0.6, 0.7, 0.8 }[Math.Min(3, Lv("a_ins"))];   // 🍀 행운의 부적 — 내 종목 나쁜 속보를 좋은 속보로 (09-24 사장님 「자동 매도 말고 오를 확률」)
         void MakeMarket()
         {
             if (S.market == null) S.market = new MarketState { seed = 1 + (int)(M.playSeconds * 7) % 100000 + M.company * 131 };
-            Mk = new Market(S.market);
+            Mk = new Market(S.market) { Listed = StockListed };
         }
         /// <summary>시장 시간 — 판 중이든 조종실이든 (계좌를 열었을 때만). 배당 · 자동 매도 돈은 바로 들어온다</summary>
         public void MarketTick(double dt)
@@ -48,7 +49,7 @@ namespace SalvageRun.Orbit.Sim
             if (!StockOpen || Mk == null) return;
             S.cash += Mk.Update(dt, Lv("a_auto") > 0 ? 0.0008 : 0, LuckAt, StockFee, StockDiv);
         }
-        public void StockBuy(int i, double frac) { if (!StockOpen) return; double money = Math.Floor(S.cash * frac); if (money < 1) return; S.cash -= Mk.Buy(i, money, StockFee); }
+        public void StockBuy(int i, double frac) { if (!StockBuyOpen) return; double money = Math.Floor(S.cash * frac); if (money < 1) return; S.cash -= Mk.Buy(i, money, StockFee); }
         public void StockSell(int i, double frac) { if (!StockOpen) return; S.cash += Math.Floor(Mk.Sell(i, frac, StockFee)); }
 
         // 🎟 즉석 복권 · 🎱 궤도 로또 (09-23 사장님 「복권 두 가지 다」) — 게임 안 돈만. 평균 기대값 0.7 안팎 (복권답게 손해)

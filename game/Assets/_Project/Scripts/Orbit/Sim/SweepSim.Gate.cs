@@ -50,12 +50,31 @@ namespace SalvageRun.Orbit.Sim
         {   // 칠 때마다 가끔 비싼 파편이 떨어진다 — 관문을 치는 판도 손해만은 아니게
             if (Rnd() < 0.25) SpawnFree(Rnd() < 0.75 ? Chip : Rnd() < 0.7 ? Sat : Vault, d.x, d.y, Rnd(-120, 120), Rnd(-90, 90), 2.4);
         }
+        // 📈 10-02 관문 공로주 (사장님 「보스를 잡으면 주던 돈을 관련 주로만 전부」 · wiki/plan-stocks.md) — 관문 순위 → 종목
+        public static readonly string[] GateStock = { "moon", "mars", "belt", "jup", "sat", "deep", "deep", "belt", "belt", "deep", "deep" };
+        public bool AutoSellGifts;                                               // 봇 — 받자마자 판다 (수수료 없이 · 돈 보상과 같게)
+        public int GiftSeq, GiftStock = -1; public double GiftAmt;              // 화면 연출용 — 마지막으로 받은 주식
+        /// <summary>돈 대신 주식으로 준다 (금액만큼 · 지금 값으로). 봇이면 돈으로</summary>
+        public void GiftShares(string id, double amt, bool card = true)
+        {
+            int si = Array.FindIndex(Market.Defs, x => x.id == id);
+            if (si < 0 || Mk == null || AutoSellGifts || amt <= 0) { S.cash += Math.Max(0, amt); return; }
+            Mk.Gift(si, amt);
+            if (card) { GiftStock = si; GiftAmt = amt; GiftSeq++; }
+        }
+        // ✍ 할부 계약 사은품 — 새 회사마다 케슬러 그룹 주식 (첫 청구서 정도 · 10-02 · 시안 XbhugR76DmgJ5myAa7iz41)
+        public static readonly (string id, double amt)[] HireGift = { ("kes", 30), ("ship", 30) };
+        public bool SignHire() { if (S.hired) return false; S.hired = true; foreach (var g in HireGift) GiftShares(g.id, g.amt, false); return true; }
         void GateBroken(Junk d)
         {
             int next = OrbitOrder[Frontier + 1];
             S.gateNext = next; S.gateFrac = 1; S.gateMax = 0; S.keys++;
-            double bonus = Math.Max(S.runAvg * 3, BillAmount * 0.3); S.cash += bonus;
-            Emit(SwEv.Pop, d.x, d.y - 30, 0, 3, Loc.T("🛰 관문 붕괴! ") + Orbits[next].name + Loc.T(" 항로 · 열쇠 +1 · +") + Math.Round(bonus));
+            double bonus = Math.Max(S.runAvg * 3, BillAmount * 0.3);
+            string gid = GateStock[Math.Min(Frontier, GateStock.Length - 1)]; int gsi = Array.FindIndex(Market.Defs, x => x.id == gid);
+            string gnm = gsi >= 0 ? Market.Defs[gsi].name : "";
+            GiftShares(gid, bonus);
+            if (Mk != null && gsi >= 0) Mk.GameEvent(gnm + Loc.T(", 항로 개통 호재"), Orbits[next].name + Loc.T(" 항로가 열렸다 — 민간 청소선이 관문을 치웠다."), new[] { gid }, null, 0.18f);   // 들고 있으면 다음 출동 동안 오른다
+            Emit(SwEv.Pop, d.x, d.y - 30, 0, 3, Loc.T("🛰 관문 붕괴! ") + Orbits[next].name + Loc.T(" 항로 · 열쇠 +1 · 공로주 ") + gnm + " +" + Math.Round(bonus));
             Emit(SwEv.Act, 0, 0, 1, 0, GateName + Loc.T(" 붕괴 — ") + Orbits[next].name + Loc.T(" 항로"));
             AddNews(null, GateName + Loc.T(" 붕괴 — 민간 청소선이 해냈다"), Orbits[S.orbit].name + Loc.T(" 궤도를 막고 있던 ") + GateName + Loc.T("이(가) 부서졌다. ") + Orbits[next].name + Loc.T(" 항로가 열렸다."));
         }
