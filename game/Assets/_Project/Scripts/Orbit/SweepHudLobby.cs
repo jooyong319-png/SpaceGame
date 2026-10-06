@@ -26,6 +26,24 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(0.02f, 0.03f, 0.05f, 0.92f * (1 - Mathf.SmoothStep(0f, 1f, (k - 0.42f) / 0.58f)) * a);   // 이름 · 단추 뒤는 진하게, 오른쪽으로 옅게
                 GUI.DrawTexture(new Rect(i * vw * 0.025f, 0, vw * 0.025f + 1, RefH), white);
             }
+            // 🚀 10-07 지금 타는 배가 지구 쪽으로 — 오른쪽 아래 빈 곳에 (격납고 도트 그대로 · 움직임 줄이기면 멈춤)
+            var shipTx = HullTex(Mathf.Clamp(sim.Ship, 0, HullName.Length - 1));
+            if (shipTx != null)
+            {
+                float bob = reduceMotion ? 0 : Mathf.Sin(lobbyT * 1.3f) * 4, sz = 96;
+                var sc = new Vector2(vw * 0.70f, RefH * 0.70f + bob);
+                var m0 = GUI.matrix;
+                GUI.matrix = m0 * Matrix4x4.TRS(sc, Quaternion.Euler(0, 0, -38), Vector3.one) * Matrix4x4.TRS(-sc, Quaternion.identity, Vector3.one);
+                float fl = reduceMotion ? 1 : 0.8f + 0.2f * Mathf.Sin(lobbyT * 23);
+                for (int k = 0; k < 4; k++)   // 엔진 불꽃 — 꼬리 쪽으로 가늘어지는 점 넷
+                {
+                    float fw = (10 - k * 2) * fl, fy2 = sc.y + sz * 0.40f + k * 7 * fl;
+                    GUI.color = k == 0 ? new Color(1f, 0.92f, 0.65f, 0.8f * a) : new Color(1f, 0.6f, 0.25f, (0.55f - k * 0.12f) * a);
+                    GUI.DrawTexture(new Rect(sc.x - fw / 2, fy2, fw, fw * 1.2f), texDisc);
+                }
+                GUI.color = new Color(1, 1, 1, a); GUI.DrawTexture(new Rect(sc.x - sz / 2, sc.y - sz / 2, sz, sz), shipTx, ScaleMode.ScaleToFit);
+                GUI.matrix = m0;
+            }
             GUI.color = new Color(1, 1, 1, a);
             float x = Mathf.Max(48, ox + 40);
             // 이름
