@@ -149,7 +149,7 @@ static class Tests
         s.lv[Ix("c_pow")] = 5; want["c_pow"] = 5;                     // 앞쪽은 그대로
         int[] eVals = { 3, 2, 1, 3, 0, 2, 0, 1 }, lVals = { 3, 2, 1, 1 }, oVals = { 1, 1, 0, 1, 0, 0, 1, 4, 0, 7, 2, 0 };
         for (int j = 0; j < 8; j++) { s.lv[106 + j] = eVals[j]; want[ids[j]] = eVals[j]; }
-        for (int j = 0; j < 4; j++) { s.lv[114 + j] = lVals[j]; want[ids[8 + j]] = lVals[j]; }
+        for (int j = 0; j < 4; j++) { s.lv[114 + j] = lVals[j]; want[ids[8 + j]] = Math.Min(lVals[j], SweepSim.Nodes[Ix(ids[8 + j])].max); }   // 10-06 복권 단골(3) → 투시경(1) — 최대치로 잘린다
         for (int j = 0; j < 12; j++) { s.lv[118 + j] = oVals[j]; want[old[j]] = Math.Min(oVals[j], SweepSim.Nodes[Ix(old[j])].max); }   // 예전 ∞ 칸은 5단계로 잘린다 (09-26)
         var sim = new SweepSim(s, null, 1);
         foreach (var kv in want) if (sim.Lv(kv.Key) != kv.Value) Fail($"옮기기: {kv.Key} = {sim.Lv(kv.Key)} (기대 {kv.Value})");
@@ -366,12 +366,21 @@ static class Tests
         // 9칸 — 당첨이면 그 그림이 셋, 다른 그림은 둘까지 · 꽝이면 셋인 그림 없음
         var s4 = new SweepSim(null, null, 47); s4.S.cash = 1e15;
         for (int i = 0; i < 3000; i++) { s4.S.runs = i; var g = s4.ScratchBuy(out int w); var c = new int[8]; foreach (var x in g) c[x]++; for (int k = 0; k < 8; k++) if (c[k] >= 3 && k != w || k == w && c[k] != 3) { Fail($"칸 짜임: 등수 {w} · {string.Join(",", c)}"); break; } s4.ScratchClaim(); }
+        // ★ 와일드 별 — 약 8% · 당첨이면 그림 둘 + 별 · 꽝이면 별이 있어도 같은 그림 둘이 없다 (별이 뜻밖의 당첨을 만들지 않게)
+        var s5 = new SweepSim(null, null, 48); s5.S.cash = 1e15; s5.S.lv[Ix("l_wild")] = 1; int starN = 0;
+        for (int i = 0; i < 5000; i++)
+        {
+            s5.S.runs = i; var g = s5.ScratchBuy(out int w); var c = new int[8]; int st = 0; foreach (var x in g) { if (x == SweepSim.ScratchStar) st++; else c[x]++; }
+            if (st > 0) { starN++; for (int k = 0; k < 8; k++) if (k != w && c[k] + st >= 3) { Fail($"별이 뜻밖의 당첨: 등수 {w} · 그림 {k}"); break; } if (w >= 0 && c[w] != 2) Fail($"별 당첨 짜임 {c[w]}"); }
+            s5.ScratchClaim();
+        }
+        if (starN < 250 || starN > 550) Fail($"와일드 별 {starN}/5000 (약 400 기대)");
         int wins = 0; var s2 = new SweepSim(null, null, 45); s2.S.cash = 1e15; s2.S.lv[Ix("l_luck")] = 3;
         for (int i = 0; i < 4000; i++) { s2.S.runs = i; s2.ScratchBuy(out int w); s2.ScratchClaim(); if (w >= 0) wins++; }
         var s3 = new SweepSim(null, null, 46); s3.S.cash = 1e15; int wins0 = 0;
         for (int i = 0; i < 4000; i++) { s3.S.runs = i; s3.ScratchBuy(out int w); s3.ScratchClaim(); if (w >= 0) wins0++; }
         if (!(wins > wins0 * 1.6)) Fail($"행운의 긁개 3: 당첨 {wins} vs 없음 {wins0}");
-        Console.WriteLine($"   표값 {p0} → {p6} (7장) · 공짜 · 9칸 · 긁개(당첨 {wins0} → {wins} / 4000)");
+        Console.WriteLine($"   표값 {p0} → {p6} (7장) · 공짜 · 9칸 · 별 {starN}/5000 · 긁개(당첨 {wins0} → {wins} / 4000)");
     }
 
     // 10 — 클릭한 판이 더 부순다

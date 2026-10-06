@@ -63,7 +63,8 @@ namespace SalvageRun.Orbit.Sim
         public const int ScratchCells = 9;
         public static string RankName(int n) => Loc.En ? n + (n == 1 ? "st" : n == 2 ? "nd" : n == 3 ? "rd" : "th") : n + "등";   // 🌐 1등 · 1st
         public double ScratchBase => Math.Max(10, Math.Round(ShopBase * 0.15 / 10) * 10);   // 첫 장 = 판 벌이의 15%
-        public double ScratchGrow => Math.Max(1.06, 1.3 - 0.08 * Lv("l_more"));     // 장마다 오르는 배수 — 「복권 단골」 칸이 줄인다 (임시 · 스킬 개편 시안 대기)
+        public const double ScratchGrow = 1.3;                                    // 장마다 오르는 배수 (10-06 사장님 「표값 내려가는 건 빼자」)
+        public const int ScratchStar = 8;                                         // ★ 와일드 별 — 칸 번호 (등수 그림 0~7 뒤)
         int ScratchPaidN => S.scratchRun == S.runs ? S.scratchN : 0;               // 이번 판에 돈 내고 산 장수
         int ScratchFreeUsed => S.scratchRun == S.runs ? S.scratchFree : 0;
         static double RoundPrice(double v) => v < 100 ? Math.Round(v) : Math.Round(v / 10) * 10;   // 작은 값은 1 단위 — 10 단위면 초반 ×1.3 이 안 보였다
@@ -71,7 +72,7 @@ namespace SalvageRun.Orbit.Sim
         public double ScratchNextPrice => Math.Max(10, RoundPrice(ScratchBase * Math.Pow(ScratchGrow, ScratchPaidN + 1)));
         public int ScratchLeft => S.freeTix + (Lv("l_free") > 0 ? Math.Max(0, 2 - ScratchFreeUsed) : 0);   // 공짜로 긁을 수 있는 장수 (돈 내고는 제한 없음)
         public double ScratchCost => ScratchLeft > 0 ? 0 : ScratchPrice;
-        public double ScratchMoney(int tier) => Math.Round(ShopBase * ScratchK[tier] * (Lv("l_jack") > 0 ? 3 : 1));
+        public double ScratchMoney(int tier) => Math.Round(ShopBase * ScratchK[tier] * (Lv("l_jack") > 0 && tier <= 1 ? 3 : 1));   // 잭팟 — 1 · 2등만 ×3
         int scratchWin = -1;                                                     // 긁어서 다 보이면 받는다
         public void DebugScratchWin(int w) => scratchWin = w;                     // 시험용 — 이 등수로 받기
         public string ScratchText;                                               // 받은 것 한 줄 (화면에 띄운다)
@@ -86,13 +87,17 @@ namespace SalvageRun.Orbit.Sim
             else if (Lv("l_free") > 0 && S.scratchFree < 2) S.scratchFree++;
             else S.scratchN++;
             S.cash -= cost;
-            double u = luck.NextDouble() / (1 + 0.5 * Lv("l_luck")), acc = 0;    // 행운의 긁개 — 단계마다 +50%
+            double u = luck.NextDouble() / (1 + 0.3 * Lv("l_luck")), acc = 0;    // 행운의 긁개 — 단계마다 +30% (10-06 · 등수가 늘어 +50% 는 과했다)
             for (int k = 0; k < ScratchOdds.Length; k++) { acc += ScratchOdds[k]; if (u < acc) { win = k; break; } }
             scratchWin = win;
             // 9칸 — 당첨 그림 셋 + 나머지는 같은 그림이 둘까지만 (다른 셋이 생기지 않게)
+            // ★ 와일드 별 — 있으면 당첨 셋 중 하나가 별이 되고, 나머지는 한 장씩만 (둘 + 별이 뜻밖의 당첨이 되지 않게)
+            bool star = Lv("l_wild") > 0 && luck.NextDouble() < 0.08;
+            int cap = star ? 1 : 2;
             var cells = new List<int>(); var cnt = new int[ScratchSym.Length];
-            if (win >= 0) { for (int i = 0; i < 3; i++) cells.Add(win); cnt[win] = 3; }
-            while (cells.Count < ScratchCells) { int c = luck.Next(ScratchSym.Length); if (cnt[c] >= 2) continue; cnt[c]++; cells.Add(c); }
+            if (win >= 0) { cells.Add(win); cells.Add(win); cells.Add(star ? ScratchStar : win); cnt[win] = 99; }
+            else if (star) cells.Add(ScratchStar);
+            while (cells.Count < ScratchCells) { int c = luck.Next(ScratchSym.Length); if (cnt[c] >= cap) continue; cnt[c]++; cells.Add(c); }
             for (int i = cells.Count - 1; i > 0; i--) { int j = luck.Next(i + 1); (cells[i], cells[j]) = (cells[j], cells[i]); }
             return cells.ToArray();
         }
@@ -100,7 +105,11 @@ namespace SalvageRun.Orbit.Sim
         public double ScratchClaim()
         {
             int w = scratchWin; scratchWin = -1; ScratchText = null;
-            if (w < 0) return 0;
+            if (w < 0)
+            {   // ↺ 다시 긁기 — 꽝이면 25% 로 공짜 표
+                if (Lv("l_again") > 0 && luck.NextDouble() < 0.25) { S.freeTix++; ScratchText = Loc.T("꽝 — 다시 긁기! 공짜 표 1장"); }
+                return 0;
+            }
             double got = ScratchMoney(w), R0 = ShopBase;
             string head = RankName(w + 1) + " — " + ScratchSym[w] + Loc.T(" 셋");
             switch (w)
@@ -112,6 +121,7 @@ namespace SalvageRun.Orbit.Sim
                 case 6: if (S.nFuel < 10) { S.nFuel = 10; ScratchText = head + Loc.T(" · 다음 판 연료 +10초"); } else { got = Math.Round(R0 * 0.3); ScratchText = head + Loc.T(" · 이미 걸려 있어 돈으로 +") + got; } break;
                 default: ScratchText = head + " · +" + Math.Round(got); break;
             }
+            if (w <= 1 && Lv("l_jack") > 0) ScratchText += Loc.T(" · 잭팟!");
             got = Math.Round(got); S.cash += got;
             return got;
         }

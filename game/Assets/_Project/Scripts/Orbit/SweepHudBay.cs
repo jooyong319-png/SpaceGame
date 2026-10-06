@@ -644,6 +644,8 @@ namespace SalvageRun.Orbit
                 case "e_save": return Loc.T("이자 ") + (2 * l) + "%";
                 case "e_guard": return Loc.T("상환 ") + (l > 0 ? 20 : 30) + "%";
                 case "e_used": return "-" + (5 * l) + "%";
+                case "l_more": case "l_free": case "l_jack": case "l_wild": case "l_again": return l > 0 ? Loc.T("켜짐") : Loc.T("꺼짐");   // 🎟 10-06 복권 칸
+                case "l_luck": return Loc.T("당첨 +") + (30 * l) + "%";
             }
             return l.ToString();
         }

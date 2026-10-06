@@ -1774,3 +1774,17 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 <size=10><color=#7fcfe0>한 장 	<size=10><color=#7fcfe0>Ticket 
 즉석 복권 표값 오름 −0.08 (단계마다 · 기본 ×1.3)	Scratch ticket price growth −0.08 (per level · base ×1.3)
 즉석 복권 돈 당첨 ×3	Scratch ticket cash prizes ×3
+투시경	Peek Lens
+즉석 복권을 살 때 9칸 중 1칸이 미리 비침	When you buy a scratch ticket, 1 of the 9 boxes shows through
+즉석 복권 당첨 확률 +30% (단계마다)	Scratch ticket win chance +30% (per level)
+즉석 복권 1 · 2등 상금 ×3	Scratch ticket 1st and 2nd prizes ×3
+와일드 별	Wild Star
+즉석 복권 8% 확률로 한 칸이 ★ — 아무 그림으로 쳐 줌	8% chance a box is ★ — counts as any symbol
+다시 긁기	Scratch Again
+즉석 복권 꽝이면 25% 확률로 공짜 표 1장	25% chance of a free ticket when you lose
+꽝 — 다시 긁기! 공짜 표 1장	No luck — Scratch Again! 1 free ticket
+ · 잭팟!	 · Jackpot!
+<size=10><color=#5a2050>와일드</color></size>	<size=10><color=#5a2050>Wild</color></size>
+<size=9><color=#06202a>투시</color></size>	<size=9><color=#06202a>Peek</color></size>
+다음 판 화력 +30%	Next run firepower +30%
+당첨 +	Win chance +

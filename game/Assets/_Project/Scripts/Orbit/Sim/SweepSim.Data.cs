@@ -193,23 +193,26 @@ namespace SalvageRun.Orbit.Sim
             N("w_mag_e", "arm", Loc.T("자석 펄스 특화"), Loc.T("끄는 범위 +20%"), new[] { "w_mag_a" }, 1, 4800000, 4, 3, 0, 0),
             N("w_rail_e", "arm", Loc.T("레일건 특화"), Loc.T("사거리 +120 — 3단계: 한 줄 더"), new[] { "w_rail_a" }, 1, 18000000, 4, 3, 0, 0),
             // 🎟 복권 — 스킬로 (09-24 사장님 33번)
-            N("l_more", "eco", Loc.T("복권 단골"), Loc.T("즉석 복권 표값 오름 −0.08 (단계마다 · 기본 ×1.3)"), new[] { "e_val" }, 1, 300, 3, 3, 0, 0),
-            N("l_luck", "eco", Loc.T("행운의 긁개"), Loc.T("즉석 복권 당첨 확률 +50% (단계마다)"), new[] { "l_more" }, 1, 2000, 3, 3, 0, 0),
+            N("l_more", "eco", Loc.T("투시경"), Loc.T("즉석 복권을 살 때 9칸 중 1칸이 미리 비침"), new[] { "e_val" }, 1, 300, 1, 1, 0, 0),   // 🎟 10-06 복권 단골(장수 · 표값) → 투시경 (사장님 「표값 내려가는 건 빼자」 · 시안 5raBznjBUK92nar8j2qc8x)
+            N("l_luck", "eco", Loc.T("행운의 긁개"), Loc.T("즉석 복권 당첨 확률 +30% (단계마다)"), new[] { "l_more" }, 1, 2000, 3, 3, 0, 0),
             N("l_free", "eco", Loc.T("첫 장은 공짜"), Loc.T("판마다 즉석 복권 두 장이 공짜"), new[] { "l_luck" }, 1, 1500, 1, 1, 0, 0),
-            N("l_jack", "eco", Loc.T("잭팟"), Loc.T("즉석 복권 돈 당첨 ×3"), new[] { "l_luck" }, 1, 30000, 1, 1, 0, 0),
+            N("l_jack", "eco", Loc.T("잭팟"), Loc.T("즉석 복권 1 · 2등 상금 ×3"), new[] { "l_luck" }, 1, 30000, 1, 1, 0, 0),
             N("v_volley", "arm", Loc.T("🚀 전탄 발사"), Loc.T("출동 중 게이지가 차면 Space · 계기판 단추 — 보유한 무기 전부 동시 발사. 단계마다 더 오래 · 더 촘촘히 · 게이지 충전 빨라짐 (무기 2개부터)"), new[] { "w_hub" }, 1, 4000, 4, 3, 0, 0),   // 09-26 사장님 「전탄 발사도 트리에 · 기본은 안 좋게 · 지금이 최종」
             // 🪐 09-27 행성 셋 더 — 맨 뒤에만 (저장 규칙)
             N("p_oort", "route", Loc.T("오르트 구름 항로"), Loc.T("태양계 바깥 얼음 혜성 떼 — 값 ×19683 · 단단하고 느림"), new[] { "p_kui" }, 1, 120000000, 1, 1, 0, 0),
             N("p_helio", "route", Loc.T("태양권 계면 항로"), Loc.T("태양풍이 부딪히는 경계 — 값 ×59049 · 출렁이는 잔해"), new[] { "p_oort" }, 1, 240000000, 1, 1, 0, 0),
             N("p_inter", "route", Loc.T("성간 공간 항로"), Loc.T("태양 빛이 닿지 않는 곳 — 값 ×177147 · 드문드문 · 가장 비쌈"), new[] { "p_helio" }, 1, 480000000, 1, 1, 0, 0),
+            // 🎟 10-06 복권 칸 둘 더 — 맨 뒤에만 (저장 규칙)
+            N("l_wild", "eco", Loc.T("와일드 별"), Loc.T("즉석 복권 8% 확률로 한 칸이 ★ — 아무 그림으로 쳐 줌"), new[] { "l_luck" }, 1, 6000, 1, 1, 0, 0),
+            N("l_again", "eco", Loc.T("다시 긁기"), Loc.T("즉석 복권 꽝이면 25% 확률로 공짜 표 1장"), new[] { "l_free" }, 1, 4000, 1, 1, 0, 0),
         };
-        public const int NodeCount = 134;
+        public const int NodeCount = 136;
         /// <summary>◆ 핵심 칸 — 돈 + 열쇠 하나 (부품 가게에서 산다). 각성도 여기</summary>
         public static readonly HashSet<string> KeyNodes = new HashSet<string> { "w_laser_a", "w_chain_a", "k_claw", "k_drone", "k_bh", "k_eco", "k_route", "w_slot2", "w_vac_a", "w_mine_a", "w_frz_a", "w_clus_a", "w_mag_a", "w_rail_a", "x_claw_arm", "x_arm_drone", "x_drone_bh", "x_bh_eco", "x_eco_route", "x_route_claw" };
         public static readonly string[] WeaponName = { Loc.T("집게 빔"), Loc.T("레이저"), Loc.T("번개"), Loc.T("청소기"), Loc.T("기뢰"), Loc.T("냉동 빔"), Loc.T("분열탄"), Loc.T("자석"), Loc.T("레일건") };
         public static readonly string[] WeaponNode = { null, "w_laser", "w_chain", "w_vac", "w_mine", "w_frz", "w_clus", "w_mag", "w_rail" };
         public static readonly string[] PlanetNode = { null, "p_moon", "p_mars", "p_jup", "p_sat", "p_belt", "p_ura", "p_nep", "p_kui", "p_oort", "p_helio", "p_inter" };   // 09-27 행성 셋 더 (사장님 「끝까지 가려면 행성이 더 있어야」)
-        public static readonly Dictionary<string, string> IconAlias = new Dictionary<string, string> { { "v_volley", "w_hub" }, { "l_more", "e_val" }, { "l_luck", "e_val" }, { "l_free", "e_val" }, { "l_jack", "e_val" }, { "w_laser_e", "w_laser_u" }, { "w_chain_e", "w_chain_u" }, { "w_vac_e", "w_vac_u" }, { "w_mine_e", "w_mine_u" }, { "w_frz_e", "w_frz_u" }, { "w_clus_e", "w_clus_u" }, { "w_mag_e", "w_mag_u" }, { "w_rail_e", "w_rail_u" }, { "m_claw", "c_pow" }, { "m_crit", "c_crit" }, { "m_fuel", "c_fuel" }, { "m_drone", "d_fact" }, { "m_dcount", "d_n" }, { "m_bh", "b_n" }, { "m_val", "e_val" }, { "m_route", "o_wide" }, { "w_laser_x", "w_laser_u" }, { "w_chain_x", "w_chain_u" }, { "w_vac_x", "w_vac_u" }, { "w_mine_x", "w_mine_u" }, { "w_frz_x", "w_frz_u" }, { "w_clus_x", "w_clus_u" }, { "w_mag_x", "w_mag_u" }, { "w_rail_x", "w_rail_u" } };
+        public static readonly Dictionary<string, string> IconAlias = new Dictionary<string, string> { { "v_volley", "w_hub" }, { "l_more", "e_val" }, { "l_luck", "e_val" }, { "l_wild", "e_val" }, { "l_again", "e_val" }, { "l_free", "e_val" }, { "l_jack", "e_val" }, { "w_laser_e", "w_laser_u" }, { "w_chain_e", "w_chain_u" }, { "w_vac_e", "w_vac_u" }, { "w_mine_e", "w_mine_u" }, { "w_frz_e", "w_frz_u" }, { "w_clus_e", "w_clus_u" }, { "w_mag_e", "w_mag_u" }, { "w_rail_e", "w_rail_u" }, { "m_claw", "c_pow" }, { "m_crit", "c_crit" }, { "m_fuel", "c_fuel" }, { "m_drone", "d_fact" }, { "m_dcount", "d_n" }, { "m_bh", "b_n" }, { "m_val", "e_val" }, { "m_route", "o_wide" }, { "w_laser_x", "w_laser_u" }, { "w_chain_x", "w_chain_u" }, { "w_vac_x", "w_vac_u" }, { "w_mine_x", "w_mine_u" }, { "w_frz_x", "w_frz_u" }, { "w_clus_x", "w_clus_u" }, { "w_mag_x", "w_mag_u" }, { "w_rail_x", "w_rail_u" } };
         public static bool Ring4(string id) => id.StartsWith("m_") || (id.StartsWith("w_") && id.EndsWith("_x"));
         public static readonly int[] OrbitOrder = { 0, 1, 2, 5, 3, 4, 6, 7, 8, 9, 10, 11 };          // 가까운 → 먼 (소행성대는 번호 5지만 화성과 목성 사이)
         // ───────────────────────── 정비소 트리 자리 (손으로 격자에 놓았다 · 시안 https://claude.ai/artifact/NLZseBQWXKMGfuAmFDFJcR)
@@ -336,10 +339,12 @@ namespace SalvageRun.Orbit.Sim
             { "w_clus_e", new TreeSpot { par = "w_clus_a", tile = 1, x = 8, y = -7, dx = 1, dy = 0 } },
             { "w_mag_e", new TreeSpot { par = "w_mag_a", tile = 1, x = 8, y = -8, dx = 1, dy = 0 } },
             { "w_rail_e", new TreeSpot { par = "w_rail_a", tile = 1, x = 8, y = -9, dx = 1, dy = 0 } },
-            { "l_more", new TreeSpot { par = "e_val", tile = 1, x = -2, y = 1, dx = -1, dy = 0 } },
-            { "l_luck", new TreeSpot { par = "l_more", tile = 3, x = -5, y = 1, dx = -1, dy = 0 } },
-            { "l_free", new TreeSpot { par = "l_luck", tile = 2, x = -6, y = 2, dx = 0, dy = 0 } },
+            { "l_more", new TreeSpot { par = "e_val", tile = 1, x = -2, y = 1, dx = 0, dy = 0 } },     // 🎟 10-06 투시경 (한 칸)
+            { "l_luck", new TreeSpot { par = "l_more", tile = 1, x = -3, y = 1, dx = -1, dy = 0 } },
+            { "l_free", new TreeSpot { par = "l_luck", tile = 3, x = -6, y = 2, dx = 0, dy = 0 } },
             { "l_jack", new TreeSpot { par = "l_luck", tile = 3, x = -8, y = 1, dx = 0, dy = 0 } },
+            { "l_wild", new TreeSpot { par = "l_luck", tile = 3, x = -6, y = 1, dx = 0, dy = 0 } },
+            { "l_again", new TreeSpot { par = "l_free", tile = 1, x = -7, y = 1, dx = 0, dy = 0 } },
             { "w_rail_a", new TreeSpot { par = "w_rail_u", tile = 2, x = 7, y = -9, dx = 0, dy = 0 } },
             { "x_claw_arm", new TreeSpot { par = "c_magnet", tile = 3, x = 2, y = -10, dx = 0, dy = 0 } },
             { "x_arm_drone", new TreeSpot { par = "d_grade", tile = 3, x = 13, y = -2, dx = 0, dy = 0 } },
