@@ -142,7 +142,7 @@ namespace SalvageRun.Orbit
                     av.transform.position = pos + new Vector3(Mathf.Cos(ang), Mathf.Sin(ang), 0) * size * 0.62f;
                     float asz = Mathf.Max(0.09f, size * (ap != null ? 0.62f : d.att == Att.Tag ? 0.55f : 0.42f));
                     if (d.att == Att.Pouch && ap != null)
-                    {   // 💰 10-07 사장님 「현금 캡슐이 눈에 안 띈다」 — 크게 · 두근 · 가끔 금빛 반짝이
+                    {   // 💰 10-07 사장님 「현금 캡슐이 눈에 안 띈다」 — 크게 · 두근 · 가끔 금빛 반짝이 (10-07 금고 상자 + 검 · 금 두 겹 테로 바꿈)
                         bool calm = hud != null && hud.reduceMotion;
                         asz = Mathf.Max(0.12f, size * 0.85f) * (calm ? 1f : 1f + 0.09f * Mathf.Sin(t * 5f + d.id));
                         if (!calm && d.fade > 0.9 && fx.Count < 700 && Random.value < Time.deltaTime * 2.4f)
