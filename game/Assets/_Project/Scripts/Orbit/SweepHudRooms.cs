@@ -75,20 +75,36 @@ namespace SalvageRun.Orbit
             GUI.matrix = m0;
         }
 
+        static readonly Texture2D[] tabTex = new Texture2D[2]; static GUIStyle tabStyle;
         /// <summary>화면 가장자리 세로 탭 — ‹ 정비고로 · 증권 하러 가기 ›</summary>
         bool NavTab(bool right, string word, string sub, Color col)
         {
             float w = 42, x = right ? Mathf.Min(vw - w, ox + 960 + 4) : Mathf.Max(0, ox - w - 4);
             var r = new Rect(x, 170, w, 260);
             bool ov = r.Contains(Event.current.mousePosition);
-            GUI.color = new Color(col.r * 0.16f, col.g * 0.16f, col.b * 0.16f, 0.94f); GUI.DrawTexture(r, white);
-            Frame(r, ov ? col : new Color(col.r * 0.5f, col.g * 0.5f, col.b * 0.5f), ov ? 2.5f : 1.5f);
+            bool green = col.g > col.r * 1.2f;                                  // 🖼 10-07 픽셀랩 금속 판 — 주황(정비고 · 가게 · 조종실) · 초록(증권)
+            if (tabTex[green ? 1 : 0] == null) tabTex[green ? 1 : 0] = Resources.Load<Texture2D>(green ? "cockpit/tab_green" : "cockpit/tab_amber");
+            var tt = tabTex[green ? 1 : 0];
+            if (tt != null)
+            {
+                if (tabStyle == null) tabStyle = new GUIStyle { border = new RectOffset(0, 0, 48, 26) };   // 위 · 아래 장식은 그대로, 가운데만 늘린다
+                tabStyle.normal.background = tt;
+                GUI.color = ov ? new Color(1.15f, 1.15f, 1.15f) : Color.white;
+                if (Event.current.type == EventType.Repaint) tabStyle.Draw(r, false, false, false, false);
+                if (ov) Frame(r, col, 1.5f);
+            }
+            else
+            {
+                GUI.color = new Color(col.r * 0.16f, col.g * 0.16f, col.b * 0.16f, 0.94f); GUI.DrawTexture(r, white);
+                Frame(r, ov ? col : new Color(col.r * 0.5f, col.g * 0.5f, col.b * 0.5f), ov ? 2.5f : 1.5f);
+            }
+            GUI.color = Color.white;
             string hex = ColorUtility.ToHtmlStringRGB(col);
             float nd = ov && !reduceMotion ? Mathf.Sin(Time.unscaledTime * 9) * 2.5f : 0;
             Lbl(new Rect(r.x + (right ? nd : -nd), r.y + 6, w, 44), "<size=34><b><color=#" + hex + ">" + (right ? "›" : "‹") + "</color></b></size>", center);
             if (Loc.En)
             {   // 🌐 영어는 한 글자씩 세우면 못 읽는다 — 책등처럼 옆으로 눕혀 쓴다
-                var m0 = GUI.matrix; var c = new Vector2(r.center.x, r.y + 48 + 90);
+                var m0 = GUI.matrix; var c = new Vector2(r.center.x, r.y + 122);
                 GUI.matrix = m0 * Matrix4x4.TRS(c, Quaternion.Euler(0, 0, 90), Vector3.one) * Matrix4x4.TRS(-c, Quaternion.identity, Vector3.one);   // 화면 배율(GUI.matrix) 위에서 돌린다
                 Lbl(new Rect(c.x - 90, c.y - w / 2, 180, w), "<size=15><b><color=#" + hex + ">" + word + "</color></b></size>", center);
                 GUI.matrix = m0;
@@ -99,7 +115,7 @@ namespace SalvageRun.Orbit
                 foreach (char ch in word) sb.Append(ch == ' ' ? "\n" : ch + "\n");
                 Lbl(new Rect(r.x, r.y + 48, w, 180), "<size=14><b><color=#" + hex + ">" + sb.ToString().TrimEnd('\n') + "</color></b></size>", center);
             }
-            if (!string.IsNullOrEmpty(sub)) Lbl(new Rect(r.x, r.yMax - 38, w, 34), "<size=10>" + sub.Replace(" ", "\n") + "</size>", center);   // 탭 안에 두 줄 — 밖으로 삐져나오지 않게
+            if (!string.IsNullOrEmpty(sub)) Lbl(new Rect(r.x - 4, r.yMax - (tt == null ? 50 : Loc.En ? 60 : 74), w + 8, 46), "<size=10>" + sub.Replace(" ", "\n") + "</size>", center);   // 탭 안에 두 줄 — 밖으로 삐져나오지 않게
             return Bt(r, GUIContent.none, GUIStyle.none);
         }
 
