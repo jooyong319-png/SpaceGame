@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
@@ -63,6 +63,7 @@ namespace SalvageRun.Orbit
             sr.transform.localScale = new Vector3(w * TK / square.bounds.size.x, h * TK / square.bounds.size.y, 1);
         }
         static Sprite hullSpr, turClawSpr, dronePx;
+        readonly List<SpriteRenderer> droneGlows = new List<SpriteRenderer>();   // 🤖 드론 엔진 불빛 (10-07)
         static int turClawShip = -1;
         static readonly Sprite[] shipTur = new Sprite[8]; static readonly bool[] shipTurTried = new bool[8];
         static readonly string[] ShipTurName = { "claw", "scatter", "harpoon", "tesla", "missile", "frz", "clus" };

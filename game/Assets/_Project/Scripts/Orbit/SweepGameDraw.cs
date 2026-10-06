@@ -218,9 +218,17 @@ namespace SalvageRun.Orbit
                 droneViews[i].enabled = on;
                 if (!on) continue;
                 var dr = drs[i];
-                droneViews[i].transform.position = PxToWorld(dr.x, dr.y);
+                var dp = PxToWorld(dr.x, dr.y);
+                droneViews[i].transform.position = dp;
                 droneViews[i].transform.rotation = Quaternion.Euler(0, 0, -(float)dr.a * Mathf.Rad2Deg);
+                // 🤖 10-07 드론 = 내 편 표시 (시안 7nbFLkCVFB72bKaemf1hSv) — 숨 쉬는 엔진 불빛 · 하늘색 빛 꼬리 (움직임 줄이기면 꼬리 없음)
+                while (droneGlows.Count <= i) droneGlows.Add(Make(glow, Vector3.zero, 0.55f, new Color(0.44f, 0.83f, 0.91f, 0.35f), 59));
+                var dg = droneGlows[i]; dg.enabled = true; dg.transform.position = dp;
+                dg.color = new Color(0.44f, 0.83f, 0.91f, 0.28f + 0.12f * Mathf.Sin(Time.time * 6 + i));
+                bool calm = hud != null && hud.reduceMotion;
+                if (!calm && fx.Count < 1500) Add(glow, dp, 0.2f, new Color(0.44f, 0.83f, 0.91f, 0.5f), 0, 0.3f);
             }
+            for (int i = drs.Count; i < droneGlows.Count; i++) droneGlows[i].enabled = false;
         }
 
         void DrawTools()

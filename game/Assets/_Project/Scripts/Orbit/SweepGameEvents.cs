@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
@@ -94,7 +94,8 @@ namespace SalvageRun.Orbit
                         Color c = src == 3 ? Green : cut ? new Color(0.9f, 0.65f, 0.6f) : Amber2;
                         if (sim.R != tallyRun) { tallyRun = sim.R; runTally = 0; }
                         if (src != 3 && e.v > 0) runTally += e.v;                                   // 값은 계산대에 모은다 — 쓰레기 위 숫자는 아주 큰 것만
-                        if (e.v >= 1 && (src == 3 || e.v > sim.ValMult * 400 || brokeWinN <= 2)) CoinPop(e.x, e.y - 8, src == 3 ? Loc.T("청구서 -") : "+", e.v, c);   // 🏷 딱지 = 청구서를 깎는다 (09-27 「빚 -」라 떠서 돈이 빠지는 줄 알았다)
+                        if (src == 1 && e.v >= 1 && Time.time - dronePopT > 0.16f) { dronePopT = Time.time; CoinPop(e.x, e.y - 8, "+", e.v, new Color(0.56f, 0.91f, 1f)); }   // 🤖 드론이 번 돈 — 하늘색 (1초에 6개까지)
+                        else if (e.v >= 1 && (src == 3 || e.v > sim.ValMult * 400 || brokeWinN <= 2)) CoinPop(e.x, e.y - 8, src == 3 ? Loc.T("청구서 -") : "+", e.v, c);   // 🏷 딱지 = 청구서를 깎는다 (09-27 「빚 -」라 떠서 돈이 빠지는 줄 알았다)
                         if (Random.value < 0.25f) Add(disc, at, 0.11f, src == 3 ? Green : Amber, 2, 1.6f).v = (Vector3)(Random.insideUnitCircle * 3f);
                         break;
                     }
@@ -248,7 +249,15 @@ namespace SalvageRun.Orbit
                         if (lb.delay <= 0) DrawBolt(lb); else lateBolts.Add(lb);
                         break;
                     }
-                    case SwEv.Beam: { var p = Add(pixel, at, 0.05f, Cyan, 3, 0.16f); p.a = at; p.b = PxToWorld(e.x2, e.y2); break; }
+                    case SwEv.Beam:
+                    {   // 🤖 드론 수집 빔 — 굵고 밝게 · 맞은 자리 빛 · 하늘색 조각이 드론으로 빨려 든다 (10-07 · 전엔 0.05 굵기라 안 보였다)
+                        var to = PxToWorld(e.x2, e.y2);
+                        var p = Add(pixel, at, 0.11f, new Color(0.63f, 0.94f, 1f, 0.95f), 3, 0.22f); p.a = at; p.b = to;
+                        Add(glow, to, 0.35f, new Color(0.63f, 0.94f, 1f, 0.6f), 7, 0.18f);
+                        if (!(hud != null && hud.reduceMotion) && fx.Count < 1500)
+                            for (int bi = 0; bi < 5; bi++) { var b = Add(pixel, to + (Vector3)(Random.insideUnitCircle * 0.12f), 0.06f, new Color(0.63f, 0.94f, 1f, 0.9f), 0, 0.3f); b.v = (at - to) / 0.3f + (Vector3)(Random.insideUnitCircle * 0.6f); }
+                        break;
+                    }
                     case SwEv.Ring:
                         if (e.k == 4) { Add(glow, at, 0.5f, new Color(1f, 0.6f, 0.3f, 0.85f), 7, 0.12f); Burst(at, new Color(1f, 0.7f, 0.4f), 5, 3f); OrbitSfx.Play("tick", 0.35f, 0.08f); break; }   // 🚀 미사일이 닿았다
                         if (e.k == 3)
@@ -538,6 +547,7 @@ namespace SalvageRun.Orbit
             }
         }
 
+        float dronePopT;
         public static Color AttColor(Att a)
         {
             switch (a)
