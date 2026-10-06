@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using SalvageRun.Orbit.Sim;
 
 namespace SalvageRun.Orbit
@@ -42,31 +42,85 @@ namespace SalvageRun.Orbit
         }
         public int TestRadioCount => RadioLines.Length + 3;
 
-        // 📻 첫 판 무전 — 쭉 누르기 → 연타 → 끝. 해 봐야 넘어간다 (09-27 사장님 「처음 하는 사람들이 연타 · 쭉 누르기를 모른다」 · 시안 TxxPY6mLoewcLnW1vmNVBG)
-        int coachStep; float coachHold, coachEnd, coachAge; double coachLastPress = -9; readonly System.Collections.Generic.List<float> coachTaps = new System.Collections.Generic.List<float>();
+        // 🖱 누르기 연습 — 첫 출동 3초 뒤 시간이 멈추고 쭉 누르기(2초) → 연타(5번) → 3 · 2 · 1 재개 (10-06 · 시안 A4mdNF9eHBPTRXKCpUater)
+        // 멈춘 동안은 시계 · 연료 · 잔해가 그대로 (sim.Practice) — 내 발사만 움직여서 누르는 법과 결과가 한눈에. 처음 회사 첫 판에 한 번. [건너뛰기]는 5초 뒤
+        int coachStep; float coachHold, coachEnd, coachAge, coachT0; double coachLastPress = -9; int coachTapN;
         static readonly string[] CoachLines =
         {
             "",
-            Loc.T("왼쪽 단추를 <color=#ffdf95>쭉 누르고</color> 있어 봐. 0.5초마다 한 발씩 나가."),
+            Loc.T("잠깐, 시간 멈춰 놨어. 왼쪽 단추를 <color=#ffdf95>쭉 누르고</color> 있어 봐."),
             Loc.T("좋아. 급할 땐 <color=#ffdf95>연타</color>! 누를 때마다 바로 한 발이야."),
             Loc.T("그거야. 연타는 빠른 대신 <color=#ffdf95>연료도 빨리 닳아</color>. 알아서 섞어 써."),
         };
+        void CoachDone() { sim.Practice = false; sim.M.flags.Add("coach"); coachStep = 0; }
         bool CoachBox()
         {
             var R = sim.R;
-            if (R == null || R.over || R.clean || sim.M.flags.Contains("coach") || sim.M.company > 1 || sim.S.runs >= 3 || !manualFire) { coachStep = 0; return false; }
-            if (coachStep == 0) { coachStep = 1; coachHold = 0; coachAge = 0; coachTaps.Clear(); coachLastPress = R.lastPress; }
+            if (R == null || R.over || R.clean || sim.M.flags.Contains("coach") || sim.M.company > 1 || sim.S.runs > 1 || !manualFire) { if (coachStep != 0) sim.Practice = false; coachStep = 0; return false; }
+            if (coachStep == 0) { if (R.t < 3) return false; coachStep = 1; coachHold = 0; coachAge = 0; coachTapN = 0; coachLastPress = R.lastPress; coachT0 = Time.unscaledTime; sim.Practice = true; OrbitSfx.Play("tick", 0.7f); }
             if (Event.current.type == EventType.Repaint)
             {   // OnGUI 는 한 프레임에 여러 번 — 세기는 그릴 때 한 번만
-                float dt = Time.deltaTime; coachAge += dt;
-                if (R.lastPress != coachLastPress) { coachLastPress = R.lastPress; coachTaps.Add(Time.time); }
-                coachTaps.RemoveAll(x => Time.time - x > 2f);
-                if (coachStep == 1) { coachHold = sim.FireHeld ? coachHold + dt : 0; if (coachHold >= 2f) { coachStep = 2; coachAge = 0; coachTaps.Clear(); OrbitSfx.Play("tick", 0.6f); } }
-                else if (coachStep == 2) { if (coachTaps.Count >= 5) { coachStep = 3; coachAge = 0; coachEnd = Time.time + 4f; OrbitSfx.Play("buy", 0.5f); } }
-                else if (Time.time > coachEnd) { sim.M.flags.Add("coach"); coachStep = 0; return false; }
+                float dt = Time.unscaledDeltaTime; coachAge += dt;
+                bool pressed = R.lastPress != coachLastPress; coachLastPress = R.lastPress;
+                if (coachStep == 1) { coachHold = sim.FireHeld ? coachHold + dt : 0; if (coachHold >= 2f) { coachStep = 2; coachAge = 0; coachTapN = 0; OrbitSfx.Play("tick", 0.6f); } }
+                else if (coachStep == 2) { if (pressed) { coachTapN++; OrbitSfx.Play("tick", 0.35f, 0.05f, 0.2f); } if (coachTapN >= 5) { coachStep = 3; coachAge = 0; coachEnd = Time.unscaledTime + 2.4f; OrbitSfx.Play("buy", 0.5f); } }
+                else if (Time.unscaledTime > coachEnd) { sim.Practice = false; if (Time.unscaledTime > coachEnd + 2.2f) { CoachDone(); return false; } }
             }
+            bool frozen = sim.Practice;
+            // ⏸ 멈춘 화면 — 살짝 푸르게 · 테두리
+            if (frozen)
+            {
+                GUI.color = new Color(0.24f, 0.47f, 0.7f, 0.12f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white);
+                Frame(new Rect(2, 2, vw - 4, RefH - 4), new Color(0.62f, 0.86f, 1f, 0.35f), 4);
+                GUI.color = Color.white;
+                Lbl(new Rect(vw / 2 - 160, 52, 320, 20), Loc.T("<size=13><color=#9fdcff>⏸ 시간 멈춤 · 연료 그대로</color></size>"), center);
+            }
+            float cx = vw / 2;
+            if (coachStep == 1 || coachStep == 2)
+            {
+                GUI.color = new Color(0.02f, 0.03f, 0.05f, 0.82f); GUI.DrawTexture(new Rect(cx - 230, 78, 460, 80), white); GUI.color = Color.white;   // 지구 위에서도 읽히게
+                Lbl(new Rect(cx - 220, 82, 440, 16), "<size=11><color=#9fdcff>" + (coachStep == 1 ? Loc.T("연습 1 / 2") : Loc.T("연습 2 / 2")) + "</color></size>", center);
+                Lbl(new Rect(cx - 220, 98, 440, 32), "<size=24><color=#ffdf95>" + (coachStep == 1 ? Loc.T("쭉 누르기") : Loc.T("연타")) + "</color></size>", center);
+                Lbl(new Rect(cx - 220, 132, 440, 20), "<size=13><color=#c9d2de>" + (coachStep == 1 ? Loc.T("왼쪽 단추를 누르고 있기 — 0.5초마다 한 발") : Loc.T("누를 때마다 바로 한 발 · 다섯 번")) + "</color></size>", center);
+            }
+            if (coachStep == 1)
+            {   // 🖱 마우스 그림 — 왼쪽 단추가 빛나고, 누르고 있는 동안 둘레 고리가 2초 동안 찬다
+                var mb = new Rect(cx - 30, 200, 60, 90);
+                GUI.color = new Color(0.02f, 0.03f, 0.05f, 0.82f); GUI.DrawTexture(new Rect(cx - 92, mb.center.y - 92, 184, 184), texDisc);   // 고리 뒤 어두운 원
+                GUI.color = new Color(0.04f, 0.06f, 0.09f, 0.9f); GUI.DrawTexture(mb, white); Frame(mb, new Color(0.79f, 0.82f, 0.87f), 2.5f);
+                float pulse = 0.6f + 0.4f * Mathf.Sin(Time.unscaledTime * 6);
+                GUI.color = sim.FireHeld ? SweepGame.Amber : new Color(0.95f, 0.76f, 0.31f, 0.35f + 0.35f * pulse); GUI.DrawTexture(new Rect(mb.x + 3, mb.y + 3, 26, 36), white);
+                GUI.color = new Color(0.79f, 0.82f, 0.87f); GUI.DrawTexture(new Rect(mb.x + 29, mb.y + 3, 2.5f, 36), white); GUI.DrawTexture(new Rect(mb.x + 3, mb.y + 39, 54, 2.5f), white);
+                float pr = Mathf.Clamp01(coachHold / 2f); const int Dots = 40;
+                for (int i = 0; i < Dots; i++)
+                {
+                    float ang = -Mathf.PI / 2 + i / (float)Dots * Mathf.PI * 2; var dp = new Vector2(cx + Mathf.Cos(ang) * 72, mb.center.y + Mathf.Sin(ang) * 72);
+                    GUI.color = i < pr * Dots ? SweepGame.Amber : new Color(1, 1, 1, 0.22f); GUI.DrawTexture(new Rect(dp.x - 2.5f, dp.y - 2.5f, 5, 5), white);
+                }
+                GUI.color = Color.white;
+                GUI.color = new Color(0.02f, 0.03f, 0.05f, 0.82f); GUI.DrawTexture(new Rect(cx - 40, mb.yMax + 34, 80, 18), white); GUI.color = Color.white;
+                Lbl(new Rect(cx - 60, mb.yMax + 34, 120, 18), "<size=12><color=#8a93a3>" + coachHold.ToString("0.0") + Loc.T(" / 2초") + "</color></size>", center);
+            }
+            else if (coachStep == 2)
+            {   // 연타 — 칸 다섯
+                for (int i = 0; i < 5; i++)
+                {
+                    if (i == 0) { GUI.color = new Color(0.02f, 0.03f, 0.05f, 0.82f); GUI.DrawTexture(new Rect(cx - 86, 220, 172, 40), white); GUI.color = Color.white; }
+                    var bx = new Rect(cx - 72 + i * 30, 230, 20, 20);
+                    if (i < coachTapN) { GUI.color = SweepGame.Amber; GUI.DrawTexture(bx, white); } else Frame(bx, new Color(0.3f, 0.34f, 0.4f), 2);
+                }
+                GUI.color = Color.white;
+            }
+            else if (coachStep == 3 && frozen)
+            {   // 3 · 2 · 1
+                int n = Mathf.Clamp(Mathf.CeilToInt((coachEnd - Time.unscaledTime) / 0.8f), 1, 3);
+                float f = 1 - Mathf.Repeat((coachEnd - Time.unscaledTime) / 0.8f, 1);
+                Lbl(new Rect(cx - 80, 170, 160, 100), "<size=" + Mathf.RoundToInt(Mathf.Lerp(96, 72, Mathf.Clamp01(f * 4))) + "><color=#ffdf95>" + n + "</color></size>", center);
+            }
+            if (frozen && coachStep < 3 && Time.unscaledTime - coachT0 > 5f && Bt(new Rect(vw - 120, RefH - 150, 100, 28), Loc.T("<size=12>건너뛰기</size>"), btnOff)) { coachStep = 3; coachAge = 0; coachEnd = Time.unscaledTime; }
+            // 📻 무전 — 윤 대리
             if (radioTex == null) radioTex = Resources.Load<Texture2D>("news/yoon");
-            float a = Mathf.Clamp01(coachAge / 0.25f) * (coachStep == 3 ? Mathf.Clamp01((coachEnd - Time.time) / 0.5f) : 1);
+            float a = Mathf.Clamp01(coachAge / 0.25f) * (coachStep == 3 ? Mathf.Clamp01((coachEnd + 2.2f - Time.unscaledTime) / 0.5f) : 1);
             var r = new Rect(vw / 2 - 240, RefH - 176, 480, 70);
             GUI.color = new Color(0.04f, 0.06f, 0.08f, 0.94f * a); GUI.DrawTexture(r, white);
             Frame(r, new Color(0.95f, 0.76f, 0.31f, 0.7f * a), 1);
@@ -75,10 +129,8 @@ namespace SalvageRun.Orbit
             if (radioTex != null) { GUI.color = new Color(1, 1, 1, a); GUI.DrawTexture(new Rect(face.x + 2, face.y + 2, 58, 58), radioTex); }
             GUI.color = new Color(1, 1, 1, a);
             Lbl(new Rect(r.x + 76, r.y + 5, 300, 18), Loc.T("<size=11><color=#ffdf95><b>케슬러 금융 · 윤 대리</b></color>  <color=#5fa37d>● 무전</color></size>"), label);
-            string meter = coachStep == 1 ? coachHold.ToString("0.0") + Loc.T(" / 2초") : coachStep == 2 ? coachTaps.Count + Loc.T(" / 5번") : "";
-            if (meter != "") Lbl(new Rect(r.x + 76, r.y + 5, r.width - 86, 18), "<size=11><color=#8a93a3>" + meter + "</color></size>", cost);
-            string line = CoachLines[coachStep]; int n = Mathf.Clamp(Mathf.FloorToInt(coachAge * 40), 0, line.Length);
-            string shown = line.Substring(0, n);
+            string line = CoachLines[Mathf.Clamp(coachStep, 1, 3)]; int nch = Mathf.Clamp(Mathf.FloorToInt(coachAge * 40), 0, line.Length);
+            string shown = line.Substring(0, nch);
             int lt = shown.LastIndexOf('<'), gtx = shown.LastIndexOf('>'); if (lt > gtx) shown = shown.Substring(0, lt);   // 찍다 만 태그 조각은 빼고
             if (shown.LastIndexOf("<color") > shown.LastIndexOf("</color>")) shown += "</color>";
             Lbl(new Rect(r.x + 76, r.y + 24, r.width - 86, 44), "<size=13><color=#e8edf3>" + shown + "</color></size>", small);

@@ -1733,3 +1733,12 @@ yoon|그건 사은품. 우리 그룹 주식이야. *증권* 쪽에서 언제든 
 yoon|또 왔네. 같은 배, 같은 조건. 서명만 해.	yoon|You again. Same ship, same terms. Just sign.
 yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영업이거든.	yoon|Same gift, too. We hand out our shares even when you go bust — that's sales.
 <color=#ff8a7a>새 주식 	<color=#ff8a7a>New shares 
+잠깐, 시간 멈춰 놨어. 왼쪽 단추를 <color=#ffdf95>쭉 누르고</color> 있어 봐.	Hold on, I froze time. Try <color=#ffdf95>holding</color> the left button.
+<size=13><color=#9fdcff>⏸ 시간 멈춤 · 연료 그대로</color></size>	<size=13><color=#9fdcff>⏸ Time frozen · fuel kept</color></size>
+연습 1 / 2	Practice 1 / 2
+연습 2 / 2	Practice 2 / 2
+쭉 누르기	Hold
+연타	Tap fast
+왼쪽 단추를 누르고 있기 — 0.5초마다 한 발	Hold the left button — one shot every 0.5s
+누를 때마다 바로 한 발 · 다섯 번	One shot per press · five times
+<size=12>건너뛰기</size>	<size=12>Skip</size>

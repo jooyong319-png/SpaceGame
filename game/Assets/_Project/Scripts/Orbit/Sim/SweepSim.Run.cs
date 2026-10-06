@@ -212,9 +212,37 @@ namespace SalvageRun.Orbit.Sim
         }
 
         // ───────────────────────── 한 걸음
+        // 🖱 누르기 연습 (10-06 사장님 「시간을 멈추고 쭉 클릭 · 연타를 보고 넘기게」 · 시안 A4mdNF9eHBPTRXKCpUater)
+        // 켜져 있으면 시계 · 연료 · 잔해 · 이벤트가 멈추고 내 발사와 맞은 잔해만 움직인다. 화면(HUD)이 켜고 끈다 — 봇은 안 쓴다
+        public bool Practice; double practiceFuel = -1;
+        void PracticeTick(double dt, double ax, double ay, bool aim)
+        {
+            var r = R;
+            if (practiceFuel < 0) practiceFuel = r.fuel;
+            r.fuel = practiceFuel;                                              // 연료 그대로 (연타 PressFire 가 쓴 것도 여기서 되돌린다)
+            if (aim) { r.ax = ax; r.ay = ay; }
+            if (aim && r.fuel > 0) Claw(dt);
+            if (r.orbs.Count > 0) OrbTick(dt);
+            if (r.missiles.Count > 0) MissileTick(dt);
+            for (int i = 0; i < r.pend.Count; i++) r.pend[i].t -= dt;
+            for (int i = r.pend.Count - 1; i >= 0; i--)
+            {
+                var p = r.pend[i]; if (p.t > 0) continue;
+                r.pend.RemoveAt(i);
+                if (p.dk > 0) { ShellBurst(p.x, p.y, p.R, p.dk); continue; }
+                blastW = p.w; redBlast = p.red; redGen = p.gen; dmgCat = p.wid; DoBlast(p.x, p.y, p.R * BlastK); dmgCat = -1; blastW = false; redBlast = false; redGen = 0;
+            }
+            r.chainT -= dt;
+            if (r.chainT <= 0 && r.pend.Count == 0 && !r.holding) { ChainPay(); r.chain = 0; r.tier = 0; }
+            r.junk.RemoveAll(d => d.dead && !r.packed.Contains(d));
+            r.fuel = practiceFuel;
+        }
+
         public void Tick(double dt, double ax, double ay, bool aim, bool hold)
         {
             var r = R; if (r.over) return;
+            if (Practice) { PracticeTick(dt, ax, ay, aim); return; }
+            practiceFuel = -1;
             M.playSeconds += dt; r.t += dt;
             if (FireHeld) r.heldT += dt;                                        // 🖱 손 기록 (09-29)
             if (GateReady) { var gj = GateJunk; if (gj != null) { r.gateT += dt; double gx = gj.x - ax, gy = gj.y - ay; if (gx * gx + gy * gy < 90 * 90) r.gateAimT += dt; } }
