@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -283,10 +283,10 @@ static class Tests
         double fuel0 = sim.FuelMax;
         // 진열을 소모품으로 채워 산다
         sim.S.shop.Clear(); for (int i = 0; i < 4; i++) sim.S.shop.Add(SweepSim.Cons0 + i); sim.S.shopSale = -1;
-        int sc0 = sim.ScratchLeft;
+        int sc0 = sim.S.freeTix;
         for (int i = 0; i < 4; i++) if (!sim.BuyPart(0)) Fail($"소모품 {i} 못 삼");
         if (sim.S.nFuel != 10 || sim.S.nDmg != 20 || sim.S.nVal != 15) Fail($"소모품 쌓임: 연료 {sim.S.nFuel} 화력 {sim.S.nDmg} 값 {sim.S.nVal}");
-        if (sim.ScratchLeft != sc0 + 3) Fail($"복권 묶음: {sc0} → {sim.ScratchLeft}");
+        if (sim.S.freeTix != sc0 + 3) Fail($"복권 묶음: {sc0} → {sim.S.freeTix}");
         double dmgOff = sim.DmgMul, valOff = sim.ValMult;
         sim.StartRun();
         if (Math.Abs(sim.R.max - (fuel0 + 10)) > 1e-6) Fail($"연료 캔: 판 연료 {sim.R.max} (기대 {fuel0 + 10})");
@@ -349,25 +349,29 @@ static class Tests
     }
 
     static void Lotto()
-    {
+    {   // 🎟 10-06 개편 — 장수 제한 없음 · 장마다 표값 ×1.3 · 공짜 표는 값이 안 오른다 · 9칸 · 1~8등
         var sim = new SweepSim(null, null, 44);
         sim.S.cash = 1e9;
-        int b0 = sim.ScratchLeft; double c0 = sim.ScratchCost;
-        if (b0 != 3) Fail($"처음 복권 {b0}장");
-        sim.S.lv[Ix("l_more")] = 2; sim.S.lv[Ix("l_free")] = 1;
-        if (sim.ScratchLeft != 7) Fail($"복권 단골 2: {sim.ScratchLeft}장");
-        if (sim.ScratchCost != 0) Fail($"첫 장 공짜: {sim.ScratchCost}");
-        double cash = sim.S.cash; sim.ScratchBuy(out _); sim.ScratchClaim();
-        if (sim.ScratchCost != 0) Fail("둘째 장은 공짜여야");
-        sim.ScratchBuy(out _); sim.ScratchClaim();
-        if (sim.ScratchCost <= 0) Fail("셋째 장도 공짜");
+        if (sim.ScratchLeft != 0) Fail($"처음 공짜 표 {sim.ScratchLeft}장");
+        double p0 = sim.ScratchCost;
+        for (int i = 0; i < 6; i++) { var g = sim.ScratchBuy(out _); if (g == null || g.Length != 9) Fail("9칸이 아님"); sim.ScratchClaim(); }   // 제한 없이 산다
+        double p6 = sim.ScratchCost;
+        if (!(p6 > p0 * 4)) Fail($"표값 오름: 첫 장 {p0} → 일곱째 {p6}");
+        sim.S.runs++; if (Math.Abs(sim.ScratchCost - p0) > 1) Fail($"출동하면 표값 원래대로: {sim.ScratchCost} (첫 장 {p0})");
+        sim.S.lv[Ix("l_free")] = 1;
+        if (sim.ScratchLeft != 2 || sim.ScratchCost != 0) Fail($"첫 두 장 공짜: {sim.ScratchLeft} {sim.ScratchCost}");
+        sim.ScratchBuy(out _); sim.ScratchClaim(); sim.ScratchBuy(out _); sim.ScratchClaim();
+        if (sim.ScratchCost <= 0 || Math.Abs(sim.ScratchCost - p0) > 1) Fail($"셋째 장 = 첫 값: {sim.ScratchCost}");
         sim.S.freeTix = 2; if (sim.ScratchCost != 0) Fail("공짜 표"); int l0 = sim.ScratchLeft; sim.ScratchBuy(out _); sim.ScratchClaim(); if (sim.S.freeTix != 1 || sim.ScratchLeft != l0 - 1) Fail($"공짜 표 쓰기 {sim.S.freeTix} {sim.ScratchLeft}");
-        int wins = 0; var s2 = new SweepSim(null, null, 45); s2.S.cash = 1e12; s2.S.lv[Ix("l_luck")] = 3;
+        // 9칸 — 당첨이면 그 그림이 셋, 다른 그림은 둘까지 · 꽝이면 셋인 그림 없음
+        var s4 = new SweepSim(null, null, 47); s4.S.cash = 1e15;
+        for (int i = 0; i < 3000; i++) { s4.S.runs = i; var g = s4.ScratchBuy(out int w); var c = new int[8]; foreach (var x in g) c[x]++; for (int k = 0; k < 8; k++) if (c[k] >= 3 && k != w || k == w && c[k] != 3) { Fail($"칸 짜임: 등수 {w} · {string.Join(",", c)}"); break; } s4.ScratchClaim(); }
+        int wins = 0; var s2 = new SweepSim(null, null, 45); s2.S.cash = 1e15; s2.S.lv[Ix("l_luck")] = 3;
         for (int i = 0; i < 4000; i++) { s2.S.runs = i; s2.ScratchBuy(out int w); s2.ScratchClaim(); if (w >= 0) wins++; }
-        var s3 = new SweepSim(null, null, 46); s3.S.cash = 1e12; int wins0 = 0;
+        var s3 = new SweepSim(null, null, 46); s3.S.cash = 1e15; int wins0 = 0;
         for (int i = 0; i < 4000; i++) { s3.S.runs = i; s3.ScratchBuy(out int w); s3.ScratchClaim(); if (w >= 0) wins0++; }
         if (!(wins > wins0 * 1.6)) Fail($"행운의 긁개 3: 당첨 {wins} vs 없음 {wins0}");
-        Console.WriteLine($"   단골 · 공짜 · 긁개(당첨 {wins0} → {wins} / 4000)");
+        Console.WriteLine($"   표값 {p0} → {p6} (7장) · 공짜 · 9칸 · 긁개(당첨 {wins0} → {wins} / 4000)");
     }
 
     // 10 — 클릭한 판이 더 부순다

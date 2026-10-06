@@ -13,14 +13,27 @@ namespace SalvageRun.Orbit
         public bool lottoOpen; int lottoTab, lottoSeen = -1; float lottoToast;
         int[] scGrid; int scWin = -1; bool[,] scCoat; bool scDone; float scDoneT; double scGot;
         readonly List<int> lottoPick = new List<int>();
-        const int ScCols = 8, ScRows = 6, ScCells = 3;                      // 칸 셋 · 칸마다 은박 조각 (09-27 아홉 칸 → 셋)
+        const int ScCols = 7, ScRows = 4, ScCells = SweepSim.ScratchCells;  // 🎟 10-06 창 9칸(3×3) · 칸마다 은박 조각 7×4
         static Texture2D[] scIcon; bool scUse;
-        static readonly string[] ScIconPath = { "junk/junk_chip_a", "junk/junk_sat", "junk/junk_vault", "shop/key", "shop/part_0", "junk/junk_vault_gold" };
+        static readonly string[] ScIconPath = { "junk/junk_vault_gold", "junk/junk_vault", "shop/part_0", "shop/key", "junk/junk_rocket", "junk/junk_sat", "junk/junk_fuel", "junk/junk_chip_a" };   // 1등 → 8등
         public void TestLotto(int step)   // 에디터 시험용
         {
             if (step == 0) { lottoOpen = true; lottoTab = 0; scGrid = sim.ScratchBuy(out scWin); scCoat = new bool[ScCells, ScCols * ScRows]; scDone = false; }
-            else if (step == 1) { for (int c = 0; c < ScCells; c++) for (int b = 0; b < ScCols * ScRows; b++) if (c == 0 || (b + c) % 3 != 0 && c == 1) scCoat[c, b] = true; }
+            else if (step == 1) { for (int c = 0; c < ScCells; c++) for (int b = 0; b < ScCols * ScRows; b++) if (c < 5 || (b + c) % 3 != 0 && c == 5) scCoat[c, b] = true; }
             else if (step == 2) { lottoTab = 1; lottoPick.Clear(); lottoPick.AddRange(new[] { 3, 7, 11 }); sim.LottoBuy(3, 7, 11); lottoPick.Clear(); lottoPick.AddRange(new[] { 2, 5 }); }
+        }
+        /// <summary>에디터 시험용 — rank 등 당첨 표를 펼친다 (reveal = 몇 칸까지 긁어 둘지 · 9 = 다)</summary>
+        public void TestLottoWin(int rank, int reveal)
+        {
+            lottoOpen = true; lottoTab = 0;
+            var g = new int[ScCells]; var cnt = new int[SweepSim.ScratchSym.Length];
+            for (int i = 0; i < ScCells; i++)
+            {
+                if (rank >= 0 && (i == 0 || i == 4 || i == 8)) { g[i] = rank; continue; }   // 대각선에 셋 — 긁는 순서 보기 좋게
+                int c; do c = Random.Range(0, cnt.Length); while (c == rank || cnt[c] >= 2); cnt[c]++; g[i] = c;
+            }
+            scGrid = g; scWin = rank; sim.DebugScratchWin(rank); scCoat = new bool[ScCells, ScCols * ScRows]; scDone = false; scRank = -1; scBannerTxt = null;
+            for (int c = 0; c < Mathf.Min(reveal, ScCells); c++) for (int b = 0; b < ScCols * ScRows; b++) scCoat[c, b] = true;
         }
         void LottoToast()
         {
@@ -41,131 +54,174 @@ namespace SalvageRun.Orbit
         {
             var S = sim.S; var ev = Event.current;
             GUI.DrawTexture(new Rect(0, 0, vw, RefH), texDim);
-            var r = new Rect(vw / 2 - 300, 60, 600, 480);
+            var r = new Rect(vw / 2 - 450, 44, 900, 512);
             GUI.color = new Color(0.07f, 0.03f, 0.09f, 0.96f); GUI.DrawTexture(r, white);                    // 분홍 홀로그램 테 (09-24)
             GUI.color = new Color(1f, 0.66f, 0.94f, 0.05f); for (float yy = r.y + 2; yy < r.yMax; yy += 4) GUI.DrawTexture(new Rect(r.x, yy, r.width, 1), white);
             Frame(r, new Color(1f, 0.66f, 0.94f, 0.85f), 1.5f);
-            GUI.color = new Color(1f, 0.66f, 0.94f); foreach (var cn in new[] { new Vector2(r.x, r.y), new Vector2(r.xMax - 14, r.y), new Vector2(r.x, r.yMax - 3), new Vector2(r.xMax - 14, r.yMax - 3) }) GUI.DrawTexture(new Rect(cn.x, cn.y, 14, 3), white);
             GUI.color = Color.white;
-            Lbl(new Rect(r.x + 20, r.y + 14, 200, 30), Loc.T("<size=18><b><color=#f3c8ff>즉석 복권</color></b></size>"), label);   // 🎱 궤도 로또는 뺐다 (09-24 사장님 「로또는 의미가 없다」)
-            Lbl(new Rect(r.x, r.y + 18, r.width - 20, 24), Loc.T("<size=13><color=#8a9bb3>돈</color> ") + KNum.Fmt(S.cash) + "</size>", cost);
+            Lbl(new Rect(r.x + 20, r.y + 12, 200, 30), Loc.T("<size=18><b><color=#f3c8ff>즉석 복권</color></b></size>"), label);
+            Lbl(new Rect(r.x, r.y + 16, r.width - 20, 24), Loc.T("<size=13><color=#8a9bb3>돈</color> ") + KNum.Fmt(S.cash) + "</size>", cost);
             Scratch(r, ev);
-            if (Bt(new Rect(r.xMax - 106, r.yMax - 46, 92, 34), Loc.T("닫기"), btnOffC)) lottoOpen = false;
+            if (Bt(new Rect(r.xMax - 106, r.yMax - 50, 92, 36), Loc.T("닫기"), btnOffC)) lottoOpen = false;
+            ScratchFx();
         }
 
+        // 🎟 10-06 개편 — 창 9칸 · 같은 그림 3개 · 1~8등 · 둘 보이면 「하나 더!」 · 등수별 연출 (시안 Kd11dtfKUykpWiS1P8TLdz)
+        readonly List<(Vector2 p, Vector2 v, float l, Color c, float s, float g)> scParts = new List<(Vector2, Vector2, float, Color, float, float)>();
+        float scShakeT = -9, scFlashT = -9, scBannerT = -9; int scRank = -1;
+        void ScBurst(Vector2 at, int n, float sp, float grav, params Color[] cols)
+        {
+            if (reduceMotion) n = Mathf.Min(n, 8);
+            for (int i = 0; i < n; i++) { float a = Random.value * Mathf.PI * 2, v = sp * (0.4f + Random.value); scParts.Add((at, new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * v - new Vector2(0, sp * 0.3f), 1f, cols[i % cols.Length], 2 + Random.value * 3, grav)); }
+        }
+        void ScratchFx()
+        {   // 동전 · 은박 가루 · 번쩍 · 1등 배너 — 창 위에
+            float dt = Time.unscaledDeltaTime;
+            if (Event.current.type == EventType.Repaint)
+                for (int i = scParts.Count - 1; i >= 0; i--) { var q = scParts[i]; q.v.y += q.g * dt; q.p += q.v * dt; q.l -= dt; if (q.l <= 0 || q.p.y > RefH + 20) scParts.RemoveAt(i); else scParts[i] = q; }
+            foreach (var q in scParts) { GUI.color = new Color(q.c.r, q.c.g, q.c.b, Mathf.Clamp01(q.l * 2)); GUI.DrawTexture(new Rect(q.p.x, q.p.y, q.s, q.s), white); }
+            float fe = Time.unscaledTime - scFlashT; if (fe < 0.5f && !reduceMotion) { GUI.color = new Color(1, 1, 1, 0.8f * (1 - fe / 0.5f)); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); }
+            float be = Time.unscaledTime - scBannerT;
+            if (be < 2.6f && scRank >= 0)
+            {
+                float a = Mathf.Clamp01(be / 0.2f) * Mathf.Clamp01((2.6f - be) / 0.5f); var c = new Vector2(vw / 2, RefH / 2);
+                for (int i = 0; i < 18; i++) { float ang = i * 20 + be * 30; var d = new Vector2(Mathf.Cos(ang * Mathf.Deg2Rad), Mathf.Sin(ang * Mathf.Deg2Rad)); Line(c + d * 60, c + d * 420, new Color(1f, 0.87f, 0.58f, 0.16f * a), 26); }
+                float sc = reduceMotion ? 1 : Mathf.Lerp(2.4f, 1f, Mathf.Clamp01(be / 0.35f));
+                GUI.color = new Color(0.1f, 0.03f, 0.1f, 0.8f * a); GUI.DrawTexture(new Rect(c.x - 260, c.y - 80, 520, 150), white); Frame(new Rect(c.x - 260, c.y - 80, 520, 150), new Color(1f, 0.87f, 0.58f, a), 2);   // 글자가 빛줄기 · 표에 묻히지 않게
+                GUI.color = new Color(1, 1, 1, a);
+                Lbl(new Rect(c.x - 300, c.y - 70, 600, 100), "<size=" + Mathf.RoundToInt(88 * sc) + "><b><color=#ffdf95>" + SweepSim.RankName(scRank + 1) + "!</color></b></size>", center);
+                if (sim.ScratchText != null || scBannerTxt != null) Lbl(new Rect(c.x - 300, c.y + 30, 600, 30), "<size=20>" + scBannerTxt + "</size>", center);
+            }
+            GUI.color = Color.white;
+        }
+        string scBannerTxt;
         void Scratch(Rect r, Event ev)
-        {   // 🎟 09-27 칸 셋 · 도트 그림 · 문지르면 한 번에 여러 칸 (시안 TxxPY6mLoewcLnW1vmNVBG)
+        {
             var S = sim.S;
             if (scIcon == null) { scIcon = new Texture2D[ScIconPath.Length]; for (int i = 0; i < ScIconPath.Length; i++) scIcon[i] = Resources.Load<Texture2D>(ScIconPath[i]); }
-            int leftN = sim.ScratchLeft + (scGrid != null && !scDone ? 1 : 0);          // 긁고 있는 장도 센다 (09-27 「남은 개수가 이상」)
-            Lbl(new Rect(r.x + 20, r.y + 52, r.width - 40, 22), Loc.T("<size=13>한 장 <color=#ffdf95>") + KNum.Fmt(sim.ScratchPrice) + Loc.T("</color> · 같은 그림 셋 = 당첨 · 둘 = 표값 돌려받기</size>"), label);
-            Lbl(new Rect(r.x + 20, r.y + 52, r.width - 40, 22), Loc.T("<size=13><color=#f3c8ff>남은 표 ") + leftN + Loc.T("장") + (scGrid != null && !scDone ? Loc.T(" (이 장 포함)") : "") + (S.freeTix > 0 ? Loc.T(" · <color=#9ff0bf>공짜 ") + S.freeTix + "</color>" : "") + "</color></size>", cost);
-            // 표 — 분홍 바탕에 창 셋
-            var card = new Rect(r.center.x - 250, r.y + 88, 500, 230);
-            GUI.color = new Color(0.23f, 0.06f, 0.2f); GUI.DrawTexture(new Rect(card.x - 4, card.y - 4, card.width + 8, card.height + 8), white);
+            // 표 — 분홍 바탕에 창 아홉 (흔들림은 2~5등)
+            float se = Time.unscaledTime - scShakeT, sh = se < 0.45f && !reduceMotion ? Mathf.Sin(se * 60) * 5 * (1 - se / 0.45f) : 0;
+            var card = new Rect(r.x + 20 + sh, r.y + 52, 500, 372);
+            bool gold = scDone && scRank >= 0 && scRank <= 1;
+            GUI.color = gold ? new Color(1f, 0.87f, 0.58f, 0.5f + 0.3f * Mathf.Sin(Time.unscaledTime * 6)) : new Color(0.23f, 0.06f, 0.2f); GUI.DrawTexture(new Rect(card.x - 4, card.y - 4, card.width + 8, card.height + 8), white);
             GUI.color = new Color(1f, 0.7f, 0.86f); GUI.DrawTexture(card, white);
-            GUI.color = new Color(1f, 0.83f, 0.45f, 0.55f); GUI.DrawTexture(new Rect(card.x, card.yMax - 40, card.width, 40), white); GUI.color = Color.white;
-            Lbl(new Rect(card.x + 14, card.y + 8, 300, 26), Loc.T("<size=17><b><color=#3a0f33>궤도 즉석 복권</color></b></size>"), label);
-            if (scGrid == null)
-            {
-                Lbl(new Rect(card.x, card.y + 40, card.width, card.height - 60), Loc.T("<size=18><color=#5a2050>한 장 사서 긁어 보세요</color></size>"), center);
-            }
-            float gap = 14, cw = (card.width - gap * 4) / 3, ch = card.height - 70;
-            int revealed = 0;
+            GUI.color = new Color(1f, 0.83f, 0.45f, 0.55f); GUI.DrawTexture(new Rect(card.x, card.yMax - 34, card.width, 34), white); GUI.color = Color.white;
+            Lbl(new Rect(card.x + 14, card.y + 6, 300, 26), Loc.T("<size=17><b><color=#3a0f33>궤도 즉석 복권</color></b></size>"), label);
+            Lbl(new Rect(card.x, card.y + 9, card.width - 14, 20), Loc.T("<size=11><color=#6a2a5c>같은 그림 3개 = 당첨</color></size>"), cost);
+            string band = scGrid == null ? Loc.T("한 장 사서 긁어 보세요") : scDone ? (scRank >= 0 ? sim.ScratchText ?? scBannerTxt : Loc.T("꽝 — 다음 장은 출동 전까지 값이 오름")) : Loc.T("누른 채 문질러 긁기");
+            Lbl(new Rect(card.x + 8, card.yMax - 30, card.width - 16, 26), Fit("<color=#5a2050>" + (scDone && scRank >= 0 ? scBannerTxt : band) + "</color>", 12, card.width - 16, center, 9), center);
+            float gap = 10, gx = card.x + 18, gy = card.y + 38, cw = (464 - gap * 2) / 3, ch = (290 - gap * 2) / 3;
+            int nRev = 0; var revCnt = new int[SweepSim.ScratchSym.Length]; var rev = new bool[ScCells];
             for (int c = 0; c < ScCells && scGrid != null; c++)
             {
-                var cr = new Rect(card.x + gap + c * (cw + gap), card.y + 42, cw, ch);
+                int left = 0; for (int b = 0; b < ScCols * ScRows; b++) if (!scCoat[c, b]) left++;
+                rev[c] = scDone || left <= ScCols * ScRows * 0.45f; if (rev[c]) { nRev++; revCnt[scGrid[c]]++; }
+            }
+            int reachSym = -1; if (!scDone && scGrid != null) for (int k = 0; k < revCnt.Length; k++) if (revCnt[k] == 2) reachSym = k;
+            for (int c = 0; c < ScCells && scGrid != null; c++)
+            {
+                var cr = new Rect(gx + (c % 3) * (cw + gap), gy + (c / 3) * (ch + gap), cw, ch);
                 int sym = scGrid[c];
-                bool winCell = scDone && (scWin >= 0 || scWin == -2 && System.Array.IndexOf(scGrid, sym) != System.Array.LastIndexOf(scGrid, sym));
+                bool hit = scDone && scRank >= 0 && sym == scRank, reach = rev[c] && sym == reachSym;
+                float pop = hit && !reduceMotion ? 1 + 0.12f * Mathf.Exp(-6 * (Time.unscaledTime - scDoneT)) * Mathf.Sin((Time.unscaledTime - scDoneT) * 18) : 1;
+                if (pop != 1) cr = new Rect(cr.center.x - cr.width * pop / 2, cr.center.y - cr.height * pop / 2, cr.width * pop, cr.height * pop);
                 GUI.color = new Color(0.23f, 0.06f, 0.2f); GUI.DrawTexture(new Rect(cr.x - 3, cr.y - 3, cr.width + 6, cr.height + 6), white);
-                GUI.color = winCell ? new Color(1f, 0.95f, 0.62f) : new Color(1f, 0.97f, 0.93f); GUI.DrawTexture(cr, white); GUI.color = Color.white;
+                if (reach) { GUI.color = new Color(1f, 0.87f, 0.58f, 0.55f + 0.45f * Mathf.Sin(Time.unscaledTime * 8)); GUI.DrawTexture(new Rect(cr.x - 6, cr.y - 6, cr.width + 12, cr.height + 12), white); }
+                GUI.color = hit ? new Color(1f, 0.95f, 0.62f) : new Color(1f, 0.97f, 0.93f); GUI.DrawTexture(cr, white); GUI.color = Color.white;
                 var ic = scIcon[Mathf.Clamp(sym, 0, scIcon.Length - 1)];
-                if (ic != null) { float isz = Mathf.Min(cr.width, cr.height) * 0.66f; GUI.DrawTexture(new Rect(cr.center.x - isz / 2, cr.center.y - isz / 2 - 8, isz, isz), ic, ScaleMode.ScaleToFit); }
-                Lbl(new Rect(cr.x, cr.yMax - 24, cr.width, 20), "<size=12><color=#5a2050>" + SweepSim.ScratchSym[sym] + "</color></size>", center);
+                if (ic != null) { float isz = Mathf.Min(cr.width, cr.height) * 0.62f; GUI.DrawTexture(new Rect(cr.center.x - isz / 2, cr.center.y - isz / 2 - 7, isz, isz), ic, ScaleMode.ScaleToFit); }
+                Lbl(new Rect(cr.x, cr.yMax - 19, cr.width, 18), "<size=10><color=#5a2050>" + SweepSim.ScratchSym[sym] + "</color></size>", center);
+                if (reach) { var tg = new Rect(cr.xMax - 58, cr.y + 2, 56, 15); GUI.color = new Color(1f, 0.87f, 0.58f); GUI.DrawTexture(tg, white); GUI.color = Color.white; Lbl(tg, Loc.T("<size=10><color=#5a2050>하나 더!</color></size>"), center); }
                 // 은박 — 누른 채 지나가면 벗겨진다 (칸 사이를 한 번에 문질러도 된다)
-                int left = 0; float bw = cr.width / ScCols, bh = cr.height / ScRows;
+                int leftN = 0; float bw = cr.width / ScCols, bh = cr.height / ScRows;
                 for (int b = 0; b < ScCols * ScRows; b++)
                 {
-                    if (scCoat[c, b]) continue; left++;
-                    if (scDone) continue;
+                    if (scCoat[c, b]) continue; leftN++;
+                    if (scDone || rev[c]) continue;
                     var br = new Rect(cr.x + (b % ScCols) * bw, cr.y + (b / ScCols) * bh, bw + 0.5f, bh + 0.5f);
-                    float shade = (b % ScCols) % 2 == 0 ? 0.74f : 0.8f;
+                    float shade = ((b % ScCols) + (b / ScCols)) % 2 == 0 ? 0.74f : 0.8f;
                     GUI.color = new Color(shade, shade, shade + 0.04f); GUI.DrawTexture(br, white); GUI.color = Color.white;
                 }
-                if (left == ScCols * ScRows && !scDone) Lbl(cr, Loc.T("<size=13><color=#7a5a86>긁기</color></size>"), center);
-                if (left <= ScCols * ScRows * 0.45f) revealed++;
-                if (!scDone && (ev.type == EventType.MouseDrag || ev.type == EventType.MouseDown) && ev.button == 0 && new Rect(cr.x - 20, cr.y - 20, cr.width + 40, cr.height + 40).Contains(ev.mousePosition))
+                if (leftN == ScCols * ScRows && !scDone) Lbl(cr, Loc.T("<size=12><color=#7a5a86>긁기</color></size>"), center);
+                if (!scDone && !rev[c] && (ev.type == EventType.MouseDrag || ev.type == EventType.MouseDown) && ev.button == 0 && new Rect(cr.x - 10, cr.y - 10, cr.width + 20, cr.height + 20).Contains(ev.mousePosition))
                 {
                     for (int b = 0; b < ScCols * ScRows; b++)
                     {
                         var bc = new Vector2(cr.x + (b % ScCols + 0.5f) * bw, cr.y + (b / ScCols + 0.5f) * bh);
-                        if (!scCoat[c, b] && (bc - ev.mousePosition).sqrMagnitude < 26 * 26) { scCoat[c, b] = true; if (Random.value < 0.2f) OrbitSfx.PlayPitch("tick", 0.2f, 1.6f + Random.value * 0.4f); }
+                        if (!scCoat[c, b] && (bc - ev.mousePosition).sqrMagnitude < 22 * 22) { scCoat[c, b] = true; if (Random.value < 0.35f) ScBurst(bc, 2, 60, 500, new Color(0.85f, 0.85f, 0.88f), new Color(0.72f, 0.72f, 0.77f)); if (Random.value < 0.2f) OrbitSfx.PlayPitch("tick", 0.2f, 1.6f + Random.value * 0.4f); }
                     }
                     scUse = true;
                 }
             }
             if (scUse) { scUse = false; ev.Use(); }
-            // 당첨표 — 그림 여섯
-            string[] pay = { "× 0.2", Loc.En ? "Fire +30%" : Loc.T("화력 +30%"), "× 1", Loc.T("열쇠"), Loc.T("부품"), "× 10" };   // 🌐 칸이 좁아 영어는 짧게
-            for (int k = 0; k < 6; k++)
+            // 당첨표 — 1~8등 · 실제 금액
+            var pt = new Rect(r.xMax - 360, r.y + 52, 340, 8 * 36);
+            Lbl(new Rect(pt.x, pt.y - 2, pt.width, 18), Loc.T("<size=12><color=#f3c8ff>당첨표 — 같은 그림 3개</color></size>"), label);
+            for (int k = 0; k < 8; k++)
             {
-                var pr = new Rect(r.x + 24 + k * 94, r.y + 330, 90, 30);
-                if (scIcon[k] != null) GUI.DrawTexture(new Rect(pr.x, pr.y + 2, 26, 26), scIcon[k], ScaleMode.ScaleToFit);
-                Lbl(new Rect(pr.x + 28, pr.y + 5, 64, 20), "<color=" + (k == 5 ? "#ffdf95" : "#c9b3d6") + ">" + Fit(pay[k], 11, 62, label) + "</color>", label);   // 🌐 영어 Firepower +30% 는 칸보다 넓다
+                var row = new Rect(pt.x, pt.y + 20 + k * 36, pt.width, 34);
+                if (scDone && scRank == k) { GUI.color = new Color(1f, 0.87f, 0.58f, 0.22f); GUI.DrawTexture(row, white); }
+                GUI.color = new Color(1, 1, 1, 0.08f); GUI.DrawTexture(new Rect(row.x, row.yMax, row.width, 1), white); GUI.color = Color.white;
+                string rc = k == 0 ? "#ffdf95" : "#c9b3d6";
+                Lbl(new Rect(row.x + 4, row.y + 8, 36, 18), "<size=12><color=" + rc + ">" + SweepSim.RankName(k + 1) + "</color></size>", label);
+                if (scIcon[k] != null) GUI.DrawTexture(new Rect(row.x + 42, row.y + 4, 26, 26), scIcon[k], ScaleMode.ScaleToFit);
+                Lbl(new Rect(row.x + 74, row.y + 1, 200, 18), "<size=12><color=" + (k == 0 ? "#ffdf95" : "#efe6f3") + ">" + SweepSim.ScratchSym[k] + "</color></size>", label);
+                Lbl(new Rect(row.x + 74, row.y + 17, row.width - 120, 16), Fit("<color=#9a8ca6>" + ScPrize(k) + "</color>", 10, row.width - 120, label, 8), label);
+                Lbl(new Rect(row.x, row.y + 8, row.width - 6, 18), "<size=10><color=#9a8ca6>" + (SweepSim.ScratchOdds[k] * 100 * (1 + 0.5f * sim.Lv("l_luck"))).ToString(SweepSim.ScratchOdds[k] < 0.01 ? "0.0" : "0") + "%</color></size>", cost);
             }
-            Lbl(new Rect(r.x + 24, r.y + 360, r.width - 48, 18), Loc.T("<size=10><color=#8a7a96>× = 판 벌이 · 부품은 가게 진열에서 하나 무료 장착 · 황금은 부품도 하나</color></size>"), label);
-            if (scGrid != null && !scDone && revealed == ScCells) { scDone = true; scDoneT = Time.unscaledTime; scGot = sim.ScratchClaim(); if (scWin != -1) { OrbitSfx.Play("buy", 1f); OrbitSfx.Play("clank", 0.7f); game.creditPulse = 1; } else OrbitSfx.PlayPitch("tick", 0.6f, 0.7f); }
-            bool can = sim.ScratchLeft > 0 && S.cash >= sim.ScratchCost;
-            string buyTxt = can ? "<size=16>" + (scGrid == null ? Loc.T("복권 1장 구매") : Loc.T("한 장 더")) + " · " + (sim.ScratchCost <= 0 ? Loc.T("공짜") : KNum.Fmt(sim.ScratchCost)) + "</size>" : "<size=12>" + (sim.ScratchLeft <= 0 ? Loc.T("오늘 표 소진 — 출동하면 다시 충전") : Loc.T("돈 부족")) + "</size>";
+            Lbl(new Rect(pt.x, pt.y + 20 + 8 * 36 + 4, pt.width, 30), Loc.T("<size=10><color=#8a7a96>판 벌이 = 지금 평균 판 수입 · 화력 · 연료는 다음 판 한 번 · 겹치지 않음</color></size>"), small);
+            // 다 보이면 받는다 — 당첨 그림 셋이 보이면 바로
             if (scGrid != null && !scDone)
             {
-                Lbl(new Rect(r.x, r.yMax - 96, r.width, 22), Loc.T("<size=13><color=#b89ac6>누른 채 문질러 긁기</color></size>"), center);
-                if (Bt(new Rect(r.center.x - 90, r.yMax - 70, 180, 36), Loc.T("<size=14>한 번에 다 긁기</size>"), btn)) for (int c = 0; c < ScCells; c++) for (int b = 0; b < ScCols * ScRows; b++) scCoat[c, b] = true;
-                return;
+                int won = -1; for (int k = 0; k < revCnt.Length; k++) if (revCnt[k] >= 3) won = k;
+                if (won >= 0 || nRev == ScCells)
+                {
+                    scDone = true; scDoneT = Time.unscaledTime; scRank = scWin; scGot = sim.ScratchClaim(); scBannerTxt = sim.ScratchText;
+                    var cc = new Vector2(card.center.x, card.center.y);
+                    if (scRank >= 0)
+                    {
+                        OrbitSfx.Play("buy", 1f); OrbitSfx.Play("clank", 0.7f); game.creditPulse = 1;
+                        if (scRank <= 4) { ScBurst(cc, scRank <= 1 ? 120 : 50, scRank <= 1 ? 420 : 260, 300, new Color(1f, 0.87f, 0.58f), SweepGame.Amber, new Color(1f, 0.96f, 0.78f)); scShakeT = Time.unscaledTime; }
+                        if (scRank <= 1)
+                        {
+                            scFlashT = Time.unscaledTime; scBannerT = Time.unscaledTime; OrbitSfx.Play("launch", 0.6f);
+                            for (int i = 0; i < (scRank == 0 ? 160 : 80); i++) scParts.Add((new Vector2(Random.value * vw, -10 - Random.value * 300), new Vector2((Random.value - 0.5f) * 40, 120 + Random.value * 120), 3.5f, i % 2 == 0 ? new Color(1f, 0.87f, 0.58f) : SweepGame.Amber, 4 + Random.value * 3, 120));
+                        }
+                    }
+                    else OrbitSfx.PlayPitch("tick", 0.6f, 0.7f);
+                }
             }
+            // 아래 — 사기 · 다 긁기 · 결과 · 표값
+            bool can = S.cash >= sim.ScratchCost;
+            string costTxt = sim.ScratchCost <= 0 ? Loc.T("공짜") : KNum.Fmt(sim.ScratchCost);
+            string buyTxt = "<size=15>" + (scGrid == null ? Loc.T("복권 1장 구매") : Loc.T("한 장 더")) + " · " + costTxt + "</size>";
+            var bb = new Rect(r.x + 20, r.yMax - 50, 220, 36);
+            if (scGrid != null && !scDone)
+            {
+                if (Bt(new Rect(bb.x, bb.y, 180, 36), Loc.T("<size=14>한 번에 다 긁기</size>"), btn)) for (int c = 0; c < ScCells; c++) for (int b = 0; b < ScCols * ScRows; b++) scCoat[c, b] = true;
+            }
+            else if (Bt(bb, buyTxt, can ? btn : btnOff) && can)
+            { scGrid = sim.ScratchBuy(out scWin); scCoat = new bool[ScCells, ScCols * ScRows]; scDone = false; scGot = 0; scRank = -1; scBannerTxt = null; OrbitSfx.Play("buy", 0.5f); }
             if (scDone)
             {
                 float k = Mathf.Clamp01((Time.unscaledTime - scDoneT) / 0.25f);
-                string msg = scWin == -1 ? Loc.T("<size=22><color=#8a93a3>꽝</color></size>") : "<size=" + Mathf.RoundToInt(Mathf.Lerp(30, 20, k)) + "><b><color=#ffdf95>" + sim.ScratchText + (scGot > 0 ? "  +" + KNum.Fmt(scGot) : "") + "</color></b></size>";
-                Lbl(new Rect(r.x, r.yMax - 104, r.width, 36), msg, center);
+                string msg = scRank < 0 ? Loc.T("<color=#8a93a3>꽝</color>") : "<color=#ffdf95>" + scBannerTxt + "</color>";
+                Lbl(new Rect(r.x + 250, r.yMax - 52, 280, 36), Fit(msg, scRank < 0 ? 20 : Mathf.RoundToInt(Mathf.Lerp(24, 16, k)), 280, center, 9), center);   // 오른쪽 표값 안내와 안 겹치게
             }
-            if (Bt(new Rect(r.center.x - 120, r.yMax - 62, 240, 40), buyTxt, can ? btn : btnOff) && can)
-            { scGrid = sim.ScratchBuy(out scWin); scCoat = new bool[ScCells, ScCols * ScRows]; scDone = false; scGot = 0; OrbitSfx.Play("buy", 0.5f); }
+            string pr = sim.ScratchLeft > 0 ? Loc.T("공짜 표 ") + sim.ScratchLeft + Loc.T("장") : Loc.T("이번 장 ") + KNum.Fmt(sim.ScratchPrice) + Loc.T(" · 다음 장 ") + KNum.Fmt(sim.ScratchNextPrice);
+            Lbl(new Rect(r.xMax - 360, r.yMax - 46, 240, 30), "<size=11><color=#9a8ca6>" + pr + Loc.T("\n출동하면 표값 원래대로") + "</color></size>", small);
         }
-
-        void Lotto(Rect r)
+        string ScPrize(int k)
         {
-            var S = sim.S;
-            Lbl(new Rect(r.x + 20, r.y + 58, r.width - 40, 24), Loc.T("<size=15><b>제 ") + S.lottoRound + Loc.T("회</b> · <color=#ffdf95>출동 다녀오면 바로 추첨</color></size>"), label);
-            Lbl(new Rect(r.x + 20, r.y + 82, r.width - 40, 20), Loc.T("<size=11><color=#8a9bb3>1~12 중 셋 · 한 장 ") + KNum.Fmt(sim.LottoPrice) + Loc.T(" · 한 회 3장까지 · 셋 다 ×60 · 둘 ×2 · 하나 ×0.3</color></size>"), label);
-            // 번호판
-            for (int n = 1; n <= 12; n++)
+            double m = sim.ScratchMoney(k);
+            switch (k)
             {
-                var nb = new Rect(r.x + 40 + ((n - 1) % 6) * 58, r.y + 116 + ((n - 1) / 6) * 58, 50, 50);
-                bool on = lottoPick.Contains(n);
-                GUI.color = on ? new Color(1f, 0.55f, 0.92f, 0.55f) : new Color(1f, 0.66f, 0.94f, 0.06f); GUI.DrawTexture(nb, texDisc);          // 빛 구슬
-                GUI.color = new Color(1f, 0.66f, 0.94f, on ? 1f : 0.45f); GUI.DrawTexture(nb, texRing); GUI.color = Color.white;
-                Lbl(nb, "<size=18><b>" + (on ? "<color=#ffffff>" : "<color=#b89ac6>") + n + "</color></b></size>", center);
-                if (Bt(nb, GUIContent.none, GUIStyle.none)) { if (on) lottoPick.Remove(n); else if (lottoPick.Count < 3) lottoPick.Add(n); OrbitSfx.Play("tick", 0.4f); }
-            }
-            bool can = lottoPick.Count == 3 && S.lotto.Count < 3 && S.cash >= sim.LottoPrice;
-            if (Bt(new Rect(r.x + 400, r.y + 116, 170, 44), can ? Loc.T("<size=14>이 번호로 구매</size>") : "<size=12>" + (S.lotto.Count >= 3 ? Loc.T("이번 회는 3장까지") : lottoPick.Count < 3 ? Loc.T("번호 셋을 고르세요") : Loc.T("돈 부족")) + "</size>", can ? btnC : btnOffC) && can)
-            { lottoPick.Sort(); if (sim.LottoBuy(lottoPick[0], lottoPick[1], lottoPick[2])) { OrbitSfx.Play("buy", 0.6f); lottoPick.Clear(); } }
-            if (Bt(new Rect(r.x + 400, r.y + 166, 170, 34), Loc.T("<size=12>자동 고르기</size>"), btnOff))
-            { lottoPick.Clear(); while (lottoPick.Count < 3) { int n = Random.Range(1, 13); if (!lottoPick.Contains(n)) lottoPick.Add(n); } OrbitSfx.Play("tick", 0.5f); }
-            // 내 표
-            Lbl(new Rect(r.x + 20, r.y + 244, 200, 22), Loc.T("<size=13>내 표</size>"), label);
-            for (int i = 0; i < 3; i++)
-            {
-                var tr = new Rect(r.x + 20 + i * 180, r.y + 270, 170, 40);
-                GUI.color = new Color(0.12f, 0.07f, 0.15f); GUI.DrawTexture(tr, white); GUI.color = Color.white; Frame(tr, new Color(0.4f, 0.25f, 0.45f), 1.5f);
-                Lbl(tr, i < S.lotto.Count ? "<size=17><b>" + S.lotto[i].a + " · " + S.lotto[i].b + " · " + S.lotto[i].c + "</b></size>" : Loc.T("<size=12><color=#5f4f66>빈 칸</color></size>"), center);
-            }
-            // 지난 회
-            if (S.lottoLast != null)
-            {
-                Lbl(new Rect(r.x + 20, r.y + 330, r.width - 40, 22), Loc.T("<size=13>지난 ") + S.lottoLastRound + Loc.T("회 당첨 번호  <b><color=#f3c8ff>") + S.lottoLast[0] + " · " + S.lottoLast[1] + " · " + S.lottoLast[2] + "</color></b></size>", label);
-                Lbl(new Rect(r.x + 20, r.y + 354, r.width - 40, 22), "<size=12>" + (S.lottoLastHit < 0 ? Loc.T("<color=#8a9bb3>그 회차엔 표 없음</color>") : S.lottoLastWin > 0 ? "<color=#6fcf97>" + S.lottoLastHit + Loc.T("개 맞음 · +") + KNum.Fmt(S.lottoLastWin) + "</color>" : Loc.T("<color=#ee7766>꽝</color>")) + "</size>", label);
+                case 0: return Loc.T("판 벌이 × ") + SweepSim.ScratchK[k] * (sim.Lv("l_jack") > 0 ? 3 : 1) + " = " + KNum.Fmt(m) + Loc.T(" + 부품");
+                case 2: return Loc.T("가게 부품 1 무료");
+                case 3: return Loc.T("열쇠 1");
+                case 5: return Loc.T("다음 판 화력 +30%");
+                case 6: return Loc.T("다음 판 연료 +10초");
+                default: return Loc.T("판 벌이 × ") + SweepSim.ScratchK[k] * (sim.Lv("l_jack") > 0 ? 3 : 1) + " = " + KNum.Fmt(m);
             }
         }
 

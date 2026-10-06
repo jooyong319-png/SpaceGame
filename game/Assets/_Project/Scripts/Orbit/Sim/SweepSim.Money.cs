@@ -52,56 +52,65 @@ namespace SalvageRun.Orbit.Sim
         public void StockBuy(int i, double frac) { if (!StockBuyOpen) return; double money = Math.Floor(S.cash * frac); if (money < 1) return; S.cash -= Mk.Buy(i, money, StockFee); }
         public void StockSell(int i, double frac) { if (!StockOpen) return; S.cash += Math.Floor(Mk.Sell(i, frac, StockFee)); }
 
-        // 🎟 즉석 복권 · 🎱 궤도 로또 (09-23 사장님 「복권 두 가지 다」) — 게임 안 돈만. 평균 기대값 0.7 안팎 (복권답게 손해)
+        // 🎟 즉석 복권 · 🎱 궤도 로또 (09-23 사장님 「복권 두 가지 다」) — 게임 안 돈만
         readonly Random luck = new Random();                              // 게임 난수와 따로 — 봇 영향 없음
-        // 🎟 09-27 사장님 「복권이 진짜 의미가 없다 · 디자인도 불편」 (시안 TxxPY6mLoewcLnW1vmNVBG) — 칸 셋 · 그림 여섯 · 판 벌이 기준 · 돈 말고도 부품 · 열쇠 · 강화
-        public static readonly string[] ScratchSym = { Loc.T("고철"), Loc.T("위성"), Loc.T("금고"), Loc.T("열쇠"), Loc.T("부품"), Loc.T("황금") };
-        static readonly double[] ScratchOdds = { 0.12, 0.10, 0.06, 0.04, 0.03, 0.005 };   // 셋이 같을 확률 (드문 것부터 뽑는다)
-        public const double ScratchPairP = 0.25;                                   // 둘만 같으면 표값 돌려받기
-        public double ScratchPrice => Math.Max(10, Math.Round(ShopBase * 0.15 / 10) * 10);   // 한 장 = 판 벌이의 15%
-        public int ScratchMax => 3 + 2 * Lv("l_more");                              // 🎟 복권 단골 — 단계마다 +2 (09-27 +1 에서)
-        public int ScratchLeft => (S.scratchRun == S.runs ? Math.Max(0, ScratchMax - S.scratchN) : ScratchMax) + S.freeTix;   // 공짜 표는 따로 더한다
-        public double ScratchCost => S.freeTix > 0 || Lv("l_free") > 0 && (S.scratchRun != S.runs || S.scratchN < 2) ? 0 : ScratchPrice;   // 공짜 표 · 판마다 두 장 공짜 (09-27 한 장에서)
-        int scratchWin = -1; double scratchPaid;                                 // 긁어서 다 보이면 받는다
+        // 🎟 10-06 개편 (사장님 「상품 개수를 늘리고 1등을 판 벌이 기준으로」 · 시안 Kd11dtfKUykpWiS1P8TLdz)
+        //    창 9칸(3×3) · 같은 그림 3개 = 당첨 · 1~8등 · 상품은 판 벌이(평균 판 수입) 기준.
+        //    장수 제한 없음 — 한 판 안에서 살수록 표값 ×1.3 (출동하면 원래대로). 돈 기대값 ≈ 표값의 0.73 + 물건.
+        public static readonly string[] ScratchSym = { Loc.T("황금 금고"), Loc.T("금고"), Loc.T("부품"), Loc.T("열쇠"), Loc.T("로켓"), Loc.T("위성"), Loc.T("연료통"), Loc.T("고철") };   // 1등 → 8등
+        public static readonly double[] ScratchOdds = { 0.001, 0.006, 0.015, 0.02, 0.03, 0.04, 0.06, 0.10 };   // 등수마다 당첨 확률
+        public static readonly double[] ScratchK = { 20, 5, 0, 0, 1, 0, 0, 0.3 };                              // 돈 상품 = 판 벌이 × K
+        public const int ScratchCells = 9;
+        public static string RankName(int n) => Loc.En ? n + (n == 1 ? "st" : n == 2 ? "nd" : n == 3 ? "rd" : "th") : n + "등";   // 🌐 1등 · 1st
+        public double ScratchBase => Math.Max(10, Math.Round(ShopBase * 0.15 / 10) * 10);   // 첫 장 = 판 벌이의 15%
+        public double ScratchGrow => Math.Max(1.06, 1.3 - 0.08 * Lv("l_more"));     // 장마다 오르는 배수 — 「복권 단골」 칸이 줄인다 (임시 · 스킬 개편 시안 대기)
+        int ScratchPaidN => S.scratchRun == S.runs ? S.scratchN : 0;               // 이번 판에 돈 내고 산 장수
+        int ScratchFreeUsed => S.scratchRun == S.runs ? S.scratchFree : 0;
+        static double RoundPrice(double v) => v < 100 ? Math.Round(v) : Math.Round(v / 10) * 10;   // 작은 값은 1 단위 — 10 단위면 초반 ×1.3 이 안 보였다
+        public double ScratchPrice => Math.Max(10, RoundPrice(ScratchBase * Math.Pow(ScratchGrow, ScratchPaidN)));
+        public double ScratchNextPrice => Math.Max(10, RoundPrice(ScratchBase * Math.Pow(ScratchGrow, ScratchPaidN + 1)));
+        public int ScratchLeft => S.freeTix + (Lv("l_free") > 0 ? Math.Max(0, 2 - ScratchFreeUsed) : 0);   // 공짜로 긁을 수 있는 장수 (돈 내고는 제한 없음)
+        public double ScratchCost => ScratchLeft > 0 ? 0 : ScratchPrice;
+        public double ScratchMoney(int tier) => Math.Round(ShopBase * ScratchK[tier] * (Lv("l_jack") > 0 ? 3 : 1));
+        int scratchWin = -1;                                                     // 긁어서 다 보이면 받는다
+        public void DebugScratchWin(int w) => scratchWin = w;                     // 시험용 — 이 등수로 받기
         public string ScratchText;                                               // 받은 것 한 줄 (화면에 띄운다)
-        /// <summary>한 장 산다 — 돌려주는 값 = 칸 셋의 그림 (null = 못 삼). win = 셋이 같은 그림 (-1 꽝 · -2 둘만 같음)</summary>
+        /// <summary>한 장 산다 — 돌려주는 값 = 9칸의 그림 (등수 번호 0~7 · null = 못 삼). win = 당첨 등수 (0 = 1등 · -1 꽝)</summary>
         public int[] ScratchBuy(out int win)
         {
             win = -1;
-            if (ScratchLeft <= 0 || S.cash < ScratchCost) return null;
+            if (S.cash < ScratchCost) return null;
             double cost = ScratchCost;
-            if (S.scratchRun != S.runs) { S.scratchRun = S.runs; S.scratchN = 0; }
-            if (S.freeTix > 0) S.freeTix--; else S.scratchN++;                // 공짜 표부터 쓴다 — 판마다 장수는 안 깎인다
-            S.cash -= cost; scratchPaid = cost > 0 ? cost : ScratchPrice;
-            double u = luck.NextDouble() / (1 + 0.5 * Lv("l_luck")), acc = 0;    // 행운의 긁개 — 단계마다 +50% (09-27 +25% 에서)
-            for (int k = ScratchOdds.Length - 1; k >= 0; k--) { acc += ScratchOdds[k]; if (u < acc) { win = k; break; } }
-            int n = ScratchSym.Length;
-            if (win >= 0) { scratchWin = win; return new[] { win, win, win }; }
-            if (u < acc + ScratchPairP)
-            {
-                win = -2; scratchWin = -2;
-                int a = luck.Next(n), b; do b = luck.Next(n); while (b == a);
-                var g = new[] { a, a, b }; int j = luck.Next(3); (g[j], g[2]) = (g[2], g[j]); return g;
-            }
-            scratchWin = -1;
-            var l = new List<int>(); while (l.Count < 3) { int c = luck.Next(n); if (!l.Contains(c)) l.Add(c); }
-            return l.ToArray();
+            if (S.scratchRun != S.runs) { S.scratchRun = S.runs; S.scratchN = 0; S.scratchFree = 0; }
+            if (S.freeTix > 0) S.freeTix--;                                    // 공짜 표부터 — 값은 안 오른다
+            else if (Lv("l_free") > 0 && S.scratchFree < 2) S.scratchFree++;
+            else S.scratchN++;
+            S.cash -= cost;
+            double u = luck.NextDouble() / (1 + 0.5 * Lv("l_luck")), acc = 0;    // 행운의 긁개 — 단계마다 +50%
+            for (int k = 0; k < ScratchOdds.Length; k++) { acc += ScratchOdds[k]; if (u < acc) { win = k; break; } }
+            scratchWin = win;
+            // 9칸 — 당첨 그림 셋 + 나머지는 같은 그림이 둘까지만 (다른 셋이 생기지 않게)
+            var cells = new List<int>(); var cnt = new int[ScratchSym.Length];
+            if (win >= 0) { for (int i = 0; i < 3; i++) cells.Add(win); cnt[win] = 3; }
+            while (cells.Count < ScratchCells) { int c = luck.Next(ScratchSym.Length); if (cnt[c] >= 2) continue; cnt[c]++; cells.Add(c); }
+            for (int i = cells.Count - 1; i > 0; i--) { int j = luck.Next(i + 1); (cells[i], cells[j]) = (cells[j], cells[i]); }
+            return cells.ToArray();
         }
         /// <summary>다 긁으면 받는다 — 돌려주는 값 = 받은 돈 (돈 아닌 것은 ScratchText 로)</summary>
         public double ScratchClaim()
         {
             int w = scratchWin; scratchWin = -1; ScratchText = null;
-            double R0 = ShopBase, jack = Lv("l_jack") > 0 ? 3 : 1, got = 0;       // 잭팟 ×3 (09-27 ×2 에서)
+            if (w < 0) return 0;
+            double got = ScratchMoney(w), R0 = ShopBase;
+            string head = RankName(w + 1) + " — " + ScratchSym[w] + Loc.T(" 셋");
             switch (w)
             {
-                case -2: got = scratchPaid * (Lv("l_jack") > 0 ? 2 : 1); ScratchText = Lv("l_jack") > 0 ? Loc.T("둘이 같음 — 잭팟! 표값 2배") : Loc.T("둘이 같음 — 표값 환불"); break;
-                case 0: got = R0 * 0.2 * jack; ScratchText = Loc.T("고철 셋 — 판 벌이 × 0.2"); break;
-                case 1: S.nDmg += 30; ScratchText = Loc.T("위성 셋 — 다음 판 화력 +30%"); break;
-                case 2: got = R0 * 1 * jack; ScratchText = Loc.T("금고 셋 — 판 벌이 × 1"); break;
-                case 3: S.keys++; ScratchText = Loc.T("열쇠 셋 — 열쇠 1개"); break;
-                case 4: ScratchText = Loc.T("부품 셋 — ") + FreePart() + Loc.T(" 공짜"); break;
-                case 5: got = R0 * 10 * jack; ScratchText = Loc.T("황금 셋! 판 벌이 × 10 + ") + FreePart(); break;
-                default: return 0;
+                case 0: ScratchText = head + " · +" + Math.Round(got) + " · " + FreePart(); break;
+                case 2: ScratchText = head + " · " + FreePart() + Loc.T(" 무료"); break;
+                case 3: S.keys++; ScratchText = head + Loc.T(" · 열쇠 1"); break;
+                case 5: if (S.nDmg < 30) { S.nDmg = 30; ScratchText = head + Loc.T(" · 다음 판 화력 +30%"); } else { got = Math.Round(R0 * 0.3); ScratchText = head + Loc.T(" · 이미 걸려 있어 돈으로 +") + got; } break;   // 겹치지 않는다
+                case 6: if (S.nFuel < 10) { S.nFuel = 10; ScratchText = head + Loc.T(" · 다음 판 연료 +10초"); } else { got = Math.Round(R0 * 0.3); ScratchText = head + Loc.T(" · 이미 걸려 있어 돈으로 +") + got; } break;
+                default: ScratchText = head + " · +" + Math.Round(got); break;
             }
             got = Math.Round(got); S.cash += got;
             return got;

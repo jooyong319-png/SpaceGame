@@ -1742,3 +1742,35 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 왼쪽 단추를 누르고 있기 — 0.5초마다 한 발	Hold the left button — one shot every 0.5s
 누를 때마다 바로 한 발 · 다섯 번	One shot per press · five times
 <size=12>건너뛰기</size>	<size=12>Skip</size>
+등!	!
+<size=11><color=#6a2a5c>같은 그림 3개 = 당첨</color></size>	<size=11><color=#6a2a5c>3 of a kind = win</color></size>
+한 장 사서 긁어 보세요	Buy a ticket and scratch it
+꽝 — 다음 장은 출동 전까지 값이 오름	No luck — the next ticket costs more until you launch
+누른 채 문질러 긁기	Hold and rub to scratch
+<size=10><color=#5a2050>하나 더!</color></size>	<size=10><color=#5a2050>One more!</color></size>
+<size=12><color=#7a5a86>긁기</color></size>	<size=12><color=#7a5a86>Scratch</color></size>
+<size=12><color=#f3c8ff>당첨표 — 같은 그림 3개</color></size>	<size=12><color=#f3c8ff>Prizes — 3 of a kind</color></size>
+등	th
+<size=10><color=#8a7a96>판 벌이 = 지금 평균 판 수입 · 화력 · 연료는 다음 판 한 번 · 겹치지 않음</color></size>	<size=10><color=#8a7a96>Run pay = your average run income · firepower and fuel apply to the next run only · no stacking</color></size>
+<color=#8a93a3>꽝</color>	<color=#8a93a3>No luck</color>
+공짜 표 	Free tickets 
+이번 장 	This ticket 
+ · 다음 장 	 · next 
+\n출동하면 표값 원래대로	\nPrice resets when you launch
+판 벌이 × 	Run pay × 
+ + 부품	 + a part
+가게 부품 1 무료	1 free shop part
+열쇠 1	1 key
+황금 금고	Gold Vault
+로켓	Rocket
+등 — 	th — 
+ 셋	 ×3
+ 무료	 free
+ · 열쇠 1	 · 1 key
+ · 다음 판 화력 +30%	 · next run firepower +30%
+ · 이미 걸려 있어 돈으로 +	 · already active, paid as cash +
+ · 다음 판 연료 +10초	 · next run fuel +10s
+<size=10><color=#7fcfe0>공짜 표 	<size=10><color=#7fcfe0>Free tickets 
+<size=10><color=#7fcfe0>한 장 	<size=10><color=#7fcfe0>Ticket 
+즉석 복권 표값 오름 −0.08 (단계마다 · 기본 ×1.3)	Scratch ticket price growth −0.08 (per level · base ×1.3)
+즉석 복권 돈 당첨 ×3	Scratch ticket cash prizes ×3

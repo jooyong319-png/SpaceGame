@@ -283,7 +283,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(1, 1, 1, fl);
             Lbl(new Rect(p.x, p.y + 6, p.width, 18), "<size=11><b><color=#bff3ff>SCRATCH</color></b></size>", center);
             Lbl(new Rect(p.x, p.y + 26, p.width, 32), Loc.T("<size=22><b><color=#e8fbff>복권</color></b></size>"), center);
-            Lbl(new Rect(p.x, p.y + 62, p.width, 18), Loc.T("<size=10><color=#7fcfe0>즉석 복권 ") + sim.ScratchLeft + Loc.T("장</color></size>"), center);
+            Lbl(new Rect(p.x, p.y + 62, p.width, 18), (sim.ScratchLeft > 0 ? Loc.T("<size=10><color=#7fcfe0>공짜 표 ") + sim.ScratchLeft + Loc.T("장</color></size>") : Loc.T("<size=10><color=#7fcfe0>한 장 ") + KNum.Fmt(sim.ScratchPrice) + "</color></size>"), center);
             GUI.color = Color.white;
             if (Bt(p, GUIContent.none, GUIStyle.none)) { lottoOpen = true; OrbitSfx.Play("tick", 0.6f); }
         }

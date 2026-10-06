@@ -47,7 +47,7 @@ namespace SalvageRun.Orbit.Sim
         public int[] lv = new int[SweepSim.NodeCount];
         public int planets = 1;                                          // 연 행성 (비트) — 지구는 늘
         public MarketState market;                                       // 📈 궤도 증권 — 회사마다 (파산하면 새 장)
-        public int scratchRun = -1, scratchN;                            // 🎟 즉석 복권 — 출동마다 3장
+        public int scratchRun = -1, scratchN, scratchFree;               // 🎟 즉석 복권 — 이번 판에 산 장수(값이 오른다) · 공짜로 쓴 장수 (10-06)
         public int freeTix;                                              // 🎟 공짜 표 (황금 잔해 · 복권 묶음 — 출동해도 남는다 · 09-27)
         public List<LottoTicket> lotto = new List<LottoTicket>();        // 🎱 궤도 로또 — 이번 회 내 표
         public int lottoRound = 1, lottoDrawAt = 3;                      // 다음 추첨 = 출동 번호
