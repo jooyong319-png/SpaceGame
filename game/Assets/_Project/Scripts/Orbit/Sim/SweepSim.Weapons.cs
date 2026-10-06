@@ -713,7 +713,7 @@ namespace SalvageRun.Orbit.Sim
               if (!r.clean && cm > 0) { r.chainBank += v * cm * BotEarn; r.chainX = d.x; r.chainY = d.y; }   // 💰 09-27 사장님 「연쇄 끝나면 돈을 파파팍」 — 보너스 합계만 세어 두었다가 연쇄가 끝날 때 보여 준다 (돈은 바로 들어간다 · 경제 그대로)
               v *= 1 + cm; }
             Pay(d, src, v, d.x, d.y, true);
-            if (d.att == Att.Pouch && v * BotEarn >= 1) Emit(SwEv.Pop, d.x, d.y - 14, 0, 0, Loc.T("돈 주머니 +") + KFmt(v));
+            if (d.att == Att.Pouch && v * BotEarn >= 1) Emit(SwEv.Pop, d.x, d.y - 14, 0, 0, Loc.T("현금 캡슐 +") + KFmt(v));
             Emit(SwEv.Broke, d.x, d.y, 0, d.k * 100 + (int)d.att);
             if (d.k == Fuel && AddFuel(3) > 0) Emit(SwEv.Pop, d.x, d.y, 0, 1, Loc.T("연료 +3초"));
             if (d.k == Tank && r.pend.Count < PendCap && (!redBlast || redGen < RedGenMax)) r.pend.Add(new Blast { x = d.x, y = d.y, t = 0.05, R = TankR, red = true, gen = redBlast ? redGen + 1 : 1 });   // 💥 09-27 사장님 「빨간 폭탄 안 터지는 것도 있나?」 — 연쇄 한도(지구 40)를 넘으면 조용히 안 터졌다. 이제 늘 (렉 막는 건 대기 폭발 수로)

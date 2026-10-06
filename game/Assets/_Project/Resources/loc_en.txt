@@ -246,7 +246,7 @@
 금고 감별	Vault Spotting
 금고 위성이 나올 확률 +50% (단계마다)	Vault satellite chance +50% (per level)
 부착물 감별	Attachment Spotting
-잔해에 돈 주머니 · 기폭 장치 같은 부착물이 붙을 확률 +40% (단계마다)	Chance of attachments like money pouches and detonators +40% (per level)
+잔해에 현금 캡슐 · 기폭 장치 같은 부착물이 붙을 확률 +40% (단계마다)	Chance of attachments like cash capsules and detonators +40% (per level)
 의뢰 게시판	Job Board
 출동마다 의뢰 카드 — 성공 시 판 수입 증가 · 단계마다 보상 +10%	A job card every run — complete it for bonus income · reward +10% per level
 청구서 협상	Bill Negotiation
@@ -817,7 +817,7 @@
 떠돌이 소행성 속에서 이상한 열쇠가 나왔다	A strange key found inside a rogue asteroid
 청소선이 부순 소행성 속에서 반짝이는 금속 조각이 발견됐다. 케슬러 금융은 「우리 것이 아니다」라고 했다.	A glinting piece of metal was found inside an asteroid the sweeper broke. Kessler Finance said, "It's not ours."
 돈 뭉치 +	Cash bundle +
-돈 주머니 +	Money pouch +
+현금 캡슐 +	Cash capsule +
 블랙박스 — 특종 제보!	Black box — scoop tip!
 무한 궤도 	Endless Orbit 
 층 — 심연 보급	F — abyss supply
