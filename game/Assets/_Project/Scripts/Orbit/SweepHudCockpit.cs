@@ -11,7 +11,7 @@ namespace SalvageRun.Orbit
         // ───────────────────────────────── 조종실 — 판과 판 사이의 집. 출동은 여기서만
         // 시안(cockpit.html 1600×1000)을 960×600 으로 — 사다리꼴 창 · 양옆 선체 판 · 아래 조종대
         static readonly Vector2[] WinPoly = { new Vector2(198, 42), new Vector2(762, 42), new Vector2(834, 336), new Vector2(126, 336) };
-        static Texture2D hullTex;
+        static Texture2D hullTex, launchTex;
         static Texture2D hullArt;
         public static void TestHullArt(Texture2D t) { hullArt = t; hullTex = null; }   // 캡처용 — 배경 그림 바꿔 보기 (null = 원래 그림)
         static bool InQuad(Vector2[] q, float x, float y)
@@ -161,9 +161,19 @@ namespace SalvageRun.Orbit
                 // 빛 번짐
                 GUI.color = new Color(Th.btnGlow.r, Th.btnGlow.g, Th.btnGlow.b, due ? 0 : 0.10f + 0.10f * glow + (hover ? 0.08f : 0)); GUI.DrawTexture(new Rect(cxm - 120, fy0 - 26, 240, 150), texDisc);
                 // 받침 (어두운 테 + 그림자)
-                GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(cxm - 92, fy0 + 24, 184, 76), texDisc);
-                GUI.color = new Color(0.1f, 0.13f, 0.18f); GUI.DrawTexture(new Rect(cxm - 88, fy0 + 16, 176, 76), texDisc);
-                GUI.color = new Color(0.17f, 0.22f, 0.3f); GUI.DrawTexture(new Rect(cxm - 84, fy0 + 14, 168, 72), texDisc);
+                if (launchTex == null) launchTex = Resources.Load<Texture2D>("cockpit/launch_base");
+                if (launchTex != null)
+                {   // 🖼 10-07 픽셀랩 도트 받침 — 리벳 · 붉은 등 · 경고 줄 (홀로그램 투사기와 같은 화풍)
+                    float bw = 192, bh = bw * launchTex.height / launchTex.width;
+                    GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(cxm - bw * 0.52f, fy0 + side + fh / 2 - bh * 0.4f, bw * 1.04f, bh * 0.95f), texDisc);
+                    GUI.color = Color.white; GUI.DrawTexture(new Rect(cxm - bw / 2, fy0 + side + fh / 2 - bh * 0.49f, bw, bh), launchTex);
+                }
+                else
+                {
+                    GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(cxm - 92, fy0 + 24, 184, 76), texDisc);
+                    GUI.color = new Color(0.1f, 0.13f, 0.18f); GUI.DrawTexture(new Rect(cxm - 88, fy0 + 16, 176, 76), texDisc);
+                    GUI.color = new Color(0.17f, 0.22f, 0.3f); GUI.DrawTexture(new Rect(cxm - 84, fy0 + 14, 168, 72), texDisc);
+                }
                 GUI.color = new Color(0.05f, 0.07f, 0.1f); GUI.DrawTexture(new Rect(cxm - fw / 2 - 4, fy0 + side + 2, fw + 8, fh + 4), texDisc);
                 // 몸통 옆면
                 float fy = fy0 + dip, sh = side - dip * 0.8f;

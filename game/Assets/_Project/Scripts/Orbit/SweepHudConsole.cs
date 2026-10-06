@@ -26,11 +26,7 @@ namespace SalvageRun.Orbit
                 GUI.DrawTexture(new Rect(ex - bwid / 2, y, bwid, step + 0.5f), white);
             }
             // 발사기 (조종대 위 원반)
-            GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(ex - 76, ey - 2, 152, 34), texDisc);
-            GUI.color = new Color(0.17f, 0.23f, 0.31f); GUI.DrawTexture(new Rect(ex - 70, ey - 8, 140, 30), texDisc);
-            GUI.color = new Color(0.08f, 0.28f, 0.36f); GUI.DrawTexture(new Rect(ex - 54, ey - 6, 108, 20), texDisc);
-            GUI.color = new Color(Holo.r, Holo.g, Holo.b, 0.8f * fl); GUI.DrawTexture(new Rect(ex - 36, ey - 3, 72, 12), texDisc);
-            GUI.color = new Color(Holo.r, Holo.g, Holo.b, 0.22f * fl); GUI.DrawTexture(new Rect(ex - 90, ey - 26, 180, 56), texDisc);
+            Emitter(ex, ey, 1f, Holo, fl);
 
             // 뒤에 한 장 더 — 빚 명세서 (누르면 대출 창구)
             if (S.debt > 0 && !M.cleanReady)
@@ -126,6 +122,28 @@ namespace SalvageRun.Orbit
         static readonly Color HoloPink = new Color(1f, 0.66f, 0.94f), Amber3 = new Color(1f, 0.67f, 0.24f);
         float Flick(float seed) => reduceMotion ? 1 : Mathf.PerlinNoise(Time.unscaledTime * 1.7f, seed) > 0.8f ? 0.5f + 0.4f * Mathf.PerlinNoise(Time.unscaledTime * 40, seed + 1) : 1f;
 
+        // 🔵 발사기 (조종대 위 원반) — 10-07 픽셀랩 도트 투사기 · 그림이 없으면 예전 원반 도형
+        static Texture2D emitTex;
+        void Emitter(float ex, float ey, float e, Color hc, float fl)
+        {
+            if (emitTex == null) emitTex = Resources.Load<Texture2D>("cockpit/holo_base");
+            if (emitTex != null)
+            {
+                float w = 150 * e, h = w * emitTex.height / emitTex.width;
+                GUI.color = new Color(0, 0, 0, 0.45f); GUI.DrawTexture(new Rect(ex - w * 0.52f, ey - h * 0.2f, w * 1.04f, h * 0.95f), texDisc);
+                GUI.color = Color.white; GUI.DrawTexture(new Rect(ex - w / 2, ey + 3 - h * 0.33f, w, h), emitTex);
+                GUI.color = new Color(hc.r, hc.g, hc.b, 0.25f * fl); GUI.DrawTexture(new Rect(ex - 36 * e, ey - 4 * e, 72 * e, 14 * e), texDisc);   // 렌즈가 홀로그램 따라 지직
+            }
+            else
+            {
+                GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(ex - 76 * e, ey - 2, 152 * e, 34 * e), texDisc);
+                GUI.color = new Color(0.17f, 0.23f, 0.31f); GUI.DrawTexture(new Rect(ex - 70 * e, ey - 8, 140 * e, 30 * e), texDisc);
+                GUI.color = new Color(hc.r * 0.25f, hc.g * 0.25f, hc.b * 0.3f); GUI.DrawTexture(new Rect(ex - 54 * e, ey - 6, 108 * e, 20 * e), texDisc);
+                GUI.color = new Color(hc.r, hc.g, hc.b, 0.8f * fl); GUI.DrawTexture(new Rect(ex - 36 * e, ey - 3, 72 * e, 12 * e), texDisc);
+            }
+            GUI.color = new Color(hc.r, hc.g, hc.b, 0.22f * fl); GUI.DrawTexture(new Rect(ex - 90 * e, ey - 26 * e, 180 * e, 56 * e), texDisc);
+        }
+
         /// <summary>홀로그램 바탕 — 원반 · 빛기둥 · 반투명 판 · 주사선 · 꺾쇠</summary>
         void HoloBase(Rect p, float ex, float ey, float emW, Color hc, float fl, bool hover)
         {
@@ -136,12 +154,7 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(hc.r, hc.g, hc.b, (0.09f - 0.06f * k) * fl);
                 GUI.DrawTexture(new Rect(ex - bwid / 2, y, bwid, step + 0.5f), white);
             }
-            float e = emW / 140f;
-            GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(ex - 76 * e, ey - 2, 152 * e, 34 * e), texDisc);
-            GUI.color = new Color(0.17f, 0.23f, 0.31f); GUI.DrawTexture(new Rect(ex - 70 * e, ey - 8, 140 * e, 30 * e), texDisc);
-            GUI.color = new Color(hc.r * 0.25f, hc.g * 0.25f, hc.b * 0.3f); GUI.DrawTexture(new Rect(ex - 54 * e, ey - 6, 108 * e, 20 * e), texDisc);
-            GUI.color = new Color(hc.r, hc.g, hc.b, 0.8f * fl); GUI.DrawTexture(new Rect(ex - 36 * e, ey - 3, 72 * e, 12 * e), texDisc);
-            GUI.color = new Color(hc.r, hc.g, hc.b, 0.22f * fl); GUI.DrawTexture(new Rect(ex - 90 * e, ey - 26 * e, 180 * e, 56 * e), texDisc);
+            Emitter(ex, ey, emW / 140f, hc, fl);
             GUI.color = new Color(0.02f, 0.035f, 0.05f, 0.6f * fl); GUI.DrawTexture(p, white);          // 어두운 바탕 — 뒤가 비쳐 글자와 겹치지 않게 (09-24 글자 점검)
             GUI.color = new Color(hc.r * 0.3f, hc.g * 0.4f, hc.b * 0.5f, (hover ? 0.34f : 0.22f) * fl); GUI.DrawTexture(p, white);
             GUI.color = new Color(hc.r, hc.g, hc.b, 0.06f * fl);
