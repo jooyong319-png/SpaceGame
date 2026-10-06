@@ -81,6 +81,8 @@ namespace SalvageRun.Orbit
             }
         }
 
+        // 👁 10-07 사장님 「출발에서 쓰레기들 크기가 너무 작다」 — 그리는 크기만 종류별로 키운다 (맞는 판정 r 은 그대로 · 작은 것일수록 더)
+        static readonly float[] KindVis = { 1.45f, 1.3f, 1.15f, 1.2f, 1.25f, 1.25f, 1f };   // 조각 · 위성 · 로켓 · 금고 · 연료통 · 탱크 · 큰 잔해
         void DrawJunk()
         {
             var list = sim.R.junk;
@@ -116,7 +118,7 @@ namespace SalvageRun.Orbit
                 c.a = (float)d.fade;
                 v.color = c;
                 float r = (float)SweepSim.Types[d.k].r;
-                float size = r * 2.6f / PxPerUnit * (d.hit > 0 ? 1.25f : 1f) * (px != null ? 1.3f : d.k == SweepSim.Fuel ? 0.6f : 1f) * (d.sig == 2 ? 1.9f : d.sig == 3 ? 1.5f : d.sig == 6 ? 1.5f : d.sig == 9 ? 0.7f : d.sig == SweepSim.GateSig ? 1.7f : 1f);   // 🪐 월면 금고 · 탐사차 · 얼음 덩이는 크게, 혜성 머리는 작게 · 🛰 관문은 큰 잔해의 세 배 남짓   // 그림은 둘레가 비어 있어 1.3배
+                float size = r * 2.6f / PxPerUnit * KindVis[d.k] * (d.hit > 0 ? 1.25f : 1f) * (px != null ? 1.3f : d.k == SweepSim.Fuel ? 0.6f : 1f) * (d.sig == 2 ? 1.9f : d.sig == 3 ? 1.5f : d.sig == 6 ? 1.5f : d.sig == 9 ? 0.7f : d.sig == SweepSim.GateSig ? 1.7f : 1f);   // 🪐 월면 금고 · 탐사차 · 얼음 덩이는 크게, 혜성 머리는 작게 · 🛰 관문은 큰 잔해의 세 배 남짓   // 그림은 둘레가 비어 있어 1.3배
                 v.transform.localScale = new Vector3(size / Mathf.Max(0.01f, s.bounds.size.x), size / Mathf.Max(0.01f, s.bounds.size.x) * (px == null && d.k == SweepSim.Fuel ? 1.6f : 1f), 1);
                 v.transform.rotation = Quaternion.Euler(0, 0, (float)d.rot * Mathf.Rad2Deg);
                 int order = 10 + Mathf.Clamp((int)(d.y / 6), 0, 99);
