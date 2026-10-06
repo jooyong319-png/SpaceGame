@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
@@ -141,6 +141,16 @@ namespace SalvageRun.Orbit
                     float ang = (float)d.rot + 0.9f;
                     av.transform.position = pos + new Vector3(Mathf.Cos(ang), Mathf.Sin(ang), 0) * size * 0.62f;
                     float asz = Mathf.Max(0.09f, size * (ap != null ? 0.62f : d.att == Att.Tag ? 0.55f : 0.42f));
+                    if (d.att == Att.Pouch && ap != null)
+                    {   // 💰 10-07 사장님 「현금 캡슐이 눈에 안 띈다」 — 크게 · 두근 · 가끔 금빛 반짝이
+                        bool calm = hud != null && hud.reduceMotion;
+                        asz = Mathf.Max(0.12f, size * 0.85f) * (calm ? 1f : 1f + 0.09f * Mathf.Sin(t * 5f + d.id));
+                        if (!calm && d.fade > 0.9 && fx.Count < 700 && Random.value < Time.deltaTime * 2.4f)
+                        {
+                            var sp = Add(glow, av.transform.position + (Vector3)(Random.insideUnitCircle * asz * 0.45f), asz * 0.55f, new Color(1f, 0.86f, 0.36f, 0.85f), 0, 0.55f);
+                            sp.v = new Vector3(0, asz * 0.6f, 0);
+                        }
+                    }
                     av.transform.localScale = Vector3.one * asz / Mathf.Max(0.01f, av.sprite.bounds.size.x);
                 }
                 av.transform.rotation = v.transform.rotation;
