@@ -12,6 +12,8 @@ namespace SalvageRun.Orbit
         // 시안(cockpit.html 1600×1000)을 960×600 으로 — 사다리꼴 창 · 양옆 선체 판 · 아래 조종대
         static readonly Vector2[] WinPoly = { new Vector2(198, 42), new Vector2(762, 42), new Vector2(834, 336), new Vector2(126, 336) };
         static Texture2D hullTex;
+        static Texture2D hullArt;
+        public static void TestHullArt(Texture2D t) { hullArt = t; hullTex = null; }   // 캡처용 — 배경 그림 바꿔 보기 (null = 원래 그림)
         static bool InQuad(Vector2[] q, float x, float y)
         {
             bool inside = false;
@@ -61,6 +63,9 @@ namespace SalvageRun.Orbit
             Vector2[] outer = Grow(WinPoly, t.rimW), inner = Grow(WinPoly, 1.4f);
             var leftPlate = new[] { new Vector2(0, 0), new Vector2(198, 42), new Vector2(126, 336), new Vector2(0, 384) };
             var rightPlate = new[] { new Vector2(W, 0), new Vector2(762, 42), new Vector2(834, 336), new Vector2(W, 384) };
+            // 🖼 10-07 도트 실내(픽셀랩) — 벽 · 배관 · 램프 · 조종대. 창 · 창틀은 위 코드 그대로(배 테마 유지)
+            var art = hullArt != null ? hullArt : Resources.Load<Texture2D>("cockpit/hull_bg");
+            Color32[] ap = art != null && art.isReadable && art.width == W && art.height == H ? art.GetPixels32() : null;
             for (int y = 0; y < H; y++)
                 for (int x = 0; x < W; x++)
                 {
@@ -69,6 +74,7 @@ namespace SalvageRun.Orbit
                     if (InQuad(WinPoly, fx, fy)) c = new Color32(0, 0, 0, 0);
                     else if (InQuad(inner, fx, fy)) c = edge;
                     else if (InQuad(outer, fx, fy)) c = t.deco == 1 ? (((int)(fx + fy) / 8) % 2 == 0 ? new Color32(255, 204, 31, 255) : rim) : t.deco == 2 ? Rope(fx, fy, rim) : t.deco == 3 ? Mil(fx, fy, rim, outer) : t.deco == 4 ? Chevron(fx, fy, rim) : t.deco == 5 ? Frost(fx, fy, rim) : t.deco == 6 ? Stripe(fx, fy, rim) : rim;   // 창틀 무늬 — 산탄선 경고 줄무늬 · 작살선 밧줄
+                    else if (ap != null && ap[(H - 1 - y) * W + x].a > 0) c = ap[(H - 1 - y) * W + x];   // 투명한 곳(조종대)은 아래 코드 그림
                     else if (fy > 336 && (fy > 384 || InQuad(new[] { new Vector2(0, 384), new Vector2(126, 336), new Vector2(834, 336), new Vector2(W, 384) }, fx, fy) || fy >= 384))
                     {
                         float k = Mathf.InverseLerp(336, H, fy);   // 조종대 — 위가 밝고 아래로 어두워진다
