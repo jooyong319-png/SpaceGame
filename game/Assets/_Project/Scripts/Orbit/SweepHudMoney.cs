@@ -219,7 +219,7 @@ namespace SalvageRun.Orbit
                 Lbl(new Rect(r.x + 250, r.yMax - 52, 280, 36), Fit(msg, scRank < 0 ? 20 : Mathf.RoundToInt(Mathf.Lerp(24, 16, k)), 280, center, 9), center);   // 오른쪽 표값 안내와 안 겹치게
             }
             string pr = sim.ScratchLeft > 0 ? Loc.T("공짜 표 ") + sim.ScratchLeft + Loc.T("장") : Loc.T("이번 장 ") + KNum.Fmt(sim.ScratchPrice) + Loc.T(" · 다음 장 ") + KNum.Fmt(sim.ScratchNextPrice);
-            Lbl(new Rect(r.xMax - 360, r.yMax - 46, 240, 30), "<size=11><color=#9a8ca6>" + pr + Loc.T("\n출동하면 표값 원래대로") + "</color></size>", small);
+            Lbl(new Rect(r.xMax - 360, r.yMax - 50, 240, 36), "<size=11><color=#9a8ca6>" + pr + Loc.T("\n출동하면 표값 원래대로") + "</color></size>", small);
         }
         string ScPrize(int k)
         {

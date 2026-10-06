@@ -53,7 +53,9 @@ namespace SalvageRun.Orbit
         static readonly string[] BayDesc = { Loc.T("조준점 하나 → 넓은 착탄 → 한 번에 여럿"), Loc.T("자동 수집 — 한 번에 부서지는 잔해만"), Loc.T("블랙홀 스킬 · 지구에서 연료 보급"), Loc.T("돈 · 청구서 · 대출 · 기사") };
         public static readonly Rect Win = new Rect(200, 44, 560, 344);
 
-        static string Clip(string s, int n) { if (Loc.En) n = n * 17 / 10; return s.Length <= n ? s : s.Substring(0, n - 1) + "…"; }   // 🌐 영어 글자는 한글보다 좁다
+        static string Clip(string s, int n) { if (Loc.En && !HasHangul(s)) n = n * 17 / 10; return s.Length <= n ? s : s.Substring(0, n - 1) + "…"; }   // 🌐 영어 글자는 한글보다 좁다
+
+        static bool HasHangul(string s) { foreach (char ch in s) if (ch >= 0xAC00 && ch <= 0xD7A3) return true; return false; }   // 영어 화면에 번역 안 된 한글이 섞이면 줄이지 않는다
 
         void Frame(Rect r, Color c, float w)
         {

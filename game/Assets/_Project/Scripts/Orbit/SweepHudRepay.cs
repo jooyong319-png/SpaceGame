@@ -55,7 +55,7 @@ namespace SalvageRun.Orbit
                 for (float y = s.y + 2; y < s.yMax; y += 4) GUI.DrawTexture(new Rect(s.x, y, s.width, 1), white);
                 Frame(s, new Color(HoloRed.r, HoloRed.g, HoloRed.b, 0.9f * alpha), 1.5f);
                 GUI.color = new Color(1, 1, 1, alpha);
-                Lbl(new Rect(s.x + 14, s.y + 8, s.width - 28, 20), "<size=12><b><color=#ffd0c8>" + (rpMini ? Loc.T("자동 상환 · 판 수입 30%") : Loc.T("KESSLER // 빚 명세서")) + "</color></b></size>", label);
+                Lbl(new Rect(s.x + 11, s.y + 8, s.width - 22, 20), "<size=12><b><color=#ffd0c8>" + (rpMini ? Loc.T("자동 상환 · 판 수입 30%") : Loc.T("KESSLER // 빚 명세서")) + "</color></b></size>", label);
                 Lbl(new Rect(s.x + 14, s.y + 8, s.width - 28, 20), "<size=11><color=#ffb3a8>−" + KNum.Fmt(rpFrom - rpTo) + "</color></size>", cost);
                 if (rpMini) Lbl(new Rect(s.x + 14, s.y + 28, s.width - 28, 34), Loc.T("<size=24><b><color=#ffffff>빚 ") + KNum.Fmt(cur) + "</color></b></size>", label);
                 else
