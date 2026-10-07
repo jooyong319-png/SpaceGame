@@ -195,7 +195,7 @@ namespace SalvageRun.Orbit
         {
             if (gtiles == null) BuildGraph();
             var S = sim.S;
-            float right = ox + 956;                                          // 오른쪽 세로 탭(ox+964) 앞에서 멈춘다
+            float right = ox + 948;                                          // 오른쪽 세로 탭(ox+964) · 모니터 테(8) 앞에서 멈춘다
             var pr = new Rect(right - PanelW, 84, PanelW, 460);
             var area = new Rect(0, 84, pr.x - 2, 460);
             GUI.color = BpBg; GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;

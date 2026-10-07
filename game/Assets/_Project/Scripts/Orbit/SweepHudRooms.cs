@@ -76,9 +76,10 @@ namespace SalvageRun.Orbit
             GUI.matrix = m0;
         }
 
-        // 🖥 10-07 증권 · 정비고 = 모니터 화면 — 내용을 0.94로 줄여 남색 강철 테(PixelLab) 안에. 테 밖은 방 바탕색으로 가린다 · 그림 없으면 예전처럼 꽉 차게
+        // 🖥 10-07 증권 · 정비고 = 모니터 화면 — 남색 강철 테(PixelLab) 바깥 8칸을 원래 크기로, 원래 여백(8) 자리에. 테 밖은 방 바탕색으로 가린다
+        //    (처음엔 내용을 0.94배로 줄였더니 도트 글꼴 획이 빠졌다 → 축소 없음 · 사장님 「잘려 글자가」)
         static Texture2D monTex; Matrix4x4 roomM0; bool roomFramed;
-        const float RoomK = 0.94f, MonB = 34, MonBd = 20;                   // 내용 배율 · 테 그림 가장자리(그림 칸) · 그릴 굵기
+        const float RoomK = 1f, MonB = 8, MonBd = 8;                         // 내용 배율(1 = 그대로) · 테 그림 가장자리(그림 칸) · 그릴 굵기
         Vector2 RoomC => new Vector2(ox + 480, 300);
         Vector2 RoomPt(Vector2 p) => roomFramed ? RoomC + (p - RoomC) * RoomK : p;   // 테 안 좌표 → 바깥 좌표 (동전 날리기 등)
         bool RoomFrameBegin()
@@ -92,7 +93,7 @@ namespace SalvageRun.Orbit
         void RoomFrameEnd(Color bg)
         {
             GUI.matrix = roomM0; roomFramed = false;
-            var fr = new Rect(ox + 4, 4, 952, 592);
+            var fr = new Rect(ox, 0, 960, RefH);
             GUI.color = bg;                                                   // 테 밖 — 넓은 화면에서 삐져나온 내용 가리기
             GUI.DrawTexture(new Rect(0, 0, fr.x, RefH), white); GUI.DrawTexture(new Rect(fr.xMax, 0, vw - fr.xMax, RefH), white);
             GUI.DrawTexture(new Rect(fr.x, 0, fr.width, fr.y), white); GUI.DrawTexture(new Rect(fr.x, fr.yMax, fr.width, RefH - fr.yMax), white);

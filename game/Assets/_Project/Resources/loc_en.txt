@@ -459,7 +459,7 @@
 청소선 할부 1회	Sweeper Installment 1
 창구 직원이 이름을 외웠다	The teller learned your name
 궤도 사용료	Orbit Fee
-궤도청에 청소선이 정식 등록됐다	The sweeper is officially registered with the Orbit Authority
+궤도청에 청소선이 정식 등록됐다	Officially registered with the Orbit Authority
 정비비	Maintenance
 정비소 단골이 됐다	You're a regular at the repair dock
 보험료	Insurance
