@@ -58,7 +58,8 @@ namespace SalvageRun.Orbit
                 else if (f == 3)
                 {
                     GUI.color = new Color(0.02f, 0.027f, 0.04f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
-                    Bay();                                                   // 큰 「조종실로」 버튼 뺌 — 옆 탭 하나로 (09-24 25번)
+                    bool fr = RoomFrameBegin(); Bay(); if (fr) RoomFrameEnd(BpBg);   // 🖥 10-07 모니터 테 안으로
+                    // 큰 「조종실로」 버튼 뺌 — 옆 탭 하나로 (09-24 25번)
                     if (sim.ShopOpen) { if (NavTab(true, Loc.T("부품 가게"), "", SweepGame.Amber)) GoFlow(5); }
                     else if (NavTab(true, Loc.T("조종실로"), "", SweepGame.Amber)) GoFlow(2);
                 }
@@ -73,6 +74,38 @@ namespace SalvageRun.Orbit
                 else { StockRoom(); if (flow == 4 && sim.StockOpen) GuideOnce("stock", Loc.T("시세는 출동 중에만 변동 · 여기서 매수하고, 출동 중엔 S로 보며 매도")); }
             }
             GUI.matrix = m0;
+        }
+
+        // 🖥 10-07 증권 · 정비고 = 모니터 화면 — 내용을 0.94로 줄여 남색 강철 테(PixelLab) 안에. 테 밖은 방 바탕색으로 가린다 · 그림 없으면 예전처럼 꽉 차게
+        static Texture2D monTex; Matrix4x4 roomM0; bool roomFramed;
+        const float RoomK = 0.94f, MonB = 34, MonBd = 20;                   // 내용 배율 · 테 그림 가장자리(그림 칸) · 그릴 굵기
+        Vector2 RoomC => new Vector2(ox + 480, 300);
+        Vector2 RoomPt(Vector2 p) => roomFramed ? RoomC + (p - RoomC) * RoomK : p;   // 테 안 좌표 → 바깥 좌표 (동전 날리기 등)
+        bool RoomFrameBegin()
+        {
+            if (monTex == null) monTex = Resources.Load<Texture2D>("cockpit/monitor_frame");
+            if (monTex == null) return false;
+            roomM0 = GUI.matrix; var c = RoomC;
+            GUI.matrix = roomM0 * Matrix4x4.TRS(c, Quaternion.identity, new Vector3(RoomK, RoomK, 1)) * Matrix4x4.Translate(-c);
+            return roomFramed = true;
+        }
+        void RoomFrameEnd(Color bg)
+        {
+            GUI.matrix = roomM0; roomFramed = false;
+            var fr = new Rect(ox + 4, 4, 952, 592);
+            GUI.color = bg;                                                   // 테 밖 — 넓은 화면에서 삐져나온 내용 가리기
+            GUI.DrawTexture(new Rect(0, 0, fr.x, RefH), white); GUI.DrawTexture(new Rect(fr.xMax, 0, vw - fr.xMax, RefH), white);
+            GUI.DrawTexture(new Rect(fr.x, 0, fr.width, fr.y), white); GUI.DrawTexture(new Rect(fr.x, fr.yMax, fr.width, RefH - fr.yMax), white);
+            GUI.color = Color.white;
+            float tw = monTex.width, th = monTex.height, u = MonB / tw, v = MonB / th, b = MonBd;
+            float[] xs = { fr.x, fr.x + b, fr.xMax - b, fr.xMax }, ys = { fr.y, fr.y + b, fr.yMax - b, fr.yMax };
+            float[] us = { 0, u, 1 - u, 1 }, vs = { 1, 1 - v, v, 0 };       // 그림 v 는 아래가 0
+            for (int i = 0; i < 3; i++)
+                for (int j = 0; j < 3; j++)
+                {
+                    if (i == 1 && j == 1) continue;                           // 가운데(화면)는 비워 둔다
+                    GUI.DrawTextureWithTexCoords(Rect.MinMaxRect(xs[i], ys[j], xs[i + 1], ys[j + 1]), monTex, Rect.MinMaxRect(us[i], vs[j + 1], us[i + 1], vs[j]));
+                }
         }
 
         static readonly Texture2D[] tabTex = new Texture2D[2]; static GUIStyle tabStyle;

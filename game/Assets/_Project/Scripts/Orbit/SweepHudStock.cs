@@ -42,15 +42,22 @@ namespace SalvageRun.Orbit
         int holdScroll;
         void StockRoom()
         {
-            if (rR == null) rR = new GUIStyle(label) { alignment = TextAnchor.UpperRight };
             GUI.color = Th.room; GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;   // 🎨 배 테마
+            bool fr = RoomFrameBegin(); bool en0 = GUI.enabled;              // 🖥 10-07 모니터 테 안으로
+            StockRoomIn();
+            GUI.enabled = en0;
+            if (fr) RoomFrameEnd(Th.room);
             if (NavTab(false, Loc.T("조종실로"), "", SweepGame.Amber)) GoFlow(2);
+        }
+        void StockRoomIn()
+        {
+            if (rR == null) rR = new GUIStyle(label) { alignment = TextAnchor.UpperRight };
             var mk = sim.Mk; if (mk == null) return;
             var MS = mk.M; var S = sim.S;
             bool open = sim.StockOpen, en = GUI.enabled;
             GUI.enabled = en && open;
             float X0 = ox;
-            RowTick(); stockCashPos = new Vector2(X0 + 8 + 780, 28);
+            RowTick(); stockCashPos = RoomPt(new Vector2(X0 + 8 + 780, 28));
 
             // ── 머리 — 종합지수 · 내 계좌 · 돈 · 다음 봉
             var top = new Rect(X0 + 8, 8, 944, 40); Box(top);
@@ -77,7 +84,7 @@ namespace SalvageRun.Orbit
                 var row = new Rect(ls.x + 4, ls.y + 24 + vi * rowH, ls.width - 8, rowH - 2);
                 if (MS.sel == i) { GUI.color = new Color(0.11f, 0.15f, 0.21f); GUI.DrawTexture(row, white); GUI.color = Color.white; }
                 else if (row.Contains(Event.current.mousePosition)) { GUI.color = new Color(1, 1, 1, 0.04f); GUI.DrawTexture(row, white); GUI.color = Color.white; }
-                RowFx(i, row); if (i < stockRowPos.Length) stockRowPos[i] = new Vector2(row.xMax - 40, row.center.y);
+                RowFx(i, row); if (i < stockRowPos.Length) stockRowPos[i] = RoomPt(new Vector2(row.xMax - 40, row.center.y));
                 double ch = mk.Change(i, 20);
                 string arrow = st.pushLeft > 0 ? (st.push > 0 ? " <color=" + UpHex + ">▲</color>" : " <color=" + DnHex + ">▼</color>") : "";
                 L(row.x + 4, row.y + 1, 150, (Loc.En ? "<size=10>" : "<size=12>") + (st.shares > 0 ? "<color=#ffdf95>● </color>" : "") + d.name + arrow + "</size>");

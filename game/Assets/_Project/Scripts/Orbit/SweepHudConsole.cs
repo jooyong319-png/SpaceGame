@@ -50,7 +50,7 @@ namespace SalvageRun.Orbit
             if (!reduceMotion) { GUI.color = new Color(Holo.r, Holo.g, Holo.b, 0.08f * fl); GUI.DrawTexture(new Rect(p.x, p.y + Mathf.Repeat(t * 50, p.height - 8), p.width, 8), white); }
             Frame(p, new Color(Holo.r, Holo.g, Holo.b, 0.8f * fl), 1.5f);
             GUI.color = new Color(Holo.r, Holo.g, Holo.b, fl);                // 모서리 꺾쇠
-            foreach (var c in new[] { new Vector2(p.x, p.y), new Vector2(p.xMax - 10, p.y), new Vector2(p.x, p.yMax - 3), new Vector2(p.xMax - 10, p.yMax - 3) }) GUI.DrawTexture(new Rect(c.x, c.y, 10, 3), white);
+            HoloCorners(p, fl);
 
             GUI.color = new Color(1, 1, 1, fl);
             float x = p.x + 12, w = p.width - 24, y0 = p.y + 8;
@@ -122,6 +122,24 @@ namespace SalvageRun.Orbit
         static readonly Color HoloPink = new Color(1f, 0.66f, 0.94f), Amber3 = new Color(1f, 0.67f, 0.24f);
         float Flick(float seed) => reduceMotion ? 1 : Mathf.PerlinNoise(Time.unscaledTime * 1.7f, seed) > 0.8f ? 0.5f + 0.4f * Mathf.PerlinNoise(Time.unscaledTime * 40, seed + 1) : 1f;
 
+        // 🔷 홀로 판 네 모서리 꺾쇠 — 10-07 PixelLab UI 세트 2에서 따 옴 (판은 반투명 빛 그대로) · 그림 없으면 예전 막대
+        static Texture2D holoCornerTex;
+        void HoloCorners(Rect p, float fl)
+        {
+            if (holoCornerTex == null) holoCornerTex = Resources.Load<Texture2D>("cockpit/holo_corner");
+            if (holoCornerTex == null)
+            {
+                foreach (var c in new[] { new Vector2(p.x, p.y), new Vector2(p.xMax - 10, p.y), new Vector2(p.x, p.yMax - 3), new Vector2(p.xMax - 10, p.yMax - 3) }) GUI.DrawTexture(new Rect(c.x, c.y, 10, 3), white);
+                return;
+            }
+            const float s = 16, o = 3;
+            GUI.color = new Color(1, 1, 1, fl);
+            GUI.DrawTextureWithTexCoords(new Rect(p.x - o, p.y - o, s, s), holoCornerTex, new Rect(0, 0, 1, 1));
+            GUI.DrawTextureWithTexCoords(new Rect(p.xMax + o - s, p.y - o, s, s), holoCornerTex, new Rect(1, 0, -1, 1));
+            GUI.DrawTextureWithTexCoords(new Rect(p.x - o, p.yMax + o - s, s, s), holoCornerTex, new Rect(0, 1, 1, -1));
+            GUI.DrawTextureWithTexCoords(new Rect(p.xMax + o - s, p.yMax + o - s, s, s), holoCornerTex, new Rect(1, 1, -1, -1));
+        }
+
         // 🔵 발사기 (조종대 위 원반) — 10-07 픽셀랩 도트 투사기 · 그림이 없으면 예전 원반 도형
         static Texture2D emitTex;
         void Emitter(float ex, float ey, float e, Color hc, float fl)
@@ -162,7 +180,7 @@ namespace SalvageRun.Orbit
             if (!reduceMotion) { GUI.color = new Color(hc.r, hc.g, hc.b, 0.08f * fl); GUI.DrawTexture(new Rect(p.x, p.y + Mathf.Repeat(Time.unscaledTime * 50 + p.x, p.height - 8), p.width, 8), white); }
             Frame(p, new Color(hc.r, hc.g, hc.b, (hover ? 1f : 0.8f) * fl), hover ? 2f : 1.5f);
             GUI.color = new Color(hc.r, hc.g, hc.b, fl);
-            foreach (var c in new[] { new Vector2(p.x, p.y), new Vector2(p.xMax - 10, p.y), new Vector2(p.x, p.yMax - 3), new Vector2(p.xMax - 10, p.yMax - 3) }) GUI.DrawTexture(new Rect(c.x, c.y, 10, 3), white);
+            HoloCorners(p, fl);
             GUI.color = Color.white;
         }
 

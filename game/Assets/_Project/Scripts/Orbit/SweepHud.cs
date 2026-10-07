@@ -171,7 +171,7 @@ namespace SalvageRun.Orbit
             RepayOverlay();
             if (sim.Mk != null) { StockFxOverlay(); if (sim.StockOpen) AnchorBox(); }
             BuyFxDraw(); GiftCard(); HireFly();                                               // ✨ 칸 · 부품 · 1면 연출 (어느 화면이든)   // 📈 증권 연출 · 🎙 속보 앵커                                            // 💸 빚 갚기 연출
-            if (!sim.M.won && sim.R.over && !(flow == 2 || flow == 4)) Ticker();          // 출동 중엔 계기판 위라 안 그림 — 속보는 앵커가 읽는다          // 조종실엔 궤도일보 모니터가 있다 — 아래 한 줄과 겹친다
+            if (!sim.M.won && sim.R.over && !(flow == 2 || flow == 4 || (flow == 3 && monTex != null))) Ticker();   // 정비고는 모니터 테 안 — 머리의 궤도일보 단추로 (10-07)          // 출동 중엔 계기판 위라 안 그림 — 속보는 앵커가 읽는다          // 조종실엔 궤도일보 모니터가 있다 — 아래 한 줄과 겹친다
             ActCard();
             GuideBar();
             if (sim.R.over && !sim.M.won) RadioBox();                      // 📻 윤 대리
