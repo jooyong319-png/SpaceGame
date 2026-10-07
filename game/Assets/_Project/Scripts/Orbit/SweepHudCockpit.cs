@@ -11,7 +11,7 @@ namespace SalvageRun.Orbit
         // ───────────────────────────────── 조종실 — 판과 판 사이의 집. 출동은 여기서만
         // 시안(cockpit.html 1600×1000)을 960×600 으로 — 사다리꼴 창 · 양옆 선체 판 · 아래 조종대
         static readonly Vector2[] WinPoly = { new Vector2(198, 42), new Vector2(762, 42), new Vector2(834, 336), new Vector2(126, 336) };
-        static Texture2D hullTex, launchTex;
+        static Texture2D hullTex, launchTex, launchAnim; float launchPressK;
         static Texture2D hullArt;
         public static void TestHullArt(Texture2D t) { hullArt = t; hullTex = null; }   // 캡처용 — 배경 그림 바꿔 보기 (null = 원래 그림)
         static bool InQuad(Vector2[] q, float x, float y)
@@ -160,6 +160,25 @@ namespace SalvageRun.Orbit
                 Color wall = due ? new Color(0.18f, 0.17f, 0.16f) : Th.btnWall;
                 // 빛 번짐
                 GUI.color = new Color(Th.btnGlow.r, Th.btnGlow.g, Th.btnGlow.b, due ? 0 : 0.10f + 0.10f * glow + (hover ? 0.08f : 0)); GUI.DrawTexture(new Rect(cxm - 120, fy0 - 26, 240, 150), texDisc);
+                if (launchAnim == null) launchAnim = Resources.Load<Texture2D>("cockpit/launch_anim");
+                if (launchAnim != null)
+                {   // 🎬 10-08 픽셀랩 한 장짜리 출동 단추 (받침까지) — 첫 줄 평소 8장(받침 불빛이 돈다) · 둘째 줄 눌림 4장(서 있음 → 가장 깊음 · 불빛 번쩍) · 셋째 줄 납부일 회색 1장
+                    launchPressK = Mathf.MoveTowards(launchPressK, press ? 1 : 0, Time.unscaledDeltaTime / 0.12f);
+                    int pf = Mathf.Clamp(Mathf.RoundToInt(launchPressK * 3), 0, 3);
+                    bool pressing = launchPressK > 0.01f;
+                    int fi = pressing ? pf : (reduceMotion || due ? 0 : (int)(Time.unscaledTime * 6) % 8);
+                    float aw = 222, ah = aw * 96f / 160f, ax = cxm - aw / 2, ay = fy0 - 14;   // 그림 칸 160×96 · 단추+받침이 차지하는 폭 ≈ 160 (복권 받침과 안 닿게)
+                    GUI.color = new Color(0, 0, 0, 0.45f); GUI.DrawTexture(new Rect(cxm - 96, ay + ah * 0.62f, 192, ah * 0.4f), texDisc);
+                    GUI.color = hover && !pressing && !due ? new Color(1.12f, 1.08f, 1.02f) : Color.white;
+                    GUI.DrawTextureWithTexCoords(new Rect(ax, ay, aw, ah), launchAnim, due ? new Rect(0, 0, 1f / 8f, 1f / 3f) : new Rect(fi / 8f, pressing ? 1f / 3f : 2f / 3f, 1f / 8f, 1f / 3f));   // 그림 v 는 아래가 0 — 셋째 줄(회색)이 맨 아래
+                    GUI.color = Color.white;
+                    string w2 = due ? Loc.T("납부일") : M.cleanReady ? Loc.T("청산") : Loc.T("출동");
+                    float ty = ay + ah * (0.34f + 0.08f * launchPressK);                      // 머리 윗면 가운데 — 눌리면 같이 내려간다
+                    Lbl(new Rect(cxm - 60, ty - 20, 120, 40), Fit("<b><color=" + (due ? "#8a8580" : Th.btnInk) + ">" + w2 + "</color></b>", due ? 20 : 28, 92, center, 14), center);   // 🌐 영어 Launch 도 단추 윗면 안에
+                    if (Bt(hit, GUIContent.none, GUIStyle.none) && paidT < 2.4f) Go();
+                }
+                else
+                {
                 // 받침 (어두운 테 + 그림자)
                 if (launchTex == null) launchTex = Resources.Load<Texture2D>("cockpit/launch_base");
                 if (launchTex != null)
@@ -187,6 +206,7 @@ namespace SalvageRun.Orbit
                 string word = due ? Loc.T("납부일") : M.cleanReady ? Loc.T("청산") : Loc.T("출동");
                 Lbl(new Rect(cxm - fw / 2, fy + 2, fw, fh - 4), "<size=" + (due ? 20 : 28) + "><b><color=" + (due ? "#6a655e" : Th.btnInk) + ">" + word + "</color></b></size>", center);
                 if (Bt(hit, GUIContent.none, GUIStyle.none) && paidT < 2.4f) Go();
+                }
             }
 
             // 🧯 파산 단추 — 출동 단추 왼쪽 위, 유리 덮개 속 (09-24 사장님)
