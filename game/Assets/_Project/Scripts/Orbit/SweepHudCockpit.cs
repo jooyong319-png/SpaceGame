@@ -11,7 +11,7 @@ namespace SalvageRun.Orbit
         // ───────────────────────────────── 조종실 — 판과 판 사이의 집. 출동은 여기서만
         // 시안(cockpit.html 1600×1000)을 960×600 으로 — 사다리꼴 창 · 양옆 선체 판 · 아래 조종대
         static readonly Vector2[] WinPoly = { new Vector2(198, 42), new Vector2(762, 42), new Vector2(834, 336), new Vector2(126, 336) };
-        static Texture2D hullTex, launchTex;
+        static Texture2D hullTex, launchTex; GUIStyle bigC;
         static Texture2D hullArt;
         public static void TestHullArt(Texture2D t) { hullArt = t; hullTex = null; }   // 캡처용 — 배경 그림 바꿔 보기 (null = 원래 그림)
         static bool InQuad(Vector2[] q, float x, float y)
@@ -117,7 +117,7 @@ namespace SalvageRun.Orbit
 
             // 위 — 돈 (창 위 가운데)
             big.fontSize = 22;   // 도트 글꼴 11의 배수 (정돈 5)
-            Lbl(new Rect(ox + 330, 2, 300, 28), Loc.T("<size=13><color=#8a9bb3>돈</color></size>  ") + KNum.Fmt(shown), new GUIStyle(big) { alignment = TextAnchor.MiddleCenter });
+            Lbl(new Rect(ox + 330, 2, 300, 28), Loc.T("<size=13><color=#8a9bb3>돈</color></size>  ") + KNum.Fmt(shown), bigC ?? (bigC = new GUIStyle(big) { alignment = TextAnchor.MiddleCenter }));   // 10-08 프레임마다 새로 만들던 것
             big.fontSize = 20;
             CreditScreen = new Vector2((ox + 480) * scale, Screen.height - (16 + oy) * scale);   // 화면 좌표(아래가 0) — 위쪽 돈 자리 (예전엔 위아래가 뒤집혀 아래로 갔다)
             // 창 안 — 납부 완료 알림
