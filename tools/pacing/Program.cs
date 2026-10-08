@@ -87,7 +87,7 @@ static class Program
                 }
                 if (sim.CanBankrupt && sim.S.overdue)
                 {
-                    log.Add($"{Min(),6:0.0}분  {sim.M.company}대  💥 파산 (청구서 {sim.S.bill} · 출동 {sim.S.runs} · 신용 +{sim.S.creditPending})");
+                    log.Add($"{Min(),6:0.0}분  {sim.M.company}대  💥 파산 (청구서 {sim.S.bill} · 출동 {sim.S.runs} · 신용 +{sim.S.creditPending} · 돈 {sim.S.cash:0} · 빚 {sim.S.debt:0} · 파산보험 {sim.Lv("x_bh_eco")} · 남은 신용 {sim.M.credit:0})");   // 10-08 끝나지 않음 진단
                     rec.bankAt.Add(Min()); rec.bankBill.Add(sim.S.bill); rec.slack[sim.S.bill].Add(-9); foreach (var w in rec.win) w.Clear();
                     sim.Bankrupt();
                     continue;
