@@ -105,19 +105,6 @@ namespace SalvageRun.Orbit
             Panel2(RT, Loc.T("이번 판 피해 — 곳별"));
             DmgChart(RT, R, tally);
             if (R.cut > 0) Lbl(new Rect(RT.x + 16, RT.yMax - 2, RT.width - 32, 18), Loc.T("<size=11><color=#ee7766>빚 상환으로 떼인 것 -") + KNum.Fmt(R.cut) + "</color></size>", label);
-            if (false) {
-            double tot = System.Math.Max(1, R.Earned);
-            float a = (float)(R.earnClaw / tot), b = (float)(R.earnDrone / tot);
-            float bw = RT.width - 36, bx = RT.x + 18, by = RT.y + 38;
-            GUI.DrawTexture(new Rect(bx, by, bw, 12), texBar);
-            GUI.color = SweepGame.Amber; GUI.DrawTexture(new Rect(bx, by, bw * a * tally, 12), white);
-            GUI.color = SweepGame.Cyan; GUI.DrawTexture(new Rect(bx + bw * a, by, bw * b * tally, 12), white);
-            GUI.color = SweepGame.Violet; GUI.DrawTexture(new Rect(bx + bw * (a + b), by, bw * (1 - a - b) * tally, 12), white);
-            GUI.color = Color.white;
-            Lbl(new Rect(bx, by + 16, bw, 18), Loc.T("<color=#f2c14e>빔 ") + Mathf.RoundToInt(a * 100) + "%</color>   " + (sim.DronesOn ? Loc.T("<color=#6fd3e8>드론 ") + Mathf.RoundToInt(b * 100) + "%</color>   " : "") + (sim.BombsOn ? Loc.T("<color=#b69cff>폭발 ") + Mathf.RoundToInt((1 - a - b) * 100) + "%</color>" : ""), label);
-            if (R.contractText != null) Lbl(new Rect(bx, by + 44, bw, 20), Loc.T("의뢰 · ") + R.contractText + "  " + (R.contractOk ? Loc.T("<color=#6fcf97>성공 +") + KNum.Fmt(R.bonus) + "</color>" : Loc.T("<color=#ee7766>실패 ") + R.contractProg + "/" + R.contractTarget + "</color>"), label);
-            else if (R.cut > 0) Lbl(new Rect(bx, by + 44, bw, 20), Loc.T("<color=#ee7766>빚 상환으로 떼인 것 -") + KNum.Fmt(R.cut) + "</color>", label);
-            }
 
             // 오른쪽 아래 — 다음 해금 (청구서를 갚으면 열리는 것)
             var RB = new Rect(cx + 10, 270, 410, 120);
@@ -131,7 +118,7 @@ namespace SalvageRun.Orbit
                 var bb = new Rect(RB.x + 16, RB.y + 76, RB.width - 32, 34);
                 if (Bt(bb, bankruptArmed ? Loc.T("<color=#ffb3a8>정말? 한 번 더 누르면 파산</color>") : Loc.T("<color=#ffb3a8>파산하고 새 회사로 ▸</color>"), btn))
                 {
-                    if (bankruptArmed) { sim.Bankrupt(); bankruptArmed = false; showResult = false; flow = 2; } else bankruptArmed = true;
+                    if (bankruptArmed) { sim.Bankrupt(); bankruptArmed = false; flow = 2; } else bankruptArmed = true;
                 }
             }
             else Panel2(RB, sim.S.bill < SweepSim.Bills.Length ? Loc.T("다음 청구서") : null);

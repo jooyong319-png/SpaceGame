@@ -213,7 +213,7 @@ namespace SalvageRun.Orbit
             {
                 routeBrowse = (routeBrowse + d + vis.Count) % vis.Count;
                 int pi = vis[routeBrowse];
-                if (sim.Open(pi) && pi != S.orbit) { sim.SetOrbit(pi); permitArmed = -1; }
+                if (sim.Open(pi) && pi != S.orbit) { sim.SetOrbit(pi); }
                 OrbitSfx.Play("tick", 0.5f);
             }
             var ev = Event.current;
@@ -439,7 +439,7 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(1f, 0.2f, 0.15f, gl); GUI.DrawTexture(new Rect(cv.x + 6, cv.y + 5, cv.width - 12, cv.height - 10), texDisc);
                 GUI.color = Color.white;
                 Lbl(new Rect(cv.x - 30, cv.yMax + 1, cv.width + 36, 16), Loc.T("<size=9><color=#ff9b8f>한 번 더 → 파산</color></size>"), center);
-                if (Bt(cv, GUIContent.none, GUIStyle.none)) { sim.Bankrupt(); bankruptArmed = false; showResult = false; flow = 2; }
+                if (Bt(cv, GUIContent.none, GUIStyle.none)) { sim.Bankrupt(); bankruptArmed = false; flow = 2; }
             }
             GUI.color = Color.white;
         }
@@ -505,7 +505,7 @@ namespace SalvageRun.Orbit
             if (!art && can && glassK > 0.95f) { GUI.color = new Color(1f, 0.3f, 0.2f, 0.18f + 0.18f * pulse); GUI.DrawTexture(new Rect(cx - 50, by - 12, 100, 56), texDisc); }   // 그림 단추는 빛 번짐을 그림 뒤에 (위에 덮으면 벌겋게 뭉개짐)
             GUI.color = Color.white;
             if (glassK > 0.95f && Bt(btn, GUIContent.none, GUIStyle.none) && can)
-            { sim.Bankrupt(); glassOpen = false; glassK = 0; bankruptArmed = false; showResult = false; flow = 2; OrbitSfx.Play("break", 1f); return; }
+            { sim.Bankrupt(); glassOpen = false; glassK = 0; bankruptArmed = false; flow = 2; OrbitSfx.Play("break", 1f); return; }
             // 유리 돔 — 뒤 경첩으로 젖혀 선다 (열릴수록 위로 올라가며 납작한 테만 보임)
             float gy = by - 16 - glassK * 26, gh2 = Mathf.Lerp(40, 10, glassK);
             var glass = new Rect(cx - 33, gy, 66, gh2);

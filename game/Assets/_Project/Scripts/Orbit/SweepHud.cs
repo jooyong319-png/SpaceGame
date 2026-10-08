@@ -22,12 +22,12 @@ namespace SalvageRun.Orbit
         public bool Blocking => sim != null && (sim.R.over || sim.M.careerOpen || sim.M.won || newsOpen || bayOpen);
 
         // 결산
-        bool showResult, bankruptArmed; public bool newsOpen, manualFire = true;
-        float dueNag; public bool loanOpen; public float launchT; const float LaunchLen = 1.3f; int permitArmed = -1;
+        bool bankruptArmed; public bool newsOpen, manualFire = true;
+        float dueNag; public bool loanOpen; public float launchT; const float LaunchLen = 1.3f;
         int prevBestChain, prevBestPack, runNewsFrom;
         SweepRun last;
         double shown;
-        int selected = 0, newsSel = -1; public int endStage;
+        int newsSel = -1; public int endStage;
         Vector2 newsScroll;
         // 알림
         string banner; int bannerKind; float bannerT;
@@ -46,7 +46,7 @@ namespace SalvageRun.Orbit
 
         public void OnRunEnd()
         {
-            showResult = true; bankruptArmed = false; last = sim.R; resultT = 2.6f; flow = 1;
+            bankruptArmed = false; last = sim.R; resultT = 2.6f; flow = 1;
             if (last.cut > 0) RepayFx(sim.S.debt + last.cut, sim.S.debt, 1.4f, true);   // 판 끝 자동 상환 — 작은 명세서로
             resultAt = Time.time; endCash = sim.S.cash; gained = last.Earned + last.bonus + last.interest; flyers.Clear(); flyT = 0;
             bannerT = 0; banner = null;          // 판 중 예고가 조종실까지 남지 않게
@@ -64,7 +64,7 @@ namespace SalvageRun.Orbit
             bayOpen = false; flow = 0; lobby = false; charmKick = 1.2f;
             routeBrowse = -1;                                                  // 🧭 다이얼로 안 열린 「?」 행성을 보다 나가도 돌아오면 실제로 간 행성을 보인다 (09-29)
             prevBestChain = sim.M.bestChain; prevBestPack = sim.M.bestPack; runNewsFrom = sim.M.news.Count;
-            showResult = false; bankruptArmed = false;
+            bankruptArmed = false;
             if (sim.Mk != null) { var ms = sim.Mk.M.st; runStockSh = new double[ms.Count]; runStockPx = new double[ms.Count]; for (int i = 0; i < ms.Count; i++) { runStockSh[i] = ms[i].shares; runStockPx[i] = ms[i].price; } }   // 📈 이번 판 주식 통계용
             sim.StartRun();
             launchT = LaunchLen; OrbitSfx.Play("launch", 1f); game.shake = 0.18f;   // 🚀 출발 — 창을 뚫고 나간다

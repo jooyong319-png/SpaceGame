@@ -10,7 +10,7 @@ namespace SalvageRun.Orbit
     {
         // ───────────────────────────────── 대출 창구 (모달) — 내역 · 받기 · 갚기
         // 🎟 복권 창 — [즉석 복권] 은박을 마우스로 긁는다 · [궤도 로또] 번호 셋을 고른다 (사장님 09-23 「복권 두 가지 다」)
-        public bool lottoOpen; int lottoTab, lottoSeen = -1; float lottoToast;
+        public bool lottoOpen; int lottoSeen = -1; float lottoToast;
         int[] scGrid; int scWin = -1; bool[,] scCoat; bool scDone; float scDoneT; double scGot;
         readonly List<int> lottoPick = new List<int>();
         const int ScCols = 7, ScRows = 4, ScCells = SweepSim.ScratchCells;  // 🎟 10-06 창 9칸(3×3) · 칸마다 은박 조각 7×4
@@ -18,14 +18,14 @@ namespace SalvageRun.Orbit
         static readonly string[] ScIconPath = { "junk/junk_vault_gold", "junk/junk_vault", "shop/part_0", "shop/key", "junk/junk_rocket", "junk/junk_sat", "junk/junk_fuel", "junk/junk_chip_a" };   // 1등 → 8등
         public void TestLotto(int step)   // 에디터 시험용
         {
-            if (step == 0) { lottoOpen = true; lottoTab = 0; scGrid = sim.ScratchBuy(out scWin); scCoat = new bool[ScCells, ScCols * ScRows]; scDone = false; }
+            if (step == 0) { lottoOpen = true; scGrid = sim.ScratchBuy(out scWin); scCoat = new bool[ScCells, ScCols * ScRows]; scDone = false; }
             else if (step == 1) { for (int c = 0; c < ScCells; c++) for (int b = 0; b < ScCols * ScRows; b++) if (c < 5 || (b + c) % 3 != 0 && c == 5) scCoat[c, b] = true; }
-            else if (step == 2) { lottoTab = 1; lottoPick.Clear(); lottoPick.AddRange(new[] { 3, 7, 11 }); sim.LottoBuy(3, 7, 11); lottoPick.Clear(); lottoPick.AddRange(new[] { 2, 5 }); }
+            else if (step == 2) { lottoPick.Clear(); lottoPick.AddRange(new[] { 3, 7, 11 }); sim.LottoBuy(3, 7, 11); lottoPick.Clear(); lottoPick.AddRange(new[] { 2, 5 }); }
         }
         /// <summary>에디터 시험용 — rank 등 당첨 표를 펼친다 (reveal = 몇 칸까지 긁어 둘지 · 9 = 다)</summary>
         public void TestLottoWin(int rank, int reveal)
         {
-            lottoOpen = true; lottoTab = 0;
+            lottoOpen = true;
             var g = new int[ScCells]; var cnt = new int[SweepSim.ScratchSym.Length];
             for (int i = 0; i < ScCells; i++)
             {

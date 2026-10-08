@@ -62,7 +62,7 @@ namespace SalvageRun.Orbit
             var go = new Rect(w.xMax - 346, w.yMax - 64, 346, 52);   // 🌐 영어 「(2) Old Sweeper  Launch ▸」
             if (Bt(go, "(" + M.company + Loc.T("대) ") + SweepSim.Ships[goShip].name + Ro(SweepSim.Ships[goShip].name) + Loc.T(" 출발 ▸"), bigBtn))
             {
-                sim.SelectShip(goShip); sim.CloseCareer(); showResult = false; flow = 2; hangarPick = -1; hangarTab = 0; game.Save();   // 09-26 사장님 「조종실이 첫 화면으로」
+                sim.SelectShip(goShip); sim.CloseCareer(); flow = 2; hangarPick = -1; hangarTab = 0; game.Save();   // 09-26 사장님 「조종실이 첫 화면으로」
             }
         }
 

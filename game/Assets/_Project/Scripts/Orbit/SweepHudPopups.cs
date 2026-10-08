@@ -52,12 +52,10 @@ namespace SalvageRun.Orbit
         }
 
         // ⚔ 무기 단추 — 정비고 왼쪽 위. 산 무기만 (무기고를 사야 보인다)
-        int weaponDrop = -1;                                                  // 펼친 목록 — 0 주 무기 · 1 보조 무기
         /// <summary>⚔ 무기 고르기 — 평소엔 「무기 ▾」 한 칸, 누르면 산 무기 목록이 펼쳐진다 (아홉 개가 트리를 덮지 않게)</summary>
         // 🔫 무기 효과판 — 산 무기와 발동 확률 (09-24: 무기를 골라 끼우던 목록을 없앴다)
         void WeaponBar(Rect r)
         {
-            weaponDrop = -1;
             if (sim.Lv("w_hub") <= 0) return;
             var list = new System.Collections.Generic.List<int>();
             for (int w = 1; w < SweepSim.ProcBase.Length; w++) if (sim.ProcChance(w) > 0) list.Add(w);

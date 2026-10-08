@@ -148,9 +148,9 @@ namespace SalvageRun.Orbit
             }
             Lbl(new Rect(cx, 470, cw, 20), Loc.T("<color=#f2c14e>오늘도 궤도는 깨끗합니다.</color>"), center);
             // ∞ 무한 궤도 · ★ 새 회사 (09-24 사장님 12 · 26번)
-            if (Bt(new Rect(cx - 10, 500, 220, 44), Loc.T("<color=#d8ccff>무한 궤도로 ▸</color>"), bigBtn)) { sim.EnterEndless(); showResult = false; flow = 2; OrbitSfx.Play("launch", 0.8f); }
-            if (Bt(new Rect(cx + 220, 500, 200, 44), Loc.T("새 회사로 · ★") + M.legend, bigBtn)) { game.NewGame(true); showResult = false; }
-            if (Bt(new Rect(cx + 430, 506, 180, 32), Loc.T("<size=12>기록까지 모두 지우기</size>"), btnC)) { game.WipeAll(); showResult = false; }
+            if (Bt(new Rect(cx - 10, 500, 220, 44), Loc.T("<color=#d8ccff>무한 궤도로 ▸</color>"), bigBtn)) { sim.EnterEndless(); flow = 2; OrbitSfx.Play("launch", 0.8f); }
+            if (Bt(new Rect(cx + 220, 500, 200, 44), Loc.T("새 회사로 · ★") + M.legend, bigBtn)) { game.NewGame(true); }
+            if (Bt(new Rect(cx + 430, 506, 180, 32), Loc.T("<size=12>기록까지 모두 지우기</size>"), btnC)) { game.WipeAll(); }
             Lbl(new Rect(cx, 552, cw, 18), Loc.T("<size=11><color=#8a93a3>★ 전설 경력 ") + M.legend + Loc.T(" — 다음 회사부터 모든 값 +") + (M.legend * 10) + Loc.T("% · 처음 열쇠 +") + M.legend + "</color></size>", center);
         }
     }
