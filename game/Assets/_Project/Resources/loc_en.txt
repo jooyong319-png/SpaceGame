@@ -1788,3 +1788,7 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 <size=9><color=#06202a>투시</color></size>	<size=9><color=#06202a>Peek</color></size>
 다음 판 화력 +30%	Next run firepower +30%
 당첨 +	Win chance +
+# 10-08 시안 적용
+% 확보	% saved
+누르면 그 기사로	Click to read
+<color=#8a9bb3>정비고 ◆ 칸에 사용 · 열쇠 	<color=#8a9bb3>Used on ◆ Workshop nodes · keys 

@@ -135,14 +135,14 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(0.08f, 0.1f, 0.16f); GUI.DrawTexture(r, white);
                 Frame(r, max ? new Color(0.3f, 0.6f, 0.42f) : can ? new Color(0.45f, 0.37f, 0.12f) : new Color(0.15f, 0.18f, 0.26f), can ? 2 : 1);
                 GUI.color = Color.white;
-                var t = UpTex(i); if (t != null) GUI.DrawTexture(new Rect(r.x + 6, r.y + 10, 56, 56), t);
-                Lbl(new Rect(r.x + 64, r.y + 4, r.width - 68, 20), "<size=13><b>" + u.name + "</b></size>", label);
+                var t = UpTex(i); if (t != null) GUI.DrawTexture(new Rect(r.x + 10, r.y + 10, 56, 56), t);   // 10-08 시안 3: 테두리 · 아이콘 · 글 사이 여백
+                Lbl(new Rect(r.x + 76, r.y + 4, r.width - 80, 20), "<size=13><b>" + u.name + "</b></size>", label);
                 var ws = new GUIStyle(label) { wordWrap = true };
-                Lbl(new Rect(r.x + 64, r.y + 22, r.width - 68, 36), "<size=10><color=#8d99b8>" + KWrap(u.desc, 10, r.width - 74) + "</color></size>", ws);
-                float pw = Mathf.Min(10, (r.width - 72) / u.max - 2);
-                for (int k = 0; k < u.max; k++) { GUI.color = k < lv ? new Color(1f, 0.81f, 0.29f) : new Color(0.14f, 0.17f, 0.27f); GUI.DrawTexture(new Rect(r.x + 64 + k * (pw + 2), r.y + 58, pw, 6), white); }
+                Lbl(new Rect(r.x + 76, r.y + 22, r.width - 80, 36), "<size=10><color=#8d99b8>" + KWrap(u.desc, 10, r.width - 86) + "</color></size>", ws);
+                float pw = Mathf.Min(10, (r.width - 84) / u.max - 2);
+                for (int k = 0; k < u.max; k++) { GUI.color = k < lv ? new Color(1f, 0.81f, 0.29f) : new Color(0.14f, 0.17f, 0.27f); GUI.DrawTexture(new Rect(r.x + 76 + k * (pw + 2), r.y + 58, pw, 6), white); }
                 GUI.color = Color.white;
-                Lbl(new Rect(r.x + 64, r.y + 67, r.width - 68, 24), max ? Loc.T("<size=11><color=#6fe3a0>최대</color></size>") : "<size=11><color=" + (can ? "#ffdf95" : "#ff8a7a") + Loc.T(">신용 ") + c + "</color></size>", label);
+                Lbl(new Rect(r.x + 76, r.y + 67, r.width - 80, 24), max ? Loc.T("<size=11><color=#6fe3a0>최대</color></size>") : "<size=11><color=" + (can ? "#ffdf95" : "#ff8a7a") + Loc.T(">신용 ") + c + "</color></size>", label);
                 if (Bt(r, GUIContent.none, GUIStyle.none) && can && sim.BuyUp(i)) OrbitSfx.Play("buy", 0.8f);
             }
             Lbl(new Rect(body.x + 14, body.yMax - 24, body.width - 28, 20), Loc.T("<size=10><color=#5a6475>신용은 파산 시 지급 — 갚은 청구서가 많을수록 많이 (쌓인 신용 × ") + SweepSim.CreditK + ")</color></size>", label);

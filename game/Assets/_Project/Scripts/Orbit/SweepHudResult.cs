@@ -16,6 +16,9 @@ namespace SalvageRun.Orbit
         class Flyer { public Vector2 a, b; public float t; public string txt; }
         readonly List<Flyer> flyers = new List<Flyer>();
 
+        GUIStyle moneyR;
+        GUIStyle MoneyStyle() { if (moneyR == null) moneyR = new GUIStyle(big) { alignment = TextAnchor.MiddleCenter }; moneyR.fontSize = 22; return moneyR; }
+
         void Panel2(Rect r, string head2)
         {
             GUI.color = new Color(0.04f, 0.05f, 0.08f, 0.92f); GUI.DrawTexture(r, white); GUI.color = Color.white;
@@ -35,7 +38,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0.14f, 0.12f, 0.08f, 0.95f); GUI.DrawTexture(money, white); GUI.color = Color.white;
             Frame(money, SweepGame.Amber * new Color(1, 1, 1, 0.6f), 1.5f);
             big.fontSize = 22;   // 도트 글꼴 11의 배수 (정돈 5)
-            Lbl(new Rect(money.x + 12, money.y + 6, money.width - 24, 34), "<color=#ffdf95>" + KNum.Fmt(endCash - gained * (1 - tally)) + "</color>", big);
+            Lbl(new Rect(money.x + 12, money.y + 6, money.width - 24, 34), Loc.T("<size=13><color=#8a9bb3>돈</color></size>  ") + "<color=#ffdf95>" + KNum.Fmt(endCash - gained * (1 - tally)) + "</color>", MoneyStyle());   // 10-08 시안 1: 무엇의 숫자인지
             big.fontSize = 20;
 
             // 제목
@@ -168,11 +171,16 @@ namespace SalvageRun.Orbit
             double need = sim.BillAmount - S.cash;
             bool loanPay = !can && S.overdue && need <= sim.LoanCap;
             float pulse = can ? 0.5f + 0.5f * Mathf.Sin(Time.time * 5) : 0;
-            GUI.color = can ? Color.Lerp(new Color(0.42f, 0.1f, 0.1f), new Color(0.6f, 0.16f, 0.14f), pulse) : new Color(0.3f, 0.08f, 0.09f);
-            GUI.DrawTexture(r, white); GUI.color = Color.white;
+            GUI.color = can ? Color.Lerp(new Color(0.42f, 0.1f, 0.1f), new Color(0.6f, 0.16f, 0.14f), pulse) : new Color(0.18f, 0.055f, 0.06f);
+            GUI.DrawTexture(r, white);
+            float fill = Mathf.Clamp01((float)(S.cash / System.Math.Max(1, sim.BillAmount)));   // 10-08 시안 1-2 B: 모은 돈만큼 단추가 차오른다
+            if (!can && fill > 0) { GUI.color = new Color(0.47f, 0.14f, 0.13f); GUI.DrawTexture(new Rect(r.x, r.y, r.width * fill, r.height), white); }
+            if (!can) { GUI.color = new Color(0.43f, 0.16f, 0.16f); for (float tx = r.x + r.width / 10; tx < r.xMax - 1; tx += r.width / 10) GUI.DrawTexture(new Rect(tx, r.yMax - 4, 1, 4), white); }
+            GUI.color = Color.white;
             Frame(r, can ? Color.Lerp(SweepGame.Red, Color.white, pulse * 0.5f) : new Color(0.5f, 0.2f, 0.18f), 2);
             Lbl(new Rect(r.x, r.y + 4, r.width, 34), "<size=24><color=#ffdf95>" + KNum.Fmt(sim.BillAmount) + "</color></size>", center);
             string sub = S.overdue ? Loc.T("<color=#ffb3a8>오늘 납부일</color>") : S.billDue + Loc.T("판 남음");
+            if (!can && !loanPay) sub = "<color=#ffd278>" + Mathf.FloorToInt(fill * 100) + Loc.T("% 확보") + "</color> · " + sub;
             if (can) sub += Loc.T(" · <color=#ffffff>눌러서 갚기</color>");
             else if (loanPay) sub += Loc.T(" · <color=#ffffff>대출 ") + KNum.Fmt(need) + Loc.T(" 받아 갚기</color>");
             Lbl(new Rect(r.x, r.y + 38, r.width, 22), "<size=13>" + sub + "</size>", center);

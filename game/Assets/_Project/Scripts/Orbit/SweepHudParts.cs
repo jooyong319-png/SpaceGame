@@ -199,7 +199,7 @@ namespace SalvageRun.Orbit
                 Lbl(new Rect(r.x + 62, r.y + 66, r.width - 68, 46), "<size=" + dFs + ">" + dTxt + "</size>", small);
                 // 지금 것 → 바뀌는 것
                 GUI.color = new Color(0.2f, 0.23f, 0.29f); GUI.DrawTexture(new Rect(r.x + 10, r.y + 112, r.width - 20, 1), white); GUI.color = Color.white;
-                string cmp = key ? Loc.T("<color=#8a9bb3>정비고 ◆ 칸에 사용 · 가진 열쇠 ") + S.keys + "</color>" : cn ? Loc.T("<color=#8a9bb3>구매해 두면 <color=#9ff0bf>다음 출동 때 자동</color> 사용 · 1회용</color>") : PartCompare(id);
+                string cmp = key ? Loc.T("<color=#8a9bb3>정비고 ◆ 칸에 사용 · 열쇠 ") + S.keys + (Loc.En ? "" : "개") + "</color>" : cn ? Loc.T("<color=#8a9bb3>구매해 두면 <color=#9ff0bf>다음 출동 때 자동</color> 사용 · 1회용</color>") : PartCompare(id);
                 Lbl(new Rect(r.x + 10, r.y + 116, r.width - 20, 58), "<size=11>" + cmp + "</size>", small);
                 double price = sim.ShelfPrice(k); bool can = S.cash >= price;
                 var bb = new Rect(r.x + 10, r.yMax - 40, r.width - 20, 30);

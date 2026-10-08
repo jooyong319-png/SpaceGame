@@ -50,7 +50,7 @@ namespace SalvageRun.Orbit
             Lbl(new Rect(box.x + 12, box.yMax - 30, 300, 18), Loc.T("모은 기사 ") + total + Loc.T(" · 특종 ") + scoops + Loc.T(" / 6 · 파산해도 유지"), small);
             // 전문
             if (newsSel < 0 && total > 0) { newsSel = total - 1; M.news[newsSel].read = true; }
-            var pr = new Rect(box.x + 322, box.y + 10, box.width - 332, box.height - 20);
+            var pr = new Rect(box.x + 322, box.y + 36, box.width - 332, box.height - 46);   // 10-08 시안 2: 닫기를 종이 위 줄로 — 종이 모서리를 덮지 않게
             GUI.DrawTexture(pr, texPaper);
             if (newsSel >= 0 && newsSel < total)
             {
@@ -67,9 +67,52 @@ namespace SalvageRun.Orbit
                 Lbl(new Rect(x, y, w, hh), Loc.T(it.head), paperHead); y += hh + 14;
                 float bh = paperBody.CalcHeight(new GUIContent(Loc.T(it.body)), w);
                 Lbl(new Rect(x, y, w, bh), Loc.T(it.body), paperBody); y += bh + 16;
-                Lbl(new Rect(x, y, w, 16), Loc.T("— 궤도일보 궤도부"), paperSmall);
+                Lbl(new Rect(x, y, w, 16), Loc.T("— 궤도일보 궤도부"), paperSmall); y += 30;
+                NewsSide(pr, x, w, y);
             }
-            if (Bt(new Rect(box.xMax - 110, box.y + 6, 100, 24), Loc.T("닫기 (Esc)"), btn)) newsOpen = false;
+            if (Bt(new Rect(box.xMax - 98, box.y + 6, 88, 24), Loc.T("<size=12>닫기 Esc</size>"), btn)) newsOpen = false;   // 설정 창과 같은 말
+        }
+
+        /// <summary>10-08 시안 2 — 짧은 기사 아래 빈 종이에 다른 기사 두 단 (신문 1면처럼). 누르면 그 기사로</summary>
+        void NewsSide(Rect pr, float x, float w, float y)
+        {
+            var M = sim.M; int total = M.news.Count;
+            float bottom = pr.yMax - 30;
+            if (bottom - y < 120 || total < 2) return;
+            var pick = new List<int>();
+            for (int d = 1; d < total && pick.Count < 2; d++)
+            {
+                if (newsSel - d >= 0) pick.Add(newsSel - d);
+                if (pick.Count < 2 && newsSel + d < total) pick.Add(newsSel + d);
+            }
+            GUI.DrawTexture(new Rect(x, y, w, 2), texInk); y += 14;
+            float gap = 24, cw = (w - gap) / pick.Count;
+            int hf = paperHead.fontSize, bf = paperBody.fontSize;
+            paperHead.fontSize = 16; paperBody.fontSize = 12;
+            for (int k = 0; k < pick.Count; k++)
+            {
+                var it = M.news[pick[k]];
+                float cx = x + k * (cw + gap), cy = y;
+                if (k > 0) { GUI.color = new Color(0.78f, 0.76f, 0.71f); GUI.DrawTexture(new Rect(cx - gap / 2, y, 1, bottom - y), white); }
+                string kn = it.kind == "scoop" ? Loc.T("특종") : it.kind == "world" ? Loc.T("세상 소식") : it.kind == "extra" ? Loc.T("호외") : Loc.T("우리 소식");
+                GUI.color = it.kind == "scoop" ? new Color(0.75f, 0.22f, 0.17f) : it.kind == "world" ? new Color(0.42f, 0.39f, 0.34f) : new Color(0.72f, 0.53f, 0.04f);
+                GUI.DrawTexture(new Rect(cx, cy, 70, 18), white); GUI.color = Color.white;
+                Lbl(new Rect(cx, cy, 70, 18), "<color=#ffffff>" + kn + "</color>", center); cy += 26;
+                string hd = Loc.T(it.head); float hh = paperHead.CalcHeight(new GUIContent(hd), cw);
+                Lbl(new Rect(cx, cy, cw, hh), hd, paperHead); cy += hh + 8;
+                // 본문은 남은 높이에 들어가는 문장까지만 (중간에서 잘리지 않게)
+                string full = Loc.T(it.body), bd = full; float room = bottom - cy; int end = full.Length;
+                while (bd.Length > 0 && paperBody.CalcHeight(new GUIContent(bd), cw) > room)
+                {
+                    end = end > 2 ? full.LastIndexOf(". ", end - 2) : -1;
+                    bd = end > 0 ? full.Substring(0, end + 1) + " …" : "";
+                }
+                if (bd.Length > 0) Lbl(new Rect(cx, cy, cw, paperBody.CalcHeight(new GUIContent(bd), cw)), bd, paperBody);
+                if (Bt(new Rect(cx, y, cw, bottom - y), GUIContent.none, GUIStyle.none)) { newsSel = pick[k]; it.read = true; }
+            }
+            GUI.color = Color.white;
+            paperHead.fontSize = hf; paperBody.fontSize = bf;
+            Lbl(new Rect(x, pr.yMax - 24, w, 16), Loc.T("누르면 그 기사로"), paperSmall);
         }
 
         // ───────────────────────────────── 엔딩 — 마지막 호외 → 결과판 (§9-5)

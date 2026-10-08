@@ -420,7 +420,7 @@ namespace SalvageRun.Orbit
                 {
                     var bp = ToScr(gtiles[bk].cell); float bp2 = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 8), bs = tile * (1.3f + 0.2f * bp2);
                     Brackets(new Rect(bp.x - bs / 2, bp.y - bs / 2, bs, bs), new Color(1f, 0.6f, 0.55f, 0.5f + 0.4f * bp2), 9 * zz, 2);
-                    Lbl(new Rect(bp.x - 40, bp.y - tile * 0.5f - 20, 80, 18), Loc.T("<size=11><b><color=#ff9b8f>먼저 이 칸</color></b></size>"), center);
+                    Lbl(new Rect(bp.x - 60, bp.y - tile * 0.5f - 20, 120, 18), Loc.T("<size=11><b><color=#ff9b8f>먼저 이 칸</color></b></size>"), center);
                 }
             }
             // 영역 밖 띠 — 넘어간 칸을 덮고 머리 · 줄 · 판 · 아래 안내를 다시 그린다
