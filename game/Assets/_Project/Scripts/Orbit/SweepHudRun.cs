@@ -399,8 +399,8 @@ namespace SalvageRun.Orbit
                 bool en0 = GUI.enabled; GUI.enabled = en0 && sim.StockBuyOpen;          // 매수는 [증권 계좌] 칸 뒤 (10-02)
                 for (int k = 0; k < 4; k++) if (Bt(new Rect(r.x + 12 + k * (bw + 2), y, bw, 28), Loc.T("<size=12><color=#9ff0bf>매수 ") + bl[k] + "</color></size>", btn)) TradeBuy(si, bf[k], new Vector2(r.x + 12 + k * (bw + 2) + bw / 2, y + 14));
                 GUI.enabled = ss.shares > 0 && en0;
-                if (Bt(new Rect(r.x + 12 + 4 * (bw + 2) + 6, y, bw, 28), Loc.T("<size=12><color=#ffb3a8>절반 팔기</color></size>"), btn)) TradeSell(si, 0.5, new Vector2(r.x + 12 + 4 * (bw + 2) + 6 + bw / 2, y + 14));
-                if (Bt(new Rect(r.x + 12 + 5 * (bw + 2) + 6, y, bw, 28), Loc.T("<size=12><color=#ffb3a8>전부 팔기</color></size>"), btn)) TradeSell(si, 1, new Vector2(r.x + 12 + 5 * (bw + 2) + 6 + bw / 2, y + 14));
+                if (Bt(new Rect(r.x + 12 + 4 * (bw + 2) + 6, y, bw, 28), Loc.T("<size=12><color=#ffb3a8>절반 매도</color></size>"), btn)) TradeSell(si, 0.5, new Vector2(r.x + 12 + 4 * (bw + 2) + 6 + bw / 2, y + 14));
+                if (Bt(new Rect(r.x + 12 + 5 * (bw + 2) + 6, y, bw, 28), Loc.T("<size=12><color=#ffb3a8>전부 매도</color></size>"), btn)) TradeSell(si, 1, new Vector2(r.x + 12 + 5 * (bw + 2) + 6 + bw / 2, y + 14));
             }
             GUI.enabled = !loanOpen;
             y += 32;

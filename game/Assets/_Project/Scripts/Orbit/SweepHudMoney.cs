@@ -286,7 +286,7 @@ namespace SalvageRun.Orbit
                     signing = false; ev.Use();
                     if (signLen > 140) { signT = Time.unscaledTime; OrbitSfx.Play("clank", 0.9f); }   // 쾅 — 도장
                 }
-                if (signPts.Count == 0) Lbl(new Rect(sa.x, sa.y + 22, sa.width, 24), Loc.T("<color=#8a7f6a>여기를 마우스로 그어 서명하세요</color>"), paperBody);
+                if (signPts.Count == 0) Lbl(new Rect(sa.x, sa.y + 22, sa.width, 24), Loc.T("<color=#8a7f6a>마우스로 그어 서명</color>"), paperBody);
             }
             for (int i = 1; i < signPts.Count; i++)
                 if (signPts[i - 1].x >= 0 && signPts[i].x >= 0) Line(signPts[i - 1], signPts[i], new Color(0.1f, 0.14f, 0.35f), 2.6f);
@@ -448,7 +448,7 @@ namespace SalvageRun.Orbit
                         ev.Use();
                     }
                     else if (ev.type == EventType.MouseUp && signing) { signing = false; ev.Use(); if (signLen > 140) { hireSignT = Time.unscaledTime; OrbitSfx.Play("clank", 0.9f); } }
-                    if (signPts.Count == 0) Lbl(new Rect(sa.x, sa.y + 22, sa.width, 24), Loc.T("<color=#8a7f6a>여기를 마우스로 그어 서명하세요</color>"), new GUIStyle(paperBody) { alignment = TextAnchor.UpperCenter });
+                    if (signPts.Count == 0) Lbl(new Rect(sa.x, sa.y + 22, sa.width, 24), Loc.T("<color=#8a7f6a>마우스로 그어 서명</color>"), new GUIStyle(paperBody) { alignment = TextAnchor.UpperCenter });
                 }
                 for (int i = 1; i < signPts.Count; i++)
                     if (signPts[i - 1].x >= 0 && signPts[i].x >= 0) Line(signPts[i - 1], signPts[i], new Color(0.1f, 0.14f, 0.35f), 2.6f);

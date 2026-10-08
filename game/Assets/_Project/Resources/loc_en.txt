@@ -1018,7 +1018,7 @@ Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 	Space = launch
 청구서 즉시 납부	Pays the bill right away
 돈으로 입금	Goes to your cash
 서명	Signature
-<color=#8a7f6a>여기를 마우스로 그어 서명하세요</color>	<color=#8a7f6a>Drag the mouse here to sign</color>
+<color=#8a7f6a>마우스로 그어 서명</color>	<color=#8a7f6a>Drag the mouse here to sign</color>
 <size=26><b><color=#c42420>승인</color></b></size>	<size=26><b><color=#c42420>APPROVED</color></b></size>
 <size=10><color=#c42420>케슬러 금융</color></size>	<size=10><color=#c42420>Kessler Finance</color></size>
 취소	Cancel
@@ -1056,8 +1056,8 @@ Space = 출동 · 창밖 = 지금 내 궤도 · 궤도 넓히기 	Space = launch
 전부	All
 <size=12><color=#8a9bb3>출동 중엔 시세 확인만 — 거래는 조종실 증권에서</color></size>	<size=12><color=#8a9bb3>During a run you can only watch prices — trade at the Exchange in the cockpit</color></size>
 <size=12><color=#9ff0bf>매수 	<size=12><color=#9ff0bf>Buy 
-<size=12><color=#ffb3a8>절반 팔기</color></size>	<size=12><color=#ffb3a8>Sell half</color></size>
-<size=12><color=#ffb3a8>전부 팔기</color></size>	<size=12><color=#ffb3a8>Sell all</color></size>
+<size=12><color=#ffb3a8>절반 매도</color></size>	<size=12><color=#ffb3a8>Sell half</color></size>
+<size=12><color=#ffb3a8>전부 매도</color></size>	<size=12><color=#ffb3a8>Sell all</color></size>
 다음 출동 중 속보	News during next run
 <color=#ff5c5c>오를</color>	<color=#ff5c5c>up</color>
 <color=#5494ff>내릴</color>	<color=#5494ff>down</color>
@@ -1482,7 +1482,7 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 손익	P/L
 수익률	Return
 주</size>	 sh</size>
-<size=10><color=#8ab4ff>전부 팔기</color></size>	<size=10><color=#8ab4ff>Sell all</color></size>
+<size=10><color=#8ab4ff>전부 매도</color></size>	<size=10><color=#8ab4ff>Sell all</color></size>
 <size=12><color=#5f6878>보유 종목 없음 — 왼쪽에서 종목을 고르고 오른쪽에서 매수</color></size>	<size=12><color=#5f6878>No holdings — pick a stock on the left and buy on the right</color></size>
 종목 · 휠로 넘기기</color></size>	stocks · scroll with the wheel</color></size>
 <size=20><b><color=#ffdf95>잠김 · 증권 계좌 없음</color></b></size>	<size=20><b><color=#ffdf95>Locked · no brokerage account</color></b></size>

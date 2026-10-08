@@ -326,7 +326,7 @@ namespace SalvageRun.Orbit
                 Rt(bb.x, ry, cx2[5], "<size=11>" + Tone(pl, (pl >= 0 ? "+" : "") + KNum.Fmt(pl)) + "</size>");
                 Rt(bb.x, ry, cx2[6], "<size=11>" + Pct(val / st.cost - 1) + "</size>");
                 if (Bt(rr, GUIContent.none, GUIStyle.none)) MS.sel = i;
-                if (Bt(new Rect(bb.xMax - 90, ry, 82, 18), Loc.T("<size=10><color=#8ab4ff>전부 팔기</color></size>"), btnOff)) TradeSell(i, 1, new Vector2(bb.xMax - 49, ry + 9));
+                if (Bt(new Rect(bb.xMax - 90, ry, 82, 18), Loc.T("<size=10><color=#8ab4ff>전부 매도</color></size>"), btnOff)) TradeSell(i, 1, new Vector2(bb.xMax - 49, ry + 9));
             }
             if (rows == 0) L(bb.x + 10, bb.y + 30, 500, Loc.T("<size=12><color=#5f6878>보유 종목 없음 — 왼쪽에서 종목을 고르고 오른쪽에서 매수</color></size>"));
             if (held > 5)
