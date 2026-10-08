@@ -140,7 +140,7 @@ namespace SalvageRun.Orbit
             GUI.DrawTextureWithTexCoords(new Rect(p.xMax + o - s, p.yMax + o - s, s, s), holoCornerTex, new Rect(1, 1, -1, -1));
         }
 
-        static Texture2D bbBase, bbCap, bbGlass;   // 🧯 파산 단추 그림 (10-08)
+        static Texture2D bbAnim; float bbPressK;   // 🧯 파산 단추 애니 (10-08)
         // 🔵 발사기 (조종대 위 원반) — 10-07 픽셀랩 도트 투사기 · 그림이 없으면 예전 원반 도형
         static Texture2D emitTex;
         void Emitter(float ex, float ey, float e, Color hc, float fl)
@@ -465,12 +465,20 @@ namespace SalvageRun.Orbit
             // 🧯 누운 단추 — 출동 단추처럼 비스듬히 내려다본 모양 (09-24 사장님 14번)
             float cx = r.center.x, by = r.y + 30;
             var box = new Rect(r.x, r.y, r.width, 70);
-            if (bbBase == null) { bbBase = Resources.Load<Texture2D>("cockpit/bb_base"); bbCap = Resources.Load<Texture2D>("cockpit/bb_cap"); bbGlass = Resources.Load<Texture2D>("cockpit/bb_glass"); }
-            bool art = bbBase != null && bbCap != null && bbGlass != null;   // 🖼 10-08 픽셀랩 세 장 (경고 테 받침 · 빨간 단추 · 유리 돔)
-            float abH = 92f * (art ? bbBase.height / (float)bbBase.width : 0.4f), abY = by - 4;
+            if (bbAnim == null) bbAnim = Resources.Load<Texture2D>("cockpit/bb_anim");
+            bool art = bbAnim != null;   // 🎬 10-08 픽셀랩 한 장 — 위 줄 덮개 열림 6장(닫힘 → 세워짐) · 아래 줄 눌림 4장 (홀로그램 받침과 같은 낮은 각도)
             // 받침 — 노란 경고 테 · 검은 줄 · 어두운 속
             GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(cx - 46, by + 6, 92, 38), texDisc);
-            if (art) { GUI.color = Color.white; GUI.DrawTexture(new Rect(cx - 46, abY, 92, abH), bbBase); }
+            if (art)
+            {
+                bool ovA = glassK > 0.95f && new Rect(cx - 22, by + 2, 44, 26).Contains(Event.current.mousePosition);
+                bbPressK = Mathf.MoveTowards(bbPressK, ovA && can && Mouse.current != null && Mouse.current.leftButton.isPressed ? 1 : 0, Time.unscaledDeltaTime / 0.1f);
+                bool pr = glassK > 0.95f && bbPressK > 0.01f;
+                int fi = pr ? Mathf.Clamp(Mathf.RoundToInt(bbPressK * 3), 0, 3) : Mathf.Clamp(Mathf.RoundToInt(glassK * 5), 0, 5);
+                float aw = 88, ah = aw * 44f / 72f;                                       // 그림 1칸 = 1.22 (홀로그램 받침과 같은 알갱이)
+                GUI.color = can ? Color.white : new Color(0.62f, 0.6f, 0.6f);
+                GUI.DrawTextureWithTexCoords(new Rect(cx - aw / 2, r.y + 16, aw, ah), bbAnim, new Rect(fi / 6f, pr ? 0f : 0.5f, 1f / 6f, 0.5f));
+            }
             else {
             GUI.color = new Color(0.95f, 0.75f, 0.1f); GUI.DrawTexture(new Rect(cx - 45, by, 90, 36), texDisc);
             GUI.color = new Color(0.08f, 0.08f, 0.08f);
@@ -485,13 +493,7 @@ namespace SalvageRun.Orbit
             float dip = press ? 5 : 0, fy = by + 2 + dip, sh = side - dip;
             float pulse = glassK > 0.95f ? 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 8) : 0;
             Color face = can ? Color.Lerp(new Color(0.85f, 0.1f, 0.08f), new Color(1f, 0.3f, 0.22f), ovBtn ? 1 : pulse * 0.5f) : new Color(0.4f, 0.18f, 0.16f);
-            if (art)
-            {   // 빨간 단추 그림 — 눌리면 아래를 잘라 받침 속으로 가라앉는다
-                float cw = 46, ch = cw * bbCap.height / bbCap.width, cy0 = abY + abH * 0.5f - ch * 0.75f, cut = Mathf.Min(dip, ch - 2);
-                GUI.color = can ? (ovBtn ? new Color(1.15f, 1.05f, 1.05f) : Color.Lerp(Color.white, new Color(1.2f, 1.1f, 1.1f), pulse * 0.5f)) : new Color(0.55f, 0.45f, 0.45f);
-                GUI.DrawTextureWithTexCoords(new Rect(cx - cw / 2, cy0 + dip, cw, ch - cut), bbCap, new Rect(0, cut / ch, 1, 1 - cut / ch));
-            }
-            else
+            if (!art)
             {
             GUI.color = new Color(0.35f, 0.04f, 0.03f); GUI.DrawTexture(new Rect(cx - fw / 2, fy + sh, fw, fh), texDisc); GUI.DrawTexture(new Rect(cx - fw / 2, fy + fh / 2, fw, sh), white);
             GUI.color = face; GUI.DrawTexture(new Rect(cx - fw / 2, fy, fw, fh), texDisc);
@@ -505,13 +507,7 @@ namespace SalvageRun.Orbit
             float gy = by - 16 - glassK * 26, gh2 = Mathf.Lerp(40, 10, glassK);
             var glass = new Rect(cx - 33, gy, 66, gh2);
             bool ovGlass = glassK < 0.05f && new Rect(cx - 36, by - 18, 72, 50).Contains(Event.current.mousePosition);
-            if (art)
-            {   // 유리 돔 그림 — 닫힘: 단추 위에 · 열림: 뒤로 젖혀 위로 올라가며 납작해진다
-                float gw = 70, ghF = gw * bbGlass.height / bbGlass.width, gH = Mathf.Lerp(ghF, ghF * 0.3f, glassK);
-                float gY0 = abY + abH * 0.45f - ghF * 0.85f, gY = Mathf.Lerp(gY0, abY - ghF * 0.55f, glassK);
-                GUI.color = new Color(1, 1, 1, ovGlass ? 1f : 0.9f); GUI.DrawTexture(new Rect(cx - gw / 2, gY, gw, gH), bbGlass);
-            }
-            else
+            if (!art)
             {
             GUI.color = new Color(0.6f, 0.85f, 1f, 0.2f + (ovGlass ? 0.1f : 0)); GUI.DrawTexture(glass, texDisc);
             GUI.color = new Color(0.8f, 0.92f, 1f, 0.55f); GUI.DrawTexture(glass, texRing);
