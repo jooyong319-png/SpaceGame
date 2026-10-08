@@ -161,7 +161,19 @@ static class Tests
         var s118 = new SweepState(); s118.lv = new int[118]; s118.lv[Ix("i_bh")] = 9;
         var sim118 = new SweepSim(s118, null, 1);
         if (sim118.Lv("i_bh") != 5 || sim118.Lv("w_laser_e") != 0) Fail($"118칸 판: i_bh {sim118.Lv("i_bh")} · w_laser_e {sim118.Lv("w_laser_e")}");
-        Console.WriteLine("   130칸 · 118칸 · 두 번 불러오기");
+        // 10-08 옛 134칸 판 (와일드 별 · 한 장 더 칸이 생기기 전) — 뒤에 붙기만 · 앞 칸 그대로
+        var s134 = new SweepState(); s134.lv = new int[134]; s134.lv[Ix("l_jack")] = 1; s134.lv[Ix("c_pow")] = 3;
+        var sim134 = new SweepSim(s134, null, 1);
+        if (sim134.S.lv.Length != SweepSim.NodeCount || sim134.Lv("l_jack") != 1 || sim134.Lv("c_pow") != 3 || sim134.Lv("l_wild") != 0 || sim134.Lv("l_again") != 0)
+            Fail($"134칸 판: 길이 {sim134.S.lv.Length} · l_jack {sim134.Lv("l_jack")} · c_pow {sim134.Lv("c_pow")} · l_wild {sim134.Lv("l_wild")}");
+        // 10-08 옛 시장 (종목 2개 적던 때) — 새 종목만 뒤에 붙고 들고 있던 주식은 그대로
+        var oldM = new MarketState { seed = 7 };
+        for (int i = 0; i < Market.Defs.Length - 2; i++) oldM.st.Add(new StockState { price = 50 + i, shares = 10 + i, cost = 500 + i });
+        var mk = new Market(oldM);
+        if (mk.M.st.Count != Market.Defs.Length) Fail($"옛 시장: 종목 {mk.M.st.Count} (기대 {Market.Defs.Length})");
+        for (int i = 0; i < Market.Defs.Length - 2; i++) if (mk.M.st[i].shares != 10 + i || mk.M.st[i].cost != 500 + i) Fail($"옛 시장: {i}번 보유 {mk.M.st[i].shares} · 들인 돈 {mk.M.st[i].cost}");
+        for (int i = Market.Defs.Length - 2; i < Market.Defs.Length; i++) if (mk.M.st[i].shares != 0 || !Finite(mk.M.st[i].price) || mk.M.st[i].price <= 0) Fail($"옛 시장: 새 종목 {i} 보유 {mk.M.st[i].shares} · 값 {mk.M.st[i].price}");
+        Console.WriteLine("   130칸 · 118칸 · 134칸 · 두 번 불러오기 · 옛 시장(종목 2개 적던 때)");
     }
 
     // 사람처럼 — 지금 열린 구역까지에서 살 수 있는 가장 싼 칸 (레벨 상관없이 · 행성 항로는 빼고)
