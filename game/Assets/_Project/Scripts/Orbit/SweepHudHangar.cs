@@ -59,7 +59,7 @@ namespace SalvageRun.Orbit
             if (Bt(rb, spent > 0 ? Loc.T("<size=14>강화 전부 되돌려 받기 <color=#ffdf95>+") + spent + "</color></size>" : Loc.T("<size=14><color=#5a6475>되돌려 받을 강화 없음</color></size>"), btnC)) { sim.RefundUps(); OrbitSfx.Play("pick", 0.8f); }
             GUI.enabled = true;
             int goShip = sim.ShipOwned(hangarPick) ? hangarPick : sim.Ship;          // 안 산 배를 보고 있으면 지금 타는 배로 나간다
-            var go = new Rect(w.xMax - 330, w.yMax - 64, 330, 52);
+            var go = new Rect(w.xMax - 346, w.yMax - 64, 346, 52);   // 🌐 영어 「(2) Old Sweeper  Launch ▸」
             if (Bt(go, "(" + M.company + Loc.T("대) ") + SweepSim.Ships[goShip].name + Ro(SweepSim.Ships[goShip].name) + Loc.T(" 출발 ▸"), bigBtn))
             {
                 sim.SelectShip(goShip); sim.CloseCareer(); showResult = false; flow = 2; hangarPick = -1; hangarTab = 0; game.Save();   // 09-26 사장님 「조종실이 첫 화면으로」

@@ -81,7 +81,7 @@ namespace SalvageRun.Orbit
                 Lbl(new Rect(x, y0, w, 20), "<size=12><color=#7fcfe0>" + (S.bill + 1) + " / " + SweepSim.Bills.Length + "</color></size>", cost);
                 Lbl(new Rect(x, y0 + 22, w, 22), "<size=13><color=#dff8ff>" + b.t + "</color></size>", label);
                 Lbl(new Rect(x, y0 + 48, w, 18), Loc.T("<size=11><color=#7fcfe0>납부 금액</color></size>"), label);
-                Lbl(new Rect(x, y0 + 62, w, 38), "<size=28><b><color=#e8fbff>" + KNum.Fmt(sim.BillAmount) + "</color></b></size>", label);
+                Lbl(new Rect(x, y0 + 62, w, 38), Fit("<b><color=#e8fbff>" + KNum.Fmt(sim.BillAmount) + "</color></b>", 28, w - 4, label, 16), label);   // 큰 금액(13조 7700억)은 글자를 줄인다
                 bool blink = Mathf.Repeat(t, 0.8f) < 0.55f;
                 Lbl(new Rect(x, y0 + 100, w, 20), due ? "<size=13><b><color=" + (blink ? "#ff9b8f" : "#b0564c") + Loc.T(">오늘 납부일</color></b></size>") : Loc.T("<size=12><color=#bff4ff>기한 ▸ ") + S.billDue + Loc.T("판</color></size>"), label);
                 float prog = Mathf.Clamp01((float)(S.cash / System.Math.Max(1, sim.BillAmount)));
@@ -455,9 +455,11 @@ namespace SalvageRun.Orbit
                 float sp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 5f);
                 GUI.color = new Color(1f, 0.2f, 0.15f, 0.22f + 0.3f * sp); GUI.DrawTexture(new Rect(r.center.x - 70, r.y - 22, 140, 110), texDisc);
                 GUI.color = Color.white;
-                var tag = new Rect(r.center.x - 70, r.y - 44 - 4 * sp, 140, 22);
+                string tagTxt = Loc.T("<size=12><b><color=#ffd2c8>대출로도 납부 불가 ▼</color></b></size>");
+                float tagW = Mathf.Max(140, label.CalcSize(new GUIContent(tagTxt)).x + 16);   // 🌐 영어가 길다
+                var tag = new Rect(r.center.x - tagW / 2, r.y - 44 - 4 * sp, tagW, 22);
                 GUI.color = new Color(0.45f, 0.05f, 0.04f, 0.95f); GUI.DrawTexture(tag, white); Frame(tag, new Color(1f, 0.35f, 0.25f), 2); GUI.color = Color.white;
-                Lbl(tag, Loc.T("<size=12><b><color=#ffd2c8>대출로도 못 갚는다 ▼</color></b></size>"), center);
+                Lbl(tag, tagTxt, center);
             }
             float dt = Time.unscaledDeltaTime;
             if (glassOpen) { glassT -= dt; if (glassT <= 0 || !can) glassOpen = false; }

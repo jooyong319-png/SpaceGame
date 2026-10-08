@@ -195,7 +195,8 @@ namespace SalvageRun.Orbit
                 int nmFs = 15; while (nmFs > 9 &&label.CalcSize(new GUIContent("<size=" + nmFs + "><b>" + nm + "</b></size>")).x > r.width - 68) nmFs--;   // 🌐 긴 이름은 글자를 줄인다
                 Lbl(new Rect(r.x + 62, r.y + 44, r.width - 68, 22), "<size=" + nmFs + "><b><color=#ffffff>" + nm + "</color></b></size>", label);
                 string desc = key ? Loc.T("◆ 보라 테두리 핵심 칸 하나 해금") : cn ? SweepSim.ConsDesc[id - SweepSim.Cons0] : Parts.Defs[id].desc;
-                Lbl(new Rect(r.x + 62, r.y + 66, r.width - 68, 42), "<size=11><color=#c8d0dc>" + desc + "</color></size>", small);
+                string dTxt = "<color=#c8d0dc>" + desc + "</color>"; int dFs = small.CalcHeight(new GUIContent("<size=11>" + dTxt + "</size>"), r.width - 68) > 44 ? 10 : 11;   // 🌐 세 줄이 넘으면 한 단계 작게
+                Lbl(new Rect(r.x + 62, r.y + 66, r.width - 68, 46), "<size=" + dFs + ">" + dTxt + "</size>", small);
                 // 지금 것 → 바뀌는 것
                 GUI.color = new Color(0.2f, 0.23f, 0.29f); GUI.DrawTexture(new Rect(r.x + 10, r.y + 112, r.width - 20, 1), white); GUI.color = Color.white;
                 string cmp = key ? Loc.T("<color=#8a9bb3>정비고 ◆ 칸에 사용 · 가진 열쇠 ") + S.keys + "</color>" : cn ? Loc.T("<color=#8a9bb3>구매해 두면 <color=#9ff0bf>다음 출동 때 자동</color> 사용 · 1회용</color>") : PartCompare(id);

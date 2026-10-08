@@ -1526,7 +1526,7 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 <size=9><color=#8a6a30>잠김</color></size>	<size=9><color=#8a6a30>Locked</color></size>
 <size=10><b><color=#ffe0dc>파산</color></b></size>	<size=10><b><color=#ffe0dc>Bankrupt</color></b></size>
 <size=9><color=#ff9b8f>한 번 더 → 파산</color></size>	<size=9><color=#ff9b8f>Once more → bankrupt</color></size>
-<size=12><b><color=#ffd2c8>대출로도 못 갚는다 ▼</color></b></size>	<size=12><b><color=#ffd2c8>Can't pay even with a loan ▼</color></b></size>
+<size=12><b><color=#ffd2c8>대출로도 납부 불가 ▼</color></b></size>	<size=12><b><color=#ffd2c8>Can't pay even with a loan ▼</color></b></size>
 <size=10><color=#c8d0dc>잠김</color></size>	<size=10><color=#c8d0dc>Locked</color></size>
 3장부터	From bill 3
 누르면 파산 · 신용 +	Click to go bankrupt · credit +

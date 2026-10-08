@@ -227,7 +227,7 @@ namespace SalvageRun.Orbit
             if (myIdx.Count == 0) return;
             void Chip(string txt, bool hot)
             {
-                float w = label.CalcSize(new GUIContent(txt)).x * 0.86f + 16;
+                float w = label.CalcSize(new GUIContent(txt)).x + 14;   // 10-08 0.86배로 재서 영어 · 긴 종목명이 잘렸다
                 var r = new Rect(right - w, y, w, 22);
                 GUI.color = new Color(0.04f, 0.055f, 0.08f, 0.85f); GUI.DrawTexture(r, white);
                 if (hot) { float p = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 10); GUI.color = new Color(1f, 0.36f, 0.36f, 0.12f + 0.12f * p); GUI.DrawTexture(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), white); Frame(r, UpCol, 1 + p); }

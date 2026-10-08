@@ -1,4 +1,4 @@
-#if UNITY_EDITOR
+﻿#if UNITY_EDITOR
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
@@ -83,6 +83,18 @@ namespace SalvageRun.EditorTools
                 for (int e = 0; e < SweepSim.EventNames.Length; e++) { int ee = e; acts.Add(g => { if (!g.sim.R.over) { g.sim.R.fuel = 20; g.hud.Banner("⚠ " + SweepSim.EventNames[ee] + " — " + SweepSim.EventHint[ee], ee % 2, 2.2f); } }); }
                 acts.Add(g => { g.sim.R.fuel = 0; });
                 for (int q = 0; q < 40; q++) acts.Add(g => { });            // 결산 화면이 뜨는 동안
+                // 🔢 10-08 극단 상태 — 큰 돈 · 큰 빚 · 납부일 · 마지막 청구서 · 모든 종목 보유 (숫자가 길어질 때 잘림)
+                acts.Add(g =>
+                {
+                    Close(g); var S = g.sim.S;
+                    S.cash = 987654321012; S.debt = 123456789012; S.overdue = true; S.bill = SweepSim.Bills.Length - 1; S.hired = true;
+                    if (g.sim.Mk != null) foreach (var st in g.sim.Mk.M.st) { st.shares = 123456; st.cost = 987654321; }
+                    g.hud.flow = 2;
+                });
+                foreach (int fl in new[] { 2, 4, 3, 5 }) { int ff = fl; acts.Add(g => { Close(g); g.hud.flow = ff; }); acts.Add(g => { }); }
+                acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.loanOpen = true; });
+                acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.TestLotto(0); });
+                acts.Add(g => { Close(g); g.sim.S.overdue = false; g.hud.flow = 2; });
             }
         }
 
