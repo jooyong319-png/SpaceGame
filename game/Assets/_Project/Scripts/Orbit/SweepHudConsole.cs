@@ -466,7 +466,7 @@ namespace SalvageRun.Orbit
             float cx = r.center.x, by = r.y + 30;
             var box = new Rect(r.x, r.y, r.width, 70);
             if (bbAnim == null) bbAnim = Resources.Load<Texture2D>("cockpit/bb_anim");
-            bool art = bbAnim != null;   // 🎬 10-08 픽셀랩 한 장 — 위 줄 덮개 열림 6장(닫힘 → 세워짐) · 아래 줄 눌림 4장 (홀로그램 받침과 같은 낮은 각도)
+            bool art = bbAnim != null;   // 🎬 10-08 픽셀랩 한 장 — 위 줄 덮개 열림 4장(닫힘 → 세워짐) · 아래 줄 눌림 4장 (홀로그램 받침과 같은 낮은 각도 · 위 6칸은 세운 덮개 자리)
             // 받침 — 노란 경고 테 · 검은 줄 · 어두운 속
             GUI.color = new Color(0, 0, 0, 0.5f); GUI.DrawTexture(new Rect(cx - 46, by + 6, 92, 38), texDisc);
             if (art)
@@ -474,10 +474,11 @@ namespace SalvageRun.Orbit
                 bool ovA = glassK > 0.95f && new Rect(cx - 22, by + 2, 44, 26).Contains(Event.current.mousePosition);
                 bbPressK = Mathf.MoveTowards(bbPressK, ovA && can && Mouse.current != null && Mouse.current.leftButton.isPressed ? 1 : 0, Time.unscaledDeltaTime / 0.1f);
                 bool pr = glassK > 0.95f && bbPressK > 0.01f;
-                int fi = pr ? Mathf.Clamp(Mathf.RoundToInt(bbPressK * 3), 0, 3) : Mathf.Clamp(Mathf.RoundToInt(glassK * 5), 0, 5);
-                float aw = 88, ah = aw * 44f / 72f;                                       // 그림 1칸 = 1.22 (홀로그램 받침과 같은 알갱이)
+                int fi = Mathf.Clamp(Mathf.RoundToInt((pr ? bbPressK : glassK) * 3), 0, 3);
+                float aw = 88, ah = aw * 50f / 72f, ap = aw / 72f;                         // 그림 1칸 = 1.22 (홀로그램 받침과 같은 알갱이)
+                if (can && glassK > 0.95f) { float gp = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 8); GUI.color = new Color(1f, 0.3f, 0.2f, 0.16f + 0.14f * gp); GUI.DrawTexture(new Rect(cx - 56, by - 16, 112, 64), texDisc); }   // 열리면 뒤에서 붉게 숨 쉼
                 GUI.color = can ? Color.white : new Color(0.62f, 0.6f, 0.6f);
-                GUI.DrawTextureWithTexCoords(new Rect(cx - aw / 2, r.y + 16, aw, ah), bbAnim, new Rect(fi / 6f, pr ? 0f : 0.5f, 1f / 6f, 0.5f));
+                GUI.DrawTextureWithTexCoords(new Rect(cx - aw / 2, r.y + 16 - 6 * ap, aw, ah), bbAnim, new Rect(fi / 4f, pr ? 0f : 0.5f, 1f / 4f, 0.5f));
             }
             else {
             GUI.color = new Color(0.95f, 0.75f, 0.1f); GUI.DrawTexture(new Rect(cx - 45, by, 90, 36), texDisc);
@@ -499,7 +500,7 @@ namespace SalvageRun.Orbit
             GUI.color = face; GUI.DrawTexture(new Rect(cx - fw / 2, fy, fw, fh), texDisc);
             GUI.color = new Color(1, 1, 1, 0.3f); GUI.DrawTexture(new Rect(cx - fw * 0.3f, fy + 3, fw * 0.4f, 5), texDisc);
             }
-            if (can && glassK > 0.95f) { GUI.color = new Color(1f, 0.3f, 0.2f, 0.18f + 0.18f * pulse); GUI.DrawTexture(new Rect(cx - 50, by - 12, 100, 56), texDisc); }
+            if (!art && can && glassK > 0.95f) { GUI.color = new Color(1f, 0.3f, 0.2f, 0.18f + 0.18f * pulse); GUI.DrawTexture(new Rect(cx - 50, by - 12, 100, 56), texDisc); }   // 그림 단추는 빛 번짐을 그림 뒤에 (위에 덮으면 벌겋게 뭉개짐)
             GUI.color = Color.white;
             if (glassK > 0.95f && Bt(btn, GUIContent.none, GUIStyle.none) && can)
             { sim.Bankrupt(); glassOpen = false; glassK = 0; bankruptArmed = false; showResult = false; flow = 2; OrbitSfx.Play("break", 1f); return; }
