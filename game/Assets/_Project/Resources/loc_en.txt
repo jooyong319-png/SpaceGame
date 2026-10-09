@@ -1292,7 +1292,7 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 <size=15>구매 · 신용 	<size=15>Buy · credit 
 <size=13><color=#5a6475>신용 	<size=13><color=#5a6475>Needs credit 
  필요 (지금 	 (you have 
-<size=10><color=#5a6475>트리의 빔 칸 셋은 배의 무기에 맞게 바뀐다.\n무기고의 보조 무기는 어느 배든 그대로.	<size=10><color=#5a6475>The tree's three beam nodes change to fit the ship's weapon.\nArsenal side weapons stay the same on any ship.
+<size=10><color=#5a6475>트리의 빔 칸 셋은 배의 무기에 맞게 바뀜.\n무기고의 보조 무기는 어느 배든 그대로.	<size=10><color=#5a6475>The tree's three beam nodes change to fit the ship's weapon.\nArsenal side weapons stay the same on any ship.
 \n<color=#8fd8ff>무기고 냉동 빔 줄(강화 · 각성 · 특화 · 3단계)이 이 배의 서리 포도 강화.</color>	\n<color=#8fd8ff>The Arsenal freeze beam line (upgrade · awakening · mastery · tier 3) also powers this ship's frost cannon.</color>
 \n<color=#ffa040>무기고 분열탄 줄(강화 · 각성 · 특화 · 3단계)이 이 배의 포탄도 강화.</color>	\n<color=#ffa040>The Arsenal cluster bomb line (upgrade · awakening · mastery · tier 3) also powers this ship's shells.</color>
 <size=11><color=#8d99b8>회사가 바뀌어도 유지 · 단계마다 값 상승 · 언제든 전액 환불 후 다시 구성 가능</color></size>	<size=11><color=#8d99b8>Kept across companies · price rises per level · refund everything anytime to rebuild</color></size>
