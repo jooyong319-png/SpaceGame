@@ -1341,7 +1341,7 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 값 +	Value +
 <size=11><color=#8a9bb3>다음 출동 때 쓰일 것</color>  	<size=11><color=#8a9bb3>Used on next run</color>  
 <color=#3f4652>없음</color>	<color=#3f4652>None</color>
-<size=11><color=#8a9bb3>오늘의 진열</color></size>	<size=11><color=#8a9bb3>Today's stock</color></size>
+<size=11><color=#8a9bb3>오늘의 진열</color></size>	<size=11><color=#8a9bb3>Stock</color></size>
 <size=13><color=#3f4652>판매 완료</color></size>	<size=13><color=#3f4652>Sold</color></size>
 열쇠 +1 · 핵심 칸 하나	Key +1 · one key node
 다음 출동 한 번용	Next run only
