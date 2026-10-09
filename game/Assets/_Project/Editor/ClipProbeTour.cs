@@ -106,6 +106,8 @@ namespace SalvageRun.EditorTools
                     g.sim.S.overdue = false; g.hud.OnRunEnd();
                 });
                 for (int q = 0; q < 40; q++) acts.Add(g => { g.hud.flow = 1; });
+                acts.Add(g => g.hud.TestCert(1, 4)); for (int q = 0; q < 6; q++) acts.Add(g => { });   // 🛰 10-10 공로주 증서
+                acts.Add(g => g.hud.SendMessage("CertClose", SendMessageOptions.DontRequireReceiver));
                 acts.Add(g => { Close(g); g.sim.S.overdue = false; g.hud.flow = 2; });
             }
         }

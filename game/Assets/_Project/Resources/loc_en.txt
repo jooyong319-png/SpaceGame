@@ -1801,3 +1801,17 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 <size=14><b><color=#ffdf95>🛰 관문 보상</color></b></size>	<size=14><b><color=#ffdf95>🛰 Gate reward</color></b></size>
 <size=13><color=#d8ccff>열쇠 +1</color></size>	<size=13><color=#d8ccff>Key +1</color></size>
 <color=#c8d0dc>공로주 </color>	<color=#c8d0dc>Merit shares </color>
+궤도 항로 개통 공로주	Route Opening Merit Shares
+주권 · 무기명 · 양도 가능	Share certificate · bearer · transferable
+ 붕괴	 destroyed
+ 항로를 민간 청소선이 열었다. 이 공로로 아래 주식을 지급함.	 route opened by a private sweeper. For this merit, the shares below are granted.
+<color=#6e46aa>+ 열쇠 1개</color>	<color=#6e46aa>+ 1 Key</color>
+발행 · 궤도청 · 케슬러 증권 대행	Issued by the Orbit Authority · agent Kessler Securities
+수령인 · 주식회사 궤도 청소부 (	Recipient · Orbit Sweeper Inc. (
+<color=#b8432f>도장</color>	<color=#b8432f>Stamp</color>
+<b>도장 쾅!</b>  <color=#e8c9a0>클릭 · Space</color>	<b>Stamp it!</b>  <color=#e8c9a0>Click · Space</color>
+지급	PAID
+궤도청	Orbit Auth.
+<b>받기 ▸ 결산으로</b>	<b>Collect ▸ Results</b>
+종목	Stock
+평가	Value

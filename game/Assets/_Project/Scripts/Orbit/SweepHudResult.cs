@@ -43,6 +43,7 @@ namespace SalvageRun.Orbit
         {
             var S = sim.S; var R = last;
             GUI.color = new Color(0, 0, 0, 0.72f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
+            if (certOpen) resultAt = Time.time;   // 🛰 증서를 받는 동안엔 결산 숫자가 기다린다
             float t = Time.time - resultAt, tally = Mathf.Clamp01((t - 0.35f) / 1.3f);
             float cx = vw / 2;
 

@@ -48,6 +48,7 @@ namespace SalvageRun.Orbit
         {
             bankruptArmed = false; last = sim.R; resultT = 2.6f; flow = 1;
             if (last.cut > 0) RepayFx(sim.S.debt + last.cut, sim.S.debt, 1.4f, true);   // 판 끝 자동 상환 — 작은 명세서로
+            if (last.gateStock >= 0) { certOpen = true; certStampT = -1; }   // 🛰 10-10 관문을 깬 판 — 결산 전에 공로주 증서
             resultAt = Time.time; endCash = sim.S.cash; gained = last.Earned + last.bonus + last.interest; flyers.Clear(); flyT = 0;
             bannerT = 0; banner = null;          // 판 중 예고가 조종실까지 남지 않게
             sim.M.flags.Remove("hint_seen_now");
@@ -126,7 +127,8 @@ namespace SalvageRun.Orbit
                 else if (kb != null && (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame && !kb.altKey.isPressed) && !settingsOpen && !wipeAsk) LobbyContinue();   // 09-27 Alt+Enter 가 출발로 먹었다
                 return;
             }
-            if (kb != null && kb.spaceKey.wasPressedThisFrame && sim.R.over && !sim.M.careerOpen && !sim.M.won && !newsOpen && paidT < 2.4f)
+            if (certOpen && flow == 1) { if (kb != null && (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame)) CertKey(); }
+            else if (kb != null && kb.spaceKey.wasPressedThisFrame && sim.R.over && !sim.M.careerOpen && !sim.M.won && !newsOpen && paidT < 2.4f)
             {
                 if (loanOpen || lottoOpen) { } else if (flow == 2) Go(); else if (flow >= 3 && flow <= 5) GoFlow(2); else flow = 2;   // Space — 결과 · 정비소 → 조종실, 조종실 → 출동
             }
@@ -159,12 +161,13 @@ namespace SalvageRun.Orbit
             else if (sim.R.over)
             {
                 if (flow == 0) flow = 2;                                // 켜자마자 · 파산 뒤 = 조종실
-                GUI.enabled = !loanOpen && !lottoOpen && !newsOpen && !settingsOpen && !hireOpen;             // 모달 뒤 버튼 막음 — 뉴스 닫기가 뒤 전광판에 먹혀 다시 열렸다 (09-24 27번)
+                GUI.enabled = !loanOpen && !lottoOpen && !newsOpen && !settingsOpen && !hireOpen && !(certOpen && flow == 1);             // 모달 뒤 버튼 막음 — 뉴스 닫기가 뒤 전광판에 먹혀 다시 열렸다 (09-24 27번)
                 if (flow == 1) FlowResult(); else Strip();                    // 정비고 ← 조종실 → 증권 (좌우로 밀린다)
                 GUI.enabled = true;
                 if (loanOpen) LoanWin();
                 if (lottoOpen) LottoWin();
                 if (hireOpen) HireWin();
+                if (certOpen && flow == 1) CertWin();
             }
             if (!sim.M.won) NewsBanner();
             if (newsOpen) News();
