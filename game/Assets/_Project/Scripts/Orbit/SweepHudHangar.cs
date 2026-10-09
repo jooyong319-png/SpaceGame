@@ -83,7 +83,7 @@ namespace SalvageRun.Orbit
                 var ht = HullTex(i); if (ht != null) { GUI.color = own ? Color.white : new Color(0.35f, 0.35f, 0.38f); GUI.DrawTexture(th, ht, ScaleMode.ScaleToFit); }
                 GUI.color = Color.white;
                 Lbl(new Rect(r.x + 104, r.y + rh / 2 - 22, r.width - 108, 20), "<size=14><b>" + d.name + "</b></size>", label);
-                Lbl(new Rect(r.x + 104, r.y + rh / 2, r.width - 108, 20), (Loc.En ? "<size=10>" : "<size=11>") + (Loc.En && !own ? "" : "<color=#8d99b8>" + d.weapon + " · </color>") + (own ? (sim.Ship == i ? Loc.T("<color=#6fe3a0>타는 중</color>") : Loc.T("<color=#8d99b8>보유</color>")) : Loc.T("<color=#ffdf95>신용 ") + d.price + "</color>") + "</size>", label);
+                Lbl(new Rect(r.x + 104, r.y + rh / 2, r.width - 108, 20), Fit((Loc.En && !own ? "" : "<color=#8d99b8>" + d.weapon + " · </color>") + (own ? (sim.Ship == i ? Loc.T("<color=#6fe3a0>타는 중</color>") : Loc.T("<color=#8d99b8>보유</color>")) : Loc.T("<color=#ffdf95>신용 ") + d.price + "</color>"), Loc.En ? 10 : 11, r.width - 110, label, 8), label);
                 if (Bt(r, GUIContent.none, GUIStyle.none)) { hangarPick = i; OrbitSfx.Play("tick", 0.5f); }
             }
             if (SweepSim.Ships.Length < 5) Lbl(new Rect(L.x, L.y + SweepSim.Ships.Length * 76 + 6, L.width, 60), Loc.T("<size=11><color=#5a6475>새 배는 차례로 입고</color></size>"), label);
@@ -112,7 +112,7 @@ namespace SalvageRun.Orbit
                 GUI.color = Color.white;
             }
             var bb = new Rect(I.x, I.y + 206, 220, 40);
-            if (mine) Lbl(bb, "<size=13><color=#6fe3a0>" + (hangarPick == sim.Ship ? Loc.T("지금 타는 배") : Loc.T("보유 중 — 아래 [출발]로 이 배 탑승")) + "</color></size>", label);
+            if (mine) { var mb = new Rect(bb.x, bb.y, I.width, bb.height); Lbl(mb, Fit("<color=#6fe3a0>" + (hangarPick == sim.Ship ? Loc.T("지금 타는 배") : Loc.T("보유 중 — 아래 [출발]로 이 배 탑승")) + "</color>", 13, mb.width - 4, label, 10), label); }
             else
             {
                 bool can = M.credit >= sd.price;

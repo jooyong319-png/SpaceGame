@@ -76,7 +76,7 @@ namespace SalvageRun.Orbit.Sim
 
     public class Blast { public double x, y, t, R, dk; public bool w, red; public int gen; public int wid = -1; }   // wid = 피해를 세어 줄 곳 (DmgCat) — 기뢰 · 분열탄처럼 늦게 터져도 제 무기로     // w = 무기가 낸 폭발 (이것만 또 번진다 — 09-24 사장님 「연쇄 반응도 무기 특성으로」)
     public class Drone { public double a, cd, x, y; }
-    public class Missile { public double x, y, vx, vy, life; public Junk tg; }   // 🚀 미사일선 (09-27)
+    public class Missile { public double x, y, vx, vy, life, age; public Junk tg; }   // 🚀 미사일선 (09-27)
     public class Orb { public double x, y, tx, ty, vx, vy, t, zap; public bool there; }   // ⚡ 전격선 구체 (09-27)
     public class Pod { public int kind; public double t, x, y, a, rr; public bool up, got; }     // 지구 보급 — kind 0 연료 · 1 폭탄
 

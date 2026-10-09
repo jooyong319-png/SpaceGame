@@ -434,7 +434,7 @@ namespace SalvageRun.Orbit.Sim
             new ShipDef { id = "scatter", name = Loc.T("산탄선"),      weapon = Loc.T("산탄"), trait = Loc.T("연쇄"), price = 30, desc = Loc.T("넓게 퍼지는 산탄. 가까울수록 강하고 멀수록 약함 — 몰린 잔해를 한 번에 터뜨려 연쇄 시작") },
             new ShipDef { id = "harpoon", name = Loc.T("작살선"),      weapon = Loc.T("작살"), trait = Loc.T("꿰뚫기"), price = 50, desc = Loc.T("조준 방향으로 한 줄을 꿰뚫는 작살 — 줄 위 잔해를 모두 타격, 관통할수록 약해짐. 줄지어 선 잔해에 강함") },
             new ShipDef { id = "tesla",   name = Loc.T("전격선"),      weapon = Loc.T("전기 구체"), trait = Loc.T("지지기"), price = 85, desc = Loc.T("조준점으로 전기 구체 투척 — 날아가며 둘레 잔해에 번개, 도착하면 잠시 머문 뒤 폭발") },   // 09-27 사장님 「레일건 말고 전기로 무언가 — 전기 구체를 범위로 던진다든가」
-            new ShipDef { id = "missile", name = Loc.T("미사일선"),    weapon = Loc.T("유도 미사일"), trait = Loc.T("쫓기"), price = 60, desc = Loc.T("누르고 있으면 작은 미사일이 연속 발사되어 조준점 둘레 잔해를 스스로 추적 — 빗나가지 않지만 한 발이 약함") },   // 09-27 사장님 「유도 미사일이 그나마 낫네」 (시안 X4byMmYEwkfh7u9rat8pML)
+            new ShipDef { id = "missile", name = Loc.T("미사일선"),    weapon = Loc.T("유도 미사일"), trait = Loc.T("일제 사격"), price = 60, desc = Loc.T("한 번에 미사일 6발이 부채꼴로 퍼져, 조준점 둘레의 서로 다른 잔해를 하나씩 스스로 추적 — 흩어진 무리를 한꺼번에") },   // 09-27 사장님 「유도 미사일이 그나마 낫네」 (시안 X4byMmYEwkfh7u9rat8pML)
             new ShipDef { id = "frost",   name = Loc.T("냉동선"),      weapon = Loc.T("서리 포"), trait = Loc.T("얼려 깨기"), price = 70, desc = Loc.T("조준점에 서리 원 폭발 — 언 잔해는 모든 피해 2배, 언 채 부서지면 산산조각 나 주변 타격") },   // 09-27 사장님 「냉동이랑 분열탄선은 할만할듯」 (시안 MTRmPv5Fe9bgvb1Xcq4Tii)
             new ShipDef { id = "cluster", name = Loc.T("분열탄선"),    weapon = Loc.T("분열 포탄"), trait = Loc.T("흩뿌리기"), price = 100, desc = Loc.T("포탄이 조준점에 떨어져 폭발 후 파편 4개로 분열 — 몰린 곳에 강함. 낙하 중 잔해가 움직임") },
         };
@@ -458,7 +458,7 @@ namespace SalvageRun.Orbit.Sim
         static readonly System.Collections.Generic.Dictionary<string, string[]> MissileNode = new System.Collections.Generic.Dictionary<string, string[]>
         {
             { "c_pow", new[] { Loc.T("미사일 위력"), Loc.T("미사일 한 발 피해 +1 (단계마다)") } },
-            { "c_rad", new[] { Loc.T("탐지 범위"), Loc.T("조준점 둘레 고르는 범위 +10 (단계마다) — 세 단계마다 한 번에 한 발 더") } },
+            { "c_rad", new[] { Loc.T("탐지 범위 · 발 수"), Loc.T("두 단계마다 한 번에 미사일 +1발 · 고르는 범위 +10 (단계마다) — 처음 6발") } },   // 10-10 사장님 「발 수는 범위 쪽에」
             { "c_spd", new[] { Loc.T("미사일 증폭"), Loc.T("미사일 화력 +8% (단계마다)") } },
         };
         static readonly System.Collections.Generic.Dictionary<string, string[]> FrostNode = new System.Collections.Generic.Dictionary<string, string[]>

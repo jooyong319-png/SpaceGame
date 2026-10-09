@@ -497,36 +497,64 @@ namespace SalvageRun.Orbit.Sim
             Emit(SwEv.Strike, r.ax, r.ay, 0, 1);
         }
         /// <summary>🚀 미사일선 — 조준점 둘레 잔해를 골라 쫓는 작은 미사일 (09-27)</summary>
-        public const double MissileGap = 0.25, MissileK = 0.8, MissileSpeed = 620;
-        public double LockR => (140 + 10 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));
-        public int MissileN => 1 + Lv("c_rad") / 3;
+        // 🚀 10-10 사장님 「유도 미사일만의 특성」 → A 일제 사격: 한 번에 여러 발이 퍼져 조준점 둘레의 서로 다른 잔해를 하나씩 (간격은 길게)
+        public static double MissileGap = 1.0, MissileK = 0.7, MissileSpeed = 620; public static int MissileBase = 6;
+        public double LockR => (160 + 10 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));
+        public int MissileN => MissileBase + Lv("c_rad") / 2;
+        // 🎯 10-10 사장님 「자동으로 잡으니 우선순위를 잘」 — 과녁 고르는 순서
+        //   ① 조준점 가까이 관문(방어막 풀림) — 한 번에 절반까지  ② 금고 · 연료통(값진 것)  ③ 보통 잔해  ④ 장갑(미사일은 1씩만 박힌다) — 같은 급이면 조준점에 가까운 것
+        //   한 잔해엔 부술 만큼만 — 날아가는 미사일이 이미 맡은 피해를 빼고, 남은 체력 ÷ 한 발 피해 만큼만 보낸다. 다 맡겨도 남으면 앞에서부터 한 발씩 더.
+        int MisDmg(Junk d) => d.att == Att.Armor && !pierce ? 1 : Math.Max(1, RoundP(Pow * MissileK));
+        int MisRank(Junk d) => d.sig == GateSig ? 0 : d.att == Att.Armor && !pierce ? 3 : d.k == Vault || d.k == Fuel ? 1 : 2;
+        int MisIncoming(Junk d) { int n = 0; foreach (var m in R.missiles) if (m.tg == d) n++; return n * MisDmg(d); }
         Junk LockOn(double x, double y, double rad)
         {
-            var c = new List<(double dd, Junk d)>();
-            foreach (var d in R.junk) { if (d.dead) continue; double ex = d.x - x, ey = d.y - y, dd = ex * ex + ey * ey; if (dd < rad * rad) c.Add((dd, d)); }
-            if (c.Count == 0) return null;
-            c.Sort((a, b) => a.dd.CompareTo(b.dd));
-            foreach (var q in c) if (q.d.sig == GateSig && GateReady && q.dd < 90 * 90) return q.d;   // 🛰 조준점 가까이 관문이 있으면 관문부터 (흩어져서 관문이 안 깨졌다)
-            return c[rng.Next(Math.Min(4, c.Count))].d;
+            Junk best = null; double bs = double.MaxValue;
+            foreach (var d in R.junk)
+            {
+                if (d.dead || d.sig == GateSig && !GateReady) continue;
+                double ex = d.x - x, ey = d.y - y, dd = ex * ex + ey * ey; if (dd >= rad * rad) continue;
+                double sc = dd + (MisIncoming(d) >= d.hp ? 1e9 : 0) + MisRank(d) * 40 * 40;   // 이미 맡은 것은 뒤로 · 값진 게 조금 멀어도 먼저
+                if (sc < bs) { bs = sc; best = d; }
+            }
+            return best;
         }
         public static long DbgMisF, DbgMisH, DbgMisCall;
         void MissileFire()
         {
-            var r = R; bool any = false; DbgMisCall++;
-            for (int k = 0; k < MissileN; k++)
+            var r = R; DbgMisCall++;
+            var c = new List<(int rank, double dd, Junk d)>(); double rad = LockR;
+            foreach (var d in r.junk)
             {
-                var tg = LockOn(r.ax, r.ay, LockR); if (tg == null) break;
-                DbgMisF++; r.missiles.Add(new Missile { x = ShipX, y = ShipY, vx = Rnd(-150, 150) + (k - MissileN / 2.0) * 80, vy = -260, tg = tg, life = 3 });
-                any = true;
+                if (d.dead || d.sig == GateSig && !GateReady) continue;
+                double ex = d.x - r.ax, ey = d.y - r.ay, dd = ex * ex + ey * ey; if (dd >= rad * rad) continue;
+                int rk = MisRank(d); if (rk == 0 && dd >= 90 * 90) rk = 2;              // 관문은 조준점 가까이일 때만 먼저
+                c.Add((rk, dd, d));
             }
-            Emit(SwEv.Strike, r.ax, r.ay, 0, any ? 1 : 0);
+            c.Sort((a, b) => a.rank != b.rank ? a.rank.CompareTo(b.rank) : a.dd.CompareTo(b.dd));
+            int n = MissileN; var pick = new List<Junk>();
+            foreach (var q in c)
+            {
+                if (pick.Count >= n) break;
+                int need = q.d.hp - MisIncoming(q.d); if (need <= 0) continue;
+                int want = (need + MisDmg(q.d) - 1) / MisDmg(q.d);
+                if (q.d.sig == GateSig) want = Math.Min(want, (n + 1) / 2);
+                for (int w = 0; w < want && pick.Count < n; w++) pick.Add(q.d);
+            }
+            for (int w = 0; pick.Count < n && c.Count > 0; w++) pick.Add(c[w % c.Count].d);   // 다 맡기고도 남으면 앞에서부터 한 발씩 더
+            for (int k = 0; k < pick.Count; k++)
+            {
+                double sp = (k - (n - 1) / 2.0) / Math.Max(1, n - 1);              // 부채꼴로 퍼져 나간다
+                DbgMisF++; r.missiles.Add(new Missile { x = ShipX, y = ShipY, vx = sp * 520 + Rnd(-40, 40), vy = -300 + Math.Abs(sp) * 80, tg = pick[k], life = 3 });
+            }
+            Emit(SwEv.Strike, r.ax, r.ay, 0, pick.Count > 0 ? 1 : 0);
         }
         void MissileTick(double dt)
         {
             var r = R;
             for (int i = r.missiles.Count - 1; i >= 0; i--)
             {
-                var m = r.missiles[i]; m.life -= dt;
+                var m = r.missiles[i]; m.life -= dt; m.age += dt;
                 if (m.tg == null || m.tg.dead) m.tg = LockOn(m.x, m.y, 160);                 // 과녁이 먼저 부서지면 가까운 걸로
                 if (m.tg == null || m.life <= 0) { r.missiles.RemoveAt(i); continue; }
                 double dx = m.tg.x - m.x, dy = m.tg.y - m.y, L = Math.Sqrt(dx * dx + dy * dy) + 1e-6;
@@ -541,7 +569,8 @@ namespace SalvageRun.Orbit.Sim
                 }
                 double wx = dx / L * MissileSpeed, wy = dy / L * MissileSpeed;       // 과녁 쪽으로 방향을 부드럽게 튼다 — 가속만 주면 과녁 둘레를 빙빙 돌다 수명이 끝났다 (22%만 맞음)
                 if (L < 70) { m.vx = wx; m.vy = wy; }
-                else { double k = 1 - Math.Exp(-7 * dt); m.vx += (wx - m.vx) * k; m.vy += (wy - m.vy) * k; }
+                else { double k = m.age < 0.16 ? 0 : 1 - Math.Exp(-7 * dt);   // 10-10 처음 잠깐은 곧게 — 부채꼴로 퍼지는 게 보이게
+                       m.vx += (wx - m.vx) * k; m.vy += (wy - m.vy) * k; }
                 m.x += m.vx * dt; m.y += m.vy * dt;
             }
         }

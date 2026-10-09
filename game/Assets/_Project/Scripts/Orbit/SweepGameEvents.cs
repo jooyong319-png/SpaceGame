@@ -478,11 +478,14 @@ namespace SalvageRun.Orbit
         void DrawMissiles()
         {
             if (sim.R == null) return;
+            float lf = Mathf.Max(0.03f, Time.deltaTime * 1.2f);   // 10-10 프레임이 느려도 깜빡이지 않게
             foreach (var m in sim.R.missiles)
             {
                 var p = PxToWorld(m.x, m.y);
-                Add(glow, p, 0.2f, new Color(1f, 0.35f, 0.3f, 0.95f), 7, 0.03f);
-                Add(glow, p, 0.42f, new Color(1f, 0.55f, 0.35f, 0.35f), 7, 0.03f);
+                var b = Add(OrbitFxArt.Missile[(int)(Time.time * 30) % 2], p, 0.42f, Color.white, 7, lf);   // 10-10 일제 사격 — 진짜 미사일 몸통이 날아가는 쪽을 본다
+                b.sr.sortingOrder = 62; b.sr.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(-(float)m.vy, (float)m.vx) * Mathf.Rad2Deg);
+                Add(glow, p, 0.2f, new Color(1f, 0.35f, 0.3f, 0.95f), 7, lf);
+                Add(glow, p, 0.42f, new Color(1f, 0.55f, 0.35f, 0.35f), 7, lf);
                 if (Random.value < 0.6f) Add(glow, p, 0.16f, new Color(0.85f, 0.85f, 0.9f, 0.45f), 0, 0.35f);   // 꼬리 연기
             }
         }
