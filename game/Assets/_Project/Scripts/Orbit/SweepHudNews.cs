@@ -119,7 +119,7 @@ namespace SalvageRun.Orbit
 
         // 🎬 엔딩 크레딧 — 지구 둘레 쓰레기 0, 천천히 올라가는 글 (09-24 사장님 20번 · 시안). 누르거나 Space = 빨리
         float creditT;
-        public void TestEnd(int st) { endStage = st; creditT = st == 2 ? 3 : 0; }   // 에디터 시험용
+        public void TestEnd(int st) { endStage = st; creditT = st == 2 ? 3 : 0; sim.M.won = st >= 0; }   // 에디터 시험용 — 10-10 won 을 안 켜 엔딩이 안 떴다(잘림 검사도 엔딩을 못 봤다)
         void Credits()
         {
             var M = sim.M;
@@ -145,10 +145,10 @@ namespace SalvageRun.Orbit
             for (int i = 0; i < rows.GetLength(0); i++)
             {
                 if (rows[i, 0].Length > 0) { Lbl(new Rect(0, y, vw, 18), "<size=11><color=#8a93a3>" + rows[i, 0] + "</color></size>", center); y += 20; }
-                Lbl(new Rect(0, y, vw, 40), "<size=20><b>" + rows[i, 1] + "</b></size>", center); y += 70;
+                Lbl(new Rect(0, y, vw, 48), "<size=20><b>" + rows[i, 1] + "</b></size>", center); y += 70;
             }
             Lbl(new Rect(vw - 320, RefH - 30, 222, 20), Loc.T("<size=11><color=#5f6878>누르고 있으면 빨리</color></size>"), cost);
-            if (Bt(new Rect(vw - 90, RefH - 34, 80, 24), Loc.T("<size=11>넘기기</size>"), btnOff) || y < -40) endStage = 1;
+            if (Bt(new Rect(vw - 90, RefH - 34, 80, 24), Loc.T("<size=11>넘기기</size>"), btnOffC) || y < -40) endStage = 1;
         }
 
         void Ending()
@@ -160,11 +160,11 @@ namespace SalvageRun.Orbit
                 var pr = new Rect(ox + 130, 40, 700, 500);
                 GUI.DrawTexture(pr, texPaper);
                 float x = pr.x + 30, w = pr.width - 60, y = pr.y + 20;
-                paperHead.fontSize = 40; Lbl(new Rect(x, y, w, 48), Loc.T("궤도일보 — 호외"), paperHead);
+                paperHead.fontSize = 40; Lbl(new Rect(x, y, w, 54), Loc.T("궤도일보 — 호외"), paperHead);
                 y += 56; GUI.DrawTexture(new Rect(x, y, w, 4), texInk); y += 20;
-                paperHead.fontSize = 46; Lbl(new Rect(x, y, w, 56), Loc.T("궤도 청소율 100%"), paperHead); y += 70;
+                paperHead.fontSize = 46; Lbl(new Rect(x, y, w, 62), Loc.T("궤도 청소율 100%"), paperHead); y += 70;
                 Lbl(new Rect(x, y, w, 90), Loc.T("지구 둘레에 쓰레기가 하나도 없다. 주식회사 궤도 청소부 (") + M.company + Loc.T("대)가 청소선 할부를 끝까지 갚고, 마지막 출동에서 궤도를 전부 치웠다. 케슬러 발사는 이번 분기 발사 계획이 없다고 밝혔다."), paperBody); y += 100;
-                if (M.scoops >= 6) { paperHead.fontSize = 24; Lbl(new Rect(x, y, w, 60), Loc.T("케슬러 그룹, 궤도 사업 전면 철수"), paperHead); y += 50; }
+                if (M.scoops >= 6) { paperHead.fontSize = 24; string kx = Loc.T("케슬러 그룹, 궤도 사업 전면 철수"); float kh = paperHead.CalcHeight(new GUIContent(kx), w) + 6; Lbl(new Rect(x, y, w, kh), kx, paperHead); y += kh; }   // 10-10 영어는 두 줄 — 높이 60 이면 y 꼬리가 잘렸다
                 else Lbl(new Rect(x, y, w, 20), Loc.T("(특종 ") + M.scoops + Loc.T(" / 6 — 블랙박스를 더 모으면 한 줄이 더 붙는다)"), paperSmall);
                 if (Bt(new Rect(pr.center.x - 100, pr.yMax - 70, 200, 44), Loc.T("다음"), bigBtn)) { endStage = 2; creditT = 0; }
                 return;
@@ -191,9 +191,9 @@ namespace SalvageRun.Orbit
             }
             Lbl(new Rect(cx, 470, cw, 20), Loc.T("<color=#f2c14e>오늘도 궤도는 깨끗합니다.</color>"), center);
             // ∞ 무한 궤도 · ★ 새 회사 (09-24 사장님 12 · 26번)
-            if (Bt(new Rect(cx - 10, 500, 220, 44), Loc.T("<color=#d8ccff>무한 궤도로 ▸</color>"), bigBtn)) { sim.EnterEndless(); flow = 2; OrbitSfx.Play("launch", 0.8f); }
-            if (Bt(new Rect(cx + 220, 500, 200, 44), Loc.T("새 회사로 · ★") + M.legend, bigBtn)) { game.NewGame(true); }
-            if (Bt(new Rect(cx + 430, 506, 180, 32), Loc.T("<size=12>기록까지 모두 지우기</size>"), btnC)) { game.WipeAll(); }
+            if (Bt(new Rect(cx - 10, 500, 220, 44), Fit(Loc.T("<color=#d8ccff>무한 궤도로 ▸</color>"), 22, 204, bigBtn, 12), bigBtn)) { sim.EnterEndless(); flow = 2; OrbitSfx.Play("launch", 0.8f); }   // 10-10 영어가 양쪽으로 잘렸다 — 칸에 맞춤
+            if (Bt(new Rect(cx + 220, 500, 200, 44), Fit(Loc.T("새 회사로 · ★") + M.legend, 22, 184, bigBtn, 12), bigBtn)) { game.NewGame(true); }
+            if (Bt(new Rect(cx + 430, 506, 180, 32), Fit(Loc.T("<size=12>기록까지 모두 지우기</size>").Replace("<size=12>", "").Replace("</size>", ""), 12, 168, btnC, 9), btnC)) { game.WipeAll(); }
             Lbl(new Rect(cx, 552, cw, 18), Loc.T("<size=11><color=#8a93a3>★ 전설 경력 ") + M.legend + Loc.T(" — 다음 회사부터 모든 값 +") + (M.legend * 10) + Loc.T("% · 처음 열쇠 +") + M.legend + "</color></size>", center);
         }
     }
