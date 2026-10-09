@@ -229,7 +229,7 @@ namespace SalvageRun.Orbit
                 float pu = game.tallyPulse;
                 Lcd(tr, pu);
                 Lbl(new Rect(tr.x + 8, tr.y, tr.width, 18), Loc.T("<size=10><color=#5fa37d>이번 판</color></size>"), label);
-                Lbl(new Rect(tr.x, tr.y + 14, tr.width - 8, 24), "<size=" + (15 + Mathf.RoundToInt(pu * 3)) + "><b><color=#ffc35a>" + (game.runTally > 0 ? "+" + KNum.Fmt(game.runTally) : "—") + "</color></b></size>", cost);
+                Lbl(new Rect(tr.x, tr.y + 12, tr.width - 8, 28), "<size=" + (15 + Mathf.RoundToInt(pu * 3)) + "><b><color=#ffc35a>" + (game.runTally > 0 ? "+" + KNum.Fmt(game.runTally) : "—") + "</color></b></size>", cost);
             }
             Lbl(new Rect(x, 14, 40, 20), Loc.T("연료"), dim);
             GUI.DrawTexture(new Rect(x + 34, 19, 160, 9), texBar);
