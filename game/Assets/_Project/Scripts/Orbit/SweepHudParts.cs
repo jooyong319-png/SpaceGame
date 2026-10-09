@@ -200,7 +200,7 @@ namespace SalvageRun.Orbit
                 // 지금 것 → 바뀌는 것
                 GUI.color = new Color(0.2f, 0.23f, 0.29f); GUI.DrawTexture(new Rect(r.x + 10, r.y + 112, r.width - 20, 1), white); GUI.color = Color.white;
                 string cmp = key ? Loc.T("<color=#8a9bb3>정비고 ◆ 칸에 사용 · 열쇠 ") + S.keys + (Loc.En ? "" : "개") + "</color>" : cn ? ConsHeldLine(id) : PartCompare(id);   // 10-09 다듬기 P3: 띠 「다음 출동 한 번용」과 같은 말 대신 이미 모아 둔 양
-                Lbl(new Rect(r.x + 10, r.y + 116, r.width - 20, 58), "<size=11>" + cmp + "</size>", small);
+                { string ct = "<size=11>" + cmp + "</size>"; if (small.CalcHeight(new GUIContent(ct), r.width - 20) > 61) ct = "<size=10>" + cmp + "</size>"; Lbl(new Rect(r.x + 10, r.y + 116, r.width - 20, 58), ct, small); }   // 10-10 영어 「Now Attachment Radar is removed…」 넉 줄이면 한 치수 작게
                 double price = sim.ShelfPrice(k); bool can = S.cash >= price;
                 var bb = new Rect(r.x + 10, r.yMax - 40, r.width - 20, 30);
                 string ptxt = KNum.Short(price) + (sale ? Loc.T(" <color=#ffb0a0>(반값)</color>") : "");   // 원래 값은 카드 위 「오늘의 반값」 띠가 말해 준다 — 단추가 좁다

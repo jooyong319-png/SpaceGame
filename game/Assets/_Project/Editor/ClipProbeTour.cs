@@ -65,6 +65,7 @@ namespace SalvageRun.EditorTools
                 acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.TestLotto(0); });
                 acts.Add(g => g.hud.TestLotto(1));
                 acts.Add(g => g.hud.TestLotto(2));
+                foreach (int rk in new[] { 0, 3, 7, -1 }) { int rr = rk; acts.Add(g => g.hud.TestLottoWin(rr, 9)); acts.Add(g => { }); }   // 🎟 10-10 TestLotto 는 돈이 모자라면 안 사져 긁은 · 당첨 장면을 못 봤다
                 acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.loanOpen = true; });
                 acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.newsOpen = true; });
                 acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.TestOpen("front", true); });

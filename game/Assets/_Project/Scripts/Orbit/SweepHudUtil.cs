@@ -26,10 +26,11 @@ namespace SalvageRun.Orbit
             return (c - 0xAC00) % 28 == 0 ? Loc.T("를") : Loc.T("을");
         }
         GUIStyle kwrapSt;
-        string KWrap(string s, int size, float w)
+        string KWrap(string s, int size, float w, GUIStyle measure = null, bool bold = false)   // 10-10 measure — 실제 그리는 꼴(신문 글꼴 · 굵게)로 재야 줄 끝에서 또 쪼개지지 않는다
         {
             if (string.IsNullOrEmpty(s) || s.IndexOf('<') >= 0 || w < 20) return s;
             if (kwrapSt == null) kwrapSt = new GUIStyle(label) { wordWrap = false, richText = false };
+            kwrapSt.font = (measure ?? label).font; kwrapSt.fontStyle = bold ? FontStyle.Bold : FontStyle.Normal;
             kwrapSt.fontSize = size;
             var sb = new System.Text.StringBuilder();
             foreach (var para in s.Split('\n'))

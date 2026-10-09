@@ -89,7 +89,7 @@ namespace SalvageRun.Orbit
                 float sc = reduceMotion ? 1 : Mathf.Lerp(2.4f, 1f, Mathf.Clamp01(be / 0.35f));
                 GUI.color = new Color(0.1f, 0.03f, 0.1f, 0.8f * a); GUI.DrawTexture(new Rect(c.x - 260, c.y - 80, 520, 150), white); Frame(new Rect(c.x - 260, c.y - 80, 520, 150), new Color(1f, 0.87f, 0.58f, a), 2);   // 글자가 빛줄기 · 표에 묻히지 않게
                 GUI.color = new Color(1, 1, 1, a);
-                Lbl(new Rect(c.x - 300, c.y - 70, 600, 100), "<size=" + Mathf.RoundToInt(88 * sc) + "><b><color=#ffdf95>" + SweepSim.RankName(scRank + 1) + "!</color></b></size>", center);
+                Lbl(new Rect(c.x - 300 * sc, c.y - 20 - 55 * sc, 600 * sc, 110 * sc), "<size=" + Mathf.RoundToInt(88 * sc) + "><b><color=#ffdf95>" + SweepSim.RankName(scRank + 1) + "!</color></b></size>", center);   // 10-10 튀어나올 때 글자만 2.4배로 커지고 칸은 그대로라 넘쳤다
                 if (sim.ScratchText != null || scBannerTxt != null) Lbl(new Rect(c.x - 300, c.y + 30, 600, 30), "<size=20>" + scBannerTxt + "</size>", center);
             }
             GUI.color = Color.white;
@@ -109,7 +109,11 @@ namespace SalvageRun.Orbit
             Lbl(new Rect(card.x + 14, card.y + 6, 300, 26), Loc.T("<size=17><b><color=#3a0f33>궤도 즉석 복권</color></b></size>"), label);
             Lbl(new Rect(card.x, card.y + 9, card.width - 14, 20), Loc.T("<size=11><color=#6a2a5c>같은 그림 3개 = 당첨</color></size>"), cost);
             string band = scGrid == null ? Loc.T("한 장 사서 긁어 보세요") : scDone ? (scRank >= 0 ? sim.ScratchText ?? scBannerTxt : Loc.T("꽝 — 다음 장은 출동 전까지 값이 오름")) : Loc.T("누른 채 문질러 긁기");
-            Lbl(new Rect(card.x + 8, card.yMax - 30, card.width - 16, 26), Fit("<color=#5a2050>" + (scDone && scRank >= 0 ? scBannerTxt : band) + "</color>", 12, card.width - 16, center, 9), center);
+            {   // 10-10 영어 당첨 문구는 가장 작게 줄여도 한 줄에 안 들어가 앞뒤가 잘렸다(「.st — Gold Vault…」) — 안 들어가면 두 줄로
+                string bi = "<color=#5a2050>" + (scDone && scRank >= 0 ? scBannerTxt : band) + "</color>", bt = Fit(bi, 12, card.width - 16, center, 10);
+                if (center.CalcSize(new GUIContent(bt)).x <= card.width - 16) Lbl(new Rect(card.x + 8, card.yMax - 30, card.width - 16, 26), bt, center);
+                else { var bw = new GUIStyle(center) { wordWrap = true }; Lbl(new Rect(card.x + 8, card.yMax - 31, card.width - 16, 28), "<size=10>" + bi + "</size>", bw); }
+            }
             float gap = 10, gx = card.x + 18, gy = card.y + 38, cw = (464 - gap * 2) / 3, ch = (290 - gap * 2) / 3;
             int nRev = 0, stars = 0; var revCnt = new int[SweepSim.ScratchSym.Length]; var rev = new bool[ScCells];
             for (int c = 0; c < ScCells && scGrid != null; c++)
@@ -216,7 +220,8 @@ namespace SalvageRun.Orbit
             {
                 float k = Mathf.Clamp01((Time.unscaledTime - scDoneT) / 0.25f);
                 string msg = scRank < 0 ? (scBannerTxt != null ? "<color=#9ff0bf>" + scBannerTxt + "</color>" : Loc.T("<color=#8a93a3>꽝</color>")) : "<color=#ffdf95>" + scBannerTxt + "</color>";   // ↺ 다시 긁기 문구
-                Lbl(new Rect(r.x + 250, r.yMax - 52, 280, 36), Fit(msg, scRank < 0 ? 20 : Mathf.RoundToInt(Mathf.Lerp(24, 16, k)), 280, center, 9), center);   // 오른쪽 표값 안내와 안 겹치게
+                float mw = Mathf.Min(280, r.xMax - 360 - 10 - (r.x + 250));   // 10-10 오른쪽 표값 안내가 280 보다 앞에서 시작해 당첨 문구와 겹쳤다
+                Lbl(new Rect(r.x + 250, r.yMax - 52, mw, 36), Fit(msg, scRank < 0 ? 20 : Mathf.RoundToInt(Mathf.Lerp(24, 16, k)), mw, center, 9), center);   // 오른쪽 표값 안내와 안 겹치게
             }
             string pr = sim.ScratchLeft > 0 ? Loc.T("공짜 표 ") + sim.ScratchLeft + Loc.T("장") : Loc.T("이번 장 ") + KNum.Fmt(sim.ScratchPrice) + Loc.T(" · 다음 장 ") + KNum.Fmt(sim.ScratchNextPrice);
             Lbl(new Rect(r.xMax - 360, r.yMax - 50, 240, 36), "<size=11><color=#9a8ca6>" + pr + Loc.T("\n출동하면 표값 원래대로") + "</color></size>", small);

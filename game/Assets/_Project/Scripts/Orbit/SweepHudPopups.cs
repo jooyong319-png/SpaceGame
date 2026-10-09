@@ -73,7 +73,7 @@ namespace SalvageRun.Orbit
 
         // ★ 1면 조작 — 조종실 창 위에 신문 두 장. 고른 기사가 증권 속보로 나간다
         bool frontOpen;
-        public void TestOpen(string w, bool v) { if (w == "front") frontOpen = v; else if (w == "bank") bankruptArmed = v; else if (w == "glass") { glassOpen = v; glassT = v ? 5f : 0; } }   // 에디터 시험용 — 비공개 창 열기
+        public void TestOpen(string w, bool v) { if (w == "front") { frontOpen = v; if (v && (sim.S.front1 < 0 || sim.S.front2 < 0)) { sim.S.front1 = 0; sim.S.front2 = 1; } } else if (w == "bank") bankruptArmed = v; else if (w == "glass") { glassOpen = v; glassT = v ? 5f : 0; } }   // 에디터 시험용 — 비공개 창 열기
         void FrontPick()
         {
             var S = sim.S;
@@ -98,13 +98,13 @@ namespace SalvageRun.Orbit
                 GUI.color = ov ? new Color(0.98f, 0.95f, 0.88f) : new Color(0.93f, 0.9f, 0.83f); GUI.DrawTexture(r, white);
                 GUI.color = new Color(0.1f, 0.1f, 0.1f); GUI.DrawTexture(new Rect(r.x + 8, r.y + 24, r.width - 16, 2), white); GUI.color = Color.white;
                 paperSmall.fontSize = 10; Lbl(new Rect(r.x + 8, r.y + 3, r.width - 16, 20), Loc.T("궤도일보 1면"), paperSmall);
-                paperBody.fontSize = 13; Lbl(new Rect(r.x + 8, r.y + 30, r.width - 16, 40), "<b>" + nd.head.Replace(Loc.T("[소문] "), "") + "</b>", paperBody);
+                paperBody.fontSize = 13; Lbl(new Rect(r.x + 8, r.y + 30, r.width - 16, 48), "<b>" + KWrap(nd.head.Replace(Loc.T("[소문] "), ""), 13, r.width - 20, paperBody, true) + "</b>", paperBody);   // 10-10 낱말 가운데서 줄이 바뀌었다(「제 / 련」)
                 string eff = (nd.up != null ? "<color=#b3261e>▲ " + SecName(new NewsDef { up = nd.up }) + "</color>  " : "") + (nd.down != null ? "<color=#1f4fb3>▼ " + SecName(new NewsDef { down = nd.down }) + "</color>" : "");
                 paperBody.fontSize = 11; Lbl(new Rect(r.x + 8, r.y + 78, r.width - 16, 40), eff, paperBody);
                 paperBody.fontSize = 14;
                 if (Bt(r, GUIContent.none, GUIStyle.none)) { sim.PickFront(k); frontOpen = false; OrbitSfx.Play("buy", 0.8f); BuyFx(r.center, new Color(1f, 0.36f, 0.81f), true, Loc.T("1면 확정!")); }
             }
-            if (Bt(new Rect(w.xMax - 30, w.y + 4, 26, 22), "<size=13>✕</size>", btnOff)) frontOpen = false;   // 나중에
+            if (Bt(new Rect(w.xMax - 34, w.y + 4, 30, 22), "<size=13>✕</size>", btnOff)) frontOpen = false;   // 나중에
         }
     }
 }
