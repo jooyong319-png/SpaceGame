@@ -11,7 +11,10 @@
 
 보고 페이지: https://claude.ai/artifact/1w7KvhJf63AmpnypEhXPdk
 - 갱신 방법: scratchpad/polish/entries.json 끝에 한 줄 추가(id · title · kind ok|mk|no · commit · desc · imgs) → 그림은 scratchpad/polish/ 에 저장 → python build.py → Artifact 를 url 위 주소로 다시 올림(files 에 새 그림만 추가)
-- 캡처 요령: 스크립트 안에서 상태를 바꾼 뒤 40프레임 이상 기다렸다 찍기(같은 프레임에 찍으면 이전 화면) · 결산은 h.OnRunEnd() 후 flow=1 · 가게는 lobby=false · flow=5
+- 캡처 요령: 스크립트 안에서 상태를 바꾼 뒤 40프레임 이상 기다렸다 찍기(같은 프레임에 찍으면 이전 화면) · 결산은 h.OnRunEnd() 후 flow=1 · 가게는 lobby=false · flow=5 · 첫 방문 대사는 M.flags 에 "dlg:shop" 넣어 끔
+- 찍기 요령 2: 찍는 프레임 앞뒤 수십 프레임 동안 상태를 계속 고정(매 프레임 다시 대입)해야 다음 상태가 섞이지 않음
+- 번역 파일은 줄 끝 공백을 지운다 → 키 · 값 끝에 공백 두지 말고 코드에서 " " 를 붙일 것 · 파이썬 heredoc 으로 
+ 넣지 말 것(진짜 줄바꿈이 됨)
 
 ## 할 것
 - [x] P1. 설정 창 — 「창 크기」 아래 빈 줄이 길고 「설명 다시 보기」 · 「로비로 나가기」 높이 어긋남
