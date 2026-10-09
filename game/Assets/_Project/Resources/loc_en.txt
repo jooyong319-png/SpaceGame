@@ -1795,3 +1795,5 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 # 10-09 다듬기 P3
 <color=#8a9bb3>칸에 장착하지 않음\n여러 개 구매하면 합산</color>	<color=#8a9bb3>No slot needed\nBuying more stacks</color>
 <color=#8a9bb3>더 구매하면 합산</color>\n<color=#9ff0bf>모아 둔 것	<color=#8a9bb3>Buying more stacks</color>\n<color=#9ff0bf>Stocked
+<size=14>빚 상환으로 떼인 것</size>	<size=14>Taken for debt</size>
+<color=#8a93a3>총 피해</color>	<color=#8a93a3>Total</color>

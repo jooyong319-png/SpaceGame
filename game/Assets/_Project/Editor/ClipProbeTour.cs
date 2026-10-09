@@ -94,6 +94,17 @@ namespace SalvageRun.EditorTools
                 foreach (int fl in new[] { 2, 4, 3, 5 }) { int ff = fl; acts.Add(g => { Close(g); g.hud.flow = ff; }); acts.Add(g => { }); }
                 acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.loanOpen = true; });
                 acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.TestLotto(0); });
+                // 🧾 10-09 많이 부순 판의 결산 — 종류별 아이콘 줄 · 피해 목록 13종 · 빚 상환 줄 (사장님 「자원을 많이 먹으면 글이 넘친다」)
+                acts.Add(g =>
+                {
+                    Close(g); var R = g.sim.R;
+                    R.cChip = 123456; R.cSat = 23456; R.cFuel = 3456; R.cVault = 456; R.cTank = 5678; R.cBig = 789;
+                    R.broke = R.cChip + R.cSat + R.cFuel + R.cVault + R.cTank + R.cBig; R.chainBest = 12345;
+                    R.earnClaw = 9.87e11; R.earnDrone = 1.2e11; R.earnBlast = 3.4e11; R.bonus = 5e10; R.interest = 2e9; R.cut = 7.6e10;
+                    for (int i = 0; i < R.dmgBy.Length; i++) R.dmgBy[i] = 1e12 / (i + 1);
+                    g.sim.S.overdue = false; g.hud.OnRunEnd();
+                });
+                for (int q = 0; q < 40; q++) acts.Add(g => { g.hud.flow = 1; });
                 acts.Add(g => { Close(g); g.sim.S.overdue = false; g.hud.flow = 2; });
             }
         }

@@ -34,6 +34,7 @@ namespace SalvageRun.Orbit
                 dmgItems.Add((nm, v, c));
             }
             dmgItems.Sort((a, b) => b.v.CompareTo(a.v));
+            while (dmgItems.Count > 9) { etc += dmgItems[dmgItems.Count - 1].v; dmgItems.RemoveAt(dmgItems.Count - 1); }   // 10-09 다듬기: 13줄이면 칸이 12px 로 눌려 겹쳤다 — 위 9개 + 기타 (두 칸 × 5줄)
             if (etc > 0) dmgItems.Add((Loc.T("기타"), etc, DmgEtc));
 
             // 도넛 — 결과가 열리며 한 바퀴 차오른다
@@ -41,7 +42,7 @@ namespace SalvageRun.Orbit
             float k = Mathf.Clamp01(tally);
             if (Event.current.type == EventType.Repaint && (donutTex == null || Mathf.Abs(k - donutK) > 0.01f)) { donutK = k; BuildDonut(tot, k); }
             if (donutTex != null) GUI.DrawTexture(dr, donutTex);
-            Lbl(new Rect(dr.x, dr.center.y - 18, dr.width, 18), Loc.T("<size=11><color=#8a93a3>총 피해</color></size>"), center);
+            Lbl(new Rect(dr.x, dr.center.y - 18, dr.width, 18), Fit(Loc.T("<color=#8a93a3>총 피해</color>"), 11, dr.width - 30, center, 8), center);   // 10-09 다듬기: 영어 「Total damage」가 고리 밖으로 나갔다 — 구멍 폭에 맞춤
             Lbl(new Rect(dr.x - 6, dr.center.y - 2, dr.width + 12, 20), "<size=11><color=#ffdf95>" + KNum.Short(tot * k) + "</color></size>", center);
 
             // 목록 — 두 줄로 (칸마다 이름 · 피해 · %)
@@ -54,8 +55,10 @@ namespace SalvageRun.Orbit
                 float x = lx + col * cw, y = ly + row * rh;
                 GUI.color = it.c; GUI.DrawTexture(new Rect(x, y + 5, 9, 9), white); GUI.color = Color.white;
                 string pc = (it.v / tot * 100).ToString(it.v / tot < 0.1 ? "0.0" : "0") + "%";
-                Lbl(new Rect(x + 13, y - 1, cw - 13, 20), "<size=11>" + (i == 0 ? "<color=#ffdf95>" + it.n + " ★</color>" : "<color=#c8d0dc>" + it.n + "</color>") + "</size>", label);
-                Lbl(new Rect(x + 13, y - 1, cw - 16, 20), "<size=11><color=#6f7a8c>" + KNum.Short(it.v) + "</color> <color=#e7ecf8>" + pc + "</color></size>", cost);
+                string val = "<size=11><color=#6f7a8c>" + KNum.Short(it.v) + "</color> <color=#e7ecf8>" + pc + "</color></size>";
+                float vw = cost.CalcSize(new GUIContent(val)).x;   // 10-09 다듬기: 영어 이름이 길면 숫자와 붙었다 (Blast·Chain90.9B) — 이름은 숫자 앞까지만
+                Lbl(new Rect(x + 13, y - 1, cw - 19 - vw, 20), Fit(i == 0 ? "<color=#ffdf95>" + it.n + " ★</color>" : "<color=#c8d0dc>" + it.n + "</color>", 11, cw - 19 - vw, label, 8), label);
+                Lbl(new Rect(x + 13, y - 1, cw - 16, 20), val, cost);
             }
         }
 

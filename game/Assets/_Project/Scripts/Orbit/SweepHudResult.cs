@@ -38,7 +38,11 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0.14f, 0.12f, 0.08f, 0.95f); GUI.DrawTexture(money, white); GUI.color = Color.white;
             Frame(money, SweepGame.Amber * new Color(1, 1, 1, 0.6f), 1.5f);
             big.fontSize = 22;   // 도트 글꼴 11의 배수 (정돈 5)
-            Lbl(new Rect(money.x + 12, money.y + 6, money.width - 24, 34), Loc.T("<size=13><color=#8a9bb3>돈</color></size>  ") + "<color=#ffdf95>" + KNum.Fmt(endCash - gained * (1 - tally)) + "</color>", MoneyStyle());   // 10-08 시안 1: 무엇의 숫자인지
+            {   // 10-08 시안 1: 무엇의 숫자인지 · 10-09 다듬기: 「-5113억 4567만」처럼 길면 칸을 넘었다 — 숫자만 칸에 맞춰 줄인다
+                string ml = Loc.T("<size=13><color=#8a9bb3>돈</color></size>  ");
+                float mlw = MoneyStyle().CalcSize(new GUIContent(ml)).x;
+                Lbl(new Rect(money.x + 12, money.y + 6, money.width - 24, 34), ml + Fit("<color=#ffdf95>" + KNum.Fmt(endCash - gained * (1 - tally)) + "</color>", 22, money.width - 28 - mlw, MoneyStyle(), 12), MoneyStyle());
+            }
             big.fontSize = 20;
 
             // 제목
@@ -59,6 +63,10 @@ namespace SalvageRun.Orbit
             string CntTxt(int c, bool shortF) => shortF && c >= 10000 ? (Loc.En ? KNum.Short(c) : (c / 10000f).ToString("0.#") + "만") : c.ToString();
             float need = 0; for (int i = 0; i < counts.Length; i++) if (counts[i] > 0) need += 34 + label.CalcSize(new GUIContent(counts[i].ToString())).x;
             bool shortC = need > L.width - 40;
+            // 10-09 다듬기: 여섯 종을 다 부수면 줄여 써도 마지막 숫자가 판 밖으로 나갔다 — 넘치면 칸 사이를 좁힌다
+            float body = 0; int nShown = 0;
+            for (int i = 0; i < counts.Length; i++) if (counts[i] > 0) { body += 20 + label.CalcSize(new GUIContent(CntTxt(counts[i], shortC))).x; nShown++; }
+            float gapX = nShown > 1 ? Mathf.Clamp((L.width - 44 - body) / (nShown - 1), 4, 14) : 14;
             for (int i = 0; i < counts.Length; i++)
             {
                 if (counts[i] <= 0) continue;
@@ -66,7 +74,7 @@ namespace SalvageRun.Orbit
                 float tw = label.CalcSize(new GUIContent(CntTxt(counts[i], shortC))).x;
                 GUI.color = SweepGame.JunkColor(kinds[i]); GUI.DrawTexture(new Rect(ix, y + 4, 16, 16), kinds[i] == SweepSim.Chip || kinds[i] == SweepSim.Rocket ? white : texDisc); GUI.color = Color.white;
                 Lbl(new Rect(ix + 20, y + 2, tw + 4, 20), ct, label);
-                ix += 34 + tw;
+                ix += 20 + tw + gapX;
             }
             if (need > 0) y += 32;   // 10-09 다듬기 P2: 부순 것이 없으면 빈 아이콘 줄 자리를 남기지 않는다
             Line2(Loc.T("최대 연쇄"), R.chainBest + (R.chainBest > prevBestChain && R.chainBest >= 10 ? Loc.T(" <color=#ff8a7a>새 기록!</color>") : ""));
@@ -76,6 +84,7 @@ namespace SalvageRun.Orbit
             var totalPos = new Vector2(L.xMax - 60, y + 14);
             Lbl(new Rect(L.x + 18, y, L.width - 36, 32), Loc.T("<size=24>합계</size>"), label);
             Lbl(new Rect(L.x + 18, y - 2, L.width - 36, 38), "<size=26><color=#6fcf97>+" + KNum.Fmt(gained * tally) + "</color></size>", cost);
+            float ly2 = y + 42;   // 합계 아래 줄 — 주식 · 빚 상환이 차례로
             if (sim.Mk != null && runStockSh != null && runStockSh.Length == sim.Mk.M.st.Count)
             {   // 📈 내 주식 이번 판 — 출발 때 들고 있던 주식이 얼마나 움직였나 (09-24 사장님 4번)
                 double v0 = 0, v1 = 0; for (int i = 0; i < runStockSh.Length; i++) { v0 += runStockSh[i] * runStockPx[i]; v1 += runStockSh[i] * sim.Mk.M.st[i].price; }
@@ -84,8 +93,12 @@ namespace SalvageRun.Orbit
                     double d = v1 - v0; string hx = d >= 0 ? "#ff5c5c" : "#5494ff";
                     Lbl(new Rect(L.x + 18, y + 42, L.width - 36, 24), Loc.T("<size=16>내 주식 이번 판</size>"), label);
                     Lbl(new Rect(L.x + 18, y + 42, L.width - 36, 24), "<size=16><color=" + hx + ">" + (d >= 0 ? "+" : "") + KNum.Fmt(d) + "  (" + (d >= 0 ? "+" : "") + (d / v0 * 100).ToString("0.0") + "%)</color></size>", cost);
+                    ly2 += 28;
                 }
             }
+            // 10-09 다듬기: 빚 상환 줄은 오른쪽 피해 판 밑에 걸려 아래 판에 가려졌다 — 돈 이야기라 합계 아래로
+            if (R.cut > 0) Lbl(new Rect(L.x + 18, ly2, L.width - 36, 22), Loc.T("<size=14>빚 상환으로 떼인 것</size>"), label);
+            if (R.cut > 0) Lbl(new Rect(L.x + 18, ly2, L.width - 36, 22), "<size=14><color=#ee7766>-" + KNum.Fmt(R.cut) + "</color></size>", cost);
 
             // 합계 → 돈 칸으로 날아가는 「+」
             if (tally < 1)
@@ -100,14 +113,13 @@ namespace SalvageRun.Orbit
                 float e = f.t * f.t * (3 - 2 * f.t);
                 var p = Vector2.Lerp(f.a, f.b, e) + new Vector2(0, -Mathf.Sin(e * Mathf.PI) * 60);
                 pop.fontSize = 13; pop.normal.textColor = new Color(1f, 0.93f, 0.7f, 0.85f * (1 - f.t * 0.7f));
-                Lbl(new Rect(p.x - 40, p.y - 10, 80, 20), f.txt, pop);
+                Lbl(new Rect(p.x - 80, p.y - 10, 160, 20), f.txt, pop);   // 10-09: 큰 금액 「+499억 6666만」이 80 칸을 넘었다
             }
 
             // 오른쪽 위 — 📊 무기별 피해 원그래프 (09-27 사장님 「출동 결과에서 어떤 무기들이 데미지 넣었는지 원그래프 · 블랙홀 기타 다 포함 · 잔잔바리는 기타로」)
             var RT = new Rect(cx + 10, 140, 410, 120);
             Panel2(RT, Loc.T("이번 판 피해 — 곳별"));
             DmgChart(RT, R, tally);
-            if (R.cut > 0) Lbl(new Rect(RT.x + 16, RT.yMax - 2, RT.width - 32, 18), Loc.T("<size=11><color=#ee7766>빚 상환으로 떼인 것 -") + KNum.Fmt(R.cut) + "</color></size>", label);
 
             // 오른쪽 아래 — 다음 해금 (청구서를 갚으면 열리는 것)
             var RB = new Rect(cx + 10, 270, 410, 120);
