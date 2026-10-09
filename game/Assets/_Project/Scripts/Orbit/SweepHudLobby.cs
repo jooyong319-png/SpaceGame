@@ -48,6 +48,7 @@ namespace SalvageRun.Orbit
             float x = Mathf.Max(48, ox + 40);
             // 이름
             title.fontSize = 58; title.alignment = TextAnchor.UpperLeft;
+            while (Loc.En && title.fontSize > 40 && title.CalcSize(new GUIContent(Loc.T("궤도 청소부"))).x > 320) title.fontSize -= 2;   // 10-09 다듬기: 영어 제목이 길어 지구 궤도 그림을 덮었다
             GUI.color = new Color(1f, 0.76f, 0.3f, 0.25f * a); Lbl(new Rect(x + 2, 96, 520, 80), Loc.T("궤도 청소부"), title);
             GUI.color = new Color(1, 1, 1, a); Lbl(new Rect(x, 94, 520, 80), Loc.T("<color=#ffdf95>궤도 청소부</color>"), title);
             title.alignment = TextAnchor.MiddleCenter; title.fontSize = 34;
@@ -56,13 +57,14 @@ namespace SalvageRun.Orbit
             float y = 240, w = 320, h = 54;
             bool Btn(string main, string sub, bool primary)
             {
-                var r = new Rect(x, y, w, h); y += h + 10;
+                float bh = sub == null ? 40 : h;   // 10-09 다듬기: 설명 줄 없는 단추는 낮게 — 아래 반이 비어 보였다
+                var r = new Rect(x, y, w, bh); y += bh + 10;
                 bool ov = r.Contains(Event.current.mousePosition);
                 GUI.color = new Color(0.04f, 0.055f, 0.08f, 0.9f * a); GUI.DrawTexture(r, white);
                 Frame(r, primary ? new Color(1f, 0.76f, 0.35f, (ov ? 1f : 0.7f) * a) : new Color(0.3f, 0.34f, 0.42f, (ov ? 1f : 0.7f) * a), ov ? 2 : 1);
                 if (ov) { GUI.color = new Color(1f, 0.76f, 0.35f, 0.08f * a); GUI.DrawTexture(r, white); }
                 GUI.color = new Color(1, 1, 1, a);
-                Lbl(new Rect(r.x + 16, r.y + (sub == null ? 11 : 4), r.width - 32, 28), "<size=" + (primary ? 19 : 16) + "><b>" + (primary ? "<color=#ffdf95>" + main + "</color>" : main) + "</b></size>", label);
+                Lbl(new Rect(r.x + 16, r.y + (sub == null ? 6 : 4), r.width - 32, 28), "<size=" + (primary ? 19 : 16) + "><b>" + (primary ? "<color=#ffdf95>" + main + "</color>" : main) + "</b></size>", label);
                 if (sub != null) Lbl(new Rect(r.x + 16, r.y + 30, r.width - 24, 18), "<color=#8a93a3>" + Fit(sub, 11, r.width - 26, label) + "</color>", label);
                 return Bt(r, GUIContent.none, GUIStyle.none);
             }
