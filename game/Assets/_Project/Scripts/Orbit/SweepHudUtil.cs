@@ -112,6 +112,21 @@ namespace SalvageRun.Orbit
         static bool Bt(Rect r, string s) => Bt(r, s, GUI.skin.button);
         static bool Bt(Rect r, string s, GUIStyle st) { if (Probe && st != GUIStyle.none) ProbeFit(r, s, st); return GUI.Button(r, s, st); }
         static bool Bt(Rect r, GUIContent c, GUIStyle st) => GUI.Button(r, c, st);
+        /// <summary>🔍 10-10 글이 바깥 상자(이름표 · 띠)를 벗어나는지 — 칸은 넉넉해도 상자 밖으로 나가 잘려 보이던 관문 이름표를 못 잡았다</summary>
+        static void ProbeIn(Rect box, Rect r, string s, GUIStyle st)
+        {
+            if (!Probe || string.IsNullOrEmpty(s) || Event.current == null || Event.current.type != EventType.Repaint) return;
+            var sz = st.CalcSize(new GUIContent(s)); string why = null;
+            float x0 = st.alignment == TextAnchor.UpperCenter || st.alignment == TextAnchor.MiddleCenter || st.alignment == TextAnchor.LowerCenter ? r.center.x - sz.x / 2 : st.alignment == TextAnchor.UpperRight || st.alignment == TextAnchor.MiddleRight || st.alignment == TextAnchor.LowerRight ? r.xMax - sz.x : r.x;
+            if (x0 < box.x - 2 || x0 + sz.x > box.xMax + 2) why = "box w " + box.width.ToString("0") + "→" + (sz.x + (x0 - box.x)).ToString("0");
+            else if (r.y + Mathf.Min(sz.y, r.height) > box.yMax + 2) why = "box h " + box.height.ToString("0") + "→" + (r.y + Mathf.Min(sz.y, r.height) - box.y).ToString("0");
+            if (why == null) return;
+            var f = new System.Diagnostics.StackTrace(true).GetFrame(1);
+            string at = f != null ? System.IO.Path.GetFileName(f.GetFileName() ?? "?") + ":" + f.GetFileLineNumber() : "?";
+            string plain = System.Text.RegularExpressions.Regex.Replace(s, "<[^>]+>", "").Replace('\n', ' ');
+            if (plain.Length > 50) plain = plain.Substring(0, 50);
+            if (probeSeen.Add(at + "|" + plain)) ProbeHits.Add(at + "  [" + why + "]  " + plain);
+        }
         static void ProbeFit(Rect r, string s, GUIStyle st)
         {
             if (string.IsNullOrEmpty(s) || Event.current == null || Event.current.type != EventType.Repaint) return;

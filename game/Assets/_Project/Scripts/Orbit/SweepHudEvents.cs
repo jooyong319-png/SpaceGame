@@ -218,8 +218,10 @@ namespace SalvageRun.Orbit
                         bool blink = Mathf.Sin(Time.unscaledTime * 14) > -0.4f;
                         string nm = "<size=30><b><color=#" + ColorUtility.ToHtmlStringRGB(blink ? c : Color.Lerp(c, Color.white, 0.4f)) + ">!! " + evWarnName + "</color></b></size>";
                         center.fontSize = 13; float nw = center.CalcSize(new GUIContent(nm)).x;
-                        Lbl(new Rect(vw / 2 - 360, band.y + 2, 720, 36), nm, center);
-                        Lbl(new Rect(vw / 2 - 360, band.y + 36, 720, 22), Fit("<color=#f5efe5>" + evWarnHint + "</color>", 14, 700, center, 10), center);
+                        Lbl(new Rect(vw / 2 - 360, band.y, 720, 40), nm, center);
+                        string hn = Fit("<color=#f5efe5>" + evWarnHint + "</color>", 14, 700, center, 10);
+                        Lbl(new Rect(vw / 2 - 360, band.y + 38, 720, 22), hn, center);
+                        if (open >= 1) { var bx = new Rect(vw / 2 - 340, band.y, 680, band.height - 3); ProbeIn(bx, new Rect(vw / 2 - 360, band.y, 720, 40), nm, center); ProbeIn(bx, new Rect(vw / 2 - 360, band.y + 38, 720, 22), hn, center); }   // 🔍 띠 가운데 680 (양옆 줄무늬 · 카운트다운 자리)
                         // 카운트다운 2 → 1
                         int cd = Mathf.Max(1, Mathf.CeilToInt(evWarnT - 0.2f));
                         var cr = new Rect(vw / 2 + Mathf.Min(340, nw / 2 + 18), band.y + 6, 34, 34);

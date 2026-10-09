@@ -202,7 +202,7 @@ namespace SalvageRun.Orbit
                 if (gj != null)
                 {
                     Vector3 gsp = game.WorldToScreen(game.PxToWorld(gj.x, gj.y));    // 🛰 관문 바로 위에 따라다닌다 (09-26 — 위 가운데 막대가 화면을 가렸다)
-                    var gr = new Rect(Mathf.Clamp(gsp.x / scale - 110, 8, vw - 228), Mathf.Clamp((Screen.height - gsp.y) / scale - oy - 84, 60, RefH - 120), 220, sim.GateReady ? 30 : 42);   // 10-10 방어막이면 두 줄 — 30 이면 아랫줄이 잘렸다
+                    var gr = new Rect(Mathf.Clamp(gsp.x / scale - 110, 8, vw - 228), Mathf.Clamp((Screen.height - gsp.y) / scale - oy - 84, evWarnT > 0 ? 116 : 60, RefH - 120), 220, sim.GateReady ? 30 : 42);   // 10-10 방어막이면 두 줄 — 30 이면 아랫줄이 잘렸다 · 사건 예고 띠가 떠 있으면 띠 아래로 (띠 제목을 덮었다)
                     GUI.color = new Color(0.05f, 0.04f, 0.04f, 0.85f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.6f, 0.4f, 0.8f), 1);
                     if (!sim.GateReady)
                     {   // 🛡 방어막 — 관문 둘레에 푸른 막 · 막대 대신 자물쇠 (09-27)
@@ -211,14 +211,16 @@ namespace SalvageRun.Orbit
                         GUI.color = new Color(0.6f, 0.9f, 1f, 0.55f + 0.25f * sp); GUI.DrawTexture(new Rect(gx - 80, gy - 80, 160, 160), texRing);
                         GUI.color = new Color(0.05f, 0.04f, 0.04f, 0.92f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.6f, 0.4f, 0.8f), 1);   // 10-10 고리가 이름표를 덮어 글자가 흐렸다 — 이름표를 위로
                         GUI.color = Color.white;
-                        Lbl(new Rect(gr.x + 8, gr.y + 2, gr.width - 16, 20), Fit("<color=#ffb36b>🛰 " + sim.GateName + Loc.T("</color> <color=#9fdcff>· 방어막</color>"), 11, gr.width - 16, label, 8), label);
-                        Lbl(new Rect(gr.x + 8, gr.y + 20, gr.width - 16, 20), Fit(Loc.T("<size=10><color=#9fdcff>청구서 ").Replace("<size=10>", "") + sim.GateBill + Loc.T("장 납부 시 해제</color></size>").Replace("</size>", ""), 10, gr.width - 16, label, 8), label);
+                        string g1 = Fit("<color=#ffb36b>🛰 " + sim.GateName + Loc.T("</color> <color=#9fdcff>· 방어막</color>"), 11, gr.width - 16, label, 8), g2 = Fit(Loc.T("<size=10><color=#9fdcff>청구서 ").Replace("<size=10>", "") + sim.GateBill + Loc.T("장 납부 시 해제</color></size>").Replace("</size>", ""), 10, gr.width - 16, label, 8);
+                        Lbl(new Rect(gr.x + 8, gr.y + 2, gr.width - 16, 20), g1, label); ProbeIn(gr, new Rect(gr.x + 8, gr.y + 2, gr.width - 16, 20), g1, label);
+                        Lbl(new Rect(gr.x + 8, gr.y + 20, gr.width - 16, 20), g2, label); ProbeIn(gr, new Rect(gr.x + 8, gr.y + 20, gr.width - 16, 20), g2, label);
                         goto gateDone;
                     }
                     float gk = Mathf.Clamp01((float)gj.hp / Mathf.Max(1, gj.max));
                     GUI.color = new Color(0.2f, 0.12f, 0.1f); GUI.DrawTexture(new Rect(gr.x + 6, gr.yMax - 9, gr.width - 12, 5), white);
                     GUI.color = new Color(1f, 0.55f, 0.35f); GUI.DrawTexture(new Rect(gr.x + 6, gr.yMax - 9, (gr.width - 12) * gk, 5), white); GUI.color = Color.white;
-                    Lbl(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), "<size=11><color=#ffb36b>🛰 " + sim.GateName + "</color> <color=#8a93a3>→ " + sim.NextName + "</color></size>", label);
+                    string g3 = Fit("<color=#ffb36b>🛰 " + sim.GateName + "</color> <color=#8a93a3>→ " + sim.NextName + "</color>", 11, gr.width - 50, label, 8);   // 10-10 영어 관문 이름이 길어 「%」를 덮었다
+                    Lbl(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), g3, label); ProbeIn(new Rect(gr.x, gr.y, gr.width - 34, gr.height), new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), g3, label);   // 오른쪽 34 는 「100%」 자리
                     Lbl(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), "<size=11>" + Mathf.CeilToInt(gk * 100) + "%</size>", cost);
                     gateDone:;
                 }
@@ -241,7 +243,7 @@ namespace SalvageRun.Orbit
             {
                 Lbl(new Rect(x, 14, 200, 20), Loc.T("블랙홀 <color=#b69cff>자동 ") + (sim.HoleChance * 100).ToString("0.#") + "%</color>" + (R.holding ? Loc.T("  <color=#b69cff>● 열림</color>") : ""), dim);
             }
-            Lbl(new Rect(vw - 264, 14, 196, 20), "<color=#8a93a3>" + SweepSim.Orbits[S.orbit].name + "</color>", cost);   // 회사 이름은 조종실에만 — 행성 이름만 작게
+            { float pr = vw - 16 - SettingsW; Lbl(new Rect(pr - 196, 14, 196, 20), "<color=#8a93a3>" + SweepSim.Orbits[S.orbit].name + "</color>", cost); ProbeIn(new Rect(pr - 196, 0, 196, 40), new Rect(pr - 196, 14, 196, 20), SweepSim.Orbits[S.orbit].name, cost); }   // 10-10 영어 「Settings」 단추가 넓어 「Earth」가 가려졌다   // 회사 이름은 조종실에만 — 행성 이름만 작게
             if (R.holding)
             {
                 float k = Mathf.Clamp01((float)R.packed.Count / Mathf.Max(1, sim.Cap));

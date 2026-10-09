@@ -81,6 +81,24 @@ namespace SalvageRun.EditorTools
                 acts.Add(g => { Close(g); g.hud.flow = 2; g.sim.S.overdue = false; g.hud.Go(); });
                 for (int q = 0; q < 30; q++) acts.Add(g => { if (!g.sim.R.over && g.sim.R.fuel < 8) g.sim.R.fuel = 20; });
                 for (int e = 0; e < SweepSim.EventNames.Length; e++) { int ee = e; acts.Add(g => { if (!g.sim.R.over) { g.sim.R.fuel = 20; g.hud.Banner("⚠ " + SweepSim.EventNames[ee] + " — " + SweepSim.EventHint[ee], ee % 2, 2.2f); } }); }
+                // 🛰 10-10 관문 이름표 — 관문 11개 × 방어막 · 열림 (사장님이 직접 찾은 잘림을 검사가 못 잡았다 → 상자 밖 검사 ProbeIn)
+                for (int z = 0; z < SweepSim.GateNames.Length; z++)
+                    for (int rdy = 0; rdy < 2; rdy++)
+                    {
+                        int zz = z, rr = rdy;
+                        acts.Add(g => { if (g.sim.R.over) return; g.sim.R.fuel = 20; int pl = 0; for (int i = 1; i <= zz; i++) pl |= 1 << SweepSim.OrbitOrder[i]; g.sim.S.planets = pl; g.sim.M.cleanReady = rr == 1; });
+                        acts.Add(g => { });
+                    }
+                acts.Add(g => { g.sim.S.planets = 0; g.sim.M.cleanReady = false; });
+                // 📍 사건 예고 띠 · 발생 표적 이름표 — 띠가 다 펼쳐질 때까지 기다린다
+                for (int e = 0; e < SweepSim.EventNames.Length; e++)
+                {
+                    int ee = e;
+                    acts.Add(g => { if (g.sim.R.over) return; g.sim.R.fuel = 20; g.hud.EventWarn(ee, 480, 200, 60, SweepSim.EventNames[ee] + "\n" + SweepSim.EventHint[ee]); });
+                    for (int q = 0; q < 10; q++) acts.Add(g => { if (!g.sim.R.over) g.sim.R.fuel = 20; });
+                    acts.Add(g => { if (!g.sim.R.over) g.hud.EventGo(ee, 480, 200, 60, SweepSim.EventNames[ee]); });
+                    for (int q = 0; q < 4; q++) acts.Add(g => { if (!g.sim.R.over) g.sim.R.fuel = 20; });
+                }
                 acts.Add(g => { g.sim.R.fuel = 0; });
                 for (int q = 0; q < 40; q++) acts.Add(g => { });            // 결산 화면이 뜨는 동안
                 // 🔢 10-08 극단 상태 — 큰 돈 · 큰 빚 · 납부일 · 마지막 청구서 · 모든 종목 보유 (숫자가 길어질 때 잘림)

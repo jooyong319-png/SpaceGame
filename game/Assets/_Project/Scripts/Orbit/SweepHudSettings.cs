@@ -56,7 +56,7 @@ namespace SalvageRun.Orbit
         {
             if (vol < 0) LoadSettings();
             if (lobby) { if (settingsOpen) SettingsWin(); return; }            // 로비엔 메뉴에 설정이 있다 — 구석 단추는 숨김
-            float sw = Mathf.Max(50, center.CalcSize(new GUIContent("<size=12>" + Loc.T("설정") + "</size>")).x + 12);   // 🌐 영어 Settings 는 넓다
+            float sw = SettingsW;
             var r = new Rect(vw - 8 - sw, 8, sw, 22);
             bool ov = r.Contains(Event.current.mousePosition);
             GUI.color = settingsOpen || ov ? new Color(0.24f, 0.19f, 0.08f, 0.95f) : new Color(0.08f, 0.1f, 0.13f, 0.85f); GUI.DrawTexture(r, white);
@@ -65,6 +65,7 @@ namespace SalvageRun.Orbit
             if (Bt(r, GUIContent.none, GUIStyle.none)) { settingsOpen = !settingsOpen; OrbitSfx.Play("tick", 0.8f); }
             if (settingsOpen) SettingsWin();
         }
+        float SettingsW => Mathf.Max(50, center.CalcSize(new GUIContent("<size=12>" + Loc.T("설정") + "</size>")).x + 12);   // 🌐 영어 Settings 는 넓다 — 출동 위 줄 행성 이름도 이 왼쪽에서 끝난다
         public void TestSettings() => settingsOpen = true;   // 에디터 캡처용
         int roomGo; float roomGoAt;                                         // 🧭 새 방을 사면 그 방으로 (0.5초 뒤)
         void RoomGoTick() { if (roomGoAt > 0 && Time.unscaledTime >= roomGoAt) { roomGoAt = 0; if (sim.R.over && !sim.M.careerOpen) GoFlow(roomGo); } }
