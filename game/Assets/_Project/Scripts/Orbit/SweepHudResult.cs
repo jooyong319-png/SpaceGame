@@ -26,6 +26,19 @@ namespace SalvageRun.Orbit
             if (head2 != null) Lbl(new Rect(r.x + 14, r.y + 10, r.width - 28, 18), head2, head);
         }
 
+        static Texture2D[] resJunk;
+        /// <summary>결산 종류별 줄의 잔해 그림 — 출동 중 그림과 같은 파일 (SweepGameArt.JunkPx). 없으면 null → 예전 색 도형</summary>
+        static Texture2D ResJunkTex(int k)
+        {
+            if (resJunk == null)
+            {
+                string[] n = { "chip_a", "sat", "rocket", "vault", "fuel", "tank", "big" };   // SweepSim.Chip=0 … Big=6
+                resJunk = new Texture2D[n.Length];
+                for (int i = 0; i < n.Length; i++) resJunk[i] = Resources.Load<Texture2D>("junk/junk_" + n[i]);
+            }
+            return k >= 0 && k < resJunk.Length ? resJunk[k] : null;
+        }
+
         void FlowResult()
         {
             var S = sim.S; var R = last;
@@ -45,9 +58,14 @@ namespace SalvageRun.Orbit
             }
             big.fontSize = 20;
 
-            // 제목
-            title.fontSize = 40;
-            Lbl(new Rect(cx - 300, 70, 600, 52), Loc.T("연료 바닥!"), title);
+            // 제목 — 10-09 사장님 「크게」 (시안 B https://claude.ai/artifact/YbzsgzcUyMKJeRJ4jQbgK3): 제목은 조금 작게 위로, 아래 판 · 단추는 통째로 1.2배
+            title.fontSize = 34;
+            Lbl(new Rect(cx - 300, 46, 600, 46), Loc.T("연료 바닥!"), title);
+            float rk = Mathf.Min(1.2f, (vw - 24) / 840f);                  // 판 폭 840 이 화면을 넘지 않게 (4:3 창)
+            var mBase = GUI.matrix;
+            var mBig = mBase * Matrix4x4.TRS(new Vector3(cx, 104, 0), Quaternion.identity, new Vector3(rk, rk, 1)) * Matrix4x4.TRS(new Vector3(-cx, -140, 0), Quaternion.identity, Vector3.one);
+            Vector2 ToBase(Vector2 q) => new Vector2(cx + (q.x - cx) * rk, 104 + (q.y - 140) * rk);
+            GUI.matrix = mBig;
 
             // 왼쪽 — 이번 출동: 부순 것 종류별 · 합계
             var L = new Rect(cx - 420, 140, 410, 250);
@@ -65,16 +83,18 @@ namespace SalvageRun.Orbit
             bool shortC = need > L.width - 40;
             // 10-09 다듬기: 여섯 종을 다 부수면 줄여 써도 마지막 숫자가 판 밖으로 나갔다 — 넘치면 칸 사이를 좁힌다
             float body = 0; int nShown = 0;
-            for (int i = 0; i < counts.Length; i++) if (counts[i] > 0) { body += 20 + label.CalcSize(new GUIContent(CntTxt(counts[i], shortC))).x; nShown++; }
-            float gapX = nShown > 1 ? Mathf.Clamp((L.width - 44 - body) / (nShown - 1), 4, 14) : 14;
+            for (int i = 0; i < counts.Length; i++) if (counts[i] > 0) { body += 26 + label.CalcSize(new GUIContent(CntTxt(counts[i], shortC))).x; nShown++; }
+            float gapX = nShown > 1 ? Mathf.Clamp((L.width - 54 - body) / (nShown - 1), 2, 14) : 14;
             for (int i = 0; i < counts.Length; i++)
             {
                 if (counts[i] <= 0) continue;
                 string ct = CntTxt(Mathf.RoundToInt(counts[i] * tally), shortC);
                 float tw = label.CalcSize(new GUIContent(CntTxt(counts[i], shortC))).x;
-                GUI.color = SweepGame.JunkColor(kinds[i]); GUI.DrawTexture(new Rect(ix, y + 4, 16, 16), kinds[i] == SweepSim.Chip || kinds[i] == SweepSim.Rocket ? white : texDisc); GUI.color = Color.white;
-                Lbl(new Rect(ix + 20, y + 2, tw + 4, 20), ct, label);
-                ix += 20 + tw + gapX;
+                var jt = ResJunkTex(kinds[i]);
+                if (jt != null) GUI.DrawTexture(new Rect(ix - 2, y - 1, 26, 26), jt, ScaleMode.ScaleToFit);   // 실제 잔해 그림 (64칸 그림 · 둘레 여백 포함)
+                else { GUI.color = SweepGame.JunkColor(kinds[i]); GUI.DrawTexture(new Rect(ix, y + 4, 16, 16), kinds[i] == SweepSim.Chip || kinds[i] == SweepSim.Rocket ? white : texDisc); GUI.color = Color.white; }
+                Lbl(new Rect(ix + 26, y + 2, tw + 4, 20), ct, label);
+                ix += 26 + tw + gapX;
             }
             if (need > 0) y += 32;   // 10-09 다듬기 P2: 부순 것이 없으면 빈 아이콘 줄 자리를 남기지 않는다
             Line2(Loc.T("최대 연쇄"), R.chainBest + (R.chainBest > prevBestChain && R.chainBest >= 10 ? Loc.T(" <color=#ff8a7a>새 기록!</color>") : ""));
@@ -104,8 +124,9 @@ namespace SalvageRun.Orbit
             if (tally < 1)
             {
                 flyT -= Time.deltaTime;
-                if (flyT <= 0 && gained > 0) { flyT = 0.1f; flyers.Add(new Flyer { a = totalPos + new Vector2(Random.Range(-20f, 20f), 0), b = new Vector2(money.x + 40, money.center.y), txt = "+" + KNum.Fmt(System.Math.Max(1, System.Math.Round(gained / 30))) }); OrbitSfx.Play("coin", 0.25f, 0.04f, 0.15f); }
+                if (flyT <= 0 && gained > 0) { flyT = 0.1f; flyers.Add(new Flyer { a = ToBase(totalPos) + new Vector2(Random.Range(-20f, 20f), 0), b = new Vector2(money.x + 40, money.center.y), txt = "+" + KNum.Fmt(System.Math.Max(1, System.Math.Round(gained / 30))) }); OrbitSfx.Play("coin", 0.25f, 0.04f, 0.15f); }
             }
+            GUI.matrix = mBase;
             for (int i = flyers.Count - 1; i >= 0; i--)
             {
                 var f = flyers[i]; f.t += Time.deltaTime * 1.6f;
@@ -115,6 +136,7 @@ namespace SalvageRun.Orbit
                 pop.fontSize = 13; pop.normal.textColor = new Color(1f, 0.93f, 0.7f, 0.85f * (1 - f.t * 0.7f));
                 Lbl(new Rect(p.x - 80, p.y - 10, 160, 20), f.txt, pop);   // 10-09: 큰 금액 「+499억 6666만」이 80 칸을 넘었다
             }
+            GUI.matrix = mBig;
 
             // 오른쪽 위 — 📊 무기별 피해 원그래프 (09-27 사장님 「출동 결과에서 어떤 무기들이 데미지 넣었는지 원그래프 · 블랙홀 기타 다 포함 · 잔잔바리는 기타로」)
             var RT = new Rect(cx + 10, 140, 410, 120);
@@ -156,6 +178,7 @@ namespace SalvageRun.Orbit
             BillButton(new Rect(x0 + w + gap, yb, w, 66));
             if (Bt(new Rect(x0 + (w + gap) * 2, yb, w, 66), Loc.T("조종실로 ▸"), bigBtn)) flow = 2;
             Lbl(new Rect(x0 + (w + gap) * 2, yb + 68, w, 16), "<size=10>Space</size>", center);
+            GUI.matrix = mBase;
         }
 
         /// <summary>빨간 청구서 버튼 — 금액 · 기한. 돈이 되면 누르는 즉시 납부</summary>
