@@ -121,7 +121,7 @@ namespace SalvageRun.Orbit
             {
                 var sz = st.CalcSize(c);
                 if (st.clipping == TextClipping.Clip && sz.x > r.width + 3) why = "w " + r.width.ToString("0") + "→" + sz.x.ToString("0");
-                else if (sz.y > r.height + 4) why = "h " + r.height.ToString("0") + "→" + sz.y.ToString("0");
+                else if (sz.y > r.height + 3) why = "h " + r.height.ToString("0") + "→" + sz.y.ToString("0");
             }
             if (why == null) return;
             var f = new System.Diagnostics.StackTrace(true).GetFrame(2);

@@ -178,7 +178,7 @@ namespace SalvageRun.Orbit
             {
                 Lbl(new Rect(x, 14, 80, 20), k, dim); float kw = dim.CalcSize(new GUIContent(k)).x;
                 var s = st ?? big; float w = s.CalcSize(new GUIContent(v)).x;
-                Lbl(new Rect(x + kw + 6, 9, w + 4, 28), v, s); x += kw + w + 24;
+                Lbl(new Rect(x + kw + 6, 7, w + 4, 32), v, s); x += kw + w + 24;
             }
             GUI.color = new Color(0.02f, 0.03f, 0.05f, 0.55f); GUI.DrawTexture(new Rect(0, 0, vw, 40), white); GUI.color = Color.white;   // 위 줄 뒤 옅은 띠 (09-26 정돈 5)
             big.fontSize = 22;                                                         // 도트 글꼴은 11의 배수에서만 또렷하다 — 크기 대신 색으로 번쩍 (정돈 5)

@@ -228,7 +228,7 @@ namespace SalvageRun.Orbit
             GUI.color = open ? new Color(1, 1, 1, fl) : new Color(0.25f, 0.28f, 0.32f, 0.9f * fl); var bs = PlanetArt.Icon(show); GUI.DrawTextureWithTexCoords(big, bs.texture, SprUV(bs));   // 출동 화면과 같은 그림
             if (!open) { GUI.color = new Color(1, 1, 1, fl); Lbl(big, "<size=20><b>?</b></size>", center); }
             GUI.color = new Color(1, 1, 1, fl);
-            Lbl(new Rect(p.x + 6, p.y + 86, p.width - 12, 18), "<size=13><b><color=#ffdf95>" + so.name + "</color></b>" + (open ? "" : Loc.T("  <color=#ffb3a8>다음</color>")) + "</size>", center);
+            Lbl(new Rect(p.x + 6, p.y + 84, p.width - 12, 22), "<size=13><b><color=#ffdf95>" + so.name + "</color></b>" + (open ? "" : Loc.T("  <color=#ffb3a8>다음</color>")) + "</size>", center);
             {   // 🪐 09-30 사장님 「행성 설명 잘림」 — 20글자에서 「…」로 잘랐다. 두 줄까지 접고, 그래도 넘치면 한 치수 작게
                 if (descWrap == null) descWrap = new GUIStyle(center) { wordWrap = true };
                 var dr = new Rect(p.x + 6, p.y + 102, p.width - 12, 27);

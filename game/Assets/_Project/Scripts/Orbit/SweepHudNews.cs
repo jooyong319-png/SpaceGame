@@ -62,7 +62,7 @@ namespace SalvageRun.Orbit
                 string kn = it.kind == "scoop" ? Loc.T("특종") : it.kind == "world" ? Loc.T("세상 소식") : it.kind == "extra" ? Loc.T("호외") : Loc.T("우리 소식");
                 GUI.color = it.kind == "scoop" ? new Color(0.75f, 0.22f, 0.17f) : it.kind == "world" ? new Color(0.42f, 0.39f, 0.34f) : new Color(0.72f, 0.53f, 0.04f);
                 GUI.DrawTexture(new Rect(x, y, 70, 18), white); GUI.color = Color.white;
-                Lbl(new Rect(x, y, 70, 18), "<color=#ffffff>" + kn + "</color>", center); y += 26;
+                Lbl(new Rect(x, y - 2, 70, 22), "<color=#ffffff>" + kn + "</color>", center); y += 26;
                 paperHead.fontSize = 22; float hh = paperHead.CalcHeight(new GUIContent(Loc.T(it.head)), w);
                 Lbl(new Rect(x, y, w, hh), Loc.T(it.head), paperHead); y += hh + 14;
                 float bh = paperBody.CalcHeight(new GUIContent(Loc.T(it.body)), w);
@@ -97,7 +97,7 @@ namespace SalvageRun.Orbit
                 string kn = it.kind == "scoop" ? Loc.T("특종") : it.kind == "world" ? Loc.T("세상 소식") : it.kind == "extra" ? Loc.T("호외") : Loc.T("우리 소식");
                 GUI.color = it.kind == "scoop" ? new Color(0.75f, 0.22f, 0.17f) : it.kind == "world" ? new Color(0.42f, 0.39f, 0.34f) : new Color(0.72f, 0.53f, 0.04f);
                 GUI.DrawTexture(new Rect(cx, cy, 70, 18), white); GUI.color = Color.white;
-                Lbl(new Rect(cx, cy, 70, 18), "<color=#ffffff>" + kn + "</color>", center); cy += 26;
+                Lbl(new Rect(cx, cy - 2, 70, 22), "<color=#ffffff>" + kn + "</color>", center); cy += 26;
                 string hd = Loc.T(it.head); float hh = paperHead.CalcHeight(new GUIContent(hd), cw);
                 Lbl(new Rect(cx, cy, cw, hh), hd, paperHead); cy += hh + 8;
                 // 본문은 남은 높이에 들어가는 문장까지만 (중간에서 잘리지 않게)

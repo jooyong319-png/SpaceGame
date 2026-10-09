@@ -140,7 +140,7 @@ namespace SalvageRun.Orbit
                     if (ic != null) { float isz = Mathf.Min(cr.width, cr.height) * 0.62f; GUI.DrawTexture(new Rect(cr.center.x - isz / 2, cr.center.y - isz / 2 - 7, isz, isz), ic, ScaleMode.ScaleToFit); }
                     Lbl(new Rect(cr.x, cr.yMax - 19, cr.width, 18), "<size=10><color=#5a2050>" + SweepSim.ScratchSym[sym] + "</color></size>", center);
                 }
-                if (reach) { var tg = new Rect(cr.xMax - 58, cr.y + 2, 56, 15); GUI.color = new Color(1f, 0.87f, 0.58f); GUI.DrawTexture(tg, white); GUI.color = Color.white; Lbl(tg, Loc.T("<size=10><color=#5a2050>하나 더!</color></size>"), center); }
+                if (reach) { var tg = new Rect(cr.xMax - 58, cr.y + 2, 56, 15); GUI.color = new Color(1f, 0.87f, 0.58f); GUI.DrawTexture(tg, white); GUI.color = Color.white; Lbl(new Rect(tg.x, tg.y - 2, tg.width, tg.height + 4), Loc.T("<size=10><color=#5a2050>하나 더!</color></size>"), center); }
                 // 은박 — 누른 채 지나가면 벗겨진다 (칸 사이를 한 번에 문질러도 된다)
                 int leftN = 0; float bw = cr.width / ScCols, bh = cr.height / ScRows;
                 for (int b = 0; b < ScCols * ScRows; b++)
@@ -152,7 +152,7 @@ namespace SalvageRun.Orbit
                     GUI.color = new Color(shade, shade, shade + 0.04f, c == scPeek ? 0.22f : 1f); GUI.DrawTexture(br, white); GUI.color = Color.white;   // ◎ 투시경 — 이 칸만 비친다
                 }
                 if (leftN == ScCols * ScRows && !scDone && c != scPeek) Lbl(cr, Loc.T("<size=12><color=#7a5a86>긁기</color></size>"), center);
-                if (c == scPeek && !scDone && !rev[c]) { var tg = new Rect(cr.x + 2, cr.y + 2, 34, 14); GUI.color = new Color(0.44f, 0.83f, 0.91f); GUI.DrawTexture(tg, white); GUI.color = Color.white; Lbl(tg, Loc.T("<size=9><color=#06202a>투시</color></size>"), center); }
+                if (c == scPeek && !scDone && !rev[c]) { var tg = new Rect(cr.x + 2, cr.y + 2, 34, 14); GUI.color = new Color(0.44f, 0.83f, 0.91f); GUI.DrawTexture(tg, white); GUI.color = Color.white; Lbl(new Rect(tg.x, tg.y - 2, tg.width, tg.height + 4), Loc.T("<size=9><color=#06202a>투시</color></size>"), center); }
                 if (!scDone && !rev[c] && (ev.type == EventType.MouseDrag || ev.type == EventType.MouseDown) && ev.button == 0 && new Rect(cr.x - 10, cr.y - 10, cr.width + 20, cr.height + 20).Contains(ev.mousePosition))
                 {
                     for (int b = 0; b < ScCols * ScRows; b++)
@@ -176,7 +176,7 @@ namespace SalvageRun.Orbit
                 Lbl(new Rect(row.x + 4, row.y + 8, 36, 18), "<size=12><color=" + rc + ">" + SweepSim.RankName(k + 1) + "</color></size>", label);
                 if (scIcon[k] != null) GUI.DrawTexture(new Rect(row.x + 42, row.y + 4, 26, 26), scIcon[k], ScaleMode.ScaleToFit);
                 Lbl(new Rect(row.x + 74, row.y + 1, 200, 18), "<size=12><color=" + (k == 0 ? "#ffdf95" : "#efe6f3") + ">" + SweepSim.ScratchSym[k] + "</color></size>", label);
-                Lbl(new Rect(row.x + 74, row.y + 17, row.width - 120, 16), Fit("<color=#9a8ca6>" + ScPrize(k) + "</color>", 10, row.width - 120, label, 8), label);
+                Lbl(new Rect(row.x + 74, row.y + 15, row.width - 120, 22), Fit("<color=#9a8ca6>" + ScPrize(k) + "</color>", 10, row.width - 120, label, 8), label);   // 10-09 다듬기: 높이 16 이면 글자 아래가 잘렸다
                 Lbl(new Rect(row.x, row.y + 8, row.width - 6, 18), "<size=10><color=#9a8ca6>" + (SweepSim.ScratchOdds[k] * 100 * (1 + 0.5f * sim.Lv("l_luck"))).ToString(SweepSim.ScratchOdds[k] < 0.01 ? "0.0" : "0") + "%</color></size>", cost);
             }
             Lbl(new Rect(pt.x, pt.y + 20 + 8 * 36 + 4, pt.width, 30), Loc.T("<size=10><color=#8a7a96>판 벌이 = 지금 평균 판 수입 · 화력 · 연료는 다음 판 한 번 · 겹치지 않음</color></size>"), small);
@@ -334,7 +334,7 @@ namespace SalvageRun.Orbit
             {
                 var cr = new Rect(cx + i * cw + 4, r.y + 72, cw - 8, 60);
                 GUI.DrawTexture(cr, texCard);
-                Lbl(new Rect(cr.x, cr.y + 6, cr.width, 16), "<size=11>" + k[i] + "</size>", center);
+                Lbl(new Rect(cr.x, cr.y + 4, cr.width, 20), "<size=11>" + k[i] + "</size>", center);
                 Lbl(new Rect(cr.x, cr.y + 24, cr.width, 30), "<size=20><color=" + (i == 0 && S.debt > 0 ? "#ffb3a8" : "#ffdf95") + ">" + v[i] + "</color></size>", center);
             }
             // 받기 · 갚기

@@ -64,7 +64,7 @@ namespace SalvageRun.Orbit
             double idx = IndexAt(0), idx0 = IndexAt(20);
             double tv = mk.TotalValue(), tc = 0; foreach (var st in MS.st) tc += st.cost;
             string exT = Loc.T("<size=17><b><color=#dde3ea>궤도 증권</color></b></size>"); float exW = label.CalcSize(new GUIContent(exT)).x;   // 🌐 제목 폭만큼 민다
-            L(top.x + 12, top.y + 8, exW + 4, exT);
+            Lbl(new Rect(top.x + 12, top.y + 8, exW + 4, 28), exT, label);   // L() 은 높이 22 — 17 크기 제목은 26
             L(top.x + Mathf.Max(120, 12 + exW + 14), top.y + 10, 300, Loc.T("<size=12><color=#8a9bb3>궤도 종합</color>  <b>") + idx.ToString("#,0.00") + "</b>  " + Tone(idx - idx0, (idx >= idx0 ? "▲ " : "▼ ") + System.Math.Abs(idx - idx0).ToString("0.00")) + " " + Pct(idx / idx0 - 1) + "</size>");
             L(top.x + 420, top.y + 10, 280, Loc.T("<size=12><color=#8a9bb3>내 주식</color>  <b>") + KNum.Fmt(tv) + "</b>" + (tc > 0 ? "  " + Tone(tv - tc, (tv >= tc ? "+" : "") + KNum.Fmt(tv - tc)) + " " + Pct(tv / tc - 1) : "") + "</size>");
             L(top.x + 720, top.y + 10, 160, Loc.T("<size=12><color=#8a9bb3>돈</color>  <b><color=#ffdf95>") + KNum.Fmt(S.cash) + "</color></b></size>");
@@ -298,7 +298,7 @@ namespace SalvageRun.Orbit
             {
                 var pz = new Rect(g.x + g.width / 2 - 150, g.y + 6, 300, 40);
                 GUI.color = new Color(0.1f, 0.08f, 0.03f, 0.82f); GUI.DrawTexture(pz, white); Frame(pz, new Color(1f, 0.81f, 0.43f, 0.8f), 1); GUI.color = Color.white;
-                Lbl(new Rect(pz.x, pz.y + 3, pz.width, 18), Loc.T("<size=13><b><color=#ffcf6e>■ 시세 멈춤</color></b></size>"), center);
+                Lbl(new Rect(pz.x, pz.y + 1, pz.width, 22), Loc.T("<size=13><b><color=#ffcf6e>■ 시세 멈춤</color></b></size>"), center);
                 Lbl(new Rect(pz.x, pz.y + 20, pz.width, 16), Loc.T("<size=10><color=#c8b88a>출동하면 다시 변동 · 지금 매수하면 출동 중 시세 변동</color></size>"), center);
             }
 
