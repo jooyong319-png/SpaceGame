@@ -1509,7 +1509,7 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 <size=11><color=#8dff9a>> 출동 #	<size=11><color=#8dff9a>> Run #
  기록</color></size>	 log</color></size>
 <size=11><color=#8dff9a>기록 없음	<size=11><color=#8dff9a>No log
-<size=10><color=#6fd67a>부순것 	<size=10><color=#6fd67a>Broken 
+<size=10><color=#6fd67a>부순 것	<size=10><color=#6fd67a>Broken
  · 연쇄 	 · chain 
  · 의뢰 ○	 · job ○
  · 의뢰 ✕	 · job ✕

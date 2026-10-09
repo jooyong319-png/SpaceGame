@@ -348,7 +348,7 @@ namespace SalvageRun.Orbit
                 }
                 GUI.color = Color.white;
                 double lE = S.lastClaw + S.lastDrone + S.lastBlast;
-                Lbl(new Rect(x, sc.y + 62, w, 18), Loc.T("<size=10><color=#6fd67a>부순것 ") + S.lastBroke + Loc.T(" · 연쇄 ") + S.lastChain + (S.lastContract == 1 ? Loc.T(" · 의뢰 ○") : S.lastContract == 2 ? Loc.T(" · 의뢰 ✕") : "") + "</color></size>", label);
+                Lbl(new Rect(x, sc.y + 62, w, 18), Loc.T("<size=10><color=#6fd67a>부순 것") + " " + S.lastBroke + Loc.T(" · 연쇄 ") + S.lastChain + (S.lastContract == 1 ? Loc.T(" · 의뢰 ○") : S.lastContract == 2 ? Loc.T(" · 의뢰 ✕") : "") + "</color></size>", label);
                 Lbl(new Rect(x, sc.y + 78, w, 22), "<size=14><b><color=#b8ffc0>+" + KNum.Fmt(lE) + "</color></b><color=#8dff9a>" + (cur ? " ▮" : "") + "</color></size>", label);
             }
             GUI.color = new Color(0, 0, 0, 0.28f);
