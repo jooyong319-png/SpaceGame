@@ -68,7 +68,7 @@ namespace SalvageRun.Orbit
             GUI.matrix = mBig;
 
             // 왼쪽 — 이번 출동: 부순 것 종류별 · 합계
-            var L = new Rect(cx - 420, 140, 410, 250);
+            var L = new Rect(cx - 420, 140, 410, R.gateStock >= 0 ? 272 : 250);   // 🛰 관문 보상 띠가 들어가면 조금 길게 (아래 단추는 420)
             Panel2(L, null);
             float y = L.y + 14;
             void Line2(string k, string v) { Lbl(new Rect(L.x + 18, y, L.width - 36, 26), "<size=18>" + k + "</size>", label); Lbl(new Rect(L.x + 18, y, L.width - 36, 26), "<size=18>" + v + "</size>", cost); y += 34; }
@@ -117,6 +117,18 @@ namespace SalvageRun.Orbit
                 }
             }
             // 10-09 다듬기: 빚 상환 줄은 오른쪽 피해 판 밑에 걸려 아래 판에 가려졌다 — 돈 이야기라 합계 아래로
+            if (R.gateStock >= 0 && R.gateStock < Market.Defs.Length)
+            {   // 🛰 10-10 관문 보상 — 열쇠 · 공로주 (사장님 「받은 줄도 모르겠다」) · 금색 띠로 눈에 띄게
+                var gb = new Rect(L.x + 12, ly2 - 2, L.width - 24, 46);
+                float gp = 0.5f + 0.5f * Mathf.Sin(Time.time * 4);
+                GUI.color = new Color(0.32f, 0.24f, 0.06f, 0.9f); GUI.DrawTexture(gb, white); GUI.color = Color.white;
+                Frame(gb, Color.Lerp(SweepGame.Amber, Color.white, gp * 0.3f), 2);
+                Lbl(new Rect(gb.x + 10, gb.y + 3, gb.width - 20, 20), Loc.T("<size=14><b><color=#ffdf95>🛰 관문 보상</color></b></size>"), label);
+                Lbl(new Rect(gb.x + 10, gb.y + 3, gb.width - 20, 20), Loc.T("<size=13><color=#d8ccff>열쇠 +1</color></size>"), cost);
+                string gs = Market.Defs[R.gateStock].name + "  " + R.gateShares.ToString(R.gateShares < 10 ? "0.#" : "#,0") + Loc.T("주") + "  <color=#9ff0bf>(+" + KNum.Fmt(R.gateAmt) + ")</color>";
+                Lbl(new Rect(gb.x + 10, gb.y + 23, gb.width - 20, 20), Fit(Loc.T("<color=#c8d0dc>공로주 </color>") + "<color=#ffffff>" + gs + "</color>", 13, gb.width - 20, label, 9), label);
+                ly2 += 52;
+            }
             if (R.cut > 0) Lbl(new Rect(L.x + 18, ly2, L.width - 36, 22), Loc.T("<size=14>빚 상환으로 떼인 것</size>"), label);
             if (R.cut > 0) Lbl(new Rect(L.x + 18, ly2, L.width - 36, 22), "<size=14><color=#ee7766>-" + KNum.Fmt(R.cut) + "</color></size>", cost);
 
@@ -219,7 +231,7 @@ namespace SalvageRun.Orbit
             if (can) sub += Loc.T(" · <color=#ffffff>눌러서 갚기</color>");
             else if (loanPay) sub += Loc.T(" · <color=#ffffff>대출 ") + KNum.Fmt(need) + Loc.T(" 받아 갚기</color>");
             Lbl(new Rect(r.x, r.y + 38, r.width, 22), "<size=13>" + sub + "</size>", center);
-            if (loanPay) Lbl(new Rect(r.x, r.yMax + 2, r.width, 16), Loc.T("<size=11>빚 +") + KNum.Fmt(need * SweepSim.LoanMult) + Loc.T(" (판 수입 30%씩 상환)</size>"), center);
+            if (loanPay) Lbl(new Rect(r.x, r.yMax + 1, r.width, 20), Loc.T("<size=11>빚 +") + KNum.Fmt(need * SweepSim.LoanMult) + Loc.T(" (판 수입 30%씩 상환)</size>"), center);
             if (dueNag > 0) Lbl(new Rect(r.x - 40, r.y - 22, r.width + 80, 18), Loc.T("<color=#ff9b8f><size=12>납부일 — 먼저 갚거나 · 대출받거나 · 파산</size></color>"), center);
             if (Bt(r, GUIContent.none, GUIStyle.none)) { if (can) sim.PayBill(); else if (loanPay) RequestLoan(sim.BillAmount - S.cash, true); }
         }

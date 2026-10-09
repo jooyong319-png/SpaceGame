@@ -102,6 +102,7 @@ namespace SalvageRun.EditorTools
                     R.broke = R.cChip + R.cSat + R.cFuel + R.cVault + R.cTank + R.cBig; R.chainBest = 12345;
                     R.earnClaw = 9.87e11; R.earnDrone = 1.2e11; R.earnBlast = 3.4e11; R.bonus = 5e10; R.interest = 2e9; R.cut = 7.6e10;
                     for (int i = 0; i < R.dmgBy.Length; i++) R.dmgBy[i] = 1e12 / (i + 1);
+                    R.gateStock = 0; R.gateAmt = 9.9e11; R.gateShares = 123456789;   // 🛰 10-10 관문 보상 띠
                     g.sim.S.overdue = false; g.hud.OnRunEnd();
                 });
                 for (int q = 0; q < 40; q++) acts.Add(g => { g.hud.flow = 1; });

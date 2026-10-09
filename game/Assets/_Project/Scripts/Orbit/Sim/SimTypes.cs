@@ -92,6 +92,7 @@ namespace SalvageRun.Orbit.Sim
         public int presses; public double heldT, gateT, gateAimT;              // 🖱 09-29 사장님 손 기록 — 누른 횟수 · 누르고 있던 초 · 관문이 떠 있던 초 · 관문을 노린 초 (봇이 따라 한다)
         public bool over, holding, clean, contractOk;
         public double earnClaw, earnDrone, earnBlast, cut, toBill, bonus, interest;
+        public int gateStock = -1; public double gateAmt, gateShares;   // 🛰 10-10 이번 판 관문 공로주 — 결산에 보여 준다 (사장님 「받은 줄도 모르겠다」)
         public string contractText; public int contractProg, contractTarget;     // 지난 판 의뢰 — 결산에 성공/실패를 보여 준다
         public int cVault, cFuel, cChip, cSat, cTank, cBig, cTag;
         public int cleanKills, cleanGoal = 1; public double dmgDone, lastShot = -9;

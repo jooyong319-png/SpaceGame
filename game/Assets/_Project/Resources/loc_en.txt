@@ -1798,3 +1798,6 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 <size=14>빚 상환으로 떼인 것</size>	<size=14>Taken for debt</size>
 <color=#8a93a3>총 피해</color>	<color=#8a93a3>Total</color>
 격납고에서 신용으로 새 배 · 영구 강화 구매	Spend credit in the Hangar on ships · upgrades
+<size=14><b><color=#ffdf95>🛰 관문 보상</color></b></size>	<size=14><b><color=#ffdf95>🛰 Gate reward</color></b></size>
+<size=13><color=#d8ccff>열쇠 +1</color></size>	<size=13><color=#d8ccff>Key +1</color></size>
+<color=#c8d0dc>공로주 </color>	<color=#c8d0dc>Merit shares </color>

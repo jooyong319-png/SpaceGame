@@ -72,6 +72,7 @@ namespace SalvageRun.Orbit.Sim
             double bonus = Math.Max(S.runAvg * 3, BillAmount * 0.3);
             string gid = GateStock[Math.Min(Frontier, GateStock.Length - 1)]; int gsi = Array.FindIndex(Market.Defs, x => x.id == gid);
             string gnm = gsi >= 0 ? Market.Defs[gsi].name : "";
+            if (gsi >= 0 && Mk != null && gsi < Mk.M.st.Count && !AutoSellGifts) { R.gateStock = gsi; R.gateAmt = bonus; R.gateShares = bonus / Mk.M.st[gsi].price; }
             GiftShares(gid, bonus);
             if (Mk != null && gsi >= 0) Mk.GameEvent(gnm + Loc.T(", 항로 개통 호재"), Orbits[next].name + Loc.T(" 항로가 열렸다 — 민간 청소선이 관문을 치웠다."), new[] { gid }, null, 0.18f);   // 들고 있으면 다음 출동 동안 오른다
             Emit(SwEv.Pop, d.x, d.y - 30, 0, 3, Loc.T("🛰 관문 붕괴! ") + Orbits[next].name + Loc.T(" 항로 · 열쇠 +1 · 공로주 ") + gnm + " +" + Math.Round(bonus));
