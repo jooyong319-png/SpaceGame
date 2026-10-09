@@ -68,7 +68,7 @@ namespace SalvageRun.Orbit
                 Lbl(new Rect(ix + 20, y + 2, tw + 4, 20), ct, label);
                 ix += 34 + tw;
             }
-            y += 32;
+            if (need > 0) y += 32;   // 10-09 다듬기 P2: 부순 것이 없으면 빈 아이콘 줄 자리를 남기지 않는다
             Line2(Loc.T("최대 연쇄"), R.chainBest + (R.chainBest > prevBestChain && R.chainBest >= 10 ? Loc.T(" <color=#ff8a7a>새 기록!</color>") : ""));
             y += 6;
             GUI.color = new Color(0.16f, 0.2f, 0.27f); GUI.DrawTexture(new Rect(L.x + 18, y, L.width - 36, 1.5f), white); GUI.color = Color.white;
