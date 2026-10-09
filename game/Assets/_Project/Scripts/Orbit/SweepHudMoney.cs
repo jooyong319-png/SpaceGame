@@ -325,7 +325,11 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0.05f, 0.06f, 0.09f, 0.99f); GUI.DrawTexture(r, white); GUI.color = Color.white;
             Frame(r, new Color(0.62f, 0.5f, 0.3f), 2);
             title.fontSize = 22; Lbl(new Rect(r.x, r.y + 12, r.width, 30), Loc.T("<color=#ffdf95>케슬러 금융 — 대출 창구</color>"), title);
-            Lbl(new Rect(r.x, r.y + 44, r.width, 18), Loc.T("<size=12>받은 돈의 ") + SweepSim.LoanMult + Loc.T("배 상환 · 빚이 있으면 판 수입의 ") + Mathf.RoundToInt((float)(sim.Lv("e_guard") > 0 ? 20 : 30)) + Loc.T("% 자동 차감</size>"), center);
+            {   // 10-10 다듬기: 영어 부제가 창 테두리에 닿았다 — 창 폭 안으로 맞춤
+                string sub = Loc.T("<size=12>받은 돈의 ") + SweepSim.LoanMult + Loc.T("배 상환 · 빚이 있으면 판 수입의 ") + Mathf.RoundToInt((float)(sim.Lv("e_guard") > 0 ? 20 : 30)) + Loc.T("% 자동 차감</size>");
+                sub = sub.Replace("<size=12>", "").Replace("</size>", "");
+                Lbl(new Rect(r.x + 24, r.y + 44, r.width - 48, 18), Fit(sub, 12, r.width - 48, center, 9), center);
+            }
             // 숫자 셋
             float cx = r.x + 24, cw = (r.width - 48) / 3;
             string[] k = { Loc.T("지금 빚"), Loc.T("대출 한도"), Loc.T("가진 돈") };

@@ -502,7 +502,7 @@
 모든 값 +6%	All value +6%
 청구 기한	Bill Deadline
 첫 청구서 기한 +1판	First bill due +1 run
-대출 한도	Loan Limit
+대출 한도	Loan limit
 대출 한도 +20%	Loan limit +20%
 가게 할인	Shop Discount
 가게 값 −5%	Shop prices −5%
