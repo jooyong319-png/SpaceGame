@@ -202,16 +202,17 @@ namespace SalvageRun.Orbit
                 if (gj != null)
                 {
                     Vector3 gsp = game.WorldToScreen(game.PxToWorld(gj.x, gj.y));    // 🛰 관문 바로 위에 따라다닌다 (09-26 — 위 가운데 막대가 화면을 가렸다)
-                    var gr = new Rect(Mathf.Clamp(gsp.x / scale - 110, 8, vw - 228), Mathf.Clamp((Screen.height - gsp.y) / scale - oy - 78, 60, RefH - 120), 220, 30);
+                    var gr = new Rect(Mathf.Clamp(gsp.x / scale - 110, 8, vw - 228), Mathf.Clamp((Screen.height - gsp.y) / scale - oy - 84, 60, RefH - 120), 220, sim.GateReady ? 30 : 42);   // 10-10 방어막이면 두 줄 — 30 이면 아랫줄이 잘렸다
                     GUI.color = new Color(0.05f, 0.04f, 0.04f, 0.85f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.6f, 0.4f, 0.8f), 1);
                     if (!sim.GateReady)
                     {   // 🛡 방어막 — 관문 둘레에 푸른 막 · 막대 대신 자물쇠 (09-27)
                         float sp = 0.5f + 0.5f * Mathf.Sin(Time.time * 3f), gx = gsp.x / scale, gy = (Screen.height - gsp.y) / scale - oy;
                         GUI.color = new Color(0.45f, 0.8f, 1f, 0.12f + 0.08f * sp); GUI.DrawTexture(new Rect(gx - 78, gy - 78, 156, 156), texDisc);
                         GUI.color = new Color(0.6f, 0.9f, 1f, 0.55f + 0.25f * sp); GUI.DrawTexture(new Rect(gx - 80, gy - 80, 160, 160), texRing);
+                        GUI.color = new Color(0.05f, 0.04f, 0.04f, 0.92f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.6f, 0.4f, 0.8f), 1);   // 10-10 고리가 이름표를 덮어 글자가 흐렸다 — 이름표를 위로
                         GUI.color = Color.white;
-                        Lbl(new Rect(gr.x + 8, gr.y + 1, gr.width - 16, 18), "<size=11><color=#ffb36b>🛰 " + sim.GateName + Loc.T("</color> <color=#9fdcff>· 방어막</color></size>"), label);
-                        Lbl(new Rect(gr.x + 8, gr.y + 14, gr.width - 16, 16), Loc.T("<size=10><color=#9fdcff>청구서 ") + sim.GateBill + Loc.T("장 납부 시 해제</color></size>"), label);
+                        Lbl(new Rect(gr.x + 8, gr.y + 2, gr.width - 16, 20), Fit("<color=#ffb36b>🛰 " + sim.GateName + Loc.T("</color> <color=#9fdcff>· 방어막</color>"), 11, gr.width - 16, label, 8), label);
+                        Lbl(new Rect(gr.x + 8, gr.y + 20, gr.width - 16, 20), Fit(Loc.T("<size=10><color=#9fdcff>청구서 ").Replace("<size=10>", "") + sim.GateBill + Loc.T("장 납부 시 해제</color></size>").Replace("</size>", ""), 10, gr.width - 16, label, 8), label);
                         goto gateDone;
                     }
                     float gk = Mathf.Clamp01((float)gj.hp / Mathf.Max(1, gj.max));
