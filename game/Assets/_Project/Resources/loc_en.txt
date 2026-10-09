@@ -1792,3 +1792,6 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 % 확보	% saved
 누르면 그 기사로	Click to read
 <color=#8a9bb3>정비고 ◆ 칸에 사용 · 열쇠 	<color=#8a9bb3>Used on ◆ Workshop nodes · keys 
+# 10-09 다듬기 P3
+<color=#8a9bb3>칸에 장착하지 않음\n여러 개 구매하면 합산</color>	<color=#8a9bb3>No slot needed\nBuying more stacks</color>
+<color=#8a9bb3>더 구매하면 합산</color>\n<color=#9ff0bf>모아 둔 것	<color=#8a9bb3>Buying more stacks</color>\n<color=#9ff0bf>Stocked

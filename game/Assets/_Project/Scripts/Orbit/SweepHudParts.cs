@@ -199,7 +199,7 @@ namespace SalvageRun.Orbit
                 Lbl(new Rect(r.x + 62, r.y + 66, r.width - 68, 46), "<size=" + dFs + ">" + dTxt + "</size>", small);
                 // 지금 것 → 바뀌는 것
                 GUI.color = new Color(0.2f, 0.23f, 0.29f); GUI.DrawTexture(new Rect(r.x + 10, r.y + 112, r.width - 20, 1), white); GUI.color = Color.white;
-                string cmp = key ? Loc.T("<color=#8a9bb3>정비고 ◆ 칸에 사용 · 열쇠 ") + S.keys + (Loc.En ? "" : "개") + "</color>" : cn ? Loc.T("<color=#8a9bb3>구매해 두면 <color=#9ff0bf>다음 출동 때 자동</color> 사용 · 1회용</color>") : PartCompare(id);
+                string cmp = key ? Loc.T("<color=#8a9bb3>정비고 ◆ 칸에 사용 · 열쇠 ") + S.keys + (Loc.En ? "" : "개") + "</color>" : cn ? ConsHeldLine(id) : PartCompare(id);   // 10-09 다듬기 P3: 띠 「다음 출동 한 번용」과 같은 말 대신 이미 모아 둔 양
                 Lbl(new Rect(r.x + 10, r.y + 116, r.width - 20, 58), "<size=11>" + cmp + "</size>", small);
                 double price = sim.ShelfPrice(k); bool can = S.cash >= price;
                 var bb = new Rect(r.x + 10, r.yMax - 40, r.width - 20, 30);
@@ -250,6 +250,16 @@ namespace SalvageRun.Orbit
             { "cut", new[] { Loc.T("빚 갚는 몫"), "%" } }, { "fee0", new[] { Loc.T("수수료 0"), "" } }, { "div", new[] { Loc.T("배당"), "%" } }, { "combo", new[] { Loc.T("연쇄 상한"), "" } }, { "hole", new[] { Loc.T("블랙홀"), "%" } },
         };
         /// <summary>진열 부품을 끼우면 — 지금 부품이 빠지고 무엇이 오르고 내리나</summary>
+        /// <summary>1회용 카드 아래 줄 — 이미 모아 둔 양 (여러 개 사면 합산: BuyPart 의 nFuel · freeTix · nDmg · nVal)</summary>
+        string ConsHeldLine(int id)
+        {
+            var S = sim.S; int c = id - SweepSim.Cons0;
+            int v = c == 0 ? S.nFuel : c == 1 ? S.freeTix : c == 2 ? S.nDmg : S.nVal;
+            if (v <= 0) return Loc.T("<color=#8a9bb3>칸에 장착하지 않음\n여러 개 구매하면 합산</color>");
+            string amt = c == 0 ? "+" + v + Loc.T("초") : c == 1 ? v + (Loc.En ? " tickets" : "장") : "+" + v + "%";
+            return Loc.T("<color=#8a9bb3>더 구매하면 합산</color>\n<color=#9ff0bf>모아 둔 것") + " " + amt + "</color>";   // 다른 카드의 「빈 칸에 끼움 / 크기 +20%」 꼴
+        }
+
         string PartCompare(int id)
         {
             var np = Parts.Defs[id]; int cur = sim.S.parts != null ? sim.S.parts[np.slot] : -1;
