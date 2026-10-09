@@ -10,7 +10,7 @@
 > 보고: 바퀴마다 개발 현황 페이지(Jd5GLFEgpK4DoA9MawawhZ)는 건드리지 않고, 보고 페이지 하나(아래 주소)를 계속 갱신한다.
 > 커밋: git -c user.name=jooyco -c user.email=jooyco319@gmail.com commit · 끝줄 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 
-보고 페이지: https://claude.ai/artifact/HkHjiJW4FZWAp2f7iPKRUu (10-10 계정 바뀜 — 옛 주소 1w7KvhJf63AmpnypEhXPdk 는 다른 계정)
+보고 페이지: https://claude.ai/artifact/57tjcute9pSHbbTMtUxrT8 (jooyco319 계정) · https://claude.ai/artifact/HkHjiJW4FZWAp2f7iPKRUu (jooyong319 계정) — 사장님은 계정 둘을 번갈아 씀. 갱신이 거절되면 지금 계정으로 새로 올리고 여기 적기
 - 갱신 방법: scratchpad/polish/entries.json 끝에 한 줄 추가(id · title · kind ok|mk|no · commit · desc · imgs) → 그림은 scratchpad/polish/ 에 저장 → python build.py → Artifact 를 url 위 주소로 다시 올림(files 에 새 그림만 추가)
 - 캡처 요령: 스크립트 안에서 상태를 바꾼 뒤 40프레임 이상 기다렸다 찍기(같은 프레임에 찍으면 이전 화면) · 결산은 h.OnRunEnd() 후 flow=1 · 가게는 lobby=false · flow=5 · 첫 방문 대사는 M.flags 에 "dlg:shop" 넣어 끔
 - 찍기 요령 3: EditorApplication.update 는 게임 프레임보다 훨씬 자주 돈다 → 기다림은 프레임 수 말고 timeSinceStartup 초로
