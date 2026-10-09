@@ -9,7 +9,9 @@
 > 보고: 바퀴마다 개발 현황 페이지(Jd5GLFEgpK4DoA9MawawhZ)는 건드리지 않고, 보고 페이지 하나(아래 주소)를 계속 갱신한다.
 > 커밋: git -c user.name=jooyco -c user.email=jooyco319@gmail.com commit · 끝줄 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 
-보고 페이지: (첫 바퀴에 만듦)
+보고 페이지: https://claude.ai/artifact/1w7KvhJf63AmpnypEhXPdk
+- 갱신 방법: scratchpad/polish/entries.json 끝에 한 줄 추가(id · title · kind ok|mk|no · commit · desc · imgs) → 그림은 scratchpad/polish/ 에 저장 → python build.py → Artifact 를 url 위 주소로 다시 올림(files 에 새 그림만 추가)
+- 캡처 요령: 스크립트 안에서 상태를 바꾼 뒤 40프레임 이상 기다렸다 찍기(같은 프레임에 찍으면 이전 화면) · 결산은 h.OnRunEnd() 후 flow=1 · 가게는 lobby=false · flow=5
 
 ## 할 것
 - [x] P1. 설정 창 — 「창 크기」 아래 빈 줄이 길고 「설명 다시 보기」 · 「로비로 나가기」 높이 어긋남
