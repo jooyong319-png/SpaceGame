@@ -87,9 +87,12 @@ namespace SalvageRun.Orbit
                 RowFx(i, row); if (i < stockRowPos.Length) stockRowPos[i] = RoomPt(new Vector2(row.xMax - 40, row.center.y));
                 double ch = mk.Change(i, 20);
                 string arrow = st.pushLeft > 0 ? (st.push > 0 ? " <color=" + UpHex + ">▲</color>" : " <color=" + DnHex + ">▼</color>") : "";
-                L(row.x + 4, row.y + 1, 150, (Loc.En ? "<size=10>" : "<size=12>") + (st.shares > 0 ? "<color=#ffdf95>● </color>" : "") + d.name + arrow + "</size>");
-                L(row.x + 4, row.y + rowH - 20, 150, "<size=9><color=#5f6878>" + d.sector + " · " + d.desc + "</color></size>");
-                Rt(row.x, row.y + 1, row.width - 52, "<size=12>" + Tone(ch, Px(st.price)) + "</size>");
+                // 10-09 다듬기: 영어 이름 · 설명이 길면 가격 · 작은 차트와 겹쳤다 (Saturn Ring Tours1,017.2) — 가격 앞 · 차트 앞까지만
+                string pxT = "<size=12>" + Tone(ch, Px(st.price)) + "</size>";
+                float nameW = row.width - 52 - rR.CalcSize(new GUIContent(pxT)).x - 10;
+                L(row.x + 4, row.y + 1, nameW, Fit((st.shares > 0 ? "<color=#ffdf95>● </color>" : "") + d.name + arrow, Loc.En ? 10 : 12, nameW, label, 8));
+                L(row.x + 4, row.y + rowH - 20, row.width - 112, Fit("<color=#5f6878>" + d.sector + " · " + d.desc + "</color>", 9, row.width - 112, label, 6));
+                Rt(row.x, row.y + 1, row.width - 52, pxT);
                 Rt(row.x, row.y + 1, row.width - 4, "<size=11>" + Tone(ch, (ch >= 0 ? "+" : "") + (ch * 100).ToString("0.0") + "%") + "</size>");
                 // 작은 선 차트 (최근 20봉)
                 float sx = row.x + row.width - 104, sw = 48, sy = row.y + rowH - 18, sh = 12;
@@ -322,8 +325,9 @@ namespace SalvageRun.Orbit
                 Rt(bb.x, ry, cx2[1], "<size=11>" + st.shares.ToString("#,0.#") + Loc.T("주</size>"));
                 Rt(bb.x, ry, cx2[2], "<size=11>" + Px(avg) + "</size>");
                 Rt(bb.x, ry, cx2[3], "<size=11>" + Tone(st.price - avg, Px(st.price)) + "</size>");
-                Rt(bb.x, ry, cx2[4], "<size=11>" + KNum.Fmt(val) + "</size>");
-                Rt(bb.x, ry, cx2[5], "<size=11>" + Tone(pl, (pl >= 0 ? "+" : "") + KNum.Fmt(pl)) + "</size>");
+                // 10-09 다듬기: 「+2667만 5973」처럼 길면 옆 칸과 겹쳤다 — 길면 짧은 꼴(2667만)로
+                Rt(bb.x, ry, cx2[4], "<size=11>" + (KNum.Fmt(val).Length > 8 ? KNum.Short(val) : KNum.Fmt(val)) + "</size>");
+                Rt(bb.x, ry, cx2[5], "<size=11>" + Tone(pl, (pl >= 0 ? "+" : "-") + (KNum.Fmt(System.Math.Abs(pl)).Length > 7 ? KNum.Short(System.Math.Abs(pl)) : KNum.Fmt(System.Math.Abs(pl))))   /* KNum.Short 는 음수를 0 으로 만든다 */ + "</size>");
                 Rt(bb.x, ry, cx2[6], "<size=11>" + Pct(val / st.cost - 1) + "</size>");
                 if (Bt(rr, GUIContent.none, GUIStyle.none)) MS.sel = i;
                 if (Bt(new Rect(bb.xMax - 90, ry, 82, 18), Loc.T("<size=10><color=#8ab4ff>전부 매도</color></size>"), btnOff)) TradeSell(i, 1, new Vector2(bb.xMax - 49, ry + 9));

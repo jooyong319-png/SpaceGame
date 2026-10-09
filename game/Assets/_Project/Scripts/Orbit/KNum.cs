@@ -17,6 +17,7 @@ namespace SalvageRun.Orbit
         /// <summary>위 단위 하나만 — 34억 · 1200만 (좁은 칸용)</summary>
         public static string Short(double v)
         {
+            if (v < 0) return "-" + Short(-v);   // 10-09: 한국어일 때 음수가 0 으로 나왔다 (증권 잔고 손익)
             if (Sim.Loc.En) return En(v);
             if (v < 10000) return ((long)System.Math.Max(0, v)).ToString();
             string f = Fmt(v); int sp = f.IndexOf(' '); return sp > 0 ? f.Substring(0, sp) : f;
