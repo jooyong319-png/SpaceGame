@@ -83,7 +83,7 @@ namespace SalvageRun.Orbit
                 Lbl(new Rect(x, y0 + 48, w, 18), Loc.T("<size=11><color=#7fcfe0>납부 금액</color></size>"), label);
                 Lbl(new Rect(x, y0 + 62, w, 38), Fit("<b><color=#e8fbff>" + KNum.Fmt(sim.BillAmount) + "</color></b>", 28, w - 4, label, 16), label);   // 큰 금액(13조 7700억)은 글자를 줄인다
                 bool blink = Mathf.Repeat(t, 0.8f) < 0.55f;
-                Lbl(new Rect(x, y0 + 100, w, 20), due ? "<size=13><b><color=" + (blink ? "#ff9b8f" : "#b0564c") + Loc.T(">오늘 납부일</color></b></size>") : Loc.T("<size=12><color=#bff4ff>기한 ▸ ") + S.billDue + Loc.T("판</color></size>"), label);
+                Lbl(new Rect(x, y0 + 100, w, 20), due ? "<size=13><b><color=" + (blink ? "#ff9b8f" : "#b0564c") + Loc.T(">오늘 납부일</color></b></size>") : Loc.T("<size=12><color=#bff4ff>기한 ▸ ") + S.billDue + (Loc.En && S.billDue == 1 ? " run</color></size>" : Loc.T("판</color></size>")), label);
                 float prog = Mathf.Clamp01((float)(S.cash / System.Math.Max(1, sim.BillAmount)));
                 GUI.color = new Color(Holo.r, Holo.g, Holo.b, 0.15f * fl); GUI.DrawTexture(new Rect(x, y0 + 126, w, 5), white);
                 GUI.color = prog >= 1 ? new Color(0.62f, 0.94f, 0.75f, fl) : new Color(Holo.r, Holo.g, Holo.b, 0.9f * fl); GUI.DrawTexture(new Rect(x, y0 + 126, w * prog, 5), white);

@@ -227,7 +227,7 @@ namespace SalvageRun.Orbit
             GUI.color = Color.white;
             Frame(r, can ? Color.Lerp(SweepGame.Red, Color.white, pulse * 0.5f) : new Color(0.5f, 0.2f, 0.18f), 2);
             Lbl(new Rect(r.x, r.y + 4, r.width, 34), "<size=24><color=#ffdf95>" + KNum.Fmt(sim.BillAmount) + "</color></size>", center);
-            string sub = S.overdue ? Loc.T("<color=#ffb3a8>오늘 납부일</color>") : S.billDue + Loc.T("판 남음");
+            string sub = S.overdue ? Loc.T("<color=#ffb3a8>오늘 납부일</color>") : Loc.RunsLeft(S.billDue);
             if (!can && !loanPay) sub = "<color=#ffd278>" + Mathf.FloorToInt(fill * 100) + Loc.T("% 확보") + "</color> · " + sub;
             if (can) sub += Loc.T(" · <color=#ffffff>눌러서 갚기</color>");
             else if (loanPay) sub += Loc.T(" · <color=#ffffff>대출 ") + KNum.Fmt(need) + Loc.T(" 받아 갚기</color>");

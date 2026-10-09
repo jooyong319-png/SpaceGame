@@ -195,7 +195,7 @@ namespace SalvageRun.Orbit
             else if (sim.M.endless)
                 Item(Loc.T("무한 궤도"), "<color=#d8ccff>" + sim.M.depth + Loc.T("층</color>  <color=#8a93a3>최고 ") + sim.M.bestDepth + Loc.T("층</color>"), label);   // 빚은 끝났다 — 청구서 대신 층
             else if (S.bill < SweepSim.Bills.Length)
-                Item(Loc.T("청구서"), KNum.Fmt(sim.BillAmount) + " · " + S.billDue + Loc.T("판") + (S.debt > 0 ? Loc.T(" <color=#ee7766>빚 상환 ") + Mathf.RoundToInt((float)sim.Cut * 100) + "%</color>" : ""), label);
+                Item(Loc.T("청구서"), KNum.Fmt(sim.BillAmount) + " · " + S.billDue + (Loc.En && S.billDue == 1 ? " run" : Loc.T("판")) + (S.debt > 0 ? Loc.T(" <color=#ee7766>빚 상환 ") + Mathf.RoundToInt((float)sim.Cut * 100) + "%</color>" : ""), label);
             // 🛰 관문 체력 — 위 가운데 (09-26)
             {
                 var gj = sim.GateJunk;

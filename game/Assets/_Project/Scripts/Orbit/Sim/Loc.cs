@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
@@ -18,6 +18,8 @@ namespace SalvageRun.Orbit.Sim
         public static Func<string> Source;                                  // 번역표 읽기 (유니티가 넣는다 — 봇에선 없음)
         static Dictionary<string, string> map, back;                        // 한 → 영 · 영 → 한 (저장된 영어 기사를 한국어로 돌려 보일 때)
 
+        /// <summary>「N판 남음」 — 영어는 1 이면 단수 (10-10 「1 runs left」)</summary>
+        public static string RunsLeft(int n) => n + (En && n == 1 ? " run left" : T("판 남음"));
         public static string T(string ko)
         {
             if (string.IsNullOrEmpty(ko)) return ko;
