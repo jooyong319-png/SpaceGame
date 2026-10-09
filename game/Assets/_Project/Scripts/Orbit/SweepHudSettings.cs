@@ -71,7 +71,8 @@ namespace SalvageRun.Orbit
         void SettingsWin()
         {
             GUI.color = new Color(0, 0, 0, 0.55f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
-            var w = new Rect(vw / 2 - 250, 20, 500, 560);                      // 09-29 창 비율 줄이 늘어 키웠다
+            float wh = PlayerPrefs.GetInt("orbit.screen", 0) == 1 ? 560 : 480;   // 10-09 다듬기: 전체 화면이면 창 비율 · 크기 두 줄이 없으니 창도 줄인다
+            var w = new Rect(vw / 2 - 250, (RefH - wh) / 2, 500, wh);           // 09-29 창 비율 줄이 늘어 키웠다
             GUI.color = new Color(0.043f, 0.063f, 0.09f, 0.98f); GUI.DrawTexture(w, white); Frame(w, SweepGame.Amber, 2); GUI.color = Color.white;
             Lbl(new Rect(w.x + 22, w.y + 14, 200, 30), Loc.T("<size=20><b><color=#ffdf95>설정</color></b></size>"), label);
             if (Bt(new Rect(w.xMax - 104, w.y + 14, 88, 26), Loc.T("<size=12>닫기 Esc</size>"), btn)) settingsOpen = false;
@@ -122,7 +123,7 @@ namespace SalvageRun.Orbit
             }
             Lbl(new Rect(w.x + 24, w.yMax - 30, w.width - 48, 20), Loc.T("<size=11><color=#8a93a3>저장은 자동 · M = 소리 끄기 · Esc = 닫기</color></size>"), label);
             if (!lobby && sim.R.over && Bt(new Rect(w.x + 24, w.yMax - 66, 130, 26), Loc.T("<size=12>설명 다시 보기</size>"), btnOffC)) { sim.M.flags.Remove("dlg:stock"); sim.M.flags.Remove("dlg:shop"); sim.M.flags.Remove("dlg:news"); settingsOpen = false; OrbitSfx.Play("tick", 0.6f); }   // 💬 증권 · 가게 · 신문 설명을 다시 — 그 방에 다시 들어가면 뜬다
-            if (!lobby && sim.R.over && Bt(new Rect(w.xMax - 134, w.yMax - 36, 118, 26), Loc.T("<size=12>로비로 나가기</size>"), btnOff)) { game.Save(); settingsOpen = false; lobby = true; lobbyT = 0; }
+            if (!lobby && sim.R.over && Bt(new Rect(w.xMax - 154, w.yMax - 66, 130, 26), Loc.T("<size=12>로비로 나가기</size>"), btnOff)) { game.Save(); settingsOpen = false; lobby = true; lobbyT = 0; }
             if (changed) SaveSettings();
         }
 
