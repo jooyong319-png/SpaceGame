@@ -29,6 +29,7 @@ namespace SalvageRun.Orbit
                 if (tier > chainTierSeen) { chainTierSeen = tier; chainPopT = Mathf.Max(chainPopT, 0.6f); if (tier == 2) Big(Loc.T("연쇄 ") + R.chain + "!", 1.0f, 40, new Color(1f, 0.87f, 0.58f)); }   // 📍 10-10 30 연쇄도 가운데에
                 chainPopT -= Time.unscaledDeltaTime;
                 var cg = new Rect(vw - 150, 38, 138, 50);
+                if (evWarnT > 0) goto chainDone;                                      // 10-10 사건 예고 띠 밑에서 숫자가 줄무늬 사이로 비쳤다 — 띠가 있는 2초는 쉼
                 GUI.color = new Color(0.05f, 0.06f, 0.09f, 0.85f * Mathf.Min(1, (float)R.chainT * 3)); GUI.DrawTexture(cg, white);
                 Frame(cg, new Color(1f, 0.76f, 0.35f, (0.25f + 0.5f * Mathf.Clamp01(chainPopT)) * Mathf.Min(1, (float)R.chainT * 3)), 1);
                 GUI.color = new Color(1, 1, 1, Mathf.Min(1, (float)R.chainT * 3));
@@ -36,6 +37,7 @@ namespace SalvageRun.Orbit
                 Lbl(new Rect(cg.x + 8, cg.y + 1, cg.width - 16, 26), "<size=" + (17 + tier) + "><b><color=#ffdf95>" + R.chain + "</color></b></size>", cost);
                 Lbl(new Rect(cg.x + 8, cg.y + 31, cg.width - 16, 18), Loc.T("<size=10><color=#8a93a3>최고 ") + Mathf.Max(R.chainBest, sim.M.bestChain) + "</color></size>", cost);
                 GUI.color = Color.white;
+                chainDone:;
             }
             else { chainHund = 0; chainTierSeen = 0; }
             if (game.kessText != null) { Big(game.kessText + " ×" + R.chain, game.kessT, game.kessText == Loc.T("케슬러!") ? 48 : 56, new Color(1f, 0.6f, 0.3f)); game.kessText = null; }   // 케슬러 단계도 같은 통로 (정돈 6)

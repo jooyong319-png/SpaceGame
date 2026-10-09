@@ -206,7 +206,7 @@ namespace SalvageRun.Orbit
                 if (h > 1)
                 {
                     var band = new Rect(0, y0 + (64 - h) / 2, vw, h);
-                    GUI.color = new Color(0.04f, 0.02f, 0.03f, 0.8f); GUI.DrawTexture(band, white);
+                    GUI.color = new Color(0.04f, 0.02f, 0.03f, 0.94f); GUI.DrawTexture(band, white);   // 10-10 0.8 이면 아래 연쇄 상자 숫자가 줄무늬 사이로 비쳤다
                     GUI.color = new Color(c.r, c.g, c.b, 0.28f);
                     float sw = 210, sc = Time.unscaledTime * 1.5f;
                     GUI.DrawTextureWithTexCoords(new Rect(0, band.y, sw, h), texStripe, new Rect(sc, 0, sw / 32f, h / 32f));
