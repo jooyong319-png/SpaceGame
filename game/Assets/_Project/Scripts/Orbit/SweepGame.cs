@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering.Universal;
@@ -262,8 +262,7 @@ namespace SalvageRun.Orbit
             {
                 float sdt = dt * timeScale;
                 if (hud != null && hud.launchT > 0) sdt = 0;                   // 🚀 출발 연출 중 — 판은 아직
-                else if (hitStop > 0) { hitStop -= dt; sdt = 0; }
-                else if (slowMo > 0) { slowMo -= dt; sdt *= 0.4f; }
+                hitStop = 0; slowMo = 0;   // ⏯ 10-10 사장님 — 연출용 멈칫(히트스톱) · 「케슬러!」 슬로모션 빼기. 남는 멈춤은 무전 · 대화와 창 벗어났을 때뿐 (번쩍임 · 흔들림은 그대로)
                 int steps = Mathf.Max(1, Mathf.CeilToInt(sdt / 0.03f));
                 PerfSw.Restart();
                 if (sdt > 0) { for (int i = 0; i < steps; i++) sim.Tick(sdt / steps, aimPx.x, aimPx.y, aimOn, holdOn || castPending); castPending = false; }   // 히트스톱 중에 누른 것도 멈춤이 풀리면 열린다
@@ -290,8 +289,17 @@ namespace SalvageRun.Orbit
             // 조종실에선 카메라가 물러나 지구가 창 가운데 오게 (창 = SweepHud.Win)
             bool cockpit = hud != null && hud.CockpitView;
             // 출동 중엔 궤도 띠가 화면에 차도록 당긴다 (사장님 「좀 더 확대」) — 띠가 넓어지면 그만큼 물러난다
-            float wantSize = cockpit ? 9.6f : Mathf.Clamp((float)sim.Bo * 0.0145f, 3.8f, 7f) * 1.1f;   // 아래 계기판 몫만큼 물린다 (sim.ViewHalf 와 같은 식)   // 09-24 「화면에 작게 보인다」 — 더 당긴다 (띠는 30% 넓어짐)
-            OrthoBase = Mathf.Lerp(OrthoBase, wantSize, 1 - Mathf.Exp(-dt * 5f));
+            // 📷 10-10 확장을 산 뒤 첫 출동 — 이전 크기에서 시작해 1.2초 동안 천천히 물러나며 넓어진 궤도를 보여 준다
+            bool inRun = !cockpit && !sim.R.over;
+            if (inRun && !wasInRun)
+            {
+                int wl = (int)System.Math.Round((sim.Widen - 1) * 10);
+                if (lastWideLv >= 0 && wl > lastWideLv) { OrthoBase = (float)sim.ViewHalfAt(1 + 0.1 * lastWideLv); widenRevealT = 1.4f; }
+                lastWideLv = wl;
+            }
+            wasInRun = inRun; widenRevealT = Mathf.Max(0, widenRevealT - dt);
+            float wantSize = cockpit ? 9.6f : (float)sim.ViewHalf;   // 아래 계기판 몫만큼 물린다 (sim.ViewHalf 와 같은 식)   // 09-24 「화면에 작게 보인다」 — 더 당긴다 (띠는 30% 넓어짐)
+            OrthoBase = Mathf.Lerp(OrthoBase, wantSize, 1 - Mathf.Exp(-dt * (widenRevealT > 0 ? 1.6f : 5f)));
             NarrowK = Mathf.Max(1f, SweepHud.MinAspect / Mathf.Max(0.1f, (float)Screen.width / Mathf.Max(1, Screen.height)));   // 📐 16:9보다 좁으면 (16:10 · 4:3 · 5:4) 화면 글자처럼 16:9 폭이 다 들어가게 넓게 본다 — 위아래는 띠
             cam.orthographicSize = OrthoBase * NarrowK;
             float camY = cockpit ? -0.3f * OrthoBase : -0.1f * OrthoBase;   // 출동 중엔 궤도가 계기판 위로
@@ -397,6 +405,7 @@ namespace SalvageRun.Orbit
         /// <summary>📐 카메라 기준 크기 — 16:10 이상 화면의 세로 반폭. 좁은 화면(4:3)은 실제 카메라가 NarrowK 배 넓다.
         /// 효과 · 포대 · 계기판은 이 기준으로 그린다 (화면 글자 칸 960×600 과 맞게) — 09-29 화면 비율 검사</summary>
         public float OrthoBase = 6f; public static float NarrowK = 1f;
+        bool wasInRun; int lastWideLv = -1; float widenRevealT;   // 📷 확장 뒤 첫 출동 연출
         RenderTexture pixRT;
         void EnsurePixRT()
         {

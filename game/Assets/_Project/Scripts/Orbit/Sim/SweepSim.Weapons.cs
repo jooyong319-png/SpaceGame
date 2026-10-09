@@ -316,7 +316,9 @@ namespace SalvageRun.Orbit.Sim
             new double[] { 640, 660, 108 },                                                  // 레일건 — 긴 레일
         };
         static double[] PodMounts() { var m = new List<double>(); for (int r = 0; r < 2; r++) for (int c = 0; c < 5; c++) { m.Add(596 + c * 22); m.Add(630 + r * 22); m.Add(9); } return m.ToArray(); }
-        public double ViewHalf => Math.Min(7, Math.Max(3.8, Bo * 0.0145)) * 1.1;   // SweepGame 카메라 크기와 같은 식 (월드 단위, 화면 절반 높이) — 계기판 몫 10% 물림
+        // 📷 10-10 궤도 확장 때 카메라는 넓어진 만큼의 절반만 물러난다 — 테가 화면에서 커져 「넓어졌다」가 보이고, 잔해는 덜 작아진다 (시안 CCmZGdDP3devVa5uT5W4gU)
+        public double ViewHalfAt(double widen) { var o = Orbits[S.orbit]; double bo = o.bi + (o.bo - o.bi) * widen; return Math.Min(7, Math.Max(3.8, (o.bo + bo) / 2 * 0.0145)) * 1.1; }
+        public double ViewHalf => ViewHalfAt(Widen);   // SweepGame 카메라 크기와 같은 식 (월드 단위, 화면 절반 높이) — 계기판 몫 10% 물림
         public const double TurS = 1.4;                                        // 포구 크기 (시안보다 1.4배 — 09-24 작아 보였다)
         public double MountK => 100 * ViewHalf / 720 * TurS;                   // 시안 1px → 시뮬 px
         public int MountCount(int w) => Mounts[Math.Min(w, Mounts.Length - 1)].Length / 3;

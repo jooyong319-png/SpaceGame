@@ -109,7 +109,7 @@ namespace SalvageRun.Orbit.Sim
         public double Earned => earnClaw + earnDrone + earnBlast;
     }
 
-    public enum SwEv { Supply, SupplyGet, Strike, Broke, Coin, Pop, Beam, Ring, Blast, Tier, Crit, Collapse, Warn, EventGo, Collector, Shatter, Release, RunEnd, BillPaid, Overdue, Bankrupt, News, Won, SkillReady, NodeBought, Laser, Bolt, Meteor, Tourist, Vac, Shell, Rail , Proc, Act, Volley, TraitFx, ChainPay }
+    public enum SwEv { Supply, SupplyGet, Strike, Broke, Coin, Pop, Beam, Ring, Blast, Tier, Crit, Collapse, Warn, EventGo, Collector, Shatter, Release, RunEnd, BillPaid, Overdue, Bankrupt, News, Won, SkillReady, NodeBought, Laser, Bolt, Meteor, Tourist, Vac, Shell, Rail , Proc, Act, Volley, TraitFx, ChainPay, EvWarn, EvAt, Mark }
 
     public struct SwEvent
     {

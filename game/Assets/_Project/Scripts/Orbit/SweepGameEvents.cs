@@ -102,6 +102,7 @@ namespace SalvageRun.Orbit
                     case SwEv.Pop: if (e.k >= 3) Note(e.text, e.k == 3 ? Orange : e.k == 4 ? new Color(1f, 0.5f, 0.85f) : Violet); else PopAt(e.x, e.y, e.text, e.k == 1 ? Green : Amber2, 15); if (e.k == 3) OrbitSfx.Play("unit", 0.8f); if (e.k >= 4) OrbitSfx.Play("buy", 0.6f); break;
                     case SwEv.Meteor:
                     {
+                        hud.MarkAt(e.x, e.y, 80, new Color(1f, 0.36f, 0.31f), Loc.T("운석!"));   // 📍 10-10
                         var to = at; var from = to + new Vector3(-6f, 7f, 0);
                         if (Prop(ref meteorSpr, "meteor") != null) meteors.Add(new Meteor { sr = MakeAnim(meteorSpr, from, 0.55f, Color.white, 62), a = from, b = to });
                         else { var tail = Add(pixel, from, 0.05f, new Color(1f, 0.6f, 0.2f, 0.9f), 8, 0.4f); tail.a = from; tail.b = to; tail.size = 0.25f; }
@@ -294,7 +295,10 @@ namespace SalvageRun.Orbit
                         break;
                     case SwEv.Shatter: RingFx(at, Ice, 0.3f, 0.6f); OrbitSfx.Play("pick", 0.7f); break;
                     case SwEv.Warn: hud.Banner(e.text, e.k, 2.2f); OrbitSfx.Play("warn", 0.8f); break;
-                    case SwEv.EventGo: hud.Banner(e.text, -1, 1.6f); hud.SawEvent(e.k); break;
+                    case SwEv.EvWarn: hud.EventWarn(e.k, e.x, e.y, e.v, e.text); break;          // 📍 10-10 사건 예고 — 띠 · 점선 표적 · 소리
+                    case SwEv.EventGo: hud.EventGo(e.k, e.x, e.y, e.v, e.text); hud.SawEvent(e.k); break;   // 발생 — 실선 표적 · 이름표 (전엔 대사가 늘 ev0 이었다)
+                    case SwEv.EvAt: hud.EventAt(e.x, e.y, e.v, e.text); break;
+                    case SwEv.Mark: hud.MarkAt(e.x, e.y, e.v, e.k == 1 ? new Color(1f, 0.81f, 0.43f) : new Color(1f, 0.36f, 0.31f), e.text); OrbitSfx.Play("grab", 0.9f); break;
                     case SwEv.Collector: hud.Banner(e.text, -2, 3f); CollectorShip(); OrbitSfx.Play("warn", 1f); break;
                     case SwEv.RunEnd: Save(); hud.OnRunEnd(); PlayLog(); break;
                     case SwEv.Overdue: OrbitSfx.Play("warn", 1f); hud.RadioOverdue(sim.S.bill); break;

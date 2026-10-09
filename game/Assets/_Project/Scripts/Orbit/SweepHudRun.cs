@@ -26,7 +26,7 @@ namespace SalvageRun.Orbit
                 // 200 넘으면 큰 글자는 200 · 500 · 1000 · 2000 · 5000 … 넘을 때만 1.5초 — 그 사이엔 위쪽 작은 계수기 (09-24: 콤보가 판 내내 가운데를 덮었다)
                 int ms = 0; for (long m = 100; m <= R.chain; m = m.ToString()[0] == '1' ? m * 5 / 2 : m * 2) ms++;   // 100 · 250 · 500 · 1000 · 2500 …
                 if (ms > chainHund) { chainHund = ms; chainPopT = 1.1f; Big(Loc.T("연쇄 ") + R.chain + "!", 1.1f, 38, new Color(1f, 0.87f, 0.58f)); }   // 가운데는 고비를 넘을 때만 — 평소엔 오른쪽 위 계기 (09-26 정돈 1)
-                if (tier > chainTierSeen) { chainTierSeen = tier; chainPopT = Mathf.Max(chainPopT, 0.6f); }
+                if (tier > chainTierSeen) { chainTierSeen = tier; chainPopT = Mathf.Max(chainPopT, 0.6f); if (tier == 2) Big(Loc.T("연쇄 ") + R.chain + "!", 1.0f, 40, new Color(1f, 0.87f, 0.58f)); }   // 📍 10-10 30 연쇄도 가운데에
                 chainPopT -= Time.unscaledDeltaTime;
                 var cg = new Rect(vw - 150, 38, 138, 50);
                 GUI.color = new Color(0.05f, 0.06f, 0.09f, 0.85f * Mathf.Min(1, (float)R.chainT * 3)); GUI.DrawTexture(cg, white);
@@ -38,13 +38,14 @@ namespace SalvageRun.Orbit
                 GUI.color = Color.white;
             }
             else { chainHund = 0; chainTierSeen = 0; }
-            if (game.kessText != null) { Big(game.kessText + " ×" + R.chain, game.kessT, game.kessText == Loc.T("케슬러!") ? 30 : 36, new Color(1f, 0.6f, 0.3f)); game.kessText = null; }   // 케슬러 단계도 같은 통로 (정돈 6)
+            if (game.kessText != null) { Big(game.kessText + " ×" + R.chain, game.kessT, game.kessText == Loc.T("케슬러!") ? 48 : 56, new Color(1f, 0.6f, 0.3f)); game.kessText = null; }   // 케슬러 단계도 같은 통로 (정돈 6)
             if (cBigT > 0 && !R.over)
             {   // 🔠 가운데 큰 글자 — 한 번에 하나 (09-26 정돈 규칙 ①)
                 cBigT -= Time.unscaledDeltaTime;
                 chainSt.fontSize = cBigSize; chainSt.normal.textColor = new Color(cBigC.r, cBigC.g, cBigC.b, Mathf.Min(1, cBigT * 2.5f));
                 Lbl(new Rect(vw / 2 - 300, 74, 600, 56), cBigTxt, chainSt);
             }
+            EventFx();   // 📍 10-10 사건 띠 · 표적
             if (bannerT > 0 && banner != null && !sim.R.over)
             {
                 var c = bannerKind == -1 ? SweepGame.Amber2 : new Color(1f, 0.55f, 0.48f, Mathf.Sin(Time.time * 12) > -0.3f ? 1 : 0.55f);

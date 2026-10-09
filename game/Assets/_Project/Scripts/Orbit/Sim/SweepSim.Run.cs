@@ -198,6 +198,7 @@ namespace SalvageRun.Orbit.Sim
                 case 3:
                 {   // 🚚 09-26 사장님 「궤도 안 타고 쭉 지나가서 못 먹을 수도」 — 화면 위쪽을 한쪽에서 다른 쪽으로, 놓치면 빠져나간다
                     bool ltr = Rnd() < 0.5; double y0 = EY - Bo * Tilt * Rnd(0.55, 0.85), vx = (ltr ? 1 : -1) * 190, x0 = ltr ? -30 : 990;
+                    Emit(SwEv.EvAt, ltr ? 90 : 870, y0, 70, 3, ltr ? "▶" : "◀");                              // 📍 10-10 들어오는 쪽에 표적
                     for (int i = 0; i < 5; i++) { var v = SpawnFree(Vault, x0 - (ltr ? 1 : -1) * i * 30, y0 + Rnd(-8, 8), vx, 0, 99); v.convoy = true; }
                     var e1 = SpawnFree(Sat, x0 + (ltr ? 1 : -1) * 30, y0, vx, 0, 99, Att.Armor); e1.convoy = true;
                     var e2 = SpawnFree(Sat, x0 - (ltr ? 1 : -1) * 170, y0, vx, 0, 99, Att.Armor); e2.convoy = true;
@@ -250,7 +251,7 @@ namespace SalvageRun.Orbit.Sim
             r.idleT += dt;
             if (r.tapCombo > 0 && r.t - r.lastPress > 1) r.tapCombo = 0;          // ★ 연타 장인 — 1초 손을 떼면 식는다 (예전 게으름 보너스 자리)
             // ★ 떠돌이 소행성
-            if (r.rockT > 0 && r.t >= r.rockT) { r.rockT = -1; var o = Orbits[S.orbit]; var rk = Spawn(Big, Rnd(0, 6.28), (o.bi + Bo) / 2, Att.Rock, false, 0.7); rk.hp = rk.max = (int)Math.Round(rk.max * 2.5); Emit(SwEv.Warn, 0, 0, 0, 1, Loc.T("떠돌이 소행성이 궤도에 끼어들었다!")); }
+            if (r.rockT > 0 && r.t >= r.rockT) { r.rockT = -1; var o = Orbits[S.orbit]; var rk = Spawn(Big, Rnd(0, 6.28), (o.bi + Bo) / 2, Att.Rock, false, 0.7); rk.hp = rk.max = (int)Math.Round(rk.max * 2.5); Emit(SwEv.Mark, rk.x, rk.y, 55, 1, Loc.T("떠돌이 소행성이 궤도에 끼어들었다!")); }   // 📍 10-10 그 자리에 노란 표적
             if (aim) { r.ax = ax; r.ay = ay; }
             if (r.fuel > 0) r.fuel -= dt * FuelIdle;                       // ⛽ 가만히 있어도 조금씩 — 쏠 때 더 닳는다 (09-26 사장님 「공격에 연료를 닳게」)
 
@@ -299,13 +300,26 @@ namespace SalvageRun.Orbit.Sim
             }
         }
 
+        /// <summary>사건이 나타날 자리(시뮬 px)와 반지름 — 난수를 쓰지 않는다. 호송대(3)는 미리 모름 → r = -1</summary>
+        public void EventSpot(int ev, out double x, out double y, out double rad)
+        {
+            var o = Orbits[S.orbit]; double mid = (o.bi + Bo) / 2;
+            switch (ev)
+            {
+                case 0: x = EX - Bo + 20; y = EY + 40; rad = 55; return;                                  // 연료 보급선 — 왼쪽에서 들어옴
+                case 1: case 4: x = EX + Math.Cos(-0.5) * mid; y = EY + Math.Sin(-0.5) * mid * Tilt; rad = ev == 1 ? 75 : 120; return;   // 충돌 · 대충돌 — 오른쪽 위
+                case 2: x = EX - Bo + 30; y = EY; rad = Bo * Tilt * 0.75; return;                         // 파편 폭풍 — 왼쪽 줄기
+                default: x = y = 0; rad = -1; return;
+            }
+        }
+
         void Schedule(double dt)
         {
             var r = R;
             void Check(ref double t, ref bool warned, int ev)
             {
                 if (t < 0 || ev < 0) return;
-                if (!warned && r.t >= t - 2) { warned = true; Emit(SwEv.Warn, 0, 0, ev, ev == 2 ? 0 : 1, "⚠ " + EventNames[ev] + " — " + EventHint[ev]); }
+                if (!warned && r.t >= t - 2) { warned = true; EventSpot(ev, out double wx, out double wy, out double wr); Emit(SwEv.EvWarn, wx, wy, wr, ev, EventNames[ev] + "\n" + EventHint[ev]); }
                 if (r.t >= t) { t = -1; FireEvent(ev); }
             }
             Check(ref r.ev1T, ref r.ev1Warn, r.ev1);
@@ -327,7 +341,7 @@ namespace SalvageRun.Orbit.Sim
         void FireEvent(int ev)
         {
             var r = R; var o = Orbits[S.orbit]; double mid = (o.bi + Bo) / 2;
-            Emit(SwEv.EventGo, 0, 0, ev, 0, EventNames[ev]);
+            EventSpot(ev, out double gx, out double gy, out double gr); Emit(SwEv.EventGo, gx, gy, gr, ev, EventNames[ev]);
             switch (ev)
             {
                 case 0: SpawnFree(Fuel, -10, EY + 40, 150, 0, 3.2); break;            // ⛽ 09-27 사장님 「연료통이 한 번에 많이 날아오지 말고 하나만」 — 다섯이 와도 한 판 되찾는 한도(25%)에 막혀 한두 개만 찼다
