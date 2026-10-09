@@ -115,7 +115,7 @@ namespace SalvageRun.Orbit
                 var nw = MS.news[MS.news.Count - 1 - k];
                 float yy = ny + 24 + k * 30;
                 string mark = nw.dir > 0 ? "<color=" + UpHex + ">▲</color> " : nw.dir < 0 ? "<color=" + DnHex + ">▼</color> " : "";
-                L(ls.x + 8, yy, ls.width - 16, "<size=11>" + mark + (k == 0 ? "<color=#ffdf95>" : "<color=#c8d0dc>") + Clip(Loc.T(nw.head), 15) + "</color></size>");
+                L(ls.x + 8, yy, ls.width - 16, "<size=11>" + mark + (k == 0 ? "<color=#ffdf95>" : "<color=#c8d0dc>") + Clip(Loc.TC(nw.head), 15) + "</color></size>");
                 L(ls.x + 20, yy + 14, ls.width - 28, "<size=9><color=#5f6878>" + Mathf.Max(0, Mathf.RoundToInt(MS.clock - nw.t)) + Loc.T("초 전") + (nw.rumor ? Loc.T(" · 소문") : "") + "</color></size>");
             }
             if (MS.news.Count == 0) L(ls.x + 8, ny + 24, ls.width - 16, Loc.T("<size=11><color=#5f6878>아직 속보 없음</color></size>"));

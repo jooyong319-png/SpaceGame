@@ -369,8 +369,8 @@ namespace SalvageRun.Orbit
             int unread = sim.Unread;
             Lbl(new Rect(r.x + 10, r.y + 6, r.width - 20, 18), (Loc.En ? "<size=10><color=#ffab3d>NEWS · Day " + S.runs + "</color></size>" : "<size=10><color=#ffab3d>ORBIT NEWS · " + S.runs + "일째</color></size>"), label);
             if (unread > 0) Lbl(new Rect(r.x + 10, r.y + 6, r.width - 20, 18), Loc.T("<size=10><color=#ff5a3a>●</color> <color=#ffab3d>새 ") + unread + "</color></size>", ledR);
-            string a = M.news.Count > 0 ? (unread > 0 ? Loc.T("속보 ▸ ") : "") + Loc.T(M.news[M.news.Count - 1].head) : Loc.T("오늘은 조용함");
-            string b = M.news.Count > 1 ? Loc.T(M.news[M.news.Count - 2].head) + (M.news.Count > 2 ? "  ▸  " + Loc.T(M.news[M.news.Count - 3].head) : "") : Loc.T("궤도 청소부 영업 중");
+            string a = M.news.Count > 0 ? (unread > 0 ? Loc.T("속보 ▸ ") : "") + Loc.TC(M.news[M.news.Count - 1].head) : Loc.T("오늘은 조용함");
+            string b = M.news.Count > 1 ? Loc.TC(M.news[M.news.Count - 2].head) + (M.news.Count > 2 ? "  ▸  " + Loc.TC(M.news[M.news.Count - 3].head) : "") : Loc.T("궤도 청소부 영업 중");
             LedStrip(new Rect(r.x + 8, r.y + 26, r.width - 16, 34), a, 15, 38f);
             LedStrip(new Rect(r.x + 8, r.y + 66, r.width - 16, 26), b, 12, 26f);
             if (S.front1 >= 0 && S.front2 >= 0 && sim.Mk != null && !frontOpen)

@@ -28,6 +28,28 @@ namespace SalvageRun.Orbit.Sim
             return back.Count > 0 && back.TryGetValue(ko, out var k) ? k : ko;   // 영어일 때 저장된 글(기사 제목 …)도 한국어로
         }
 
+        /// <summary>🌐 10-10 저장된 기사(조각을 이어 만든 글) — 통째로 없으면 아는 조각을 길이 긴 것부터 바꿔 끼운다.
+        /// 「궤도 청소부 (」 + 3 + 「대), 출동 」… 처럼 만든 기사는 만든 때 언어로 저장돼, 한국어로 하다 영어로 바꾸면 기사만 한국어로 남았다.</summary>
+        public static string TC(string s)
+        {
+            string t = T(s);
+            if (!En || t != s || string.IsNullOrEmpty(s)) return t;
+            if (tc == null) { tc = new Dictionary<string, string>(); byFirst = new Dictionary<char, List<string>>(); foreach (var k in map.Keys) if (HasKo(k)) { if (!byFirst.TryGetValue(k[0], out var l)) byFirst[k[0]] = l = new List<string>(); l.Add(k); } foreach (var l in byFirst.Values) l.Sort((x, y) => y.Length.CompareTo(x.Length)); }
+            if (tc.TryGetValue(s, out var c)) return c;
+            if (!HasKo(s)) return tc[s] = s;
+            var sb = new System.Text.StringBuilder(); int i = 0;
+            while (i < s.Length)
+            {
+                string hit = null;
+                if (byFirst.TryGetValue(s[i], out var l)) foreach (var k in l) if (k.Length <= s.Length - i && string.CompareOrdinal(s, i, k, 0, k.Length) == 0 && (k.Length > 1 || (i == 0 || !Ko(s[i - 1])) && (i + 1 >= s.Length || !Ko(s[i + 1])))) { hit = k; break; }   // 한 글자(「달」)는 앞뒤가 한글이 아닌 낱말일 때만
+                if (hit != null) { sb.Append(map[hit]); i += hit.Length; } else sb.Append(s[i++]);
+            }
+            return tc[s] = sb.ToString();
+        }
+        static Dictionary<string, string> tc; static Dictionary<char, List<string>> byFirst;
+        static bool Ko(char ch) => ch >= 0xAC00 && ch <= 0xD7A3;
+        static bool HasKo(string s) { foreach (var ch in s) if (Ko(ch)) return true; return false; }
+
         static void Load()
         {
             map = new Dictionary<string, string>(); back = new Dictionary<string, string>();
@@ -45,7 +67,7 @@ namespace SalvageRun.Orbit.Sim
             }
         }
         static string Unesc(string s) => s.Replace("\\n", "\n").Replace("\\t", "\t");
-        public static void Reset() { map = null; back = null; slots = null; }
+        public static void Reset() { map = null; back = null; slots = null; tc = null; byFirst = null; }
 
         // ───────────────────────── 🔁 도중에 언어 바꾸기
         // 자리 하나 = 「어느 그릇의 어디에 있는 한국어 글」. 그릇은 정적 필드 · 배열 칸 · 객체 필드 · 사전 값.

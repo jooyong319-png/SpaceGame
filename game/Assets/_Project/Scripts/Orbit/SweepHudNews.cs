@@ -18,7 +18,7 @@ namespace SalvageRun.Orbit
             else
             {
                 var heads = new List<string>();
-                for (int i = sim.M.news.Count - 1; i >= 0 && heads.Count < 3; i--) heads.Add(Loc.T(sim.M.news[i].head));
+                for (int i = sim.M.news.Count - 1; i >= 0 && heads.Count < 3; i--) heads.Add(Loc.TC(sim.M.news[i].head));
                 int k = tickI % (heads.Count + 2);
                 line = k < heads.Count ? heads[k] : SweepSim.World[(tickI * 7) % SweepSim.World.Length];
             }
@@ -43,7 +43,7 @@ namespace SalvageRun.Orbit
             {
                 int i = total - 1 - j; var it = M.news[i];
                 string kind = it.kind == "scoop" ? Loc.T("<color=#ff6b5a>특종</color>") : it.kind == "world" ? Loc.T("<color=#8a93a3>세상</color>") : it.kind == "extra" ? Loc.T("<color=#ffdf95>호외</color>") : Loc.T("<color=#f2c14e>우리</color>");
-                if (Bt(new Rect(0, j * 40, 280, 36), (it.read ? "   " : "<color=#ff6b5a>●</color> ") + kind + "  <size=12>" + Clip(Loc.T(it.head), Loc.En ? 16 : 20) + "</size>", i == newsSel ? btn : btnOff)) { newsSel = i; it.read = true; }
+                if (Bt(new Rect(0, j * 40, 280, 36), (it.read ? "   " : "<color=#ff6b5a>●</color> ") + kind + "  <size=12>" + Clip(Loc.TC(it.head), Loc.En ? 16 : 20) + "</size>", i == newsSel ? btn : btnOff)) { newsSel = i; it.read = true; }
             }
             GUI.EndScrollView();
             int scoops = 0; foreach (var it in M.news) if (it.kind == "scoop") scoops++;
@@ -57,16 +57,16 @@ namespace SalvageRun.Orbit
                 var it = M.news[newsSel];
                 float x = pr.x + 22, w = pr.width - 44, y = pr.y + 16;
                 paperHead.fontSize = 26; Lbl(new Rect(x, y - 3, 240, 36), Loc.T("궤도일보"), paperHead);
-                paperSmall.alignment = TextAnchor.UpperRight; Lbl(new Rect(x, y + 8, w, 18), Loc.T("출동 ") + it.run + Loc.T("일째 · ") + it.company + Loc.T("대 시절"), paperSmall); paperSmall.alignment = TextAnchor.UpperLeft;
+                paperSmall.alignment = TextAnchor.UpperRight; Lbl(new Rect(x, y + 8, w, 18), (Loc.En ? "Run " + it.run + " · Sweeper #" + it.company : "출동 " + it.run + "일째 · " + it.company + "대 시절"), paperSmall); paperSmall.alignment = TextAnchor.UpperLeft;
                 y += 36; GUI.DrawTexture(new Rect(x, y, w, 3), texInk); y += 12;
                 string kn = it.kind == "scoop" ? Loc.T("특종") : it.kind == "world" ? Loc.T("세상 소식") : it.kind == "extra" ? Loc.T("호외") : Loc.T("우리 소식");
                 GUI.color = it.kind == "scoop" ? new Color(0.75f, 0.22f, 0.17f) : it.kind == "world" ? new Color(0.42f, 0.39f, 0.34f) : new Color(0.72f, 0.53f, 0.04f);
                 GUI.DrawTexture(new Rect(x, y, 70, 18), white); GUI.color = Color.white;
                 Lbl(new Rect(x, y - 2, 70, 22), "<color=#ffffff>" + kn + "</color>", center); y += 26;
-                paperHead.fontSize = 22; float hh = paperHead.CalcHeight(new GUIContent(Loc.T(it.head)), w);
-                Lbl(new Rect(x, y, w, hh), Loc.T(it.head), paperHead); y += hh + 14;
-                float bh = paperBody.CalcHeight(new GUIContent(Loc.T(it.body)), w);
-                Lbl(new Rect(x, y, w, bh), Loc.T(it.body), paperBody); y += bh + 16;
+                paperHead.fontSize = 22; float hh = paperHead.CalcHeight(new GUIContent(Loc.TC(it.head)), w);
+                Lbl(new Rect(x, y, w, hh), Loc.TC(it.head), paperHead); y += hh + 14;
+                float bh = paperBody.CalcHeight(new GUIContent(Loc.TC(it.body)), w);
+                Lbl(new Rect(x, y, w, bh), Loc.TC(it.body), paperBody); y += bh + 16;
                 Lbl(new Rect(x, y, w, 16), Loc.T("— 궤도일보 궤도부"), paperSmall); y += 30;
                 NewsSide(pr, x, w, y);
             }
@@ -98,10 +98,10 @@ namespace SalvageRun.Orbit
                 GUI.color = it.kind == "scoop" ? new Color(0.75f, 0.22f, 0.17f) : it.kind == "world" ? new Color(0.42f, 0.39f, 0.34f) : new Color(0.72f, 0.53f, 0.04f);
                 GUI.DrawTexture(new Rect(cx, cy, 70, 18), white); GUI.color = Color.white;
                 Lbl(new Rect(cx, cy - 2, 70, 22), "<color=#ffffff>" + kn + "</color>", center); cy += 26;
-                string hd = Loc.T(it.head); float hh = paperHead.CalcHeight(new GUIContent(hd), cw);
+                string hd = Loc.TC(it.head); float hh = paperHead.CalcHeight(new GUIContent(hd), cw);
                 Lbl(new Rect(cx, cy, cw, hh), hd, paperHead); cy += hh + 8;
                 // 본문은 남은 높이에 들어가는 문장까지만 (중간에서 잘리지 않게)
-                string full = Loc.T(it.body), bd = full; float room = bottom - cy; int end = full.Length;
+                string full = Loc.TC(it.body), bd = full; float room = bottom - cy; int end = full.Length;
                 while (bd.Length > 0 && paperBody.CalcHeight(new GUIContent(bd), cw) > room)
                 {
                     end = end > 2 ? full.LastIndexOf(". ", end - 2) : -1;

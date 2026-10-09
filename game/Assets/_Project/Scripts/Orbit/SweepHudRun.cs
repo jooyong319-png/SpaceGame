@@ -425,8 +425,8 @@ namespace SalvageRun.Orbit
             for (int k = 0; k < 3 && k < MS.news.Count; k++)
             {
                 var nw = MS.news[MS.news.Count - 1 - k];
-                if (k == 0) Marquee(new Rect(r.x + 12, y + 5, r.width - 24, 18), "<color=#ffdf95>" + Loc.T(nw.head) + "</color>", 11, label);   // 맨 윗줄만 흐른다 — 셋이 다 흐르면 어지럽다
-                else Lbl(new Rect(r.x + 12, y + 5 + k * 18, r.width - 24, 18), "<size=11><color=#8a9bb3>" + Clip(Loc.T(nw.head), 30) + "</color></size>", label);
+                if (k == 0) Marquee(new Rect(r.x + 12, y + 5, r.width - 24, 18), "<color=#ffdf95>" + Loc.TC(nw.head) + "</color>", 11, label);   // 맨 윗줄만 흐른다 — 셋이 다 흐르면 어지럽다
+                else Lbl(new Rect(r.x + 12, y + 5 + k * 18, r.width - 24, 18), "<size=11><color=#8a9bb3>" + Clip(Loc.TC(nw.head), 30) + "</color></size>", label);
             }
         }
         static string SecName(NewsDef nn)
@@ -446,7 +446,7 @@ namespace SalvageRun.Orbit
             if (lastNewsSeen < 0) lastNewsSeen = ns.Count > 0 ? ns[ns.Count - 1].t : sim.Mk.M.clock - 0.01f;   // 켜자마자 옛 속보는 건너뛴다
             if (ns.Count > 0 && ns[ns.Count - 1].t > lastNewsSeen)
             {
-                bannerNews = ns[ns.Count - 1]; newsBanner = 5.5f; OrbitSfx.Play("supply", 0.5f); Anchor(Loc.T(bannerNews.head));
+                bannerNews = ns[ns.Count - 1]; newsBanner = 5.5f; OrbitSfx.Play("supply", 0.5f); Anchor(Loc.TC(bannerNews.head));
                 lastNewsSeen = ns[ns.Count - 1].t;
             }
             if (newsBanner <= 0 || bannerNews == null) return;
@@ -458,7 +458,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(0.04f, 0.04f, 0.06f, 0.92f * a); GUI.DrawTexture(new Rect(b.x + 74, b.y, b.width - 74, b.height), white);
             GUI.color = new Color(1, 1, 1, a);
             Lbl(new Rect(b.x, b.y, 74, b.height), Loc.T("<size=15><b>속보</b></size>"), center);
-            Marquee(new Rect(b.x + 84, b.y + 3, b.width - 94, 22), "<b>" + Loc.T(bannerNews.head) + "</b>", 14, label);
+            Marquee(new Rect(b.x + 84, b.y + 3, b.width - 94, 22), "<b>" + Loc.TC(bannerNews.head) + "</b>", 14, label);
             string moves = "";
             for (int i = 0; i < sim.Mk.M.st.Count; i++) { var st = sim.Mk.M.st[i]; if (st.pushLeft <= 0) continue; moves += Market.Defs[i].name + (st.push > 0 ? " <color=#ff5c5c>▲</color>  " : " <color=#5494ff>▼</color>  "); }
             Lbl(new Rect(b.x + 84, b.y + 23, b.width - 94, 20), "<size=11>" + moves + "</size>", label);
