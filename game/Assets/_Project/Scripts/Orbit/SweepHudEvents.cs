@@ -39,7 +39,7 @@ namespace SalvageRun.Orbit
             if (ev != 0 && ev != 3) OrbitSfx.Play("collide", 0.8f);
         }
         /// <summary>호송대처럼 발생 순간에야 자리가 정해지는 것</summary>
-        public void EventAt(double x, double y, double rad, string arrow) { tugAt = Time.unscaledTime; tugDir = arrow == "◀" ? -1 : 1; tugStart = new Vector2(tugDir > 0 ? -30 : 990, (float)y); evGoPos = new Vector2((float)x, (float)y); evGoR = (float)rad; evGoT = Mathf.Max(evGoT, 1.8f); evGoArrow = arrow; }
+        public void EventAt(double x, double y, double rad, string arrow) { tugAt = Time.unscaledTime; tugFuel = evGoEv == 0; tugDir = arrow == "◀" ? -1 : 1; tugStart = new Vector2(tugDir > 0 ? -30 : 990, (float)y); evGoPos = new Vector2((float)x, (float)y); evGoR = (float)rad; evGoT = Mathf.Max(evGoT, 1.8f); evGoArrow = arrow; }
         /// <summary>떠돌이 소행성 · 운석 — 작은 표적 하나</summary>
         public void MarkAt(double x, double y, double rad, Color c, string label)
         {
@@ -105,7 +105,7 @@ namespace SalvageRun.Orbit
         // ───────────────────────────────── 🎬 10-10 「뭐가 나온다 하면 진짜 뭐가 나와야」(사장님) — 사건마다 등장하는 것
         // 충돌 · 대충돌 = 있는 잔해 그림 둘이 다가와 부딪쳐 폭발 · 보급선 = 셔틀이 연료통을 놓고 감 · 폭풍 = 부서진 화물선이 고철을 쏟음 · 호송대 = 예인선이 앞장
         static Texture2D[] exTex; static Texture2D tShuttle, tWreck, tTug, tSatA, tSatB, tStation, tBig;
-        float actWarnAt = -99, actGoAt = -99; int actEv = -1; Vector2 actPos; float actR; float tugAt = -99; Vector2 tugStart; int tugDir = 1;
+        float actWarnAt = -99, actGoAt = -99; int actEv = -1; Vector2 actPos; float actR; float tugAt = -99; Vector2 tugStart; int tugDir = 1; bool tugFuel;
         static Texture2D LoadTex(string p) => Resources.Load<Texture2D>(p);
         void EnsureActTex()
         {
@@ -147,12 +147,6 @@ namespace SalvageRun.Orbit
                     }
                     break;
                 }
-                case 0:
-                {   // ⛽ 셔틀이 왼쪽에서 와서 연료통을 놓고 위로 빠진다 (연료통은 시뮬이 x=-10 에서 150px/초로 보낸다)
-                    if (!going && tw < 2.4f) ActSprite(tShuttle, new Vector2(Mathf.Lerp(-90, actPos.x - 40, Mathf.SmoothStep(0, 1, tw / 2f)), actPos.y - 26), 74, false, Mathf.Clamp01(tw / 0.3f));
-                    if (going && tg < 1.6f) ActSprite(tShuttle, new Vector2(actPos.x - 40 + 170 * tg, actPos.y - 26 - 60 * tg * tg), 74, false, 1 - Mathf.Clamp01((tg - 1f) / 0.6f));
-                    break;
-                }
                 case 2:
                 {   // 🌪 부서진 화물선이 왼쪽 끝에서 흔들리며 고철을 쏟는다 (폭풍 40개 · 약 5초)
                     float life = going ? 5.5f - tg : 99, a = Mathf.Clamp01(tw / 0.4f) * Mathf.Clamp01(life / 0.6f);
@@ -168,8 +162,9 @@ namespace SalvageRun.Orbit
             // 🚚 호송대 앞 예인선 — 행렬과 같은 속도 190px/초
             if (now - tugAt < 7f)
             {
-                float t = now - tugAt; var p = tugStart + new Vector2(tugDir * (90 + 190 * t), 0);
-                ActSprite(tTug, p, 84, tugDir < 0, Mathf.Clamp01(t / 0.3f));
+                float t = now - tugAt;
+                if (tugFuel) { var p = tugStart + new Vector2(tugDir * 170 * t, -28); ActSprite(tShuttle, p, 78, tugDir < 0, Mathf.Clamp01(t / 0.3f)); }   // ⛽ 연료통을 싣고 가는 셔틀
+                else { var p = tugStart + new Vector2(tugDir * (90 + 190 * t), 0); ActSprite(tTug, p, 84, tugDir < 0, Mathf.Clamp01(t / 0.3f)); }
             }
         }
 

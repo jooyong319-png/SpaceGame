@@ -42,7 +42,7 @@ namespace SalvageRun.Orbit.Sim
         };
         public static readonly string[] FormNames = { Loc.T("무리"), Loc.T("탱크 사슬"), Loc.T("케이블 망"), Loc.T("호송대"), Loc.T("난파 구역") };
         public static readonly string[] EventNames = { Loc.T("연료 보급선"), Loc.T("충돌 사고"), Loc.T("파편 폭풍"), Loc.T("금고 호송대"), Loc.T("대충돌") };
-        public static readonly string[] EventHint = { Loc.T("왼쪽에서 연료통 하나 · 부수면 연료 충전"), Loc.T("오른쪽 위에 파편 서른 · 뭉쳤을 때 쓸면 연쇄"), Loc.T("왼쪽에서 고철 쏟아짐 · 길목 차단"), Loc.T("금고 위성 행렬 통과 · 놓치기 전에"), Loc.T("오른쪽 위에 파편 60개 · 폭탄 위성 섞임") };   // 09-26 사장님 「뭐가 되는 건데?」
+        public static readonly string[] EventHint = { Loc.T("보급 셔틀이 위쪽을 지나감 · 연료통을 부수면 연료 충전"), Loc.T("오른쪽 위에 파편 서른 · 뭉쳤을 때 쓸면 연쇄"), Loc.T("왼쪽에서 고철 쏟아짐 · 길목 차단"), Loc.T("금고 위성 행렬 통과 · 놓치기 전에"), Loc.T("오른쪽 위에 파편 60개 · 폭탄 위성 섞임") };   // 09-26 사장님 「뭐가 되는 건데?」
         public const double FuelIdle = 0.5, ShotFuel = 0.5, ClickFuel = 0.4, VolleyFuel = 2;   // ⛽ 연료 — 가만히 · 쏠 때(간격 비례) · 클릭 한 방 · 전탄
         bool TargetNear(double x, double y)
         {   // 조준점 근처에 부술 잔해가 있나 — 없으면 주 무기가 쉰다

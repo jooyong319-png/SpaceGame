@@ -306,7 +306,6 @@ namespace SalvageRun.Orbit.Sim
             var o = Orbits[S.orbit]; double mid = (o.bi + Bo) / 2;
             switch (ev)
             {
-                case 0: x = EX - Bo + 20; y = EY + 40; rad = 55; return;                                  // 연료 보급선 — 왼쪽에서 들어옴
                 case 1: case 4: x = EX + Math.Cos(-0.5) * mid; y = EY + Math.Sin(-0.5) * mid * Tilt; rad = ev == 1 ? 75 : 120; return;   // 충돌 · 대충돌 — 오른쪽 위
                 case 2: x = EX - Bo + 30; y = EY; rad = Bo * Tilt * 0.75; return;                         // 파편 폭풍 — 왼쪽 줄기
                 default: x = y = 0; rad = -1; return;
@@ -344,7 +343,13 @@ namespace SalvageRun.Orbit.Sim
             EventSpot(ev, out double gx, out double gy, out double gr); Emit(SwEv.EventGo, gx, gy, gr, ev, EventNames[ev]);
             switch (ev)
             {
-                case 0: SpawnFree(Fuel, -10, EY + 40, 150, 0, 3.2); break;            // ⛽ 09-27 사장님 「연료통이 한 번에 많이 날아오지 말고 하나만」 — 다섯이 와도 한 판 되찾는 한도(25%)에 막혀 한두 개만 찼다
+                case 0:
+                {   // ⛽ 10-10 사장님 「연료선도 금고선처럼 슥 지나가게」 — 보급 셔틀이 연료통 하나를 싣고 위쪽을 가로지른다 (놓치면 빠져나감)
+                    bool ltr = Rnd() < 0.5; double y0 = EY - Bo * Tilt * Rnd(0.5, 0.8), x0 = ltr ? -30 : 990;
+                    Emit(SwEv.EvAt, ltr ? 90 : 870, y0, 55, 0, ltr ? "▶" : "◀");
+                    var f = SpawnFree(Fuel, x0, y0, (ltr ? 1 : -1) * 170, 0, 99); f.convoy = true;
+                    break;
+                }            // ⛽ 09-27 사장님 「연료통이 한 번에 많이 날아오지 말고 하나만」 — 다섯이 와도 한 판 되찾는 한도(25%)에 막혀 한두 개만 찼다
                 case 1:
                 case 4:
                 {

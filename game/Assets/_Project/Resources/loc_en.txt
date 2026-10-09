@@ -1815,3 +1815,4 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 <b>받기 ▸ 결산으로</b>	<b>Collect ▸ Results</b>
 종목	Stock
 평가	Value
+보급 셔틀이 위쪽을 지나감 · 연료통을 부수면 연료 충전	Supply shuttle passing overhead · break the canister to refuel
