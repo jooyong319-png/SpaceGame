@@ -12,7 +12,7 @@ namespace SalvageRun.Orbit
     /// </summary>
     public static class KNum
     {
-        static readonly string[] Units = { "", "만", "억", "조", "경" };
+        static readonly string[] Units = { "", "만", "억", "조", "경", "해", "자", "양", "구", "간", "정", "재", "극" };   // 10-10 무한 궤도 깊은 층 — 경에서 값을 멈춰 900경으로만 보였다
 
         /// <summary>위 단위 하나만 — 34억 · 1200만 (좁은 칸용)</summary>
         public static string Short(double v)
@@ -27,7 +27,13 @@ namespace SalvageRun.Orbit
             if (double.IsNaN(v) || double.IsInfinity(v)) return "∞";
             if (v < 0) return "-" + Fmt(-v);
             if (Sim.Loc.En) return En(v);
-            if (v >= 9e18) v = 9e18;
+            if (v >= 9e18)
+            {   // long 을 넘는 값 — 네 자리 덩어리를 double 로 읽는다 (극 위는 극에 붙인다)
+                int t = System.Math.Min((int)System.Math.Floor(System.Math.Log10(v) / 4), Units.Length - 1);
+                double hi = System.Math.Floor(v / System.Math.Pow(10, 4 * t)), lo = System.Math.Floor(v / System.Math.Pow(10, 4 * (t - 1)) % 10000);
+                if (hi >= 10000) return Short(hi) + Units[t];                   // 극 위 — 「5조극」 · 「8130양극」
+                return hi.ToString("0") + Units[t] + (lo > 0 ? " " + lo.ToString("0") + Units[t - 1] : "");
+            }
             long n = (long)System.Math.Floor(v);
             if (n < 10000) return n.ToString();
 

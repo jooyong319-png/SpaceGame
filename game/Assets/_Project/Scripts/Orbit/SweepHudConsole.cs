@@ -60,7 +60,7 @@ namespace SalvageRun.Orbit
                 Lbl(new Rect(x, y0 + 26, w, 20), Loc.T("<size=12><color=#d8ccff>무한 궤도</color></size>"), label);
                 Lbl(new Rect(x, y0 + 44, w, 44), "<size=34><b><color=#e6dcff>" + M.depth + Loc.T("층</color></b></size>"), label);
                 Lbl(new Rect(x, y0 + 92, w, 20), Loc.T("<size=11><color=#bff4ff>최고 ") + M.bestDepth + Loc.T("층 · ★ ") + M.legend + "</color></size>", label);
-                Lbl(new Rect(x, y0 + 116, w, 60), Loc.T("<size=11><color=#7fcfe0>판이 끝날 때마다 한 층 아래로\n층마다 체력 ×1.25 · 값 ×1.2\n5층마다 열쇠 +1</color></size>"), small);
+                Lbl(new Rect(x, y0 + 116, w, 80), Loc.T("<size=11><color=#7fcfe0>판이 끝날 때마다 한 층 아래로\n층마다 체력 ×1.25 · 값 ×1.2\n5층마다 열쇠 +1</color></size>"), small);   // 10-10 영어는 다섯 줄 — 60 이면 넘쳤다 (무한 궤도엔 아래 납부 단추가 없다)
             }
             else if (M.cleanReady)
             {

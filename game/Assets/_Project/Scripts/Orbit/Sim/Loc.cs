@@ -195,7 +195,7 @@ namespace SalvageRun.Orbit.Sim
             public int GetHashCode(object o) => System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(o);
         }
 
-        static readonly string[] EnUnits = { "", "K", "M", "B", "T", "Qa", "Qi" };
+        static readonly string[] EnUnits = { "", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc", "Ud", "Dd", "Td", "Qad", "Qid" };   // 10-10 무한 궤도 깊은 층 — Qi 위는 자릿수를 다 늘어놓았다
         static readonly System.Globalization.CultureInfo IC = System.Globalization.CultureInfo.InvariantCulture;
         /// <summary>영어 숫자 — 1000 아래는 그대로 · 위는 유효 숫자 셋 (12.4K · 380M · 1.2T)</summary>
         public static string Num(double v)
@@ -203,6 +203,7 @@ namespace SalvageRun.Orbit.Sim
             if (double.IsNaN(v) || double.IsInfinity(v)) return "∞";
             if (v < 0) return "-" + Num(-v);
             if (v < 1000) return ((long)Math.Floor(v)).ToString(IC);
+            if (v >= 1e51) { int e = (int)Math.Floor(Math.Log10(v)); return (Math.Floor(v / Math.Pow(10, e) * 100) / 100).ToString("0.##", IC) + "e" + e; }   // 단위도 넘으면 짧게
             int u = 0; while (v >= 1000 && u < EnUnits.Length - 1) { v /= 1000; u++; }
             string n = v >= 100 ? Math.Floor(v).ToString("0", IC) : v >= 10 ? (Math.Floor(v * 10) / 10).ToString("0.#", IC) : (Math.Floor(v * 100) / 100).ToString("0.##", IC);
             return n + EnUnits[u];

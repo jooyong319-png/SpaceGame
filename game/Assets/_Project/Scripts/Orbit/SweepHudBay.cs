@@ -214,7 +214,7 @@ namespace SalvageRun.Orbit
                 string bl = Loc.T("청구서 · ") + SweepSim.Bills[S.bill].t + " <color=#ffdf95>" + KNum.Fmt(sim.BillAmount) + "</color>" + (S.overdue ? Loc.T("  <color=#ff8a7a>오늘 납부일</color>") : " · " + Loc.RunsLeft(S.billDue)) + (S.debt > 0 ? Loc.T("  <color=#ffb3a8>빚 ") + KNum.Fmt(S.debt) + "</color>" : "") + (S.cash >= sim.BillAmount ? Loc.T("  <color=#6fcf97>▶ 눌러서 갚기</color>") : "");
                 bool loanPay = S.overdue && S.cash < sim.BillAmount && sim.BillAmount - S.cash <= sim.LoanCap;
                 if (loanPay) bl += Loc.T("  <color=#6fcf97>▶ 대출 ") + KNum.Fmt(sim.BillAmount - S.cash) + Loc.T(" 받아 갚기</color>");
-                if (BpBtn(new Rect(ox + 240, 8, 500, 30), bl, S.cash >= sim.BillAmount || loanPay)) { if (S.cash >= sim.BillAmount) sim.PayBill(); else if (loanPay) RequestLoan(sim.BillAmount - S.cash, true); }
+                if (BpBtn(new Rect(ox + 240, 8, 500, 30), Fit(bl, 13, 492, center, 9), S.cash >= sim.BillAmount || loanPay)) { if (S.cash >= sim.BillAmount) sim.PayBill(); else if (loanPay) RequestLoan(sim.BillAmount - S.cash, true); }   // 10-10 큰 돈 · 마지막 청구서 · 납부일 · 빚이 다 붙으면 칸을 넘었다
             }
             int unreadN = sim.Unread;
             // 오른쪽 끝은 ⚙ 설정 단추(vw-58) 앞에서 멈춘다 — 겹쳐서 설정을 누르면 신문이 열렸다 (09-28)

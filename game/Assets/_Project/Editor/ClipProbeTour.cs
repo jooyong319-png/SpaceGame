@@ -121,6 +121,10 @@ namespace SalvageRun.EditorTools
                 foreach (int fl in new[] { 2, 4, 3, 5 }) { int ff = fl; acts.Add(g => { Close(g); g.hud.flow = ff; }); acts.Add(g => { }); }
                 acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.loanOpen = true; });
                 acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.TestLotto(0); });
+                // ∞ 10-10 무한 궤도 — 깊은 층 · 큰 돈(영어가 Qi 위 자릿수를 다 늘어놓았다)
+                acts.Add(g => { Close(g); var M = g.sim.M; M.endless = true; M.depth = 1234; M.bestDepth = 56789; M.legend = 12; g.sim.S.cash = 5.85e75; g.hud.flow = 2; }); acts.Add(g => { });
+                acts.Add(g => { Close(g); g.hud.flow = 3; }); acts.Add(g => { });
+                acts.Add(g => { g.sim.M.endless = false; g.sim.S.cash = 987654321012; Close(g); g.hud.flow = 2; });
                 // 🧾 10-09 많이 부순 판의 결산 — 종류별 아이콘 줄 · 피해 목록 13종 · 빚 상환 줄 (사장님 「자원을 많이 먹으면 글이 넘친다」)
                 acts.Add(g =>
                 {
