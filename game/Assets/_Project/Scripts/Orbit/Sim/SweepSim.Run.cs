@@ -493,7 +493,7 @@ namespace SalvageRun.Orbit.Sim
             r.packed.Clear();
             Emit(SwEv.Release, r.hx, r.hy, n, 0, n >= 6 ? n + Loc.T("개 압축 · ×") + mult.ToString("0.00") : null);
             dmgCat = 11; DoBlast(r.hx, r.hy, (60 + n * 2.5) * BlastK, false); dmgCat = -1;
-            if (Lv("k_bh") > 0 && !r.twin && r.fuel > 0) { r.twin = true; r.holding = true; r.holdT = 0; r.chain = 0; r.tier = 0; r.shots++; Emit(SwEv.SkillReady, r.hx, r.hy, 2); }   // ◆ 쌍둥이 — 그 자리에 한 번 더
+            if ((Lv("k_bh") > 0 || FamT(FamHole) >= 3) && !r.twin && r.fuel > 0) { r.twin = true; r.holding = true; r.holdT = 0; r.chain = 0; r.tier = 0; r.shots++; Emit(SwEv.SkillReady, r.hx, r.hy, 2); }   // ◆ 쌍둥이 — 그 자리에 한 번 더
             else r.twin = false;
             // 모이다 만 것들은 궤도로 돌아간다
             foreach (var d in r.junk) if (d.free && !d.dead && d.capT <= 0) d.capT = 0.6;

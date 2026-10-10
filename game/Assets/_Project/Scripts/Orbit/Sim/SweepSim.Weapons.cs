@@ -82,7 +82,7 @@ namespace SalvageRun.Orbit.Sim
 
         // ❄ 냉동 빔 — 맞은 것이 얼어 멈춘다. 언 것은 무엇에 맞든 두 배로 아프다. 부서지면 산산조각
         // ❄ 냉동 빔 — 빔은 조준점까지, 거기서 서리 원이 퍼진다. 원 안이 언다 (09-24 「얼음은 좀 이상해」 — 한 줄 전체가 얼던 것을 원으로)
-        public double FrzR => (34 + 0.5 * ClawR) * (Lv("w_frz_u") >= 1 ? 1.3 : 1) * (1 + 0.2 * We("frz"));
+        public double FrzR => (34 + 0.5 * ClawR) * (Lv("w_frz_u") >= 1 ? 1.3 : 1) * (1 + 0.2 * We("frz")) * (FamT(FamFrost) >= 2 ? 1.2 : 1);
         void Freeze()
         {
             var r = R; int u = Lv("w_frz_u");
@@ -100,11 +100,11 @@ namespace SalvageRun.Orbit.Sim
             Emit(SwEv.Laser, sx, sy, rad, 32 | 64, null, cx, cy);
             if (any) OnHit(0.25);
         }
-        public double FrzMul => Lv("w_frz_u") >= 2 ? 2.5 : 2;
+        public double FrzMul => (Lv("w_frz_u") >= 2 ? 2.5 : 2) + (FamT(FamFrost) >= 1 ? 0.5 : 0);
 
         // ❄ 냉동선 — 무기고 냉동 빔을 매번 쏜다. 한 방은 약하고, 냉동 빔 줄(강화 · 각성 · 특화 · 3단계)이 그대로 세게 한다 (09-27)
         public static double FrostGap = 0.3, FrostK = 0.42, FrostGateK = 0.9, FrostHold = 1.0;
-        public double FrostR => (44 + 6 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2)) * (Lv("w_frz_u") >= 1 ? 1.3 : 1) * (1 + 0.2 * We("frz"));
+        public double FrostR => (44 + 6 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2)) * (Lv("w_frz_u") >= 1 ? 1.3 : 1) * (1 + 0.2 * We("frz")) * (FamT(FamFrost) >= 2 ? 1.2 : 1);
         void FrostShot()
         {
             var r = R; double cx = r.ax, cy = r.ay, rad = FrostR, hold = FrostHold + (Lv("w_frz_u") >= 1 ? 0.5 : 0) + 0.25 * We("frz");
@@ -127,7 +127,7 @@ namespace SalvageRun.Orbit.Sim
         public int ClusN => 4 + Lv("c_rad") / 3 + (Lv("w_clus_u") >= 1 ? 2 : 0) + We("clus");
         void ClusShot()
         {
-            var r = R; int u = Lv("w_clus_u"); bool awk = Lv("w_clus_a") > 0; double xk = Lv("w_clus_x") > 0 ? 2 : 1;
+            var r = R; int u = Lv("w_clus_u"); bool awk = Awk("clus", FamBlast); double xk = Lv("w_clus_x") > 0 ? 2 : 1;
             double ax = r.ax, ay = r.ay, R0 = (26 + 5 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));
             Emit(SwEv.Shell, ShipX, ShipY, 0, 0, null, ax, ay);
             r.pend.Add(new Blast { x = ax, y = ay, t = 0.35, R = R0, dk = ClusK * xk });
@@ -163,7 +163,7 @@ namespace SalvageRun.Orbit.Sim
         }
         void Shatter(Junk d)                                                  // 언 것이 부서질 때 — 옆을 친다 (각성: 옆도 얼린다)
         {
-            bool awk = Lv("w_frz_a") > 0;
+            bool awk = Awk("frz", FamFrost);
             for (int ji = 0, jn = R.junk.Count; ji < jn && ji < R.junk.Count; ji++)
             {
                 var q = R.junk[ji]; if (q.dead || q == d) continue;
@@ -179,7 +179,7 @@ namespace SalvageRun.Orbit.Sim
         // 🎆 분열탄 — 조준점에 떨어져 터지며 파편 여섯 (강화: 아홉 · 가장 가까운 것을 노림 · 각성: 파편이 한 번 더)
         void Cluster()
         {
-            var r = R; int u = Lv("w_clus_u"); bool awk = Lv("w_clus_a") > 0;
+            var r = R; int u = Lv("w_clus_u"); bool awk = Awk("clus", FamBlast);
             double ax = r.ax, ay = r.ay;
             Emit(SwEv.Shell, ShipX, ShipY, 0, 0, null, ax, ay);
             r.pend.Add(new Blast { wid = 6, x = ax, y = ay, t = 0.35, R = 42 + 0.2 * ClawR, w = true });
@@ -365,13 +365,13 @@ namespace SalvageRun.Orbit.Sim
         void Chain()
         {
             var r = R;
-            int u = Lv("w_chain_u"); bool awk = Lv("w_chain_a") > 0;
+            int u = Lv("w_chain_u"); bool awk = Awk("chain", FamShock);
             double reach0 = 70 + 0.5 * ClawR, hop = 115 + 0.6 * ClawR;
             Junk cur = null; double bd = reach0 * reach0;
             foreach (var d in r.junk) { if (d.dead) continue; double dx = d.x - r.ax, dy = d.y - r.ay, dd = dx * dx + dy * dy; if (dd < bd) { bd = dd; cur = d; } }
             if (cur == null) { Emit(SwEv.Strike, r.ax, r.ay, PickR, 0); return; }
             bool crit = Rnd() < Crit;
-            int jumps = 5 + (u >= 1 ? 2 : 0) + 2 * We("chain");
+            int jumps = 5 + (u >= 1 ? 2 : 0) + 2 * We("chain") + (FamT(FamShock) >= 2 ? 3 : 0);
             double dmg = Pow * 1.3 * (crit ? CritX : 1);
             double px = ShipX, py = ShipY;
             var hit = new List<Junk>();
@@ -486,7 +486,7 @@ namespace SalvageRun.Orbit.Sim
         /// <summary>🚀 전격선 — 전기 구체를 던진다: 날아가며 번개로 지지고, 닿으면 머물다 터진다 (09-27)</summary>
         public const double TeslaGap = 0.9, OrbSpeed = 520, OrbHover = 0.5, ZapEvery = 0.15, ZapK = 0.2, BurstK = 1.0;
         public double ZapR => (70 + 10 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));
-        public int ZapN => 2 + Lv("c_rad") / 3;
+        public int ZapN => 2 + Lv("c_rad") / 3 + (FamT(FamShock) >= 2 ? 1 : 0);
         public double BurstR => (55 + 8 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));
         void Tesla()
         {
@@ -816,7 +816,7 @@ namespace SalvageRun.Orbit.Sim
             var c = CurContract;
             if (c != null) { r.contractText = c.Value.text; r.contractTarget = c.Value.target; r.contractProg = Math.Min(ContractProgress(r), c.Value.target); }
             if (c != null && ContractProgress(r) >= c.Value.target) { r.contractOk = true; r.bonus = Math.Ceiling(r.Earned * (0.25 + 0.1 * Lv("e_quest"))); S.cash += r.bonus; }
-            if (Lv("e_save") > 0) { r.interest = Math.Min(r.Earned, Math.Floor(S.cash * 0.02 * Lv("e_save"))); S.cash += r.interest; }
+            double ir = 0.02 * Lv("e_save") + (FamT(FamMoney) >= 2 ? 0.02 : 0); if (ir > 0) { r.interest = Math.Min(r.Earned, Math.Floor(S.cash * ir)); S.cash += r.interest; }   // 🧬 돈 2단계 +2%
             if (S.bill < Bills.Length)
             {
                 if (BillAmount <= 0) FinishBill();              // 압류 딱지로 다 갚았다

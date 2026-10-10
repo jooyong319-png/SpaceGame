@@ -91,7 +91,7 @@ namespace SalvageRun.Orbit.Sim
         public static readonly double[] ProcBase = { 0, 0.12, 0.10, 0.08, 0.08, 0.08, 0.06, 0.05, 0.04 };
         public const double ProcK = 1.8;                                          // 🔫 09-26 밤 사장님 「무기들이 너무 약한 것 같아」 — 발동 확률 ×1.8 (0.5초 한 발 · 한 판 30초면 몇 번 안 터졌다)
         static readonly string[] ProcUp = { null, "w_laser_u", "w_chain_u", "w_vac_u", "w_mine_u", "w_frz_u", "w_clus_u", "w_mag_u", "w_rail_u" };
-        public double ProcChance(int w) => w <= 0 || w >= ProcBase.Length || !WeaponOwned(w) ? 0 : ProcK * ProcBase[w] * (Lv(ProcUp[w]) >= 1 ? 1.5 : 1) * (Lv("w_slot2") > 0 ? 1.5 : 1) * (Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1);
+        public double ProcChance(int w) => w <= 0 || w >= ProcBase.Length || !WeaponOwned(w) ? 0 : ProcK * ProcBase[w] * (Lv(ProcUp[w]) >= 1 ? 1.5 : 1) * (Lv("w_slot2") > 0 ? 1.5 : 1) * (Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1) * FamProcK(w);
         void FireW(int w) { wMul = w > 0 && Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1; int sv = dmgCat; dmgCat = w; Fire(w); dmgCat = sv; wMul = 1; }
         // 📊 피해를 준 곳 — 0 주 무기 · 1~8 무기고(레이저 · 번개 · 진공 · 기뢰 · 냉동 · 분열탄 · 자석 · 레일건) · 9 드론 · 10 폭발·연쇄 · 11 블랙홀 · 12 행성 특성 (09-27 사장님 「출동 결과에 무기별 피해 원그래프」)
         public const int DmgCatN = 13;
@@ -199,22 +199,22 @@ namespace SalvageRun.Orbit.Sim
         public static double BlastPowK = 1;
         public double Crit => 0.03 * Up(4) + 0.05 * Lv("c_crit") + Part("crit") + (Lv("x_claw_arm") > 0 ? 0.1 : 0);
         public int CritX => (Lv("x_claw_arm") > 0 ? 4 : 3) + Lv("m_crit");
-        public int DroneCount => DronesOn ? 1 + Lv("d_n") + Lv("d_fact") + Cr(3) + (Lv("k_drone") > 0 ? 4 : 0) + 2 * Lv("m_dcount") : 0;   // 격납고 첫 칸 = 두 대
-        public double DroneCd => Math.Max(0.4, 1 - 0.1 * Lv("d_spd")) * (Lv("x_drone_bh") > 0 && R != null && R.holding ? 0.5 : 1);
+        public int DroneCount => DronesOn ? 1 + Lv("d_n") + Lv("d_fact") + Cr(3) + (Lv("k_drone") > 0 ? 4 : 0) + 2 * Lv("m_dcount") + (FamT(FamDrone) >= 1 ? 2 : 0) : 0;   // 격납고 첫 칸 = 두 대 · 🧬 드론 1단계 +2
+        public double DroneCd => Math.Max(0.4, 1 - 0.1 * Lv("d_spd")) * (Lv("x_drone_bh") > 0 && R != null && R.holding ? 0.5 : 1) * (FamT(FamDrone) >= 2 ? 0.7 : 1);
         public double Reach => 80 + 15 * Lv("d_reach");
         public int Grade => 1 + Lv("d_grade");
         public int DroneDmg => (int)Math.Ceiling(2 * Grade * HpMul) * (Lv("x_arm_drone") > 0 ? 2 : 1);   // 🛸 09-27 드론 한 방도 잔해 단단함을 따라 — 등급 1 조각 · 2 죽은 위성 · 3 금고 · 4 로켓 (예전엔 1~4 고정이라 화성부터 칠 게 없었다)
-        public double DroneMag => (1 + 0.25 * Lv("d_mag")) * (1 + Part("drone")) * (Lv("k_drone") > 0 ? 0.75 : 1) * (1 + 0.10 * Lv("i_drone")) * Math.Pow(1.5, Lv("m_drone"));
+        public double DroneMag => (1 + 0.25 * Lv("d_mag")) * (1 + Part("drone")) * (Lv("k_drone") > 0 ? 0.75 : 1) * (1 + 0.10 * Lv("i_drone")) * Math.Pow(1.5, Lv("m_drone")) * (FamT(FamDrone) >= 3 ? 1.5 : 1);
         public static double DroneValK = 0.4;                                     // 🛸 09-27 드론이 부순 값 몫 — 드론이 다시 일하게 되면서 난이도를 지키려고 (봇 끝 시간 맞춤)
         public int Bombs => BombsOn ? Math.Min(6, 2 + Lv("b_n") + (S.bill >= 7 ? 1 : 0) + Cr(4)) : 0;
-        public double PullR => (260 + 30 * Lv("b_pr")) * (1 + 0.15 * Lv("m_bh"));                // 🌀 09-26 밤 「뭐든지 다 빨아들이게」 → 「범위가 너무 넓어」 — 260 + 30×칸 (예전 90 + 14 · 한때 화면 전체)
+        public double PullR => (260 + 30 * Lv("b_pr")) * (1 + 0.15 * Lv("m_bh")) * (FamT(FamHole) >= 2 ? 1.3 : 1);                // 🌀 09-26 밤 「뭐든지 다 빨아들이게」 → 「범위가 너무 넓어」 — 260 + 30×칸 (예전 90 + 14 · 한때 화면 전체)
         public double PullBase => 500;                                                         // 원 가장자리에서도 끌려오는 기본 힘
         public double PullF => 1 + 0.25 * Lv("b_pf");
-        public int Cap => 40 + 15 * Lv("b_cap");
-        public double BlastK => (1 + 0.15 * Lv("b_br")) * (1 + 0.06 * Up(10));
-        public double ChainP => Math.Min(0.85, 0.3 + 0.07 * Lv("b_chain"));    // 무기 폭발이 또 번질 확률
+        public int Cap => 40 + 15 * Lv("b_cap") + (FamT(FamHole) >= 2 ? 20 : 0);
+        public double BlastK => (1 + 0.15 * Lv("b_br")) * (1 + 0.06 * Up(10)) * (FamT(FamBlast) >= 1 ? 1.2 : 1);
+        public double ChainP => Math.Min(0.85, 0.3 + 0.07 * Lv("b_chain") + (FamT(FamBlast) >= 2 ? 0.15 : 0));    // 무기 폭발이 또 번질 확률
         public double HoleCd => 16 - 1.5 * Lv("s_speed");     // (옛 시간 충전 — 이제 안 쓴다)
-        public double HoleChance => R.clean ? 0.05 : Lv("b_n") <= 0 ? 0 : (0.012 + 0.002 * Lv("b_n") + 0.0025 * Lv("s_speed") + Part("hole") + 0.002 * Lv("i_bh")) * (Lv("k_bh") > 0 ? 0.7 : 1) * (1 + 0.3 * Lv("m_bh"));   // 🌀 블랙홀 — 집게가 맞힐 때 이 확률로 그 자리에 저절로 열린다 (09-24 사장님 「자동으로 바닥에 깔리는 걸로」 · Q 스킬 없앰)
+        public double HoleChance => R.clean ? 0.05 : Lv("b_n") <= 0 ? 0 : (0.012 + 0.002 * Lv("b_n") + 0.0025 * Lv("s_speed") + Part("hole") + 0.002 * Lv("i_bh")) * (Lv("k_bh") > 0 ? 0.7 : 1) * (1 + 0.3 * Lv("m_bh")) * (FamT(FamHole) >= 1 ? 1.3 : 1);   // 🌀 블랙홀 — 집게가 맞힐 때 이 확률로 그 자리에 저절로 열린다 (09-24 사장님 「자동으로 바닥에 깔리는 걸로」 · Q 스킬 없앰)
         public const double HoleDur = 3;                           // 열려 있는 시간 — 끝나면 저절로 터진다
         public double PackK => 0.02 + 0.012 * Lv("b_pack");
         // 🔴 한 번 터질 때 이어지는 연쇄의 한계 — 도파민 사다리(§5)가 구간마다 한 단계씩 열리게
@@ -224,7 +224,7 @@ namespace SalvageRun.Orbit.Sim
         public static double RedBlastVal = 1.5;
         public static double PouchK = 2.5;                                      // 봇 24판: ×4 는 82분 · 파산 2.1, ×2.5 는 137분 · 3.1
         static string KFmt(double v) => Loc.En ? Loc.Num(v) : v >= 1e12 ? (v / 1e12).ToString("0.#") + Loc.T("조") : v >= 1e8 ? (v / 1e8).ToString("0.#") + Loc.T("억") : v >= 1e4 ? (v / 1e4).ToString("0.#") + Loc.T("만") : Math.Round(v).ToString("0");                                 // 봇 24판: ×2 는 파산 2.8 · ×1.5 는 3.3 (바꾸기 전과 같음)                                          // 터질 차례를 기다리는 폭발 한도 — 렉 막기
-        public int ChainMax => R.clean ? 5000 : 40 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 15 * Lv("b_chain");
+        public int ChainMax => R.clean ? 5000 : 40 + (S.orbit >= 1 ? 20 : 0) + (S.orbit >= 2 ? 40 : 0) + 15 * Lv("b_chain") + (FamT(FamBlast) >= 2 ? 40 : 0);
         // 🌪 모래 폭풍 (화성 · 해왕성) — 22초마다 4.5초. 값 ×1.5 · 왼쪽에서 고철이 몰려온다 (09-24 사장님 36번 「무의미함」)
         public bool StormOn => R != null && !R.over && !R.clean && Orbits[S.orbit].storm && R.t % 13.0 >= 6 && R.t % 13.0 < 10.5;   // 09-26 판이 20초 남짓 — 판 중간에 한 번
         public const double ValBase = 1.8;
@@ -234,7 +234,7 @@ namespace SalvageRun.Orbit.Sim
           // 💰 09-27 칸 값 배수 — 열린 관문 수마다 (봇으로 「가장 싼 칸 ≈ 판 벌이 0.6판」에 맞춤 · 예전 2.3^관문)                   // 행성 한 칸 = 벌이 ×3 · 관문을 부술 때마다 아직 안 산 칸 값 ×3 (봇으로 맞춤)
         public static double PlanetMul(int rank) => Math.Pow(PlanetBase, rank);
         public static double PlanetMulOf(int orbit) => PlanetMul(Math.Max(0, Array.IndexOf(OrbitOrder, orbit)));                                   // 💰 09-26 고철 시세 묶음 · 의뢰 폐지로 줄어든 벌이를 되돌린다 (봇으로 맞춤)
-        public double ValMult => ValBase * (1 + 0.06 * Up(5)) * (1 + 0.1 * M.legend) * (M.endless ? Math.Pow(1.15, M.depth) : 1) * (StormOn ? 1.5 : 1) * (R != null ? 1 + R.consVal / 100.0 : 1) * Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (PlanetMul(Rank) * (1 + (Lv("k_route") > 0 && S.orbit > 0 ? 0.15 : 0) + (S.orbit > 0 ? 0.05 * Lv("i_route") : 0))) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1) * (1 + 0.08 * Lv("i_eco")) * PlanetStockBonus * Math.Pow(1.5, Lv("m_val")) * Math.Pow(1.25, Lv("m_route"));
+        public double ValMult => ValBase * (1 + 0.06 * Up(5)) * (1 + 0.1 * M.legend) * (M.endless ? Math.Pow(1.15, M.depth) : 1) * (StormOn ? 1.5 : 1) * (R != null ? 1 + R.consVal / 100.0 : 1) * Math.Pow(1.25, Lv("e_val")) * Math.Pow(1.3, Cr(1)) * (PlanetMul(Rank) * (1 + (Lv("k_route") > 0 && S.orbit > 0 ? 0.15 : 0) + (S.orbit > 0 ? 0.05 * Lv("i_route") : 0))) * Econ * (1 + Part("val")) * (Lv("k_eco") > 0 ? 1.25 : 1) * (1 + 0.08 * Lv("i_eco")) * PlanetStockBonus * Math.Pow(1.5, Lv("m_val")) * Math.Pow(1.25, Lv("m_route")) * (FamT(FamMoney) >= 1 ? 1.1 : 1) * (FamT(FamMoney) >= 3 ? 1.2 : 1);
         public double PlanetStockBonus { get { if (Lv("x_eco_route") <= 0 || Mk == null || S.orbit == 0) return 1; string[] ids = { "", "moon", "mars", "jup", "sat", "belt", "deep", "deep", "belt", "belt", "deep", "deep" }; if (ids[S.orbit] == "") return 1; for (int i = 0; i < Market.Defs.Length && i < Mk.M.st.Count; i++) if (Market.Defs[i].id == ids[S.orbit] && Mk.M.st[i].shares > 0) return 1.2; return 1; } }   // 새 행성은 종목이 없다
         public double Cut => S.debt > 0 ? Math.Max(0.1, (Lv("e_guard") > 0 || Cr(5) > 0 ? 0.2 : 0.3) - Part("cut")) : 0;   // 빚이 있으면 판 수입에서 떼어 상환
     }

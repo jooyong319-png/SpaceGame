@@ -1838,3 +1838,28 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 다음 출동 전까지만 머묾	Stays until your next launch
 상인에게 가기 ▸	Visit merchant ▸
 떠돌이 상인	Merchant
+얼음	Frost
+전기	Shock
+폭발	Blast
+언 잔해 피해 ×2 → ×2.5	Frozen debris damage ×2 → ×2.5
+냉동 빔 발동 ×1.5 · 서리 원 +20%	Freeze beam proc ×1.5 · frost circle +20%
+냉동 빔 각성 — 산산조각이 옆을 얼림	Freeze beam awakened — shatters freeze neighbors
+레이저 · 번개 · 레일건 발동 ×1.5	Laser · lightning · railgun proc ×1.5
+번개 튀는 수 +3 · 전격선 번개 +1줄	Lightning +3 jumps · Tesla +1 bolt
+번개 각성 — 튄 자리마다 폭발	Lightning awakened — every jump explodes
+모든 폭발 범위 +20%	All blast radius +20%
+폭발 번짐 +15% · 번지는 한도 +40	Blast spread +15% · spread cap +40
+분열탄 각성 — 파편이 한 번 더 분열	Cluster awakened — fragments split again
+블랙홀 확률 ×1.3	Black hole chance ×1.3
+흡입 반경 +30% · 용량 +20	Pull radius +30% · capacity +20
+쌍둥이 블랙홀 — 터진 자리에 한 번 더	Twin black hole — reopens where it burst
+드론 +2대	+2 drones
+드론 속도 +30%	Drone speed +30%
+드론이 부순 값 ×1.5	Drone salvage value ×1.5
+모든 값 +10%	All value +10%
+적금 이자 +2% · 상인 물건 −15%	Savings interest +2% · merchant prices −15%
+모든 값 ×1.2	All value ×1.2
+점	pts
+빌드 — 계열	Build — Families
+칸 단계 · 끼운 부품 · 타는 배가 점수 — 3 · 6 · 9점마다 보너스	Node levels · equipped parts · your ship add points — bonus at 3 · 6 · 9
+계열	family

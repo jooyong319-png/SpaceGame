@@ -99,6 +99,7 @@ namespace SalvageRun.Orbit
 
             var I = new Rect(st.xMax + 18, body.y + 14, body.xMax - st.xMax - 30, body.height - 28);
             Lbl(new Rect(I.x, I.y, I.width, 30), "<size=22><b><color=#" + ah + ">" + sd.name + "</color></b></size>", label);
+            if (SweepSim.ShipFam[hangarPick] >= 0) FamChip(new Rect(I.xMax - 110, I.y + 6, 110, 20), SweepSim.ShipFam[hangarPick], "+2" + Loc.T("점"));   // 🧬 배 = 계열 2점
             Lbl(new Rect(I.x, I.y + 34, I.width, 20), Fit(Loc.T("<size=12><color=#e7ecf8>기본 무기 · ").Replace("<size=12>", "") + sd.weapon + "</color>   <color=#8d99b8>" + sd.trait + "</color>", 12, I.width - 4, label), label);   // 🌐 영어는 길다 — 줄여서 한 줄에
             var dsty = new GUIStyle(label) { wordWrap = true };
             int dfs = Loc.En ? 11 : 12;   // 🌐 영어 설명은 길다 — 한 치수 작게

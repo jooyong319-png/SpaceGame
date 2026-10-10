@@ -204,13 +204,15 @@ namespace SalvageRun.Orbit.Sim
             new[] { 0.25, 0.40, 0.27,  0.08 },    // 10~12
         };
         public int OfferTier => Math.Min(OfferOdds.Length - 1, Math.Max(0, (S.bill - 1) / 3) + (S.gateStage ? 1 : 0));   // 관문을 깬 스테이지는 한 구간 위
-        public bool OfferGold; public int OfferTierShown;
+        public bool OfferGold; public int OfferTierShown, OfferFam = -1;
         public void DebugRollOffer() => RollOffer();                            // 시험용                                                  // 화면용 — 관문 스테이지 보상이었나
         void RollOffer()
         {
             if (S.offer == null) S.offer = new List<int>();
             S.offer.Clear(); OfferGold = S.gateStage; OfferTierShown = OfferTier;
             var odds = OfferOdds[OfferTier]; var slots = new List<int>();
+            var fp = FamPoints(); int top = -1; for (int f = 0; f < FamCount; f++) if (fp[f] > 0 && (top < 0 || fp[f] > fp[top])) top = f;   // 🧬 한 장은 지금 가장 많이 모은 계열
+            OfferFam = top;
             for (int k = 0; k < 3; k++)
             {
                 double u = Rnd(), acc = 0; int rar = 0;
@@ -218,7 +220,8 @@ namespace SalvageRun.Orbit.Sim
                 for (int down = rar; down >= 0 && S.offer.Count == k; down--)
                 {   // 그 등급에 남은 칸이 없으면 한 등급 아래로
                     var pool = new List<int>();
-                    for (int i = 0; i < Parts.Defs.Length; i++) if (Parts.Defs[i].rar == down && !slots.Contains(Parts.Defs[i].slot) && (S.parts == null || Array.IndexOf(S.parts, i) < 0)) pool.Add(i);
+                    for (int pass = 0; pass < 2 && pool.Count == 0; pass++)
+                        for (int i = 0; i < Parts.Defs.Length; i++) if (Parts.Defs[i].rar == down && !slots.Contains(Parts.Defs[i].slot) && (S.parts == null || Array.IndexOf(S.parts, i) < 0) && (pass == 1 || k != 0 || top < 0 || PartFam(i) == top)) pool.Add(i);
                     if (pool.Count > 0) { int id = pool[rng.Next(pool.Count)]; S.offer.Add(id); slots.Add(Parts.Defs[id].slot); }
                 }
             }
@@ -265,7 +268,7 @@ namespace SalvageRun.Orbit.Sim
             double b = ShopBase, p = id == Parts.Key ? b * 2.5 : IsCons(id) ? b * ConsPrice[id - Cons0] : b * Parts.RarPrice[Parts.Defs[id].rar];
             if (!IsCons(id) && id != Parts.Key) p = Math.Max(Parts.RarFloor[Parts.Defs[id].rar], p);   // 👑 등급 바닥 — 희귀 천왕성 · 영웅 카이퍼 · 전설 오르트쯤 열린다 (Parts.RarFloor)
             double jit = 1 + 0.15 * Math.Sin(id * 12.9898 + S.runs * 78.233);          // 판마다 조금씩 다른 값
-            return Math.Max(10, Math.Round(p * jit * (1 - 0.05 * Up(8)) / 10) * 10);
+            return Math.Max(10, Math.Round(p * jit * (1 - 0.05 * Up(8)) * (TierOf(FamPoints()[FamMoney]) >= 2 ? 0.85 : 1) / 10) * 10);   // 🧬 돈 2단계 상인 −15%
         }
         public double ShelfPrice(int k) => S.shop == null || k < 0 || k >= S.shop.Count ? 0 : Math.Max(10, Math.Round(PartPrice(S.shop[k]) * (k == S.shopSale ? 0.5 : 1) / 10) * 10);
         public double RerollPrice => S.freeRoll ? 0 : Math.Round(ShopBase * 0.15 * Math.Pow(2, S.rolls) / 10) * 10;   // 누를수록 두 배 · 출동하면 처음부터 (09-26)

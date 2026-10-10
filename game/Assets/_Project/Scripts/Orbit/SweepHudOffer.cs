@@ -54,6 +54,7 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(rc.r, rc.g, rc.b, 0.16f * k); GUI.DrawTexture(new Rect(r.center.x - 50, r.y + 34, 100, 100), texDisc);
                 GUI.color = new Color(1, 1, 1, k);
                 if (ic != null) GUI.DrawTexture(new Rect(r.center.x - 37, r.y + 46 - (ov && !reduceMotion ? 3 : 0), 74, 74), ic, ScaleMode.ScaleToFit);
+                { int pf = SweepSim.PartFam(id); if (pf >= 0) FamChip(new Rect(r.x + 10, r.y + 28, 90, 18), pf); }   // 🧬 계열
                 var ns = new GUIStyle(center) { fontSize = 17 };
                 Lbl(new Rect(r.x + 6, r.y + 140, r.width - 12, 24), Fit("<b>" + d.name + "</b>", 17, r.width - 14, ns, 11), ns);
                 var ds = new GUIStyle(center) { wordWrap = true, alignment = TextAnchor.UpperCenter };

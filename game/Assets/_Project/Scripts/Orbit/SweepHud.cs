@@ -169,6 +169,7 @@ namespace SalvageRun.Orbit
                 if (hireOpen) HireWin();
                 if (certOpen && flow == 1) CertWin();
                 OfferWin();                                                      // 🎁 스테이지 보상
+                FamWatch();                                                      // 🧬 계열 단계 알림
             }
             if (!sim.M.won) NewsBanner();
             if (newsOpen) News();

@@ -499,8 +499,7 @@ namespace SalvageRun.Orbit
             void Rule() { GUI.color = BpEdge; GUI.DrawTexture(new Rect(x, y, w, 1), white); GUI.color = Color.white; y += 9; }
             if (k < 0 || k >= gtiles.Count || st[k] == 0 || gtiles[k].stat < 0)
             {
-                Text(Loc.T("<color=#e8f1fb>청소선</color>"), pTitle, 8);
-                Text("<color=#c9c3b6>" + KWrap(Loc.T("여기서 다섯 갈래로 뻗어 나감. 칸에 마우스를 올리면 여기에 설명 표시 — 꺾쇠가 움직이는 칸은 지금 구매 가능."), 12, w) + "</color>", pBody, 0);
+                FamBoard(x, y, w);                                                // 🧬 10-10 빈 판 → 계열 진행도 (09-28 다듬기 S3 「오른쪽 판이 비어 있음」)
                 return;
             }
             var t = gtiles[k]; var n = SweepSim.Nodes[t.stat]; var ns = sim.State(t.stat); int vis = st[k];
@@ -512,6 +511,7 @@ namespace SalvageRun.Orbit
                 return;
             }
             Text("<color=#" + ColorUtility.ToHtmlStringRGB(VisCol(n.id)) + ">" + KWrap(TileName(k), 16, w) + "</color>", pTitle, 6);
+            { int nf = SweepSim.NodeFam(n.id); if (nf >= 0) { FamChip(new Rect(x, y, w, 18), nf, Loc.T("계열") + " · " + sim.FamPoints()[nf] + Loc.T("점")); y += 22; } }   // 🧬
             int tiles = SweepSim.Tiles(t.stat);
             if (tiles > 1 && tiles <= 9)
             {
