@@ -19,7 +19,7 @@ namespace SalvageRun.Orbit.Sim
         static Dictionary<string, string> map, back;                        // 한 → 영 · 영 → 한 (저장된 영어 기사를 한국어로 돌려 보일 때)
 
         /// <summary>「N판 남음」 — 영어는 1 이면 단수 (10-10 「1 runs left」)</summary>
-        public static string RunsLeft(int n) => n + (En && n == 1 ? " run left" : T("판 남음"));
+        public static string RunsLeft(int n) => n <= 0 ? T("오늘 납부일") : n + (En && n == 1 ? " run left" : T("판 남음"));   // 10-11 기한이 지나 음수면 「-5판 남음」으로 보였다
         public static string T(string ko)
         {
             if (string.IsNullOrEmpty(ko)) return ko;

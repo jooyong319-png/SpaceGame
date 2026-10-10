@@ -1899,3 +1899,4 @@ go|청구서 두 장 낼 때마다 *떠돌이 상인*이 물건을 풀고 가. �
 모든 무기의 발동 확률 ×1.5 · 무기 하나 이상 보유 시 구매 가능	All weapons trigger ×1.5 · needs at least one weapon
 열쇠 필요	Needs a key
 무기 하나 이상 필요	Needs a weapon first
+오늘 납부일	Due today
