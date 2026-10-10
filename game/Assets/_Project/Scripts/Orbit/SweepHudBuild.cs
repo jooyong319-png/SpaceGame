@@ -81,7 +81,7 @@ namespace SalvageRun.Orbit
             for (int f = 0; f < p.Length; f++)
             {
                 int t = SweepSim.TierOf(p[f]);
-                if (t > famSeen[f]) { Guide(SweepSim.FamName[f] + " " + TierTxt(t) + " — " + SweepSim.FamBonus[f][t - 1]); OrbitSfx.Play("buy", 0.8f); }
+                if (t > famSeen[f]) { Guide("<color=#" + FamHex(f) + ">" + SweepSim.FamName[f] + " " + TierTxt(t) + "</color>   " + SweepSim.FamBonus[f][t - 1]); OrbitSfx.Play("buy", 0.8f); }   // 10-11 이름표는 색으로 · 줄표 겹침(「— 냉동 빔 각성 — …」) 없게
                 famSeen[f] = t;
             }
         }

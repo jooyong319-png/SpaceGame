@@ -197,7 +197,7 @@ namespace SalvageRun.Orbit
             var r = new Rect(vw / 2 - 300, 64, 600, 36);
             GUI.color = new Color(0.06f, 0.08f, 0.05f, 0.94f * a); GUI.DrawTexture(r, white);
             Frame(r, new Color(0.44f, 0.81f, 0.59f, a * (0.6f + 0.4f * Mathf.Sin(Time.unscaledTime * 6))), 2);
-            GUI.color = new Color(1, 1, 1, a); Lbl(r, "<size=14><color=#bff4d0>" + guideMsg + "</color></size>", center);
+            GUI.color = new Color(1, 1, 1, a); Lbl(r, Fit("<color=#bff4d0>" + guideMsg + "</color>", 14, r.width - 16, center, 10), center);   // 10-11 길면 글자를 줄인다
             GUI.color = Color.white;
         }
 
