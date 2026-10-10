@@ -10,7 +10,7 @@
 > 보고: 바퀴마다 개발 현황 페이지(Jd5GLFEgpK4DoA9MawawhZ)는 건드리지 않고, 보고 페이지 하나(아래 주소)를 계속 갱신한다.
 > 커밋: git -c user.name=jooyco -c user.email=jooyco319@gmail.com commit · 끝줄 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 
-보고 페이지: https://claude.ai/artifact/57tjcute9pSHbbTMtUxrT8 (jooyco319 계정) · https://claude.ai/artifact/HkHjiJW4FZWAp2f7iPKRUu (jooyong319 계정) — 사장님은 계정 둘을 번갈아 씀. 갱신이 거절되면 지금 계정으로 새로 올리고 여기 적기
+보고 페이지: https://claude.ai/artifact/57tjcute9pSHbbTMtUxrT8 (jooyco319 계정 · 10-10 오후 이 세션 계정에선 안 보임) · https://claude.ai/artifact/HkHjiJW4FZWAp2f7iPKRUu (jooyong319 계정) — 사장님은 계정 둘을 번갈아 씀. 갱신이 거절되면 지금 계정으로 새로 올리고 여기 적기
 - 갱신 방법: scratchpad/polish/entries.json 끝에 한 줄 추가(id · title · kind ok|mk|no · commit · desc · imgs) → 그림은 scratchpad/polish/ 에 저장 → python build.py → Artifact 를 url 위 주소로 다시 올림(files 에 새 그림만 추가)
 - 캡처 요령: 스크립트 안에서 상태를 바꾼 뒤 40프레임 이상 기다렸다 찍기(같은 프레임에 찍으면 이전 화면) · 결산은 h.OnRunEnd() 후 flow=1 · 가게는 lobby=false · flow=5 · 첫 방문 대사는 M.flags 에 "dlg:shop" 넣어 끔
 - 찍기 요령 3: EditorApplication.update 는 게임 프레임보다 훨씬 자주 돈다 → 기다림은 프레임 수 말고 timeSinceStartup 초로
@@ -101,7 +101,12 @@
   - 범위 칸 「지금 / 구매 후」가 모든 배에 빔 반지름(20+5×단계)으로 나옴 → 배마다 실제 공식(산탄 원 · 관통 · 번개 · 미사일 발 · 서리 원 · 파편)
   - 전격선 범위 칸 설명 「두 단계마다 번개 한 줄」 → 실제 공식대로 「세 단계마다」 (난이도 그대로)
 
+- [x] 사장님 요청(10-10): 스테이지 보상 · 떠돌이 상인 · NPC 대사는 출동에서 돌아왔을 때만 (5c53b2a)
+- [x] 사장님 요청(10-10): 스킬(정비고 칸) 다듬기 — 136칸 실제 공식 대조 → 버그 2 · 너무 약함 5 · 의미 없음 5 정리안 https://claude.ai/artifact/7NVZa8SSwnGMhA3Z5hrn69 (사장님 고를 것)
+  - 버그: 블랙홀 빈도가 연료 보급선을 단계마다 20% 빨리 돌림(잡기 어려워짐) · 급유 드론은 드론과 무관한 연료 +1초
+
 ## 사장님 고를 것 (시안)
+- 정비고 칸 정리안 12개 (7NVZa8SSwnGMhA3Z5hrn69) — 버그 둘 바로 고칠지 · 약한 칸 숫자 · 의미 없는 칸 새 효과
 - 조종실 창틀 테두리가 청구서 · 항로 판 글자 뒤로 지나감(배 7척 모두) — 후보: 창틀을 판보다 먼저 그리기(순서만) · 판 바탕 더 진하게 · 창틀 아래 변을 판 밖으로 (조종실 벽 보류라 손대지 않음)
 - 오른쪽 위 설정 단추 — 영어 「Settings」가 넓어 정비고 · 증권 화면 테두리 모서리를 덮음(한국어 「설정」도 거의 닿음). 후보: 톱니 그림 단추로(글 없이) · 테 있는 화면에선 테 머리 줄 안으로 옮김 (시안 아직)
 - 격납고 청소선 탭 — 가운데 조종실 미리보기 아래가 비고 오른쪽 안내 글이 아래로 몰림. 후보: 안내 글을 미리보기 아래로 · 미리보기를 세로로 키움 (시안 아직)
