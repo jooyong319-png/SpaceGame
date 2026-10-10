@@ -60,7 +60,7 @@ namespace SalvageRun.Orbit
                     GUI.color = new Color(0.02f, 0.027f, 0.04f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
                     bool fr = RoomFrameBegin(); Bay(); if (fr) RoomFrameEnd(BpBg);   // 🖥 10-07 모니터 테 안으로
                     // 큰 「조종실로」 버튼 뺌 — 옆 탭 하나로 (09-24 25번)
-                    if (sim.ShopOpen) { if (NavTab(true, Loc.T("떠돌이 상인"), "", SweepGame.Amber)) GoFlow(5); }
+                    if (sim.ShopOpen) { if (NavTab(true, sim.S.merchant ? Loc.T("떠돌이 상인") : Loc.T("부품 가게"), "", SweepGame.Amber)) GoFlow(5); }
                     else if (NavTab(true, Loc.T("조종실로"), "", SweepGame.Amber)) GoFlow(2);
                 }
                 else if (f == 5)
@@ -111,6 +111,13 @@ namespace SalvageRun.Orbit
 
         static readonly Texture2D[] tabTex = new Texture2D[2]; static GUIStyle tabStyle;
         /// <summary>화면 가장자리 세로 탭 — ‹ 정비고로 · 증권 하러 가기 ›</summary>
+        string TabSub(string sub, float w)
+        {   // 낱말마다 한 줄 · 줄마다 폭에 맞춤 · 색은 줄마다 다시 (태그가 줄 사이에 걸치지 않게)
+            var m = System.Text.RegularExpressions.Regex.Match(sub, "<color=(#[0-9a-fA-F]+)>");
+            string col = m.Success ? m.Groups[1].Value : null;
+            string plain = System.Text.RegularExpressions.Regex.Replace(sub, "<[^>]+>", "");
+            return string.Join("\n", System.Array.ConvertAll(plain.Split(new[] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries), ln => Fit(col != null ? "<color=" + col + ">" + ln + "</color>" : ln, 10, w, center, 7)));
+        }
         bool NavTab(bool right, string word, string sub, Color col)
         {
             float w = 42, x = right ? Mathf.Min(vw - w, ox + 960 + 4) : Mathf.Max(0, ox - w - 4);
@@ -149,7 +156,7 @@ namespace SalvageRun.Orbit
                 foreach (char ch in word) sb.Append(ch == ' ' ? "\n" : ch + "\n");
                 Lbl(new Rect(r.x, r.y + 48, w, 180), "<size=14><b><color=#" + hex + ">" + sb.ToString().TrimEnd('\n') + "</color></b></size>", center);
             }
-            if (!string.IsNullOrEmpty(sub)) Lbl(new Rect(r.x - 4, r.yMax - (tt == null ? 50 : Loc.En ? 60 : 74), w + 8, 46), "<size=10>" + sub.Replace(" ", "\n") + "</size>", center);   // 탭 안에 두 줄 — 밖으로 삐져나오지 않게
+            if (!string.IsNullOrEmpty(sub)) Lbl(new Rect(r.x - 4, r.yMax - (tt == null ? 50 : Loc.En ? 60 : 74), w + 8, 46), TabSub(sub, w - 8), center);   // 10-10 영어 「Workshop」이 탭보다 넓어 삐져나옴 — 줄마다 맞춤   // 탭 안에 두 줄 — 밖으로 삐져나오지 않게
             return Bt(r, GUIContent.none, GUIStyle.none);
         }
 

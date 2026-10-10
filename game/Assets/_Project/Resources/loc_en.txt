@@ -1893,3 +1893,5 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 폭발 범위	Blast size
 출동하면 떠남 · 청구서 두 장마다 들름 · 카드에 올리면 장착할 칸이 깜빡임	Leaves on launch · back every two bills · hover a card to blink its slot
 점수 = 칸 단계 · 끼운 부품 · 타는 배\n3 · 6 · 9점마다 보너스	Points: node levels · parts · ship\nBonus at 3 · 6 · 9 pts
+부품 가게 해금 — 늘 열림 · 출동마다 진열 바뀜 · 청구서 두 장마다 떠돌이 상인(희귀 이상 한 칸 · 공짜 새로고침) · 부품 칸 5개에 구매해서 장착	Parts shop — always open · stock changes every run · a traveling merchant visits every two bills (one rare+ slot · free reroll) · buy parts for your five slots
+출동마다 진열 바뀜 · 청구서 두 장마다 떠돌이 상인 · 카드에 올리면 장착할 칸이 깜빡임	Stock changes every run · merchant every two bills · hover a card to blink its slot

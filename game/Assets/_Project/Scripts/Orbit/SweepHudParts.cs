@@ -105,12 +105,12 @@ namespace SalvageRun.Orbit
             GUI.color = Color.white;
             var w = new Rect(ox + 50, 14, 860, 572);
             // 제목 · 부제 · 돈 — 부제는 제목과 돈 사이에 맞춤 (10-10 영어 부제가 「Cash 500M · Keys 0」을 덮음)
-            string ttl = "<size=24><b><color=#ffdf95>" + (Loc.En ? "Traveling Merchant" : "떠돌이 상인") + "</color></b></size>";
+            string ttl = "<size=24><b><color=#ffdf95>" + (S.merchant ? (Loc.En ? "Traveling Merchant" : "떠돌이 상인") : Loc.T("부품 가게")) + "</color></b></size>";
             string money = Loc.T("<size=14><color=#8a9bb3>돈</color> <color=#ffdf95>") + KNum.Fmt(S.cash) + Loc.T("</color>   <color=#d8ccff>열쇠 ") + S.keys + "</color></size>";
             float ttlW = label.CalcSize(new GUIContent(ttl)).x, moneyW = cost.CalcSize(new GUIContent(money)).x;
             float subW = w.width - ttlW - moneyW - 28;
             Lbl(new Rect(w.x, w.y, ttlW + 4, 34), ttl, label);
-            Lbl(new Rect(w.x + ttlW + 10, w.y + 4, subW, 26), Fit("<color=#8a9bb3>" + Loc.T("출동하면 떠남 · 청구서 두 장마다 들름 · 카드에 올리면 장착할 칸이 깜빡임") + "</color>", 12, subW, label, 9), label);
+            Lbl(new Rect(w.x + ttlW + 10, w.y + 4, subW, 26), Fit("<color=#8a9bb3>" + (S.merchant ? Loc.T("출동하면 떠남 · 청구서 두 장마다 들름 · 카드에 올리면 장착할 칸이 깜빡임") : Loc.T("출동마다 진열 바뀜 · 청구서 두 장마다 떠돌이 상인 · 카드에 올리면 장착할 칸이 깜빡임")) + "</color>", 12, subW, label, 9), label);
             Lbl(new Rect(w.x, w.y + 6, w.width, 24), money, cost);
             // 🚀 내 청소선 — 그림 위에 부품 칸 다섯 (09-25 사장님 「어디에 들어가는지 이해가 어렵다」 · 시안 https://claude.ai/artifact/6bRbq2eUNE6dXqsSgqvHND)
             if (shipTex == null) shipTex = Resources.Load<Texture2D>("ship/hull");

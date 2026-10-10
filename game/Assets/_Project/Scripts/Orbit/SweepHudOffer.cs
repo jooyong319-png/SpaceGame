@@ -6,7 +6,7 @@ namespace SalvageRun.Orbit
     /// <summary>
     /// 🎁 10-10 스테이지 보상 · 🧳 떠돌이 상인 (사장님 「스테이지 클리어 보상 · 가게는 가끔 오는 느낌」 · 시안 6JmkYLEm5bQUdzWostYE4N)
     /// 청구서 한 장을 갚으면 부품 셋(서로 다른 칸 · 등급은 카드마다 따로) 중 하나를 고른다. 관문을 깬 스테이지는 금빛 · 한 구간 위 확률.
-    /// 가게는 청구서 두 장마다 들르는 떠돌이 상인 — 다음 출동 전까지만 머문다.
+    /// 가게는 늘 열림(10-10 밤) — 청구서 두 장마다 떠돌이 상인이 들러 그날만 희귀 이상 한 칸 · 공짜 새로고침, 다음 출동 전까지 머문다.
     /// </summary>
     public partial class SweepHud
     {
@@ -88,7 +88,7 @@ namespace SalvageRun.Orbit
         static Texture2D tugTex;
         void MerchantCockpit()
         {
-            if (!sim.ShopOpen || flow != 2 || OfferUp) return;
+            if (!sim.ShopOpen || !sim.S.merchant || flow != 2 || OfferUp) return;   // 상인 오는 날만
             if (tugTex == null) tugTex = Resources.Load<Texture2D>("event/ev_tug");
             float t = Time.unscaledTime, bob = reduceMotion ? 0 : Mathf.Sin(t * 1.6f) * 3;
             if (tugTex != null) GUI.DrawTexture(new Rect(ox + 560, 178 + bob, 112, 112 * tugTex.height / (float)tugTex.width), tugTex, ScaleMode.ScaleToFit);

@@ -836,7 +836,7 @@ namespace SalvageRun.Orbit.Sim
             S.gateFrac = 1;                                                  // 🛰 한 판 안에 못 부수면 다음 판엔 다시 가득 (09-26 사장님)
             if (S.gateNext > 0) { int nx = S.gateNext; S.gateNext = 0; int pn = NodeIx[PlanetNode[nx]]; if (S.lv[pn] <= 0) S.lv[pn] = 1; PlanetBought(nx); }
             S.rolls = 0;
-            // 🧳 10-10 진열은 상인이 올 때만 새로 (전엔 판이 끝날 때마다)                  // 🔩 가게 진열이 바뀐다 · 공짜 새로고침 한 번
+            if (ShopOpen) { RollShop(); S.freeRoll = false; }                 // 🛒 10-10 밤 진열은 판마다 바뀜 · 공짜 새로고침은 상인 오는 날만 (MerchantArrive)
             if (Lv("q_front") > 0 && Mk != null && StockOpen) { S.front1 = rng.Next(Market.NewsBook.Length); do S.front2 = rng.Next(Market.NewsBook.Length); while (S.front2 == S.front1); }
             CheckClean();                                               // 판 수입에서 떼어 빚을 다 갚았을 수도
             RollContract();

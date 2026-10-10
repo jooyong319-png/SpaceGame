@@ -191,7 +191,7 @@ namespace SalvageRun.Orbit.Sim
         }
         // 🔩 부품 가게 — 진열 셋, 출동이 끝날 때마다 새로. 값은 지금 청구서에 맞춰 오른다
         public bool ShopUnlocked => Lv("e_shop") > 0;
-        public bool ShopOpen => ShopUnlocked && S.merchant;                    // 🧳 10-10 사장님 「가게는 가끔 오는 느낌」 — 떠돌이 상인이 와 있을 때만
+        public bool ShopOpen => ShopUnlocked;                                   // 🛒 10-10 밤 사장님 「가게도 증권처럼 열려 있게」 — 늘 열림 · 떠돌이 상인(S.merchant)은 청구서 두 장마다 오는 특별한 날
         public const int MerchantEvery = 2;                                     // 청구서 몇 장마다 상인이 들르나
         public void MerchantArrive() { if (!ShopUnlocked) return; S.merchant = true; RollShop(); S.freeRoll = true; S.rolls = 0; Emit(SwEv.Pop, EX, EY - 140, 0, 3, Loc.T("떠돌이 상인 도착")); }
 
@@ -290,7 +290,8 @@ namespace SalvageRun.Orbit.Sim
                     S.shop.Add(id); break;
                 }
             }
-            {   // 🧳 10-10 상인의 「이번만」 칸 — 진열에 영웅 이상이 하나도 없으면 하나를 바꿔 넣는다
+            if (S.merchant)
+            {   // 🧳 10-10 상인의 「이번만」 칸 — 진열에 영웅 이상이 하나도 없으면 하나를 바꿔 넣는다 (상인 오는 날만)
                 int hi = -1; bool has = false;
                 for (int k = 0; k < S.shop.Count; k++) { int id = S.shop[k]; if (id >= 0 && id < Parts.Defs.Length) { if (Parts.Defs[id].rar >= 2) has = true; else hi = k; } }
                 if (!has && hi >= 0) for (int t = 0; t < 60; t++) { int id = rng.Next(Parts.Defs.Length); if (Parts.Defs[id].rar >= 2 && !used.Contains(id) && !S.shop.Contains(id)) { S.shop[hi] = id; break; } }

@@ -66,6 +66,8 @@ namespace SalvageRun.EditorTools
                     }
                 acts.Add(g => { g.sim.M.ship = 0; g.hud.TestTip = -1; });
                 acts.Add(g => { Close(g); g.sim.S.merchant = true; g.hud.flow = 2; }); acts.Add(g => { });   // 🧳 조종실 상인 띠
+                acts.Add(g => { Close(g); g.sim.S.merchant = false; g.hud.flow = 2; }); acts.Add(g => { });   // 🛒 10-10 밤 평소 가게(상인 없는 날) — 조종실 탭 · 가게 머리
+                acts.Add(g => { Close(g); g.sim.S.merchant = false; g.hud.flow = 5; }); acts.Add(g => { });
                 acts.Add(g => { Close(g); g.sim.S.merchant = true; g.hud.flow = 5; });
                 for (int k = 0; k < 6; k++) { int kk = k; acts.Add(g => { g.hud.flow = 5; g.hud.testShopTip = kk; }); }
                 acts.Add(g => { g.hud.testShopTip = -1; g.hud.TestBuyAsk(0); });
