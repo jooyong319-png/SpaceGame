@@ -1886,3 +1886,9 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 번개 튀는 수 — 번개가 옆 잔해로 튀는 횟수	Lightning jumps — how many times lightning jumps to nearby debris
 폭발 범위 — 기뢰 · 분열탄 · 미사일 같은 모든 폭발의 크기	Blast size — size of every explosion (mines · cluster shells · missiles)
 폭발 번짐 — 무기 폭발이 부순 잔해에서 또 터질 확률	Blast spread — chance a weapon explosion sets off another blast from debris it breaks
+언 잔해 피해	Frozen debris damage
+냉동 빔 발동	Freeze beam trigger
+전기 무기 발동	Electric weapon trigger
+번개 튀는 수	Lightning jumps
+폭발 범위	Blast size
+출동하면 떠남 · 청구서 두 장마다 들름 · 카드에 올리면 장착할 칸이 깜빡임	Leaves on launch · back every two bills · hover a card to blink its slot

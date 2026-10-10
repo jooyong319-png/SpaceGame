@@ -104,8 +104,14 @@ namespace SalvageRun.Orbit
             GUI.color = Th.scan; for (float yy = 0; yy < RefH; yy += 4) GUI.DrawTexture(new Rect(0, yy, vw, 1), white);
             GUI.color = Color.white;
             var w = new Rect(ox + 50, 14, 860, 572);
-            Lbl(new Rect(w.x, w.y, 900, 34), Loc.T("<size=24><b><color=#ffdf95>떠돌이 상인</color></b></size>  <size=12><color=#8a9bb3>출동하면 떠남 · 청구서 두 장마다 들름 · 카드에 올리면 장착할 칸이 깜빡임</color></size>"), label);
-            Lbl(new Rect(w.x, w.y + 6, w.width, 24), Loc.T("<size=14><color=#8a9bb3>돈</color> <color=#ffdf95>") + KNum.Fmt(S.cash) + Loc.T("</color>   <color=#d8ccff>열쇠 ") + S.keys + "</color></size>", cost);
+            // 제목 · 부제 · 돈 — 부제는 제목과 돈 사이에 맞춤 (10-10 영어 부제가 「Cash 500M · Keys 0」을 덮음)
+            string ttl = "<size=24><b><color=#ffdf95>" + (Loc.En ? "Traveling Merchant" : "떠돌이 상인") + "</color></b></size>";
+            string money = Loc.T("<size=14><color=#8a9bb3>돈</color> <color=#ffdf95>") + KNum.Fmt(S.cash) + Loc.T("</color>   <color=#d8ccff>열쇠 ") + S.keys + "</color></size>";
+            float ttlW = label.CalcSize(new GUIContent(ttl)).x, moneyW = cost.CalcSize(new GUIContent(money)).x;
+            float subW = w.width - ttlW - moneyW - 28;
+            Lbl(new Rect(w.x, w.y, ttlW + 4, 34), ttl, label);
+            Lbl(new Rect(w.x + ttlW + 10, w.y + 4, subW, 26), Fit("<color=#8a9bb3>" + Loc.T("출동하면 떠남 · 청구서 두 장마다 들름 · 카드에 올리면 장착할 칸이 깜빡임") + "</color>", 12, subW, label, 9), label);
+            Lbl(new Rect(w.x, w.y + 6, w.width, 24), money, cost);
             // 🚀 내 청소선 — 그림 위에 부품 칸 다섯 (09-25 사장님 「어디에 들어가는지 이해가 어렵다」 · 시안 https://claude.ai/artifact/6bRbq2eUNE6dXqsSgqvHND)
             if (shipTex == null) shipTex = Resources.Load<Texture2D>("ship/hull");
             var L = new Rect(w.x, w.y + 60, 250, 162);
@@ -200,7 +206,7 @@ namespace SalvageRun.Orbit
                 // 지금 것 → 바뀌는 것
                 GUI.color = new Color(0.2f, 0.23f, 0.29f); GUI.DrawTexture(new Rect(r.x + 10, r.y + 112, r.width - 20, 1), white); GUI.color = Color.white;
                 string cmp = key ? Loc.T("<color=#8a9bb3>정비고 ◆ 칸에 사용 · 열쇠 ") + S.keys + (Loc.En ? "" : "개") + "</color>" : cn ? ConsHeldLine(id) : PartCompare(id);   // 10-09 다듬기 P3: 띠 「다음 출동 한 번용」과 같은 말 대신 이미 모아 둔 양
-                { string ct = "<size=11>" + cmp + "</size>"; if (small.CalcHeight(new GUIContent(ct), r.width - 20) > 61) ct = "<size=10>" + cmp + "</size>"; Lbl(new Rect(r.x + 10, r.y + 116, r.width - 20, 58), ct, small); }   // 10-10 영어 「Now Attachment Radar is removed…」 넉 줄이면 한 치수 작게
+                { string ct = null; for (int fs = 11; fs >= 9 && ct == null; fs--) { string t = "<size=" + fs + ">" + string.Join("\n", System.Array.ConvertAll(cmp.Split('\n'), ln => KWrapRich(ln, fs, r.width - 24))) + "</size>"; if (fs == 9 || small.CalcHeight(new GUIContent(t), r.width - 20) <= 58) ct = t; } Lbl(new Rect(r.x + 10, r.y + 116, r.width - 20, 58), ct, small); }   // 10-10 낱말 단위 · 넘치면 한 치수씩   // 10-10 영어 「Now Attachment Radar is removed…」 넉 줄이면 한 치수 작게
                 double price = sim.ShelfPrice(k); bool can = S.cash >= price;
                 var bb = new Rect(r.x + 10, r.yMax - 40, r.width - 20, 30);
                 string ptxt = KNum.Short(price) + (sale ? Loc.T(" <color=#ffb0a0>(반값)</color>") : "");   // 원래 값은 카드 위 「오늘의 반값」 띠가 말해 준다 — 단추가 좁다
@@ -248,6 +254,8 @@ namespace SalvageRun.Orbit
             { "dmg", new[] { Loc.T("화력"), "%" } }, { "spd", new[] { Loc.T("연사"), "%" } }, { "rad", new[] { Loc.T("크기"), "%" } }, { "fuel", new[] { Loc.T("연료"), Loc.T("초") } }, { "crit", new[] { Loc.T("치명"), "%" } },
             { "dbl", new[] { Loc.T("한 발 더"), "%" } }, { "drone", new[] { Loc.T("드론 몫"), "%" } }, { "val", new[] { Loc.T("모든 값"), "%" } }, { "vault", new[] { Loc.T("금고 위성"), "%" } }, { "att", new[] { Loc.T("부착물"), "%" } },
             { "cut", new[] { Loc.T("빚 갚는 몫"), "%" } }, { "fee0", new[] { Loc.T("수수료 0"), "" } }, { "div", new[] { Loc.T("배당"), "%" } }, { "combo", new[] { Loc.T("연쇄 상한"), "" } }, { "hole", new[] { Loc.T("블랙홀"), "%" } },
+            { "frost", new[] { Loc.T("서리 원"), "%" } }, { "frz", new[] { Loc.T("언 잔해 피해"), "%" } }, { "frzp", new[] { Loc.T("냉동 빔 발동"), "%" } }, { "shockp", new[] { Loc.T("전기 무기 발동"), "%" } },
+            { "zap", new[] { Loc.T("번개 튀는 수"), "" } }, { "blast", new[] { Loc.T("폭발 범위"), "%" } }, { "spread", new[] { Loc.T("폭발 번짐"), "%" } },
         };
         /// <summary>진열 부품을 끼우면 — 지금 부품이 빠지고 무엇이 오르고 내리나</summary>
         /// <summary>1회용 카드 아래 줄 — 이미 모아 둔 양 (여러 개 사면 합산: BuyPart 의 nFuel · freeTix · nDmg · nVal)</summary>
@@ -271,8 +279,8 @@ namespace SalvageRun.Orbit
             {
                 double d = sum[k]; if (System.Math.Abs(d) < 1e-9) continue;
                 var fn = FxName.TryGetValue(k, out var f) ? f : new[] { k, "" };
-                double shown = k == "fuel" || k == "combo" ? d : d * 100;
-                outp.Add("<color=" + (d > 0 ? "#9ff0bf" : "#ff9b8f") + ">" + fn[0] + (k == "fee0" ? (d > 0 ? Loc.T(" 켜짐") : Loc.T(" 꺼짐")) : " " + (d > 0 ? "+" : "−") + System.Math.Abs(shown).ToString("0.##") + fn[1]) + "</color>");
+                double shown = k == "fuel" || k == "combo" || k == "zap" ? d : d * 100;
+                outp.Add("<color=" + (d > 0 ? "#9ff0bf" : "#ff9b8f") + ">" + fn[0] + (k == "fee0" ? (d > 0 ? Loc.T(" 켜짐") : Loc.T(" 꺼짐")) : " " + (d > 0 ? "+" : "−") + System.Math.Round(System.Math.Abs(shown), System.Math.Abs(shown) < 10 ? 1 : 0) + fn[1]) + "</color>");
             }
             if (cur == id) return Loc.T("<color=#8a9bb3>지금 장착한 것과 같음</color>");
             string head = cur >= 0 ? Loc.T("<color=#8a9bb3>지금 <color=#8a7f99>") + Parts.Defs[cur].name + Loc.T("</color> 빠짐</color>\n") : Loc.T("<color=#8a9bb3>빈 칸에 끼움</color>\n");
@@ -292,7 +300,7 @@ namespace SalvageRun.Orbit
                 sb.Append("<color=#" + ColorUtility.ToHtmlStringRGB(RarCol[d.rar]) + ">" + d.name + "</color>  <color=#8a93a3>" + Parts.RarName[d.rar] + " · " + Parts.SlotName[d.slot] + Loc.T(" 칸</color>") + "\n\n");
                 for (int i = 0; i < d.k.Length; i++)
                 {
-                    string v = d.k[i] == "fuel" ? (d.v[i] > 0 ? "+" : "") + d.v[i] + Loc.T("초") : d.k[i] == "fee0" ? "" : d.k[i] == "combo" ? "+" + d.v[i] : (d.v[i] > 0 ? "+" : "") + (d.v[i] * 100).ToString(d.v[i] < 0.01 ? "0.0" : "0") + "%";
+                    string v = d.k[i] == "fuel" ? (d.v[i] > 0 ? "+" : "") + d.v[i] + Loc.T("초") : d.k[i] == "fee0" ? "" : d.k[i] == "combo" || d.k[i] == "zap" ? "+" + System.Math.Round(d.v[i]) : (d.v[i] > 0 ? "+" : "") + (d.v[i] * 100).ToString(d.v[i] < 0.01 ? "0.0" : "0") + "%";
                     string h = Parts.Help.TryGetValue(d.k[i], out var hh) ? hh : d.k[i];
                     if (d.k[i] == "crit") h += Loc.T(" (지금 ×") + sim.CritX + ")";
                     sb.Append("<color=#ffdf95>" + v + "</color>  " + h + "\n");
@@ -300,12 +308,13 @@ namespace SalvageRun.Orbit
                 sb.Append("\n" + "<color=#8a93a3>" + Parts.SlotName[d.slot] + Loc.T(" 칸에 하나만 장착. 이미 장착한 게 있으면 교체 — 빠지는 부품은 사라짐.</color>"));
             }
             if (tipStyle == null) tipStyle = new GUIStyle(small) { wordWrap = true, richText = true, fontSize = 12 };
-            float tw = 300, th = tipStyle.CalcHeight(new GUIContent(sb.ToString()), tw - 24) + 22;
+            float tw = 300; string tipTxt = string.Join("\n", System.Array.ConvertAll(sb.ToString().Split('\n'), ln => KWrapRich(ln, 12, tw - 24)));   // 낱말 단위 (10-10 「피 / 해」 「교 / 체」로 끊겼다)
+            float th = tipStyle.CalcHeight(new GUIContent(tipTxt), tw - 24) + 22;
             var tr = new Rect(card.xMax + 8, card.y, tw, th);
             if (tr.xMax > vw - 8) tr.x = card.x - tw - 8;
             tr.y = Mathf.Min(tr.y, RefH - th - 8);
             GUI.color = new Color(0.03f, 0.04f, 0.06f, 0.97f); GUI.DrawTexture(tr, white); Frame(tr, new Color(0.45f, 0.5f, 0.6f), 1); GUI.color = Color.white;
-            Lbl(new Rect(tr.x + 12, tr.y + 11, tw - 24, th - 16), sb.ToString(), tipStyle);
+            Lbl(new Rect(tr.x + 12, tr.y + 11, tw - 24, th - 16), tipTxt, tipStyle);
         }
         GUIStyle tipStyle;
     }
