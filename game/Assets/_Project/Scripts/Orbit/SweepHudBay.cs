@@ -595,6 +595,16 @@ namespace SalvageRun.Orbit
             GUI.matrix = m; GUI.color = Color.white;
         }
 
+        // 무기 칸 「구매 후」 발동 — 안 산 무기는 ProcChance 가 0 이라 그 단계로 잠깐 올려 놓고 잰다 (10-10 「구매 후 발동 0%」)
+        string ProcTxt(string id, int l)
+        {
+            if (l <= 0) return Loc.T("잠김");
+            int ni = System.Array.FindIndex(SweepSim.Nodes, x => x.id == id), old = sim.S.lv[ni];
+            if (old < l) sim.S.lv[ni] = l;
+            double p = sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id));
+            sim.S.lv[ni] = old;
+            return Loc.T("발동 ") + Mathf.RoundToInt((float)p * 100) + "%";
+        }
         string Val(string id, int l)
         {
             switch (id)
@@ -614,7 +624,7 @@ namespace SalvageRun.Orbit
                 case "c_spd": return Loc.T("화력 +") + 8 * l + "%";
                 case "a_open": return l > 0 ? Loc.T("열림") : Loc.T("잠김");
                 case "w_hub": return l > 0 ? Loc.T("무기 효과 열림") : Loc.T("잠김");
-                case "w_laser": case "w_chain": return l > 0 ? Loc.T("발동 ") + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : Loc.T("잠김");
+                case "w_laser": case "w_chain": return ProcTxt(id, l);
                 case "w_laser_e": case "w_chain_e": case "w_vac_e": case "w_mine_e": case "w_frz_e": case "w_clus_e": case "w_mag_e": case "w_rail_e": return l > 0 ? Loc.T("특화 ") + l + Loc.T("단계") : Loc.T("없음");   // ◇ 무기 특화
                 case "w_laser_u": return new[] { Loc.T("없음"), Loc.T("굵기 +50%"), Loc.T("굵기 +50% · 열 축적") }[Mathf.Min(2, l)];
                 case "w_chain_u": return new[] { Loc.T("없음"), Loc.T("7번 튐"), Loc.T("7번 · 튈수록 ×1.2") }[Mathf.Min(2, l)];
@@ -631,22 +641,22 @@ namespace SalvageRun.Orbit
                 case "i_bh": return Loc.T("블랙홀 확률 +") + (0.2 * l).ToString("0.#") + "%";
                 case "i_eco": return Loc.T("값 +") + 8 * l + "%";
                 case "i_route": return Loc.T("행성 값 +") + 5 * l + "%";
-                case "w_vac": return l > 0 ? Loc.T("발동 ") + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : Loc.T("잠김");
+                case "w_vac": return ProcTxt(id, l);
                 case "w_vac_u": return new[] { Loc.T("없음"), Loc.T("1단계"), Loc.T("2단계") }[Mathf.Min(2, l)];
                 case "w_vac_a": return l > 0 ? Loc.T("각성!") : Loc.T("잠김");
-                case "w_mine": return l > 0 ? Loc.T("발동 ") + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : Loc.T("잠김");
+                case "w_mine": return ProcTxt(id, l);
                 case "w_mine_u": return new[] { Loc.T("없음"), Loc.T("1단계"), Loc.T("2단계") }[Mathf.Min(2, l)];
                 case "w_mine_a": return l > 0 ? Loc.T("각성!") : Loc.T("잠김");
-                case "w_frz": return l > 0 ? Loc.T("발동 ") + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : Loc.T("잠김");
+                case "w_frz": return ProcTxt(id, l);
                 case "w_frz_u": return new[] { Loc.T("없음"), Loc.T("1단계"), Loc.T("2단계") }[Mathf.Min(2, l)];
                 case "w_frz_a": return l > 0 ? Loc.T("각성!") : Loc.T("잠김");
-                case "w_clus": return l > 0 ? Loc.T("발동 ") + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : Loc.T("잠김");
+                case "w_clus": return ProcTxt(id, l);
                 case "w_clus_u": return new[] { Loc.T("없음"), Loc.T("1단계"), Loc.T("2단계") }[Mathf.Min(2, l)];
                 case "w_clus_a": return l > 0 ? Loc.T("각성!") : Loc.T("잠김");
-                case "w_mag": return l > 0 ? Loc.T("발동 ") + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : Loc.T("잠김");
+                case "w_mag": return ProcTxt(id, l);
                 case "w_mag_u": return new[] { Loc.T("없음"), Loc.T("1단계"), Loc.T("2단계") }[Mathf.Min(2, l)];
                 case "w_mag_a": return l > 0 ? Loc.T("각성!") : Loc.T("잠김");
-                case "w_rail": return l > 0 ? Loc.T("발동 ") + Mathf.RoundToInt((float)sim.ProcChance(System.Array.IndexOf(SweepSim.WeaponNode, id)) * 100) + "%" : Loc.T("잠김");
+                case "w_rail": return ProcTxt(id, l);
                 case "w_rail_u": return new[] { Loc.T("없음"), Loc.T("1단계"), Loc.T("2단계") }[Mathf.Min(2, l)];
                 case "w_rail_a": return l > 0 ? Loc.T("각성!") : Loc.T("잠김");
                 case "k_claw": case "k_drone": case "k_bh": case "k_eco": case "k_route": return l > 0 ? Loc.T("켜짐") : Loc.T("꺼짐");
