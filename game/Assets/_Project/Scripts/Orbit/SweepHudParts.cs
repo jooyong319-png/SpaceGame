@@ -279,6 +279,7 @@ namespace SalvageRun.Orbit
             {
                 double d = sum[k]; if (System.Math.Abs(d) < 1e-9) continue;
                 var fn = FxName.TryGetValue(k, out var f) ? f : new[] { k, "" };
+                if (k == "frost" || k == "spread") fn = new[] { Loc.T(k == "frost" ? "서리 원 +" : "폭발 번짐 +").TrimEnd('+', ' '), fn[1] };   // 문장 꼴 「Frost circle」 (「서리 원」 「폭발 번짐」 번역은 칸 이름 꼴)
                 double shown = k == "fuel" || k == "combo" || k == "zap" ? d : d * 100;
                 outp.Add("<color=" + (d > 0 ? "#9ff0bf" : "#ff9b8f") + ">" + fn[0] + (k == "fee0" ? (d > 0 ? Loc.T(" 켜짐") : Loc.T(" 꺼짐")) : " " + (d > 0 ? "+" : "−") + System.Math.Round(System.Math.Abs(shown), System.Math.Abs(shown) < 10 ? 1 : 0) + fn[1]) + "</color>");
             }

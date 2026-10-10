@@ -617,7 +617,7 @@ namespace SalvageRun.Orbit
                         case 2: return Loc.T("관통") + " " + (3 + l) + (Loc.En ? "" : "개");
                         case 3: return Loc.T("번개") + " " + (2 + l / 3) + (Loc.En ? "" : "줄") + " · " + Loc.T("범위") + " " + (70 + 10 * l);
                         case 4: return Loc.T("미사일") + " " + (SweepSim.MissileBase + l) + (Loc.En ? "" : "발");
-                        case 5: return Loc.T("서리 원") + " " + (44 + 6 * l);
+                        case 5: return Loc.T("서리 원 +").TrimEnd('+', ' ') + " " + (44 + 6 * l);   // 문장 꼴 「Frost circle」 (「서리 원」 번역은 칸 이름이라 「Frost Circle」)
                         case 6: return Loc.T("파편") + " " + (4 + l / 3) + (Loc.En ? "" : "개");
                     }
                     return l > 0 ? Loc.T("반지름 ") + (20 + 5 * l) : Loc.T("한 점");
