@@ -140,8 +140,8 @@ namespace SalvageRun.Orbit
                 GUI.color = Color.white;
                 var t = UpTex(i); if (t != null) GUI.DrawTexture(new Rect(r.x + 10, r.y + 10, 56, 56), t);   // 10-08 시안 3: 테두리 · 아이콘 · 글 사이 여백
                 Lbl(new Rect(r.x + 76, r.y + 4, r.width - 80, 20), "<size=13><b>" + u.name + "</b></size>", label);
-                var ws = new GUIStyle(label) { wordWrap = true };
-                Lbl(new Rect(r.x + 76, r.y + 22, r.width - 80, 36), "<size=10><color=#8d99b8>" + KWrap(u.desc, 10, r.width - 86) + "</color></size>", ws);
+                var ws = new GUIStyle(label) { wordWrap = true, fontSize = 10 };   // 10-11 줄 높이를 글자 크기로 (영어 둘째 줄이 단계 막대에 닿았다)
+                Lbl(new Rect(r.x + 76, r.y + 22, r.width - 80, 36), "<color=#8d99b8>" + KWrap(u.desc, 10, r.width - 86) + "</color>", ws);
                 float pw = Mathf.Min(10, (r.width - 84) / u.max - 2);
                 for (int k = 0; k < u.max; k++) { GUI.color = k < lv ? new Color(1f, 0.81f, 0.29f) : new Color(0.14f, 0.17f, 0.27f); GUI.DrawTexture(new Rect(r.x + 76 + k * (pw + 2), r.y + 58, pw, 6), white); }
                 GUI.color = Color.white;
