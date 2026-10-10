@@ -21,6 +21,8 @@ namespace SalvageRun.Orbit
             return f >= 0 && f < famTex.Length ? famTex[f] : null;
         }
         static string FamHex(int f) => ColorUtility.ToHtmlStringRGB(FamCol[f]);
+        static string Pts(int n) => Loc.En ? n + (n == 1 ? " pt" : " pts") : n + "점";       // 10-10 「단계」는 다른 곳에서 빈칸으로 번역돼 있어 따로
+        static string TierTxt(int t) => Loc.En ? "Tier " + t : t + "단계";
 
         /// <summary>계열 하나 — 아이콘 · 이름 · 점수 막대(9칸, 3 · 6 · 9 마디) · 지금 보너스 또는 다음 보너스</summary>
         float FamRow(float x, float y, float w, int f, int pts)
@@ -32,7 +34,7 @@ namespace SalvageRun.Orbit
             else { GUI.color = c; GUI.DrawTexture(new Rect(x + 4, y + 4, 16, 16), texDisc); }
             GUI.color = Color.white;
             Lbl(new Rect(x + 30, y, 90, 20), "<size=13><color=#" + FamHex(f) + ">" + SweepSim.FamName[f] + "</color></size>", label);
-            Lbl(new Rect(x + 30, y, w - 30, 20), "<size=12><color=" + (tier > 0 ? "#ffdf95" : "#6f7a8c") + ">" + pts + Loc.T("점") + (tier > 0 ? " · " + tier + Loc.T("단계") : "") + "</color></size>", cost);
+            Lbl(new Rect(x + 30, y, w - 30, 20), "<size=12><color=" + (tier > 0 ? "#ffdf95" : "#6f7a8c") + ">" + Pts(pts) + (tier > 0 ? " · " + TierTxt(tier) : "") + "</color></size>", cost);
             float bx = x + 30, bw = w - 30, seg = bw / 9f;
             for (int i = 0; i < 9; i++)
             {
@@ -42,7 +44,7 @@ namespace SalvageRun.Orbit
             }
             GUI.color = Color.white;
             string line = tier >= 3 ? "<color=#" + FamHex(f) + ">" + SweepSim.FamBonus[f][2] + "</color>"
-                        : "<color=#8a96aa>" + Loc.T("다음") + " " + SweepSim.FamStep[tier] + Loc.T("점") + " · </color><color=#c4cce2>" + SweepSim.FamBonus[f][tier] + "</color>";
+                        : "<color=#8a96aa>" + Loc.T("다음") + " " + Pts(SweepSim.FamStep[tier]) + " · </color><color=#c4cce2>" + SweepSim.FamBonus[f][tier] + "</color>";
             var lw = new GUIStyle(label) { wordWrap = true, fontSize = 10 };   // 줄 높이를 글자 크기로 재게 (<size> 로만 주면 큰 글자로 쟀다)
             Lbl(new Rect(bx, y + 27, bw, 30), line, lw);   // 영어 보너스는 두 줄
             return y + 58;
@@ -79,7 +81,7 @@ namespace SalvageRun.Orbit
             for (int f = 0; f < p.Length; f++)
             {
                 int t = SweepSim.TierOf(p[f]);
-                if (t > famSeen[f]) { Guide(SweepSim.FamName[f] + " " + t + Loc.T("단계") + " — " + SweepSim.FamBonus[f][t - 1]); OrbitSfx.Play("buy", 0.8f); }
+                if (t > famSeen[f]) { Guide(SweepSim.FamName[f] + " " + TierTxt(t) + " — " + SweepSim.FamBonus[f][t - 1]); OrbitSfx.Play("buy", 0.8f); }
                 famSeen[f] = t;
             }
         }

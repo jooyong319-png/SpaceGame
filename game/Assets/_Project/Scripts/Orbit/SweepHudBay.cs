@@ -511,7 +511,7 @@ namespace SalvageRun.Orbit
                 return;
             }
             Text("<color=#" + ColorUtility.ToHtmlStringRGB(VisCol(n.id)) + ">" + KWrap(TileName(k), 16, w) + "</color>", pTitle, 6);
-            { int nf = SweepSim.NodeFam(n.id); if (nf >= 0) { FamChip(new Rect(x, y, w, 18), nf, Loc.T("계열") + " · " + sim.FamPoints()[nf] + Loc.T("점")); y += 22; } }   // 🧬
+            { int nf = SweepSim.NodeFam(n.id); if (nf >= 0) { FamChip(new Rect(x, y, w, 18), nf, Loc.T("계열") + " · " + Pts(sim.FamPoints()[nf])); y += 22; } }   // 🧬
             int tiles = SweepSim.Tiles(t.stat);
             if (tiles > 1 && tiles <= 9)
             {
