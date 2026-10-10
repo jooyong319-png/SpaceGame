@@ -113,7 +113,7 @@ namespace SalvageRun.Orbit
             if (ev.type == EventType.MouseDown && new Rect(ox + 130, 42, 700, 290).Contains(ev.mousePosition)) charmKick = Mathf.Max(charmKick, 0.9f);   // 창을 누르면 흔들린다
             if (ev.type == EventType.Repaint) charmKick = Mathf.Max(0, charmKick - dt * 0.6f);
             float ang = Mathf.Sin(t * 2.3f) * 9f + charmKick * Mathf.Sin(t * 8.5f) * 22f;   // ⛏ 자동차 백미러 장식처럼
-            var piv = new Vector2(ox + 612, 44);
+            var piv = new Vector2(ox + 490, 44);                                   // 10-10 사장님 「키링이 주식창 때문에 안 보임」 — 612 는 「MY STOCK」 판(ox+600~) 뒤였다. 흔들려도(±60) 안 닿게 창 가운데로
             DrawRot(new Rect(piv.x - 28, piv.y, 56, 112), ch, piv, ang);
         }
 
