@@ -396,6 +396,7 @@ namespace SalvageRun.Orbit
         // 종이 · 도장 = 대출 계약서와 같다. 서명하면 사은품 주식이 오른쪽 [증권] 탭으로 날아간다.
         bool hireOpen; float hireSignT = -1, hireFlyT = -1; int hireCo = -1, newStockBadge;
         public void TestHire(bool stamped = false) { sim.S.hired = false; hireOpen = true; hireSignT = -1; signPts.Clear(); signLen = 0; signing = false; if (stamped) { for (int i = 0; i < 30; i++) signPts.Add(new Vector2(vw / 2 - 150 + i * 9, 375 + Mathf.Sin(i * 0.9f) * 18)); hireSignT = Time.unscaledTime; } }   // 에디터 시험용
+        public void TestHireClose() { hireOpen = false; hireSignT = -1; signPts.Clear(); sim.S.hired = true; }   // 에디터 시험용 — 잘림 검사가 계약서를 닫는다
         bool HireTrigger()
         {
             var S = sim.S;

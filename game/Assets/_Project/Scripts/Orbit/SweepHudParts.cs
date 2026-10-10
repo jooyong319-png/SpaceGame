@@ -151,7 +151,7 @@ namespace SalvageRun.Orbit
                 var d = Parts.Defs[id];
                 float nmX = Mathf.Max(100, 46 + slotW + 8);
                 Lbl(new Rect(r.x + nmX, r.y - 1, r.width - nmX - 4, 20), "<size=12><b><color=#" + ColorUtility.ToHtmlStringRGB(RarCol[d.rar]) + ">" + d.name + "</color></b></size>", label);
-                Lbl(new Rect(r.x + 46, r.y + 17, r.width - 50, 20), "<size=10><color=#aab4c3>" + d.desc + "</color></size>", label);
+                Lbl(new Rect(r.x + 46, r.y + 17, r.width - 50, 20), Fit("<color=#aab4c3>" + d.desc + "</color>", 10, r.width - 52, label, 7), label);   // 10-10 영어 「75% chance of an extra shot · Size +38%」가 칸을 넘었다
             }
             // 🧃 다음 판 소모품
             string cons = (S.nFuel > 0 ? Loc.T("연료 +") + S.nFuel + Loc.T("초  ") : "") + (S.nDmg > 0 ? Loc.T("화력 +") + S.nDmg + "%  " : "") + (S.nVal > 0 ? Loc.T("값 +") + S.nVal + "%" : "");

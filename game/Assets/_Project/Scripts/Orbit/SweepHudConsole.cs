@@ -232,8 +232,8 @@ namespace SalvageRun.Orbit
             {   // 🪐 09-30 사장님 「행성 설명 잘림」 — 20글자에서 「…」로 잘랐다. 두 줄까지 접고, 그래도 넘치면 한 치수 작게
                 if (descWrap == null) descWrap = new GUIStyle(center) { wordWrap = true };
                 var dr = new Rect(p.x + 6, p.y + 102, p.width - 12, 27);
-                string dt = "<size=9><color=#7fcfe0>" + so.desc + "</color></size>";
-                if (descWrap.CalcHeight(new GUIContent(dt), dr.width) > dr.height + 1) dt = "<size=8><color=#7fcfe0>" + so.desc + "</color></size>";
+                string dt = "<color=#7fcfe0>" + so.desc + "</color>"; descWrap.fontSize = 9;   // 10-10 크기를 글 안 <size> 에만 두면 줄 바꿀 자리를 다른 크기로 재 영어 첫 줄이 판 밖으로 나갔다
+                if (descWrap.CalcHeight(new GUIContent(dt), dr.width) > dr.height + 1) descWrap.fontSize = 8;
                 Lbl(dr, dt, descWrap);
             }
             // 점 — 어디쯤인지
@@ -524,10 +524,12 @@ namespace SalvageRun.Orbit
                 if (can) { glassOpen = true; glassT = 5f; OrbitSfx.Play("clank", 0.8f); } else OrbitSfx.Play("tick", 0.5f, 0.1f, 0.02f);
             }
             // 명판
-            var plate = new Rect(r.x - 6, box.yMax + 3, r.width + 12, 18);
-            GUI.color = new Color(0.12f, 0.04f, 0.04f, 0.9f); GUI.DrawTexture(plate, white); Frame(plate, new Color(0.7f, 0.18f, 0.12f), 1); GUI.color = Color.white;
             string pl = !can ? Loc.T("3장부터") : glassK > 0.95f ? Loc.T("누르면 파산 · 신용 +") + sim.S.creditPending * SweepSim.CreditK : stuck ? Loc.T("지금 파산") : Loc.T("파산");
-            Lbl(plate, "<size=10><b><color=#ffb3a8>" + pl + "</color></b></size>", center);
+            string pi = "<b><color=#ffb3a8>" + pl + "</color></b>";
+            float pw = Mathf.Clamp(center.CalcSize(new GUIContent("<size=10>" + pi + "</size>")).x + 12, r.width + 12, 150);   // 10-10 유리창을 열면 글이 길어져 딱지 양쪽으로 잘렸다 — 글만큼 넓히고(최대 150) 그래도 넘치면 작게
+            var plate = new Rect(r.center.x - pw / 2, box.yMax + 3, pw, 18);
+            GUI.color = new Color(0.12f, 0.04f, 0.04f, 0.9f); GUI.DrawTexture(plate, white); Frame(plate, new Color(0.7f, 0.18f, 0.12f), 1); GUI.color = Color.white;
+            Lbl(plate, Fit(pi, 10, pw - 6, center, 7), center);
         }
 
         // 🎬 막 전환 카드 — 화면 가운데 3.5초 (09-24 레벨 설계: 목성 = 2막 · 해왕성 = 3막)

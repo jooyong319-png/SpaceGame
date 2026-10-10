@@ -69,6 +69,14 @@ namespace SalvageRun.EditorTools
                 acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.loanOpen = true; });
                 acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.newsOpen = true; });
                 acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.TestOpen("front", true); });
+                // 🧭 10-10 검사가 한 번도 안 쓰던 화면 — 항로 다이얼 12칸(행성 다 연 채로) · 파산 경고 · 유리창 · 할부 계약서(서명 전 · 서명)
+                for (int q = 0; q < SweepSim.OrbitOrder.Length; q++) { int qq = q; acts.Add(g => { Close(g); g.hud.flow = 2; int pl = 0; for (int i = 1; i < SweepSim.OrbitOrder.Length; i++) pl |= 1 << SweepSim.OrbitOrder[i]; g.sim.S.planets = pl; g.sim.S.orbit = SweepSim.OrbitOrder[qq]; g.hud.TestRoute(-1); }); }   // 열린 행성은 다이얼을 넘기면 궤도가 바로 바뀐다 — 칸만 옮기면 지금 궤도로 돌아갔다
+                acts.Add(g => { g.sim.S.planets = 0; g.sim.S.orbit = SweepSim.OrbitOrder[0]; g.sim.S.overdue = true; g.hud.TestOpen("bank", false); }); acts.Add(g => { });   // 파산 경고 · 유리창은 파산할 수 있을 때(납부일)만 그려진다
+                acts.Add(g => { g.sim.S.overdue = true; g.hud.TestOpen("bank", true); }); acts.Add(g => { });
+                acts.Add(g => { g.sim.S.overdue = true; g.hud.TestOpen("bank", false); g.hud.TestOpen("glass", true); }); acts.Add(g => { });
+                acts.Add(g => { g.hud.TestOpen("glass", false); g.sim.S.overdue = false; g.hud.TestHire(false); }); acts.Add(g => { });
+                acts.Add(g => g.hud.TestSign()); acts.Add(g => { });
+                acts.Add(g => g.hud.TestHireClose());
                 foreach (var sc in scenes)
                 {
                     string id = sc; acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.TestDlg(id); });
