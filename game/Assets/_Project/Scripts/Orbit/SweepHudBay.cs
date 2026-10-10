@@ -42,6 +42,7 @@ namespace SalvageRun.Orbit
         float BuyScale(int k) { if (!tileBuyT.TryGetValue(k, out var t0)) return 1; float e = Time.unscaledTime - t0; if (e > 0.75f) { tileBuyT.Remove(k); return 1; } if (reduceMotion || e > 0.42f) return 1; float u = e / 0.42f; return u < 0.3f ? Mathf.Lerp(1, 0.84f, u / 0.3f) : u < 0.65f ? Mathf.Lerp(0.84f, 1.12f, Mathf.SmoothStep(0, 1, (u - 0.3f) / 0.35f)) : Mathf.Lerp(1.12f, 1, (u - 0.65f) / 0.35f); }   // 📐 도장 — 꾹 눌렸다(0.84) 튀고(1.12) 제자리 · 도장 그림 때문에 0.75초 남긴다
         float BuyFlash(int k) => tileBuyT.TryGetValue(k, out var t0) ? Mathf.Clamp01(1 - (Time.unscaledTime - t0) / 0.25f) : 0;
         public int TileCount => gtiles != null ? gtiles.Count : 0;
+        public int TileOf(string id) { if (gtiles == null) return -1; int n = System.Array.FindIndex(SweepSim.Nodes, x => x.id == id); for (int k = 0; k < gtiles.Count; k++) if (gtiles[k].stat == n) return k; return -1; }   // 에디터 시험용 — 노드 이름으로 칸 번호
         static readonly Vector2Int[] Dirs8 = { new Vector2Int(0, -1), new Vector2Int(1, -1), new Vector2Int(1, 0), new Vector2Int(1, 1), new Vector2Int(0, 1), new Vector2Int(-1, 1), new Vector2Int(-1, 0), new Vector2Int(-1, -1) };
         string lastBuyBranch = "";
         Vector2 camC; float camZ = 1f, userZ = 1f; Vector2 pan; bool dragging, dragMoved; int dragBtn; Vector2 dragFrom, dragStart;
@@ -563,7 +564,17 @@ namespace SalvageRun.Orbit
             switch (id)
             {
                 case "c_pow": return Loc.T("피해 ") + (1 + l);
-                case "c_rad": return l > 0 ? Loc.T("반지름 ") + (20 + 5 * l) : Loc.T("한 점");
+                case "c_rad":   // 10-10 배마다 범위 칸이 늘리는 게 다르다 — 전엔 모든 배에 빔 반지름(20+5×단계)을 보였다
+                    switch (sim.Ship)
+                    {
+                        case 1: return Loc.T("반지름 ") + (38 + 6 * l);
+                        case 2: return Loc.T("관통") + " " + (3 + l) + (Loc.En ? "" : "개");
+                        case 3: return Loc.T("번개") + " " + (2 + l / 3) + (Loc.En ? "" : "줄") + " · " + Loc.T("범위") + " " + (70 + 10 * l);
+                        case 4: return Loc.T("미사일") + " " + (SweepSim.MissileBase + l) + (Loc.En ? "" : "발");
+                        case 5: return Loc.T("서리 원") + " " + (44 + 6 * l);
+                        case 6: return Loc.T("파편") + " " + (4 + l / 3) + (Loc.En ? "" : "개");
+                    }
+                    return l > 0 ? Loc.T("반지름 ") + (20 + 5 * l) : Loc.T("한 점");
                 case "c_spd": return Loc.T("화력 +") + 8 * l + "%";
                 case "a_open": return l > 0 ? Loc.T("열림") : Loc.T("잠김");
                 case "w_hub": return l > 0 ? Loc.T("무기 효과 열림") : Loc.T("잠김");

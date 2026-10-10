@@ -476,7 +476,7 @@ namespace SalvageRun.Orbit.Sim
         static readonly System.Collections.Generic.Dictionary<string, string[]> TeslaNode = new System.Collections.Generic.Dictionary<string, string[]>
         {
             { "c_pow", new[] { Loc.T("전기 위력"), Loc.T("번개 · 터지는 피해 +1 (단계마다)") } },
-            { "c_rad", new[] { Loc.T("구체 크기"), Loc.T("번개가 닿는 범위 +10 · 터지는 범위 +8 (단계마다) — 두 단계마다 번개 한 줄 더") } },
+            { "c_rad", new[] { Loc.T("구체 크기"), Loc.T("번개가 닿는 범위 +10 · 터지는 범위 +8 (단계마다) — 세 단계마다 번개 한 줄 더") } },
             { "c_spd", new[] { Loc.T("전기 증폭"), Loc.T("전기 화력 +8% (단계마다)") } },
         };
         System.Collections.Generic.Dictionary<string, string[]> ShipNode => Ship == 1 ? ScatterNode : Ship == 2 ? HarpoonNode : Ship == 3 ? TeslaNode : Ship == 4 ? MissileNode : Ship == 5 ? FrostNode : Ship == 6 ? ClusNode : null;

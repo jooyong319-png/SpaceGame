@@ -572,7 +572,7 @@
 전기 위력	Electric Power
 번개 · 터지는 피해 +1 (단계마다)	Lightning · burst damage +1 (per level)
 구체 크기	Orb Size
-번개가 닿는 범위 +10 · 터지는 범위 +8 (단계마다) — 두 단계마다 번개 한 줄 더	Lightning reach +10 · burst radius +8 (per level) — one more bolt every two levels
+번개가 닿는 범위 +10 · 터지는 범위 +8 (단계마다) — 세 단계마다 번개 한 줄 더	Lightning reach +10 · burst radius +8 (per level) — one more bolt every three levels
 전기 증폭	Electric Boost
 전기 화력 +8% (단계마다)	Electric firepower +8% (per level)
 금고 위성 2개	2 vault satellites
@@ -1820,3 +1820,6 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 일제 사격	Salvo
 탐지 범위 · 발 수	Lock Range · Salvo
 한 번에 미사일 +1발 · 고르는 범위 +10 (단계마다) — 처음 3발	+1 missile per salvo · lock range +10 per level — starts at 3
+관통	Pierce
+미사일	Missiles
+파편	Fragments

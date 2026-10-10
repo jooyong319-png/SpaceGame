@@ -56,6 +56,15 @@ namespace SalvageRun.EditorTools
                 acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.TestSettings(); });
                 acts.Add(g => { Close(g); g.hud.flow = 3; });
                 for (int k = 0; k < 400; k++) { int kk = k; acts.Add(g => { g.hud.flow = 3; g.hud.TestTip = kk < g.hud.TileCount ? kk : -1; }); }
+                // 🛠 10-10 배마다 바뀌는 세 칸(위력 · 범위 · 증폭) 설명 — 검사는 타고 있는 배 하나로만 돌았다
+                for (int sh = 0; sh < SweepSim.Ships.Length; sh++)
+                    foreach (var nid in new[] { "c_pow", "c_rad", "c_spd" })
+                    {
+                        int ss = sh; string id = nid;
+                        acts.Add(g => { foreach (var pid in new[] { "c_pow", "c_rad" }) { int pi = System.Array.FindIndex(SweepSim.Nodes, x => x.id == pid); if (g.sim.S.lv[pi] < 1) g.sim.S.lv[pi] = 1; } g.sim.M.shipsOwned |= 1 << ss; g.sim.M.ship = ss; g.hud.flow = 3; g.hud.TestTip = g.hud.TileOf(id); });   // 앞 칸을 사 둬야 범위 · 증폭 칸이 보인다
+                        acts.Add(g => { });
+                    }
+                acts.Add(g => { g.sim.M.ship = 0; g.hud.TestTip = -1; });
                 acts.Add(g => { Close(g); g.hud.flow = 5; });
                 for (int k = 0; k < 6; k++) { int kk = k; acts.Add(g => { g.hud.flow = 5; g.hud.testShopTip = kk; }); }
                 acts.Add(g => { g.hud.testShopTip = -1; g.hud.TestBuyAsk(0); });
