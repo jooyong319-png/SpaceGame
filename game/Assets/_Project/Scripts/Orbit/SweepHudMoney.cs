@@ -181,7 +181,7 @@ namespace SalvageRun.Orbit
                 if (scIcon[k] != null) GUI.DrawTexture(new Rect(row.x + 42, row.y + 4, 26, 26), scIcon[k], ScaleMode.ScaleToFit);
                 Lbl(new Rect(row.x + 74, row.y + 1, 200, 18), "<size=12><color=" + (k == 0 ? "#ffdf95" : "#efe6f3") + ">" + SweepSim.ScratchSym[k] + "</color></size>", label);
                 Lbl(new Rect(row.x + 74, row.y + 15, row.width - 120, 22), Fit("<color=#9a8ca6>" + ScPrize(k) + "</color>", 10, row.width - 120, label, 8), label);   // 10-09 다듬기: 높이 16 이면 글자 아래가 잘렸다
-                Lbl(new Rect(row.x, row.y + 8, row.width - 6, 18), "<size=10><color=#9a8ca6>" + (SweepSim.ScratchOdds[k] * 100 * (1 + 0.5f * sim.Lv("l_luck"))).ToString(SweepSim.ScratchOdds[k] < 0.01 ? "0.0" : "0") + "%</color></size>", cost);
+                Lbl(new Rect(row.x, row.y + 8, row.width - 6, 18), "<size=10><color=#9a8ca6>" + (SweepSim.ScratchOdds[k] * 100 * (1 + 0.3f * sim.Lv("l_luck"))).ToString(SweepSim.ScratchOdds[k] < 0.01 ? "0.0" : "0") + "%</color></size>", cost);   // 10-10 실제는 단계마다 +30% (SweepSim.Money) — 표만 +50% 로 부풀려 보였다
             }
             Lbl(new Rect(pt.x, pt.y + 20 + 8 * 36 + 4, pt.width, 30), Loc.T("<size=10><color=#8a7a96>판 벌이 = 지금 평균 판 수입 · 화력 · 연료는 다음 판 한 번 · 겹치지 않음</color></size>"), small);
             // 다 보이면 받는다 — 당첨 그림 셋이 보이면 바로

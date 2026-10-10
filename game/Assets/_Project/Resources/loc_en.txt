@@ -183,7 +183,7 @@
 금고 호송대	Vault Convoy
 대충돌	Great Collision
 왼쪽에서 연료통 하나 · 부수면 연료 충전	A fuel canister from the left · break it to refuel
-오른쪽 위에 파편 서른 · 뭉쳤을 때 쓸면 연쇄	Thirty fragments top right · sweep them while clumped for a chain
+오른쪽 위에 파편 30개 · 뭉쳤을 때 쓸면 연쇄	Thirty fragments top right · sweep them while clumped for a chain
 왼쪽에서 고철 쏟아짐 · 길목 차단	Scrap pours in from the left · block the path
 금고 위성 행렬 통과 · 놓치기 전에	A line of vault satellites passes · get them before they leave
 오른쪽 위에 파편 60개 · 폭탄 위성 섞임	Sixty fragments top right · bomb satellites mixed in
