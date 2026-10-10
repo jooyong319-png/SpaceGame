@@ -55,7 +55,7 @@ namespace SalvageRun.Orbit
             var p = sim.FamPoints();
             Lbl(new Rect(x, y, w, 22), "<size=16><color=#e8f1fb>" + Loc.T("빌드 — 계열") + "</color></size>", label); y += 24;
             var ws = new GUIStyle(label) { wordWrap = true };
-            Lbl(new Rect(x, y, w, 40), "<size=10><color=#8a96aa>" + KWrap(Loc.T("칸 단계 · 끼운 부품 · 타는 배가 점수 — 3 · 6 · 9점마다 보너스"), 10, w) + "</color></size>", ws); y += 42;
+            Lbl(new Rect(x, y, w, 40), "<size=10><color=#8a96aa>" + string.Join("\n", System.Array.ConvertAll(Loc.T("점수 = 칸 단계 · 끼운 부품 · 타는 배\n3 · 6 · 9점마다 보너스").Split('\n'), ln => KWrap(ln, 10, w))) + "</color></size>", ws); y += 42;
             // 점수 높은 계열부터
             var order = new int[SweepSim.FamCount]; for (int i = 0; i < order.Length; i++) order[i] = i;
             System.Array.Sort(order, (a, b) => p[b] != p[a] ? p[b].CompareTo(p[a]) : a.CompareTo(b));
