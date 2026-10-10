@@ -82,7 +82,7 @@ namespace SalvageRun.Orbit.Sim
 
         // ❄ 냉동 빔 — 맞은 것이 얼어 멈춘다. 언 것은 무엇에 맞든 두 배로 아프다. 부서지면 산산조각
         // ❄ 냉동 빔 — 빔은 조준점까지, 거기서 서리 원이 퍼진다. 원 안이 언다 (09-24 「얼음은 좀 이상해」 — 한 줄 전체가 얼던 것을 원으로)
-        public double FrzR => (34 + 0.5 * ClawR) * (Lv("w_frz_u") >= 1 ? 1.3 : 1) * (1 + 0.2 * We("frz")) * (FamT(FamFrost) >= 2 ? 1.2 : 1);
+        public double FrzR => (34 + 0.5 * ClawR) * (Lv("w_frz_u") >= 1 ? 1.3 : 1) * (1 + 0.2 * We("frz")) * (FamT(FamFrost) >= 2 ? 1.2 : 1) * (1 + Part("frost"));
         void Freeze()
         {
             var r = R; int u = Lv("w_frz_u");
@@ -100,11 +100,11 @@ namespace SalvageRun.Orbit.Sim
             Emit(SwEv.Laser, sx, sy, rad, 32 | 64, null, cx, cy);
             if (any) OnHit(0.25);
         }
-        public double FrzMul => (Lv("w_frz_u") >= 2 ? 2.5 : 2) + (FamT(FamFrost) >= 1 ? 0.5 : 0);
+        public double FrzMul => ((Lv("w_frz_u") >= 2 ? 2.5 : 2) + (FamT(FamFrost) >= 1 ? 0.5 : 0)) * (1 + Part("frz"));
 
         // ❄ 냉동선 — 무기고 냉동 빔을 매번 쏜다. 한 방은 약하고, 냉동 빔 줄(강화 · 각성 · 특화 · 3단계)이 그대로 세게 한다 (09-27)
         public static double FrostGap = 0.3, FrostK = 0.42, FrostGateK = 0.9, FrostHold = 1.0;
-        public double FrostR => (44 + 6 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2)) * (Lv("w_frz_u") >= 1 ? 1.3 : 1) * (1 + 0.2 * We("frz")) * (FamT(FamFrost) >= 2 ? 1.2 : 1);
+        public double FrostR => (44 + 6 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2)) * (Lv("w_frz_u") >= 1 ? 1.3 : 1) * (1 + 0.2 * We("frz")) * (FamT(FamFrost) >= 2 ? 1.2 : 1) * (1 + Part("frost"));
         void FrostShot()
         {
             var r = R; double cx = r.ax, cy = r.ay, rad = FrostR, hold = FrostHold + (Lv("w_frz_u") >= 1 ? 0.5 : 0) + 0.25 * We("frz");
@@ -371,7 +371,7 @@ namespace SalvageRun.Orbit.Sim
             foreach (var d in r.junk) { if (d.dead) continue; double dx = d.x - r.ax, dy = d.y - r.ay, dd = dx * dx + dy * dy; if (dd < bd) { bd = dd; cur = d; } }
             if (cur == null) { Emit(SwEv.Strike, r.ax, r.ay, PickR, 0); return; }
             bool crit = Rnd() < Crit;
-            int jumps = 5 + (u >= 1 ? 2 : 0) + 2 * We("chain") + (FamT(FamShock) >= 2 ? 3 : 0);
+            int jumps = 5 + (u >= 1 ? 2 : 0) + 2 * We("chain") + (FamT(FamShock) >= 2 ? 3 : 0) + (int)Math.Round(Part("zap"));
             double dmg = Pow * 1.3 * (crit ? CritX : 1);
             double px = ShipX, py = ShipY;
             var hit = new List<Junk>();

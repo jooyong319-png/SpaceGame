@@ -74,7 +74,13 @@ namespace SalvageRun.Orbit
                 t.lpar = pl.par == "R" ? 0 : first[pl.par] + pl.tile - 1;
                 foreach (var p in n.par) if (p != pl.par) t.xpar.Add(first[p]);
             }
+            busHub = first.TryGetValue("w_hub", out var bh) ? bh : -1;
         }
+
+        // 🔫 10-10 무기고 갈림길 — 무기고에서 뻗는 무기 줄은 곧은 선 대신 배선(아래 · 오른쪽 · 세로 줄기 · 가지)으로 (곧은 선 여덟 개가 다른 칸을 가로질렀다)
+        static int busHub = -1; readonly List<(int k, int s)> busKids = new List<(int, int)>();
+        bool OnBus(int k, int pk) { if (pk != busHub || busHub < 0) return false; var h = gtiles[busHub].cell; var c = gtiles[k].cell; return c.x > h.x + 1 && c.y < h.y; }
+        Vector2[] BusPath(int k) { var h = gtiles[busHub].cell; var c = gtiles[k].cell; return new Vector2[] { h, new Vector2(h.x, h.y - 1), new Vector2(h.x + 2, h.y - 1), new Vector2(h.x + 2, c.y), c }; }
 
         int[] gmemo; int treeHover = -1;
         /// <summary>이 칸을 막고 있는 앞 칸 (아직 안 산 부모 칸) — 없으면 -1</summary>
@@ -259,6 +265,7 @@ namespace SalvageRun.Orbit
             if (ev.type == EventType.MouseUp && dragging && ev.button == dragBtn) { dragging = false; if (dragMoved) ev.Use(); }
             float zz = camZ * userZ;
             Vector2 ToScr(Vector2Int c) => area.center + pan + ((Vector2)c - camC) * cellPx * zz;
+            Vector2 ToScrF(Vector2 c) => area.center + pan + (c - camC) * cellPx * zz;
             float tile = 44f * zz;
             // 📐 모눈 — 굵은 선이 칸 자리를 지난다 (트리와 같이 움직인다) · 가는 선은 다섯 칸
             {
@@ -281,6 +288,7 @@ namespace SalvageRun.Orbit
                 {
                     if (st[pk] == 0) continue;
                     bool gold = st[k] == 3 && st[pk] == 3;
+                    if (OnBus(k, pk)) { busKids.Add((k, gold ? 2 : st[k] == 1 || pk != t.lpar ? 0 : 1)); continue; }
                     var a = ToScr(gtiles[pk].cell); var b = ToScr(t.cell);
                     if (!gold && pk != t.lpar)
                     {   // ✕ 연결 칸의 둘째 선 — 안 샀으면 흐리게, 마우스를 올린 칸 것만 밝게 (09-26 정돈 15)
@@ -291,6 +299,22 @@ namespace SalvageRun.Orbit
                     if (gold) Line(a, b, SweepGame.Amber, 2.5f * zz);
                     else DashLine(a, b, new Color(BpWire.r, BpWire.g, BpWire.b, st[k] == 1 ? 0.4f : 1f), 1.5f * zz, 4 * zz);
                 }
+            }
+            if (busKids.Count > 0)
+            {   // 줄기는 한 번만 — 겹쳐 그리면 흐린 점선이 진해진다
+                var hb = gtiles[busHub].cell; float low = hb.y - 1, goldLow = hb.y; bool bright = false;
+                foreach (var (bk, bs) in busKids) { low = Mathf.Min(low, gtiles[bk].cell.y); if (bs == 2) goldLow = Mathf.Min(goldLow, gtiles[bk].cell.y); if (bs >= 1) bright = true; }
+                var bdc = new Color(BpWire.r, BpWire.g, BpWire.b, bright ? 1f : 0.4f);
+                var p0 = ToScrF(hb); var p1 = ToScrF(new Vector2(hb.x, hb.y - 1)); var p2 = ToScrF(new Vector2(hb.x + 2, hb.y - 1)); var p3 = ToScrF(new Vector2(hb.x + 2, low));
+                DashLine(p0, p1, bdc, 1.5f * zz, 4 * zz); DashLine(p1, p2, bdc, 1.5f * zz, 4 * zz); DashLine(p2, p3, bdc, 1.5f * zz, 4 * zz);
+                foreach (var (bk, bs) in busKids)
+                {
+                    var bc = gtiles[bk].cell;
+                    if (bs == 2) Line(ToScrF(new Vector2(hb.x + 2, bc.y)), ToScr(bc), SweepGame.Amber, 2.5f * zz);
+                    else DashLine(ToScrF(new Vector2(hb.x + 2, bc.y)), ToScr(bc), new Color(BpWire.r, BpWire.g, BpWire.b, bs == 1 ? 1f : 0.4f), 1.5f * zz, 4 * zz);
+                }
+                if (goldLow < hb.y) { Line(p0, p1, SweepGame.Amber, 2.5f * zz); Line(p1, p2, SweepGame.Amber, 2.5f * zz); Line(p2, ToScrF(new Vector2(hb.x + 2, goldLow)), SweepGame.Amber, 2.5f * zz); }
+                busKids.Clear();
             }
             // ✨ 산 칸 → 다음 칸으로 금색 선이 그려진다 (잉크) · 닿으면 잠깐 남았다 사라진다
             {
@@ -303,6 +327,18 @@ namespace SalvageRun.Orbit
                     var a = ToScr(gtiles[f.from].cell); var b = ToScr(gtiles[f.to].cell);
                     float u = Mathf.Clamp01(e / FlowLen); u = 1 - (1 - u) * (1 - u);
                     float al = e > FlowLen ? 1 - (e - FlowLen) / PingLen : 1;
+                    if (OnBus(f.to, f.from))
+                    {   // 배선을 따라 흐른다
+                        var bp = BusPath(f.to); float tot = 0; for (int q = 1; q < bp.Length; q++) tot += Vector2.Distance(bp[q - 1], bp[q]);
+                        float left = tot * u;
+                        for (int q = 1; q < bp.Length && left > 0; q++)
+                        {
+                            float d = Vector2.Distance(bp[q - 1], bp[q]); if (d <= 0) continue;
+                            Line(ToScrF(bp[q - 1]), ToScrF(Vector2.Lerp(bp[q - 1], bp[q], Mathf.Min(1, left / d))), new Color(1f, 0.76f, 0.31f, al), 2.5f * zz);
+                            left -= d;
+                        }
+                        continue;
+                    }
                     Line(a, Vector2.Lerp(a, b, u), new Color(1f, 0.76f, 0.31f, al), 2.5f * zz);
                 }
                 GUI.color = Color.white;

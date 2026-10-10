@@ -101,7 +101,7 @@ namespace SalvageRun.Orbit.Sim
             }
         }
         public int ZoneOpen { get { int oi = 0; while (oi + 1 < OrbitOrder.Length && (S.planets & (1 << OrbitOrder[oi + 1])) != 0) oi++; return oi; } }
-        public static bool ZoneNeed(int i) { var id = Nodes[i].id; return !id.StartsWith("p_") && id != "e_shop" && !KeyNodes.Contains(id) && !Infinite(i) && !Ring4(id) && !(id.StartsWith("w_") && id.EndsWith("_e")) && !id.StartsWith("l_"); }   // 무기 특화 · 복권 칸은 더 파고드는 선택 — 다 찍기에서 뺀다 (09-25 밸런스: 토성 구역 3480만 중 1800만이 레일건 특화)
+        public static bool ZoneNeed(int i) { var id = Nodes[i].id; return !id.StartsWith("p_") && id != "e_shop" && !KeyNodes.Contains(id) && !Infinite(i) && !Ring4(id) && !(id.StartsWith("w_") && id != "w_hub") && !id.StartsWith("l_"); }   // 무기 특화 · 복권 칸은 더 파고드는 선택 — 다 찍기에서 뺀다 (09-25 밸런스: 토성 구역 3480만 중 1800만이 레일건 특화)
         public int ZoneLeft(int z) { int c = 0; for (int i = 0; i < Nodes.Length; i++) if (Zone[i] == z && ZoneNeed(i) && S.lv[i] <= 0) c++; return c; }
 
         public NodeSt State(int i)

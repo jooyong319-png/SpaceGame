@@ -15,6 +15,14 @@ static class Program
     const double ShopSec = 22;       // 정비소에서 보내는 시간 (판마다)
     const double Dt = 0.05;
 
+    // 🔫 10-10 무기 8개가 무기고에서 바로 뻗는다 — 사람처럼 무기는 둘까지만 골라 판다 (싼 것부터 다 사면 돈이 흩어진다)
+    static bool BotWeaponOk(SweepSim sim, int i)
+    {
+        var id = SweepSim.Nodes[i].id;
+        if (Array.IndexOf(SweepSim.WeaponNode, id) <= 0) return true;
+        int own = 0; foreach (var w in SweepSim.WeaponNode) if (w != null && sim.S.lv[Array.FindIndex(SweepSim.Nodes, x => x.id == w)] > 0) own++;
+        return own < (Environment.GetEnvironmentVariable("BOTW") is string bw ? int.Parse(bw) : 2);
+    }
     static void BotPickOffer(SweepSim sim)
     {   // 🎁 10-10 스테이지 보상 — 제일 높은 등급 (NOOFFER=1 이면 건너뛰기)
         if (sim.S.offer == null || sim.S.offer.Count == 0) return;
@@ -129,7 +137,7 @@ static class Program
                 for (int loop = 0; loop < 60; loop++)
                 {
                     int best = -1; double bc = double.MaxValue;
-                    for (int i = 0; i < SweepSim.NodeCount; i++) if (!SweepSim.Nodes[i].id.StartsWith("p_") && SweepSim.Nodes[i].id != "e_shop" && sim.State(i) == NodeSt.Can && sim.TileCost(i) < bc) { bc = sim.TileCost(i); best = i; }
+                    for (int i = 0; i < SweepSim.NodeCount; i++) if (!SweepSim.Nodes[i].id.StartsWith("p_") && SweepSim.Nodes[i].id != "e_shop" && BotWeaponOk(sim, i) && sim.State(i) == NodeSt.Can && sim.TileCost(i) < bc) { bc = sim.TileCost(i); best = i; }
                     if (best < 0 || reserve == double.MaxValue || sim.S.cash - bc < reserve) break;
                     sim.Buy(best);
                 }

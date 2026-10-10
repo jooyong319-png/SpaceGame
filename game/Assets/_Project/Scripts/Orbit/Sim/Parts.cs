@@ -58,6 +58,13 @@ namespace SalvageRun.Orbit.Sim
                 case "cut": return Loc.T("빚 갚는 몫 −") + Pc(v) + "%";
                 case "fee0": return Loc.T("주식 수수료 0");
                 case "div": return Loc.T("배당 +") + System.Math.Round(v * 100, 3) + "%";
+                case "frost": return Loc.T("서리 원 +") + Pc(v) + "%";
+                case "frz": return Loc.T("언 잔해 피해 +") + Pc(v) + "%";
+                case "frzp": return Loc.T("냉동 빔 발동 +") + Pc(v) + "%";
+                case "shockp": return Loc.T("전기 무기 발동 +") + Pc(v) + "%";
+                case "zap": return Loc.T("번개 튀는 수 +") + System.Math.Round(v);
+                case "blast": return Loc.T("폭발 범위 +") + Pc(v) + "%";
+                case "spread": return Loc.T("폭발 번짐 +") + Pc(v) + "%";
             }
             return k + " +" + v;
         }
@@ -97,6 +104,16 @@ namespace SalvageRun.Orbit.Sim
             P(2, 2, Loc.T("공명 선체"), Loc.T("드론 몫 +40% · 블랙홀 확률 +0.8%"), "drone", 0.40, "hole", 0.008),
             P(3, 2, Loc.T("금맥 탐지기"), Loc.T("모든 값 +15% · 부착물 +50%"), "val", 0.15, "att", 0.5),
             P(4, 2, Loc.T("연쇄 목걸이"), Loc.T("연쇄 보너스 상한 +150 · 치명 +6%"), "combo", 150, "crit", 0.06),
+            // 🧬 10-10 계열 부품 — 얼음 · 전기 · 폭발을 부품으로도 파게 (첫 효과 키가 계열을 정한다 — PartFam)
+            P(2, 0, Loc.T("냉각 선체"), "", "frost", 0.15),
+            P(1, 1, Loc.T("극저온 사출구"), "", "frz", 0.15, "frost", 0.10),
+            P(4, 2, Loc.T("서리 결정"), "", "frzp", 0.12, "frz", 0.12),
+            P(3, 0, Loc.T("전도 레이더"), "", "shockp", 0.12),
+            P(1, 1, Loc.T("테슬라 코일"), "", "zap", 2),
+            P(4, 2, Loc.T("번개 부적"), "", "shockp", 0.10, "zap", 0.8),
+            P(0, 0, Loc.T("고폭 연소실"), "", "blast", 0.12),
+            P(2, 1, Loc.T("연쇄 장약 선체"), "", "spread", 0.08),
+            P(1, 2, Loc.T("집속탄 사출구"), "", "blast", 0.10, "spread", 0.06),
         };
         // 📖 효과마다 판에서 무슨 뜻인지 (09-26 사장님 「가게 아이템 설명이 더 자세했으면」) — 카드에 올리면 옆 창에
         public static readonly System.Collections.Generic.Dictionary<string, string> Help = new System.Collections.Generic.Dictionary<string, string>
@@ -116,6 +133,13 @@ namespace SalvageRun.Orbit.Sim
             { "div",   Loc.T("배당 — 판마다 보유 주식 값의 이 비율만큼 돈 지급") },
             { "combo", Loc.T("연쇄 보너스 상한 — 긴 연쇄의 값 배수 상한 증가") },
             { "hole",  Loc.T("블랙홀 — 공격마다 이 확률로 블랙홀이 자동으로 열려 주변을 흡수") },
+            { "frost", Loc.T("서리 원 — 냉동 빔 · 냉동선 서리가 얼리는 범위") },
+            { "frz",   Loc.T("언 잔해 피해 — 얼어 있는 잔해에 주는 피해 배수가 더") },
+            { "frzp",  Loc.T("냉동 빔 발동 — 공격할 때 냉동 빔이 함께 나갈 확률") },
+            { "shockp", Loc.T("전기 무기 발동 — 레이저 · 번개 · 레일건이 함께 나갈 확률") },
+            { "zap",   Loc.T("번개 튀는 수 — 번개가 옆 잔해로 튀는 횟수") },
+            { "blast", Loc.T("폭발 범위 — 기뢰 · 분열탄 · 미사일 같은 모든 폭발의 크기") },
+            { "spread", Loc.T("폭발 번짐 — 무기 폭발이 부순 잔해에서 또 터질 확률") },
         };
         public static double Sum(int[] equipped, string key)
         {

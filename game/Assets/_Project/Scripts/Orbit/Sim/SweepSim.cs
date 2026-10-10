@@ -91,7 +91,7 @@ namespace SalvageRun.Orbit.Sim
         public static readonly double[] ProcBase = { 0, 0.12, 0.10, 0.08, 0.08, 0.08, 0.06, 0.05, 0.04 };
         public const double ProcK = 1.8;                                          // 🔫 09-26 밤 사장님 「무기들이 너무 약한 것 같아」 — 발동 확률 ×1.8 (0.5초 한 발 · 한 판 30초면 몇 번 안 터졌다)
         static readonly string[] ProcUp = { null, "w_laser_u", "w_chain_u", "w_vac_u", "w_mine_u", "w_frz_u", "w_clus_u", "w_mag_u", "w_rail_u" };
-        public double ProcChance(int w) => w <= 0 || w >= ProcBase.Length || !WeaponOwned(w) ? 0 : ProcK * ProcBase[w] * (Lv(ProcUp[w]) >= 1 ? 1.5 : 1) * (Lv("w_slot2") > 0 ? 1.5 : 1) * (Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1) * FamProcK(w);
+        public double ProcChance(int w) => w <= 0 || w >= ProcBase.Length || !WeaponOwned(w) ? 0 : ProcK * ProcBase[w] * (Lv(ProcUp[w]) >= 1 ? 1.5 : 1) * (Lv("w_slot2") > 0 ? 1.5 : 1) * (Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1) * FamProcK(w) * (1 + PartProc(w));
         void FireW(int w) { wMul = w > 0 && Lv(ProcUp[w].Replace("_u", "_x")) > 0 ? 2 : 1; int sv = dmgCat; dmgCat = w; Fire(w); dmgCat = sv; wMul = 1; }
         // 📊 피해를 준 곳 — 0 주 무기 · 1~8 무기고(레이저 · 번개 · 진공 · 기뢰 · 냉동 · 분열탄 · 자석 · 레일건) · 9 드론 · 10 폭발·연쇄 · 11 블랙홀 · 12 행성 특성 (09-27 사장님 「출동 결과에 무기별 피해 원그래프」)
         public const int DmgCatN = 13;
@@ -211,8 +211,8 @@ namespace SalvageRun.Orbit.Sim
         public double PullBase => 500;                                                         // 원 가장자리에서도 끌려오는 기본 힘
         public double PullF => 1 + 0.25 * Lv("b_pf");
         public int Cap => 40 + 15 * Lv("b_cap") + (FamT(FamHole) >= 2 ? 20 : 0);
-        public double BlastK => (1 + 0.15 * Lv("b_br")) * (1 + 0.06 * Up(10)) * (FamT(FamBlast) >= 1 ? 1.2 : 1);
-        public double ChainP => Math.Min(0.85, 0.3 + 0.07 * Lv("b_chain") + (FamT(FamBlast) >= 2 ? 0.15 : 0));    // 무기 폭발이 또 번질 확률
+        public double BlastK => (1 + 0.15 * Lv("b_br")) * (1 + 0.06 * Up(10)) * (FamT(FamBlast) >= 1 ? 1.2 : 1) * (1 + Part("blast"));
+        public double ChainP => Math.Min(0.85, 0.3 + 0.07 * Lv("b_chain") + (FamT(FamBlast) >= 2 ? 0.15 : 0) + Part("spread"));    // 무기 폭발이 또 번질 확률
         public double HoleCd => 16 - 1.5 * Lv("s_speed");     // (옛 시간 충전 — 이제 안 쓴다)
         public double HoleChance => R.clean ? 0.05 : Lv("b_n") <= 0 ? 0 : (0.012 + 0.002 * Lv("b_n") + 0.0025 * Lv("s_speed") + Part("hole") + 0.002 * Lv("i_bh")) * (Lv("k_bh") > 0 ? 0.7 : 1) * (1 + 0.3 * Lv("m_bh")) * (FamT(FamHole) >= 1 ? 1.3 : 1);   // 🌀 블랙홀 — 집게가 맞힐 때 이 확률로 그 자리에 저절로 열린다 (09-24 사장님 「자동으로 바닥에 깔리는 걸로」 · Q 스킬 없앰)
         public const double HoleDur = 3;                           // 열려 있는 시간 — 끝나면 저절로 터진다

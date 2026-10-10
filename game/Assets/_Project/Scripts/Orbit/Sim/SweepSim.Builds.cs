@@ -43,9 +43,9 @@ namespace SalvageRun.Orbit.Sim
             if (id < 0 || id >= Parts.Defs.Length) return -1;
             switch (Parts.Defs[id].k[0])
             {
-                case "fuel": return FamFrost;                                  // 냉각 · 연료
-                case "crit": case "dbl": return FamShock;
-                case "rad": case "combo": return FamBlast;
+                case "fuel": case "frost": case "frz": case "frzp": return FamFrost;   // 냉각 · 연료
+                case "crit": case "dbl": case "shockp": case "zap": return FamShock;
+                case "rad": case "combo": case "blast": case "spread": return FamBlast;
                 case "hole": return FamHole;
                 case "drone": return FamDrone;
                 case "val": case "vault": case "att": case "cut": case "fee0": case "div": return FamMoney;
@@ -71,6 +71,7 @@ namespace SalvageRun.Orbit.Sim
             return famT[f];
         }
         double FamProcK(int w) => w == 5 ? (FamT(FamFrost) >= 2 ? 1.5 : 1) : (w == 1 || w == 2 || w == 8) ? (FamT(FamShock) >= 1 ? 1.5 : 1) : 1;
+        double PartProc(int w) => w == 5 ? Part("frzp") : (w == 1 || w == 2 || w == 8) ? Part("shockp") : 0;   // 계열 부품 — 그 계열 무기 발동 +%
         bool Awk(string w, int fam) => Lv("w_" + w + "_a") > 0 || FamT(fam) >= 3;   // 3단계 보너스 = 그 무기 각성
     }
 }
