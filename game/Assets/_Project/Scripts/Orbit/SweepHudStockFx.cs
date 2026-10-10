@@ -218,9 +218,11 @@ namespace SalvageRun.Orbit
         }
 
         /// <summary>출동 중 — 오른쪽 위 작은 칩 (전체 + 종목 셋, 수익률 높은 순 · 급등 중이면 빨갛게 빛남)</summary>
+        Rect chipArea;                                                          // 10-10 이번 프레임 칩들이 차지한 곳 — 관문 이름표가 피해 간다
         void MyStockChips()
         {
             float y = 124, right = vw - 14;                                   // 연쇄 계기 · 압축 막대 아래
+            chipArea = new Rect(right, y, 0, 0);
             if (sim.Grit > 0.005) { var gr = new Rect(right - 130, y, 130, 22); GUI.color = new Color(0.2f, 0.05f, 0.05f, 0.85f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.4f, 0.3f), 1); GUI.color = Color.white; Lbl(new Rect(gr.x + 8, gr.y + 1, gr.width, 20), Loc.T("<size=12><color=#ffb3a8>근성 화력 <b>+") + Mathf.RoundToInt((float)sim.Grit * 100) + "%</b></color></size>", label); y += 25; }
             if (!sim.StockOpen || sim.Mk == null) return;
             MyStocks();
@@ -229,6 +231,7 @@ namespace SalvageRun.Orbit
             {
                 float w = label.CalcSize(new GUIContent(txt)).x + 14;   // 10-08 0.86배로 재서 영어 · 긴 종목명이 잘렸다
                 var r = new Rect(right - w, y, w, 22);
+                chipArea = Rect.MinMaxRect(Mathf.Min(chipArea.xMin, r.xMin), chipArea.yMin, right, r.yMax);
                 GUI.color = new Color(0.04f, 0.055f, 0.08f, 0.85f); GUI.DrawTexture(r, white);
                 if (hot) { float p = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 10); GUI.color = new Color(1f, 0.36f, 0.36f, 0.12f + 0.12f * p); GUI.DrawTexture(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), white); Frame(r, UpCol, 1 + p); }
                 else Frame(r, new Color(0.16f, 0.2f, 0.26f), 1);

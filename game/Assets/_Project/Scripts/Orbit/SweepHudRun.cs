@@ -205,6 +205,7 @@ namespace SalvageRun.Orbit
                 {
                     Vector3 gsp = game.WorldToScreen(game.PxToWorld(gj.x, gj.y));    // 🛰 관문 바로 위에 따라다닌다 (09-26 — 위 가운데 막대가 화면을 가렸다)
                     var gr = new Rect(Mathf.Clamp(gsp.x / scale - 110, 8, vw - 228), Mathf.Clamp((Screen.height - gsp.y) / scale - oy - 84, evWarnT > 0 ? 116 : 60, RefH - 120), 220, sim.GateReady ? 30 : 42);   // 10-10 방어막이면 두 줄 — 30 이면 아랫줄이 잘렸다 · 사건 예고 띠가 떠 있으면 띠 아래로 (띠 제목을 덮었다)
+                    if (chipArea.width > 0 && gr.yMax > chipArea.yMin - 4 && gr.y < chipArea.yMax + 4 && gr.xMax > chipArea.xMin - 6) gr.x = Mathf.Max(8, chipArea.xMin - 6 - gr.width);   // 10-10 오른쪽 위 관문 이름표가 주식 칩을 덮었다 — 칩 왼쪽으로
                     GUI.color = new Color(0.05f, 0.04f, 0.04f, 0.85f); GUI.DrawTexture(gr, white); Frame(gr, new Color(1f, 0.6f, 0.4f, 0.8f), 1);
                     if (!sim.GateReady)
                     {   // 🛡 방어막 — 관문 둘레에 푸른 막 · 막대 대신 자물쇠 (09-27)
