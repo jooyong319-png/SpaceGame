@@ -68,7 +68,7 @@ namespace SalvageRun.Orbit.Sim
         void GateBroken(Junk d)
         {
             int next = OrbitOrder[Frontier + 1];
-            S.gateNext = next; S.gateFrac = 1; S.gateMax = 0; S.keys++;
+            S.gateNext = next; S.gateFrac = 1; S.gateMax = 0; S.keys++; S.gateStage = true;   // 🎁 이번 스테이지 보상은 한 구간 위
             double bonus = Math.Max(S.runAvg * 3, BillAmount * 0.3);
             string gid = GateStock[Math.Min(Frontier, GateStock.Length - 1)]; int gsi = Array.FindIndex(Market.Defs, x => x.id == gid);
             string gnm = gsi >= 0 ? Market.Defs[gsi].name : "";

@@ -290,8 +290,9 @@ static class Tests
         var sim = new SweepSim(null, null, 33); var rng = new Random(33);
         sim.S.cash = 1e9; sim.S.keys = 9;
         sim.BuyTile(Ix("e_shop"));
-        for (int k = 0; k < 400 && !sim.ShopOpen; k++) BuyCheapest(sim, 9);
+        for (int k = 0; k < 400 && !sim.ShopUnlocked; k++) BuyCheapest(sim, 9);
         if (!sim.ShopOpen) { sim.S.lv[Ix("e_shop")] = 1; }
+        sim.MerchantArrive();                                                // 🧳 10-10 가게는 상인이 와 있을 때만
         double fuel0 = sim.FuelMax;
         // 진열을 소모품으로 채워 산다
         sim.S.shop.Clear(); for (int i = 0; i < 4; i++) sim.S.shop.Add(SweepSim.Cons0 + i); sim.S.shopSale = -1;

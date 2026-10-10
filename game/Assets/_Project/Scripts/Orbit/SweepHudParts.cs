@@ -104,7 +104,7 @@ namespace SalvageRun.Orbit
             GUI.color = Th.scan; for (float yy = 0; yy < RefH; yy += 4) GUI.DrawTexture(new Rect(0, yy, vw, 1), white);
             GUI.color = Color.white;
             var w = new Rect(ox + 50, 14, 860, 572);
-            Lbl(new Rect(w.x, w.y, 900, 34), Loc.T("<size=24><b><color=#ffdf95>부품 가게</color></b></size>  <size=12><color=#8a9bb3>진열은 출동 후 교체 · 카드에 올리면 장착할 칸이 깜빡임</color></size>"), label);
+            Lbl(new Rect(w.x, w.y, 900, 34), Loc.T("<size=24><b><color=#ffdf95>떠돌이 상인</color></b></size>  <size=12><color=#8a9bb3>출동하면 떠남 · 청구서 두 장마다 들름 · 카드에 올리면 장착할 칸이 깜빡임</color></size>"), label);
             Lbl(new Rect(w.x, w.y + 6, w.width, 24), Loc.T("<size=14><color=#8a9bb3>돈</color> <color=#ffdf95>") + KNum.Fmt(S.cash) + Loc.T("</color>   <color=#d8ccff>열쇠 ") + S.keys + "</color></size>", cost);
             // 🚀 내 청소선 — 그림 위에 부품 칸 다섯 (09-25 사장님 「어디에 들어가는지 이해가 어렵다」 · 시안 https://claude.ai/artifact/6bRbq2eUNE6dXqsSgqvHND)
             if (shipTex == null) shipTex = Resources.Load<Texture2D>("ship/hull");

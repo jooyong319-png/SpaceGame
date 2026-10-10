@@ -64,7 +64,7 @@ namespace SalvageRun.Orbit.Sim
             S.cash -= TileCost(i); S.lv[i] = Infinite(i) ? S.lv[i] + 1 : TileLv(i, NextTile(i));
             var id = Nodes[i].id;
             if (KeyNodes.Contains(id)) S.keys--;   // 🔑 파산해도 남는다
-            if (id == "e_shop") RollShop();
+            if (id == "e_shop") MerchantArrive();                       // 🧳 칸을 사면 상인이 바로 한 번 들른다
             int pi = Array.IndexOf(PlanetNode, id); if (pi > 0) PlanetBought(pi);
             if (id == "e_quest" && S.lv[i] == 1 && S.contract < 0) RollContract();
             Emit(SwEv.NodeBought, 0, 0, i, S.lv[i]);

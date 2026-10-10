@@ -15,6 +15,21 @@ static class Program
     const double ShopSec = 22;       // 정비소에서 보내는 시간 (판마다)
     const double Dt = 0.05;
 
+    static void BotPickOffer(SweepSim sim)
+    {   // 🎁 10-10 스테이지 보상 — 제일 높은 등급 (NOOFFER=1 이면 건너뛰기)
+        if (sim.S.offer == null || sim.S.offer.Count == 0) return;
+        int best = -1; double bs = -1e9;
+        for (int k = 0; k < sim.S.offer.Count; k++)
+        {   // 빈 칸 먼저 · 높은 등급 · 연료를 깎는 부품은 피한다 · 지금 것보다 낮은 등급과는 안 바꾼다
+            var d = Parts.Defs[sim.S.offer[k]]; int old = sim.S.parts[d.slot];
+            double sc = d.rar * 10 + (old < 0 ? 25 : -10 * Parts.Defs[old].rar);
+            for (int j = 0; j < d.k.Length; j++) if (d.k[j] == "fuel" && d.v[j] < 0) sc -= 30;
+            if (sc > bs) { bs = sc; best = k; }
+        }
+        if (bs < 0) best = -1;
+        sim.PickOffer(Environment.GetEnvironmentVariable("NOOFFER") == "1" ? -1 : best);
+    }
+
     static void Main(string[] args)
     {
         SweepSim.BotEarn = double.TryParse(Environment.GetEnvironmentVariable("EARN"), out double be) ? be : 3;   // 🤖 사장님은 연쇄로 봇의 약 3배를 번다 (09-26 첫 청구서 기록)
@@ -76,6 +91,7 @@ static class Program
             {
                 int dueWas = sim.S.billDue, billWas = sim.S.bill; bool overWas = sim.S.overdue;
                 if (sim.PayBill()) { rec.slack[billWas].Add(overWas ? -1 : dueWas); rec.win[billWas].Add(overWas ? -1 : dueWas); }
+                BotPickOffer(sim);
                 if (sim.S.bill != billWas) log.Add($"{Min(),6:0.0}분  {sim.M.company}대  청구서 {sim.S.bill} 갚음  (출동 {sim.S.runs})");
                 // 납부일 — 모자라면 대출받아 갚는다. 한도가 모자라면 파산
                 if (sim.S.overdue && sim.S.cash < sim.BillAmount)
@@ -83,6 +99,7 @@ static class Program
                     double need = sim.BillAmount - sim.S.cash;
                     int lb = sim.S.bill;
                     if (sim.LoanAndPay()) { rec.slack[lb].Add(-2); rec.win[lb].Add(-2); }
+                    BotPickOffer(sim);
                     if (sim.S.bill != lb) log.Add($"{Min(),6:0.0}분  {sim.M.company}대  🏦 대출 {need:0} 받아 청구서 {sim.S.bill} 갚음 · 빚 {sim.S.debt:0}");
                 }
                 if (sim.CanBankrupt && sim.S.overdue)

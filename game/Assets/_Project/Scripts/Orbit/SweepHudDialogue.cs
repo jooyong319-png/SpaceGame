@@ -167,20 +167,23 @@ namespace SalvageRun.Orbit
         }
 
         // 언제 뜨나 — 방에 처음 들어갈 때 한 번 · 청구서를 갚고 조종실로 돌아왔을 때 (출동 중 · 로비 · 결산 화면엔 안 뜬다)
+        // 🗨 10-10 사장님 「조종실을 지나갈 때마다 NPC 가 말한다」 — 밀린 대사는 출동에서 돌아와 조종실에 왔을 때만 (방을 오가는 길엔 안 나옴)
+        bool dlgWindow; int dlgLastFlow = -1;
         void DlgTriggers()
         {
+            if (dlgLastFlow != flow) { if (flow == 2 && (dlgLastFlow <= 1)) dlgWindow = true; else if (flow != 2) dlgWindow = false; dlgLastFlow = flow; }
             if (dlgId != null || lobby || !sim.R.over || sim.M.careerOpen) return;
             if (dlgPend != null)
             {
                 dlgPendT -= Time.unscaledDeltaTime;
-                if (dlgPendT <= 0 && (sim.M.won || flow == 2) && paidT <= 0) { var p = dlgPend; dlgPend = null; DlgStart(p, true); }
+                if (dlgPendT <= 0 && (sim.M.won || flow == 2 && dlgWindow && !OfferUp) && paidT <= 0) { var p = dlgPend; dlgPend = null; DlgStart(p, true); }
                 return;
             }
             if (sim.M.won) return;
             if (HireTrigger()) return;                                          // ✍ 새 회사 — 할부 계약서부터 (10-02)
-            if (flow == 2 && dlgQueue.Count > 0) { var q = dlgQueue[0]; dlgQueue.RemoveAt(0); DlgStart(q); return; }
-            if (flow == 2 && sim.S.runs > 0) DlgStart("fuel");
-            if (dlgId == null && flow == 2 && sim.S.runs > 0 && sim.GateReady) DlgStart("gate");
+            if (flow == 2 && dlgWindow && !OfferUp && dlgQueue.Count > 0) { var q = dlgQueue[0]; dlgQueue.RemoveAt(0); DlgStart(q); return; }
+            if (flow == 2 && dlgWindow && sim.S.runs > 0) DlgStart("fuel");
+            if (dlgId == null && flow == 2 && dlgWindow && sim.S.runs > 0 && sim.GateReady) DlgStart("gate");
             if (dlgId != null) return;
             if (flow == 4 && sim.StockOpen) DlgStart("stock");
             else if (flow == 5 && sim.ShopOpen) DlgStart("shop");

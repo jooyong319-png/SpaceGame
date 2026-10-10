@@ -161,13 +161,14 @@ namespace SalvageRun.Orbit
             else if (sim.R.over)
             {
                 if (flow == 0) flow = 2;                                // 켜자마자 · 파산 뒤 = 조종실
-                GUI.enabled = !loanOpen && !lottoOpen && !newsOpen && !settingsOpen && !hireOpen && !(certOpen && flow == 1);             // 모달 뒤 버튼 막음 — 뉴스 닫기가 뒤 전광판에 먹혀 다시 열렸다 (09-24 27번)
+                GUI.enabled = !loanOpen && !lottoOpen && !newsOpen && !settingsOpen && !hireOpen && !(certOpen && flow == 1) && !OfferUp;             // 모달 뒤 버튼 막음 — 뉴스 닫기가 뒤 전광판에 먹혀 다시 열렸다 (09-24 27번)
                 if (flow == 1) FlowResult(); else Strip();                    // 정비고 ← 조종실 → 증권 (좌우로 밀린다)
                 GUI.enabled = true;
                 if (loanOpen) LoanWin();
                 if (lottoOpen) LottoWin();
                 if (hireOpen) HireWin();
                 if (certOpen && flow == 1) CertWin();
+                OfferWin();                                                      // 🎁 스테이지 보상
             }
             if (!sim.M.won) NewsBanner();
             if (newsOpen) News();

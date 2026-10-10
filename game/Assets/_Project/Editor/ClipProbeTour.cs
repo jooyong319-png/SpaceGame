@@ -51,7 +51,7 @@ namespace SalvageRun.EditorTools
                 {
                     Close(g); g.hud.flow = 2; g.sim.S.overdue = false;
                     foreach (var id in new[] { "e_shop", "a_open" }) { int i = System.Array.FindIndex(SweepSim.Nodes, x => x.id == id); g.sim.S.lv[i] = 1; }
-                    g.sim.RollShop();
+                    g.sim.MerchantArrive();                                       // 🧳 10-10 가게는 상인이 와 있을 때만
                 });
                 acts.Add(g => { Close(g); g.hud.flow = 2; g.hud.TestSettings(); });
                 acts.Add(g => { Close(g); g.hud.flow = 3; });
@@ -65,7 +65,8 @@ namespace SalvageRun.EditorTools
                         acts.Add(g => { });
                     }
                 acts.Add(g => { g.sim.M.ship = 0; g.hud.TestTip = -1; });
-                acts.Add(g => { Close(g); g.hud.flow = 5; });
+                acts.Add(g => { Close(g); g.sim.S.merchant = true; g.hud.flow = 2; }); acts.Add(g => { });   // 🧳 조종실 상인 띠
+                acts.Add(g => { Close(g); g.sim.S.merchant = true; g.hud.flow = 5; });
                 for (int k = 0; k < 6; k++) { int kk = k; acts.Add(g => { g.hud.flow = 5; g.hud.testShopTip = kk; }); }
                 acts.Add(g => { g.hud.testShopTip = -1; g.hud.TestBuyAsk(0); });
                 acts.Add(g => { Close(g); g.hud.flow = 4; });
@@ -146,6 +147,8 @@ namespace SalvageRun.EditorTools
                     g.sim.S.overdue = false; g.hud.OnRunEnd();
                 });
                 for (int q = 0; q < 40; q++) acts.Add(g => { g.hud.flow = 1; });
+                foreach (bool gold in new[] { false, true }) { bool gg = gold; acts.Add(g => { Close(g); g.sim.S.offer.Clear(); g.hud.flow = 2; g.sim.S.bill = 9; g.hud.TestOffer(gg); }); for (int q = 0; q < 4; q++) acts.Add(g => { }); }   // 🎁 10-10 스테이지 보상
+                acts.Add(g => g.sim.S.offer.Clear());
                 acts.Add(g => g.hud.TestCert(1, 4)); for (int q = 0; q < 6; q++) acts.Add(g => { });   // 🛰 10-10 공로주 증서
                 acts.Add(g => g.hud.SendMessage("CertClose", SendMessageOptions.DontRequireReceiver));
                 acts.Add(g => { Close(g); g.sim.S.overdue = false; g.hud.flow = 2; });

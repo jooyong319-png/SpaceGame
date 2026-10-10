@@ -13,7 +13,7 @@ namespace SalvageRun.Orbit.Sim
             bool clean = M.cleanReady;
             if (Mk != null) Mk.ArmNews(Rnd(5, 14));                                 // 📰 이번 출동 중 속보 하나
             if (clean) S.orbit = MaxOrbit;
-            S.runs++; S.rerolled = false;
+            S.runs++; S.rerolled = false; S.merchant = false;                     // 🧳 출동하면 상인이 떠난다
             var r = new SweepRun { clean = clean };
             r.max = r.fuel = clean ? 45 : FuelMax + S.nFuel;
             r.consDmg = S.nDmg; r.consVal = S.nVal; S.nFuel = S.nDmg = S.nVal = 0;   // 🧃 가게 소모품 — 이번 판

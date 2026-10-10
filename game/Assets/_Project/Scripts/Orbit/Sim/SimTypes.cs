@@ -36,6 +36,7 @@ namespace SalvageRun.Orbit.Sim
         public int weapon, weapon2 = -1, keys, front1 = -1, front2 = -1, frontPick = -1;       // ★ 1면 조작 — 고를 기사 둘                               // ⚔ 무기 · 보조 무기 · 🔑 열쇠
         public int[] parts = { -1, -1, -1, -1, -1 };                           // 🔩 부품 칸 다섯
         public List<int> shop = new List<int>();
+        public List<int> offer = new List<int>(); public bool merchant, gateStage;   // 🎁 10-10 스테이지 보상(고를 부품 셋) · 떠돌이 상인이 와 있나 · 이번 스테이지에 관문을 깼나
         public int shopSale = -1, nFuel, nDmg, nVal; public bool freeRoll = true;
         public double runAvg; public int rolls;
         public double gateFrac = 1, gateMax, dmgAvg; public int gateNext;   // gateMax = 이 관문 체력(처음 뜰 때 정한다) · dmgAvg = 판당 준 피해 평균                           // 🛰 관문 — 남은 체력(판을 넘어 남는다) · 부순 판이 끝나면 열 행성 (09-26)                                   // 💰 최근 판당 수입(가게 값 기준) · 이번 판 새로고침 횟수 (09-26)

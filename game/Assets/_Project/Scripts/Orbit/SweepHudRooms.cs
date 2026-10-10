@@ -54,13 +54,13 @@ namespace SalvageRun.Orbit
                 float d = RoomX(f) - v;
                 if (Mathf.Abs(d) >= 0.999f) continue;
                 GUI.matrix = m0 * Matrix4x4.Translate(new Vector3(d * vw, 0, 0));
-                if (f == 2) Cockpit();
+                if (f == 2) { Cockpit(); MerchantCockpit(); }
                 else if (f == 3)
                 {
                     GUI.color = new Color(0.02f, 0.027f, 0.04f); GUI.DrawTexture(new Rect(0, 0, vw, RefH), white); GUI.color = Color.white;
                     bool fr = RoomFrameBegin(); Bay(); if (fr) RoomFrameEnd(BpBg);   // 🖥 10-07 모니터 테 안으로
                     // 큰 「조종실로」 버튼 뺌 — 옆 탭 하나로 (09-24 25번)
-                    if (sim.ShopOpen) { if (NavTab(true, Loc.T("부품 가게"), "", SweepGame.Amber)) GoFlow(5); }
+                    if (sim.ShopOpen) { if (NavTab(true, Loc.T("떠돌이 상인"), "", SweepGame.Amber)) GoFlow(5); }
                     else if (NavTab(true, Loc.T("조종실로"), "", SweepGame.Amber)) GoFlow(2);
                 }
                 else if (f == 5)

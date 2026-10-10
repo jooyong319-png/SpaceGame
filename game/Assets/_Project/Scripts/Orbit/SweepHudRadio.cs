@@ -29,7 +29,7 @@ namespace SalvageRun.Orbit
         public void Radio(string line) { radioLine = line; radioPending = true; }
         public void RadioPaid(int paid)
         {   // 💬 청구서를 갚으면 한 줄 무전 대신 대화 장면 — 조종실로 돌아오면 뜬다 (SweepHudDialogue.cs)
-            if (paid > 0 && Scenes.ContainsKey("b" + paid)) { dlgPend = "b" + paid; dlgPendT = 1.2f; return; }
+            if (paid > 0 && Scenes.ContainsKey("b" + paid)) { dlgPend = "b" + paid; dlgPendT = 1.2f; if (flow == 2) dlgWindow = true; return; }   // 조종실에서 갚았으면 바로
             Radio(RadioLines[Mathf.Clamp(paid, 0, RadioLines.Length - 1)]);
         }
         public void RadioOverdue(int bill) => Radio(bill < 5 ? Loc.T("기한 지났다? 납부든 대출이든 오늘 정해.") : Loc.T("기한이 지났습니다. 창구는 열려 있어요, 대표님."));

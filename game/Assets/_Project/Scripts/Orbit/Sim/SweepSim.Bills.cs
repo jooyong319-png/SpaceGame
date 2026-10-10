@@ -25,6 +25,8 @@ namespace SalvageRun.Orbit.Sim
             string nid = "bill" + S.bill;
             AddNews(nid);
             Emit(SwEv.BillPaid, 0, 0, S.bill, 0, b.t + Loc.T(" 납부 완료 — ") + b.perk + Loc.T(" · 열쇠 +1"));
+            RollOffer();                                                     // 🎁 스테이지 보상
+            if (S.bill % MerchantEvery == 0) MerchantArrive();               // 🧳 청구서 두 장마다 상인
             CheckClean();
         }
 

@@ -325,7 +325,7 @@
 번개 각성	Lightning Awakening
 튄 자리마다 작은 폭발 — 연쇄로 이어짐	A small blast at every jump — carries the chain
 부품 거래	Parts Trade
-부품 가게 해금 — 청소선 부품 칸 5개에 구매해서 장착 · 진열은 출동마다 교체	Opens the Parts Shop — buy parts for your sweeper's five slots · stock changes every run
+부품 가게 해금 — 청구서 두 장마다 떠돌이 상인이 들름 · 부품 칸 5개에 구매해서 장착 · 출동하면 떠남	Traveling merchant — visits every two bills · buy parts for your five slots · leaves when you launch
 ◆ 과열 사격	◆ Overheat Fire
 모든 무기 화력 +40% — 대신 연료 −15%	All weapon firepower +40% — but fuel −15%
 ◆ 벌떼	◆ Swarm
@@ -1330,7 +1330,7 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
 <size=15>구입</size>	<size=15>Buy</size>
 <size=12>돈 모자람</size>	<size=12>Not enough cash</size>
 <size=15>취소</size>	<size=15>Cancel</size>
-<size=24><b><color=#ffdf95>부품 가게</color></b></size>  <size=12><color=#8a9bb3>진열은 출동 후 교체 · 카드에 올리면 장착할 칸이 깜빡임</color></size>	<size=24><b><color=#ffdf95>Parts Shop</color></b></size>  <size=12><color=#8a9bb3>Stock changes after each run · hover a card to see its slot blink</color></size>
+<size=24><b><color=#ffdf95>떠돌이 상인</color></b></size>  <size=12><color=#8a9bb3>출동하면 떠남 · 청구서 두 장마다 들름 · 카드에 올리면 장착할 칸이 깜빡임</color></size>	<size=24><b><color=#ffdf95>Traveling Merchant</color></b></size>  <size=12><color=#8a9bb3>Leaves when you launch · visits every two bills · hover a card to see its slot blink</color></size>
 <size=14><color=#8a9bb3>돈</color> <color=#ffdf95>	<size=14><color=#8a9bb3>Cash</color> <color=#ffdf95>
 </color>   <color=#d8ccff>열쇠 	</color>   <color=#d8ccff>Keys 
 <size=11><color=#8a9bb3>내 청소선 · 부품 칸 다섯</color></size>	<size=11><color=#8a9bb3>My sweeper · five part slots</color></size>
@@ -1823,3 +1823,18 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 관통	Pierce
 미사일	Missiles
 파편	Fragments
+스테이지	Stage
+클리어 — 보급품 하나 고르기	clear — pick one supply
+관문을 깬 스테이지 · 한 구간 위 확률	Gate stage · one tier better odds
+카드마다 등급을 따로 굴림	Each card rolls its own rarity
+칸	slot
+빈 칸 → 바로 장착	Empty slot → equips now
+교체	Replaces
+▸ 이걸로 장착	▸ Equip this
+고르기	Pick
+칸이 차 있으면 지금 부품과 바꿔 끼움 — 빠진 부품은 고철로 팔림	Filled slots swap out the current part — the old one sells for scrap
+건너뛰기	Skip
+떠돌이 상인 도착	Traveling merchant arrived
+다음 출동 전까지만 머묾	Stays until your next launch
+상인에게 가기 ▸	Visit merchant ▸
+떠돌이 상인	Merchant

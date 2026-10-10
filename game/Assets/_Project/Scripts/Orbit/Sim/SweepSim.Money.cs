@@ -190,7 +190,53 @@ namespace SalvageRun.Orbit.Sim
             return true;
         }
         // 🔩 부품 가게 — 진열 셋, 출동이 끝날 때마다 새로. 값은 지금 청구서에 맞춰 오른다
-        public bool ShopOpen => Lv("e_shop") > 0;
+        public bool ShopUnlocked => Lv("e_shop") > 0;
+        public bool ShopOpen => ShopUnlocked && S.merchant;                    // 🧳 10-10 사장님 「가게는 가끔 오는 느낌」 — 떠돌이 상인이 와 있을 때만
+        public const int MerchantEvery = 2;                                     // 청구서 몇 장마다 상인이 들르나
+        public void MerchantArrive() { if (!ShopUnlocked) return; S.merchant = true; RollShop(); S.freeRoll = true; S.rolls = 0; Emit(SwEv.Pop, EX, EY - 140, 0, 3, Loc.T("떠돌이 상인 도착")); }
+
+        // 🎁 10-10 스테이지 보상 — 청구서 한 장 = 스테이지 하나. 부품 셋(서로 다른 칸) 중 하나 · 등급은 카드마다 따로 굴린다
+        public static readonly double[][] OfferOdds =
+        {   //            일반   희귀   영웅    전설
+            new[] { 0.70, 0.25, 0.045, 0.005 },   // 청구서 1~3장
+            new[] { 0.50, 0.35, 0.12,  0.03 },    // 4~6
+            new[] { 0.35, 0.40, 0.20,  0.05 },    // 7~9
+            new[] { 0.25, 0.40, 0.27,  0.08 },    // 10~12
+        };
+        public int OfferTier => Math.Min(OfferOdds.Length - 1, Math.Max(0, (S.bill - 1) / 3) + (S.gateStage ? 1 : 0));   // 관문을 깬 스테이지는 한 구간 위
+        public bool OfferGold; public int OfferTierShown;
+        public void DebugRollOffer() => RollOffer();                            // 시험용                                                  // 화면용 — 관문 스테이지 보상이었나
+        void RollOffer()
+        {
+            if (S.offer == null) S.offer = new List<int>();
+            S.offer.Clear(); OfferGold = S.gateStage; OfferTierShown = OfferTier;
+            var odds = OfferOdds[OfferTier]; var slots = new List<int>();
+            for (int k = 0; k < 3; k++)
+            {
+                double u = Rnd(), acc = 0; int rar = 0;
+                for (int r = 0; r < 4; r++) { acc += odds[r]; if (u < acc) { rar = r; break; } rar = r; }
+                for (int down = rar; down >= 0 && S.offer.Count == k; down--)
+                {   // 그 등급에 남은 칸이 없으면 한 등급 아래로
+                    var pool = new List<int>();
+                    for (int i = 0; i < Parts.Defs.Length; i++) if (Parts.Defs[i].rar == down && !slots.Contains(Parts.Defs[i].slot) && (S.parts == null || Array.IndexOf(S.parts, i) < 0)) pool.Add(i);
+                    if (pool.Count > 0) { int id = pool[rng.Next(pool.Count)]; S.offer.Add(id); slots.Add(Parts.Defs[id].slot); }
+                }
+            }
+            S.gateStage = false;
+        }
+        public double ScrapValue(int id) => id < 0 || id >= Parts.Defs.Length ? 0 : Math.Max(10, Math.Round(ShopBase * Parts.RarPrice[Parts.Defs[id].rar] * 0.25 / 10) * 10);   // 빠진 부품 · 건너뛰기 = 판 벌이 × 등급 값의 ¼
+        /// <summary>k = 0~2 고르기 · -1 건너뛰기(셋 중 제일 싼 것의 고철 값)</summary>
+        public bool PickOffer(int k)
+        {
+            if (S.offer == null || S.offer.Count == 0) return false;
+            if (k < 0 || k >= S.offer.Count) { double best = double.MaxValue; foreach (var id in S.offer) best = Math.Min(best, ScrapValue(id)); S.cash += best; S.offer.Clear(); return true; }
+            int got = S.offer[k];
+            if (S.parts == null || S.parts.Length != 5) S.parts = new[] { -1, -1, -1, -1, -1 };
+            int slot = Parts.Defs[got].slot, old = S.parts[slot];
+            if (old >= 0) S.cash += ScrapValue(old);
+            S.parts[slot] = got; S.offer.Clear();
+            return true;
+        }
         /// <summary>★ 1면 조작 — 고른 기사를 증권 속보로 낸다</summary>
         public void PickFront(int k)
         {
@@ -240,6 +286,11 @@ namespace SalvageRun.Orbit.Sim
                     if (Parts.Defs[id].rar != rar || used.Contains(id) || S.shop.Contains(id)) continue;
                     S.shop.Add(id); break;
                 }
+            }
+            {   // 🧳 10-10 상인의 「이번만」 칸 — 진열에 영웅 이상이 하나도 없으면 하나를 바꿔 넣는다
+                int hi = -1; bool has = false;
+                for (int k = 0; k < S.shop.Count; k++) { int id = S.shop[k]; if (id >= 0 && id < Parts.Defs.Length) { if (Parts.Defs[id].rar >= 2) has = true; else hi = k; } }
+                if (!has && hi >= 0) for (int t = 0; t < 60; t++) { int id = rng.Next(Parts.Defs.Length); if (Parts.Defs[id].rar >= 2 && !used.Contains(id) && !S.shop.Contains(id)) { S.shop[hi] = id; break; } }
             }
             S.shopSale = S.shop.Count > 0 ? rng.Next(S.shop.Count) : -1;         // 오늘의 반값 한 칸
         }
