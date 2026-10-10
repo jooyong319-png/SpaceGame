@@ -57,7 +57,7 @@ namespace SalvageRun.Orbit
                 string pc = (it.v / tot * 100).ToString(it.v / tot < 0.1 ? "0.0" : "0") + "%";
                 string val = "<size=11><color=#6f7a8c>" + KNum.Short(it.v) + "</color> <color=#e7ecf8>" + pc + "</color></size>";
                 float vw = cost.CalcSize(new GUIContent(val)).x;   // 10-09 다듬기: 영어 이름이 길면 숫자와 붙었다 (Blast·Chain90.9B) — 이름은 숫자 앞까지만
-                Lbl(new Rect(x + 13, y - 1, cw - 19 - vw, 20), Fit(i == 0 ? "<color=#ffdf95>" + it.n + " ★</color>" : "<color=#c8d0dc>" + it.n + "</color>", 11, cw - 19 - vw, label, 8), label);
+                Lbl(new Rect(x + 13, y - 1, cw - 19 - vw, 20), Fit(i == 0 ? "<color=#ffdf95>" + it.n + " ★</color>" : "<color=#c8d0dc>" + it.n + "</color>", 11, cw - 19 - vw, label, 7), label);   // 10-10 큰 피해 숫자 옆 「Cluster Bomb」 — 8 로도 넘쳤다
                 Lbl(new Rect(x + 13, y - 1, cw - 16, 20), val, cost);
             }
         }

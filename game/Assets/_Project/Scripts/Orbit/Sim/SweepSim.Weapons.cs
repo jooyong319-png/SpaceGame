@@ -498,9 +498,9 @@ namespace SalvageRun.Orbit.Sim
         }
         /// <summary>🚀 미사일선 — 조준점 둘레 잔해를 골라 쫓는 작은 미사일 (09-27)</summary>
         // 🚀 10-10 사장님 「유도 미사일만의 특성」 → A 일제 사격: 한 번에 여러 발이 퍼져 조준점 둘레의 서로 다른 잔해를 하나씩 (간격은 길게)
-        public static double MissileGap = 1.0, MissileK = 0.7, MissileSpeed = 620; public static int MissileBase = 6;
+        public static double MissileGap = 1.0, MissileK = 0.7, MissileSpeed = 620; public static int MissileBase = 3;   // 10-10 사장님 「처음부터 개수가 많아 셈 — 범위 찍으면 늘게」: 6 + 범위/2 → 3 + 범위 (봇: 1대 2장 · 2대 5장 · 3대 11장)
         public double LockR => (160 + 10 * Lv("c_rad")) * (1 + Part("rad")) * (1 + 0.04 * Up(2));
-        public int MissileN => MissileBase + Lv("c_rad") / 2;
+        public int MissileN => MissileBase + Lv("c_rad");
         // 🎯 10-10 사장님 「자동으로 잡으니 우선순위를 잘」 — 과녁 고르는 순서
         //   ① 조준점 가까이 관문(방어막 풀림) — 한 번에 절반까지  ② 금고 · 연료통(값진 것)  ③ 보통 잔해  ④ 장갑(미사일은 1씩만 박힌다) — 같은 급이면 조준점에 가까운 것
         //   한 잔해엔 부술 만큼만 — 날아가는 미사일이 이미 맡은 피해를 빼고, 남은 체력 ÷ 한 발 피해 만큼만 보낸다. 다 맡겨도 남으면 앞에서부터 한 발씩 더.

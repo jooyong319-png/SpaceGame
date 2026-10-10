@@ -1816,7 +1816,7 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 종목	Stock
 평가	Value
 보급 셔틀이 위쪽을 지나감 · 연료통을 부수면 연료 충전	Supply shuttle passing overhead · break the canister to refuel
-한 번에 미사일 6발이 부채꼴로 퍼져, 조준점 둘레의 서로 다른 잔해를 하나씩 스스로 추적 — 흩어진 무리를 한꺼번에	Six missiles fan out at once, each homing on a different piece of debris around your aim — clears scattered clusters in one go
+한 번에 미사일 여러 발(처음 3발 · 범위 칸마다 +1)이 부채꼴로 퍼져, 조준점 둘레의 서로 다른 잔해를 하나씩 스스로 추적 — 흩어진 무리를 한꺼번에	A salvo fans out (3 missiles, +1 per Lock Range level), each homing on different debris near your aim — clears scattered clusters
 일제 사격	Salvo
 탐지 범위 · 발 수	Lock Range · Salvo
-두 단계마다 한 번에 미사일 +1발 · 고르는 범위 +10 (단계마다) — 처음 6발	+1 missile per salvo every 2 levels · lock range +10 per level — starts at 6
+한 번에 미사일 +1발 · 고르는 범위 +10 (단계마다) — 처음 3발	+1 missile per salvo · lock range +10 per level — starts at 3

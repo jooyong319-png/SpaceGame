@@ -150,7 +150,7 @@ namespace SalvageRun.Orbit
                 if (id < 0) { Lbl(new Rect(r.x + 46, r.y + 17, r.width - 50, 18), Loc.T("<size=12><color=#3f4652>비어 있음</color></size>"), label); continue; }
                 var d = Parts.Defs[id];
                 float nmX = Mathf.Max(100, 46 + slotW + 8);
-                Lbl(new Rect(r.x + nmX, r.y - 1, r.width - nmX - 4, 20), "<size=12><b><color=#" + ColorUtility.ToHtmlStringRGB(RarCol[d.rar]) + ">" + d.name + "</color></b></size>", label);
+                Lbl(new Rect(r.x + nmX, r.y - 1, r.width - nmX - 4, 20), Fit("<b><color=#" + ColorUtility.ToHtmlStringRGB(RarCol[d.rar]) + ">" + d.name + "</color></b>", 12, r.width - nmX - 6, label, 9), label);   // 10-10 영어 「Kessler's Gold Tooth」가 칸을 넘었다
                 Lbl(new Rect(r.x + 46, r.y + 17, r.width - 50, 20), Fit("<color=#aab4c3>" + d.desc + "</color>", 10, r.width - 52, label, 7), label);   // 10-10 영어 「75% chance of an extra shot · Size +38%」가 칸을 넘었다
             }
             // 🧃 다음 판 소모품
