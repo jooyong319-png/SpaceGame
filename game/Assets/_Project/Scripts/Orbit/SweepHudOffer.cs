@@ -62,7 +62,13 @@ namespace SalvageRun.Orbit
                 GUI.color = new Color(0.16f, 0.2f, 0.27f, k); GUI.DrawTexture(new Rect(r.x + 12, r.yMax - 64, r.width - 24, 1), white); GUI.color = new Color(1, 1, 1, k);
                 int old = sim.S.parts != null && sim.S.parts.Length == 5 ? sim.S.parts[d.slot] : -1;
                 string now = old < 0 ? Loc.T("빈 칸 → 바로 장착") : Loc.T("교체") + " · " + Parts.Defs[old].name + " · " + Loc.T("고철") + " +" + KNum.Short(sim.ScrapValue(old));
-                Lbl(new Rect(r.x + 8, r.yMax - 60, r.width - 16, 18), Fit("<color=#8a96aa>" + now + "</color>", 11, r.width - 18, center, 8), center);
+                if (old < 0 || center.CalcSize(new GUIContent("<size=9>" + now + "</size>")).x <= r.width - 18)
+                    Lbl(new Rect(r.x + 8, r.yMax - 60, r.width - 16, 18), Fit("<color=#8a96aa>" + now + "</color>", 11, r.width - 18, center, 8), center);
+                else
+                {   // 10-10 영어 「Replaces · High-Explosive Chamber · Scrap +10」이 카드보다 넓어 앞뒤가 잘림 — 이름 / 고철 두 줄
+                    Lbl(new Rect(r.x + 8, r.yMax - 65, r.width - 16, 16), Fit("<color=#8a96aa>" + Loc.T("교체") + " · " + Parts.Defs[old].name + "</color>", 10, r.width - 18, center, 8), center);
+                    Lbl(new Rect(r.x + 8, r.yMax - 52, r.width - 16, 16), "<size=10><color=#8a96aa>" + Loc.T("고철") + " +" + KNum.Short(sim.ScrapValue(old)) + "</color></size>", center);
+                }
                 var b = new Rect(r.x + 14, r.yMax - 36, r.width - 28, 26);
                 GUI.color = ov ? new Color(0.24f, 0.47f, 0.31f, k) : new Color(0.12f, 0.16f, 0.22f, k); GUI.DrawTexture(b, white);
                 Frame(b, ov ? new Color(0.63f, 0.94f, 0.75f, k) : new Color(0.16f, 0.2f, 0.27f, k), 1); GUI.color = new Color(1, 1, 1, k);
