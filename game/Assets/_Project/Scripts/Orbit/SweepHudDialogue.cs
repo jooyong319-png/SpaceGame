@@ -55,6 +55,7 @@ namespace SalvageRun.Orbit
                         Loc.T("go|네 배엔 칸이 다섯이야. *사출기 · 레이더 · 부적 · 선체 · 엔진*. 칸마다 하나씩만 끼운다."),
                         Loc.T("go|카드에 손 올려 봐. 어디에 끼우는지 왼쪽 배 그림에서 깜빡일 거다."),
                         Loc.T("go|진열은 *출동 한 번 다녀오면* 바뀐다. 빨간 띠 붙은 건 오늘만 반값이고."),
+                        Loc.T("go|청구서 두 장 낼 때마다 *떠돌이 상인*이 물건을 풀고 가. 그날은 좋은 물건이 하나는 꼭 끼어 있고, 새로고침 한 번은 공짜다."),
                         Loc.T("go|「다음 출동 한 번용」은 칸에 안 끼워. 사 두면 *다음 출동 때 저절로* 쓰이고 끝이야. 복권 묶음, 연료 캔 같은 것."),
                         Loc.T("go|…근데 요즘 주워 오는 것마다 *케슬러 발사* 딱지가 붙어 있어. 새것 같은데 벌써 고물이야. 이상하지?") } },
                     { "news", new[] {
@@ -153,6 +154,22 @@ namespace SalvageRun.Orbit
         static string DlgWhoOf(string ln) { int p = ln.IndexOf('|'); return p < 0 ? "yoon" : ln.Substring(0, p); }
         static string DlgTextOf(string ln) { int p = ln.IndexOf('|'); return p < 0 ? ln : ln.Substring(p + 1); }
         static int DlgLen(string t) { int n = 0; foreach (char ch in t) if (ch != '*') n++; return n; }
+        // 10-10 낱말 단위 줄바꿈 — 상자가 알아서 줄을 바꾸면 한국어가 낱말 가운데서 끊긴다(「새 / 로고침」). 다 보인 문장으로 미리 줄을 정하고(빈칸 → 줄바꿈, 글자 수 그대로) 한 글자씩 드러낸다
+        GUIStyle dlgMeasure; string dlgWrapSrc; float dlgWrapW; string dlgWrapOut;
+        string DlgWrap(string t, float w)
+        {
+            if (t == dlgWrapSrc && w == dlgWrapW) return dlgWrapOut;
+            if (dlgMeasure == null) dlgMeasure = new GUIStyle(dlgText) { wordWrap = false, richText = false };
+            var sb = new System.Text.StringBuilder(); string line = "";
+            foreach (var word in t.Split(' '))
+            {
+                string wp = word.Replace("*", ""), tp = line.Length == 0 ? wp : line + " " + wp;
+                if (line.Length > 0 && dlgMeasure.CalcSize(new GUIContent(tp)).x > w) { sb.Append('\n').Append(word); line = wp; }
+                else { if (sb.Length > 0) sb.Append(' '); sb.Append(word); line = tp; }
+            }
+            dlgWrapSrc = t; dlgWrapW = w; dlgWrapOut = sb.ToString();
+            return dlgWrapOut;
+        }
         static string DlgReveal(string t, string hex, int n)
         {   // 한 글자씩 — *강조*는 색 태그로 바꾸고, 열린 채로 끊기면 닫아 준다
             var sb = new System.Text.StringBuilder(); bool open = false; int k = 0;
@@ -273,7 +290,7 @@ namespace SalvageRun.Orbit
             Lbl(new Rect(nr.x + 13, nr.y + 3, nw, 22), nm, label);
 
             // 대사
-            Lbl(new Rect(bx + 24, by + 18, bw - 64, bh - 40), DlgReveal(t, w.hex, Mathf.FloorToInt(dlgShown)), dlgText);
+            Lbl(new Rect(bx + 24, by + 18, bw - 64, bh - 40), DlgReveal(DlgWrap(t, bw - 70), w.hex, Mathf.FloorToInt(dlgShown)), dlgText);
             Lbl(new Rect(bx + 24, by + bh - 24, 120, 18), "<size=11><color=#5f6878>" + (dlgI + 1) + " / " + lines.Length + "</color></size>", label);
             if (!talking && (reduceMotion || Mathf.FloorToInt(Time.unscaledTime * 2.2f) % 2 == 0))
                 Lbl(new Rect(box.xMax - 40, by + bh - 30, 24, 24), "<size=16><color=" + w.hex + ">▼</color></size>", center);

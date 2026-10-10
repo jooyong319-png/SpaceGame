@@ -1370,8 +1370,8 @@ yoon|…저도 오늘부로 그만둬요. 다음엔 창구 말고, 궤도에서 
  켜짐	 on
  꺼짐	 off
 <color=#8a9bb3>지금 장착한 것과 같음</color>	<color=#8a9bb3>Same as what's equipped</color>
-<color=#8a9bb3>지금 <color=#8a7f99>	<color=#8a9bb3>Now <color=#8a7f99>
-</color> 빠짐</color>\n	</color> is removed</color>\n
+<color=#8a9bb3>지금 <color=#8a7f99>	<color=#8a9bb3>Replaces <color=#8a7f99>
+</color> 빠짐</color>\n	</color></color>\n
 <color=#8a9bb3>빈 칸에 끼움</color>\n	<color=#8a9bb3>Goes into an empty slot</color>\n
 <color=#8a9bb3>달라지는 것 없음</color>	<color=#8a9bb3>No change</color>
 <color=#d8ccff>양자 열쇠</color>	<color=#d8ccff>Quantum Key</color>
@@ -1869,7 +1869,7 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 전도 레이더	Conductive Radar
 테슬라 코일	Tesla Coil
 번개 부적	Lightning Charm
-고폭 연소실	High-Explosive Chamber
+고폭 연소실	Blast Chamber
 연쇄 장약 선체	Chain-Charge Hull
 집속탄 사출구	Cluster Launcher
 서리 원 +	Frost circle +
@@ -1895,3 +1895,4 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 점수 = 칸 단계 · 끼운 부품 · 타는 배\n3 · 6 · 9점마다 보너스	Points: node levels · parts · ship\nBonus at 3 · 6 · 9 pts
 부품 가게 해금 — 늘 열림 · 출동마다 진열 바뀜 · 청구서 두 장마다 떠돌이 상인(희귀 이상 한 칸 · 공짜 새로고침) · 부품 칸 5개에 구매해서 장착	Parts shop — always open · stock changes every run · a traveling merchant visits every two bills (one rare+ slot · free reroll) · buy parts for your five slots
 출동마다 진열 바뀜 · 청구서 두 장마다 떠돌이 상인 · 카드에 올리면 장착할 칸이 깜빡임	Stock changes every run · merchant every two bills · hover a card to blink its slot
+go|청구서 두 장 낼 때마다 *떠돌이 상인*이 물건을 풀고 가. 그날은 좋은 물건이 하나는 꼭 끼어 있고, 새로고침 한 번은 공짜다.	go|Every two bills a *traveling merchant* drops off goods here. That day there's always at least one good piece, and one reroll is free.
