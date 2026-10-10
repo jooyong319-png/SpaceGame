@@ -46,7 +46,7 @@ namespace SalvageRun.Orbit
             string line = tier >= 3 ? "<color=#" + FamHex(f) + ">" + SweepSim.FamBonus[f][2] + "</color>"
                         : "<color=#8a96aa>" + Loc.T("다음") + " " + Pts(SweepSim.FamStep[tier]) + " · </color><color=#c4cce2>" + SweepSim.FamBonus[f][tier] + "</color>";
             var lw = new GUIStyle(label) { wordWrap = true, fontSize = 10 };   // 줄 높이를 글자 크기로 재게 (<size> 로만 주면 큰 글자로 쟀다)
-            Lbl(new Rect(bx, y + 27, bw, 30), line, lw);   // 영어 보너스는 두 줄
+            Lbl(new Rect(bx, y + 27, bw, 30), KWrapRich(line, 10, bw - 4), lw);   // 낱말 단위 (「서 / 리 원」으로 끊겼다)   // 영어 보너스는 두 줄
             return y + 58;
         }
 
