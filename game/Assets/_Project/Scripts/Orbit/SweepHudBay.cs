@@ -571,6 +571,8 @@ namespace SalvageRun.Orbit
             else if (ns == NodeSt.Locked) foot = SweepSim.Ring4(n.id) ? Loc.T("<color=#ff9b8f>목성 항로를 열면 — 외행성 면허</color>") : Loc.T("<color=#ff9b8f>청구서 ") + SweepSim.BranchNeed[b] + Loc.T("을 갚으면 해금</color>");
             else if (ns == NodeSt.Hidden) { int bk = BlockTile(k); foot = "<color=#ff9b8f>" + (bk >= 0 ? "「" + TileName(bk) + Loc.T("」 먼저 구매 필요") : Loc.T("앞 칸 먼저 구매 필요")) + "</color>"; }   // 어느 칸인지 콕 집어 (09-25 사장님)
             else if (SweepSim.KeyNodes.Contains(n.id) && sim.S.keys < 1) foot = Loc.T("<color=#ff9b8f>+ 열쇠 1 (없음)</color>");   // 돈은 되는데 열쇠가 없다
+            else if (ns == NodeSt.Poor && SweepSim.Nodes[t.stat].id == "w_slot2" && !sim.AnyWeapon) foot = "<color=#ff9b8f>" + Loc.T("무기 하나 이상 필요") + "</color>";
+            else if (ns == NodeSt.Poor && SweepSim.KeyNodes.Contains(SweepSim.Nodes[t.stat].id) && sim.S.keys < 1 && sim.S.cash >= sim.TileCost(t.stat)) foot = "<color=#ff9b8f>" + Loc.T("열쇠 필요") + "</color>";
             else if (ns == NodeSt.Poor) foot = "<color=#ff9b8f>" + Loc.T("돈 ") + KNum.Fmt(sim.TileCost(t.stat) - sim.S.cash) + Loc.T(" 부족") + "</color>";
             else foot = SweepSim.KeyNodes.Contains(n.id) ? Loc.T("  <color=#d8ccff>+ 열쇠 1</color>").Trim() : "";
             if (foot.Length > 0) Text(KWrapRich(foot, 12, w), pBody, 6);

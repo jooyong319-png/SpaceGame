@@ -1896,3 +1896,6 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 부품 가게 해금 — 늘 열림 · 출동마다 진열 바뀜 · 청구서 두 장마다 떠돌이 상인(희귀 이상 한 칸 · 공짜 새로고침) · 부품 칸 5개에 구매해서 장착	Parts shop — always open · stock changes every run · a traveling merchant visits every two bills (one rare+ slot · free reroll) · buy parts for your five slots
 출동마다 진열 바뀜 · 청구서 두 장마다 떠돌이 상인 · 카드에 올리면 장착할 칸이 깜빡임	Stock changes every run · merchant every two bills · hover a card to blink its slot
 go|청구서 두 장 낼 때마다 *떠돌이 상인*이 물건을 풀고 가. 그날은 좋은 물건이 하나는 꼭 끼어 있고, 새로고침 한 번은 공짜다.	go|Every two bills a *traveling merchant* drops off goods here. That day there's always at least one good piece, and one reroll is free.
+모든 무기의 발동 확률 ×1.5 · 무기 하나 이상 보유 시 구매 가능	All weapons trigger ×1.5 · needs at least one weapon
+열쇠 필요	Needs a key
+무기 하나 이상 필요	Needs a weapon first

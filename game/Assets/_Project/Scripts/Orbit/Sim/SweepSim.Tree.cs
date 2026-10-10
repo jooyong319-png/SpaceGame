@@ -117,10 +117,12 @@ namespace SalvageRun.Orbit.Sim
             foreach (var p in n.par) if (S.lv[NodeIx[p]] <= 0) return NodeSt.Hidden;
             var pl = Layout[n.id];
             if (pl.par != "R" && S.lv[NodeIx[pl.par]] < TileLv(NodeIx[pl.par], pl.tile)) return NodeSt.Hidden;
+            if (n.id == "w_slot2" && !AnyWeapon) return NodeSt.Poor;   // 10-10 갈림길 뒤 무기고 바로 아래 — 무기 없이 열쇠를 쓰지 않게
             if (KeyNodes.Contains(n.id) && S.keys < 1) return NodeSt.Poor;          // ◆ 열쇠가 없다
             return S.cash >= TileCost(i) ? NodeSt.Can : NodeSt.Poor;
         }
         public bool Buy(int i) => BuyTile(i);
+        public bool AnyWeapon { get { for (int w = 1; w < WeaponNode.Length; w++) if (WeaponOwned(w)) return true; return false; } }
 
     }
 }
