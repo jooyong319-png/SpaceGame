@@ -40,6 +40,8 @@ namespace SalvageRun.EditorTools
             EditorApplication.EnterPlaymode();
         }
 
+        /// <summary>촬영 스크립트용 — 게임 창을 그 크기로 (w = 0 이면 원래 크기로). 반환: 바꾸기 전 번호</summary>
+        public static int SetSize(int w, int h, int restore = -1) { int old = SelectedIndex(); Select(restore >= 0 ? restore : FindOrAdd(w, h)); return old; }
         // ── 게임 창 크기 (유니티 속 기능)
         static Assembly Ed => typeof(Editor).Assembly;
         static object Group()
