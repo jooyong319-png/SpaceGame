@@ -17,7 +17,7 @@ namespace SalvageRun.Orbit
         static Texture2D[] scIcon; bool scUse;
         static readonly string[] ScIconPath = { "junk/junk_vault_gold", "junk/junk_vault", "shop/part_0", "shop/key", "junk/junk_rocket", "junk/junk_sat", "junk/junk_fuel", "junk/junk_chip_a" };   // 1등 → 8등
         // 10-11 당첨 문구의 「+1600」 같은 돈은 당첨표처럼 단위로 (영어 표 1.6K ↔ 문구 1600 · 끝판엔 「+1200000000000」)
-        static string ScratchNum(string t) => t == null ? null : System.Text.RegularExpressions.Regex.Replace(t, @"\+(\d{4,})", m => "+" + KNum.Fmt(double.Parse(m.Groups[1].Value)));
+        static string ScratchNum(string t) => KNum.MoneyIn(t);
         public void TestLotto(int step)   // 에디터 시험용
         {
             if (step == 0) { lottoOpen = true; scGrid = sim.ScratchBuy(out scWin); scCoat = new bool[ScCells, ScCols * ScRows]; scDone = false; }

@@ -22,6 +22,8 @@ namespace SalvageRun.Orbit
             if (v < 10000) return ((long)System.Math.Max(0, v)).ToString();
             string f = Fmt(v); int sp = f.IndexOf(' '); return sp > 0 ? f.Substring(0, sp) : f;
         }
+        /// <summary>10-11 Sim 이 글에 붙인 돈(「+1600」 「+1,234,567」)을 단위로 — Sim 은 봇도 같이 써서 KNum 을 못 부른다</summary>
+        public static string MoneyIn(string t) => t == null ? null : System.Text.RegularExpressions.Regex.Replace(t, @"\+(\d[\d,]{3,})", m => "+" + Fmt(double.Parse(m.Groups[1].Value.Replace(",", ""))));
         public static string Fmt(double v)
         {
             if (double.IsNaN(v) || double.IsInfinity(v)) return "∞";

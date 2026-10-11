@@ -99,7 +99,7 @@ namespace SalvageRun.Orbit
                         if (Random.value < 0.25f) Add(disc, at, 0.11f, src == 3 ? Green : Amber, 2, 1.6f).v = (Vector3)(Random.insideUnitCircle * 3f);
                         break;
                     }
-                    case SwEv.Pop: if (e.k >= 3) Note(e.text, e.k == 3 ? Orange : e.k == 4 ? new Color(1f, 0.5f, 0.85f) : Violet); else PopAt(e.x, e.y, e.text, e.k == 1 ? Green : Amber2, 15); if (e.k == 3) OrbitSfx.Play("unit", 0.8f); if (e.k >= 4) OrbitSfx.Play("buy", 0.6f); break;
+                    case SwEv.Pop: if (e.k >= 3) Note(KNum.MoneyIn(e.text), e.k == 3 ? Orange : e.k == 4 ? new Color(1f, 0.5f, 0.85f) : Violet); else PopAt(e.x, e.y, e.text, e.k == 1 ? Green : Amber2, 15); if (e.k == 3) OrbitSfx.Play("unit", 0.8f); if (e.k >= 4) OrbitSfx.Play("buy", 0.6f); break;
                     case SwEv.Meteor:
                     {
                         hud.MarkAt(e.x, e.y, 80, new Color(1f, 0.36f, 0.31f), Loc.T("운석!"));   // 📍 10-10
