@@ -16,6 +16,8 @@ namespace SalvageRun.Orbit
         const int ScCols = 7, ScRows = 4, ScCells = SweepSim.ScratchCells;  // 🎟 10-06 창 9칸(3×3) · 칸마다 은박 조각 7×4
         static Texture2D[] scIcon; bool scUse;
         static readonly string[] ScIconPath = { "junk/junk_vault_gold", "junk/junk_vault", "shop/part_0", "shop/key", "junk/junk_rocket", "junk/junk_sat", "junk/junk_fuel", "junk/junk_chip_a" };   // 1등 → 8등
+        // 10-11 당첨 문구의 「+1600」 같은 돈은 당첨표처럼 단위로 (영어 표 1.6K ↔ 문구 1600 · 끝판엔 「+1200000000000」)
+        static string ScratchNum(string t) => t == null ? null : System.Text.RegularExpressions.Regex.Replace(t, @"\+(\d{4,})", m => "+" + KNum.Fmt(double.Parse(m.Groups[1].Value)));
         public void TestLotto(int step)   // 에디터 시험용
         {
             if (step == 0) { lottoOpen = true; scGrid = sim.ScratchBuy(out scWin); scCoat = new bool[ScCells, ScCols * ScRows]; scDone = false; }
@@ -108,7 +110,7 @@ namespace SalvageRun.Orbit
             GUI.color = new Color(1f, 0.83f, 0.45f, 0.55f); GUI.DrawTexture(new Rect(card.x, card.yMax - 34, card.width, 34), white); GUI.color = Color.white;
             Lbl(new Rect(card.x + 14, card.y + 6, 300, 26), Loc.T("<size=17><b><color=#3a0f33>궤도 즉석 복권</color></b></size>"), label);
             Lbl(new Rect(card.x, card.y + 9, card.width - 14, 20), Loc.T("<size=11><color=#6a2a5c>같은 그림 3개 = 당첨</color></size>"), cost);
-            string band = scGrid == null ? Loc.T("한 장 사서 긁어 보세요") : scDone ? (scRank >= 0 ? sim.ScratchText ?? scBannerTxt : Loc.T("꽝 — 다음 장은 출동 전까지 값이 오름")) : Loc.T("누른 채 문질러 긁기");
+            string band = scGrid == null ? Loc.T("한 장 사서 긁어 보세요") : scDone ? (scRank >= 0 ? ScratchNum(sim.ScratchText) ?? scBannerTxt : Loc.T("꽝 — 다음 장은 출동 전까지 값이 오름")) : Loc.T("누른 채 문질러 긁기");
             {   // 10-10 영어 당첨 문구는 가장 작게 줄여도 한 줄에 안 들어가 앞뒤가 잘렸다(「.st — Gold Vault…」) — 안 들어가면 두 줄로
                 string bi = "<color=#5a2050>" + (scDone && scRank >= 0 ? scBannerTxt : band) + "</color>", bt = Fit(bi, 12, card.width - 16, center, 10);
                 if (center.CalcSize(new GUIContent(bt)).x <= card.width - 16) Lbl(new Rect(card.x + 8, card.yMax - 30, card.width - 16, 26), bt, center);
@@ -190,7 +192,7 @@ namespace SalvageRun.Orbit
                 int won = -1; for (int k = 0; k < revCnt.Length; k++) if (revCnt[k] > 0 && revCnt[k] + stars >= 3) won = k;
                 if (won >= 0 || nRev == ScCells)
                 {
-                    scDone = true; scDoneT = Time.unscaledTime; scRank = scWin; scGot = sim.ScratchClaim(); scBannerTxt = sim.ScratchText;
+                    scDone = true; scDoneT = Time.unscaledTime; scRank = scWin; scGot = sim.ScratchClaim(); scBannerTxt = ScratchNum(sim.ScratchText);
                     var cc = new Vector2(card.center.x, card.center.y);
                     if (scRank >= 0)
                     {
