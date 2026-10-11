@@ -174,6 +174,10 @@
 
 - [x] 로비 다시 (한 · 영) — 없음. 제목 · 단추 · 이어하기 줄 · 아래 줄 겹침 없음
 
+- [x] 상인 온 날 조종실 (영어 중심)
+  - 띠 · 「Visit merchant」 단추 · 상인 배 겹침 없음. 왼쪽 탭 「Workshop 1 nodes」 → 1이면 「node」
+  - 검사가 새로 잡은 1곳: 장착 부품 줄 영어 서리 결정 「Freeze beam trigger · Frozen debris damage」가 가장 작은 글씨로도 넘침 → 영어 효과 이름 줄임(Freeze beam rate · Frozen damage · Electric weapon rate)
+
 ## 사장님 고를 것 (시안)
 - 정비고 칸 정리안 12개 (U6QS8WQ5q2qE7XHkDKjGRM) — 버그 둘 바로 고칠지 · 약한 칸 숫자 · 의미 없는 칸 새 효과
 - 조종실 창틀 테두리가 청구서 · 항로 판 글자 뒤로 지나감(배 7척 모두) — 후보: 창틀을 판보다 먼저 그리기(순서만) · 판 바탕 더 진하게 · 창틀 아래 변을 판 밖으로 (조종실 벽 보류라 손대지 않음)

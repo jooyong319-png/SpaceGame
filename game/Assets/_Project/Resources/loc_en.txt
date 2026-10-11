@@ -1873,9 +1873,9 @@ yoon|사은품도 그대로. 우리 주식은 망해도 또 줘 — 그게 영�
 연쇄 장약 선체	Chain-Charge Hull
 집속탄 사출구	Cluster Launcher
 서리 원 +	Frost circle +
-언 잔해 피해 +	Frozen debris damage +
-냉동 빔 발동 +	Freeze beam trigger +
-전기 무기 발동 +	Electric weapon trigger +
+언 잔해 피해 +	Frozen damage +
+냉동 빔 발동 +	Freeze beam rate +
+전기 무기 발동 +	Electric weapon rate +
 번개 튀는 수 +	Lightning jumps +
 폭발 범위 +	Blast size +
 폭발 번짐 +	Blast spread +
