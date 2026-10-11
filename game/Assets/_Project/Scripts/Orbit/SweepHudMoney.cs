@@ -112,7 +112,7 @@ namespace SalvageRun.Orbit
             {   // 10-10 영어 당첨 문구는 가장 작게 줄여도 한 줄에 안 들어가 앞뒤가 잘렸다(「.st — Gold Vault…」) — 안 들어가면 두 줄로
                 string bi = "<color=#5a2050>" + (scDone && scRank >= 0 ? scBannerTxt : band) + "</color>", bt = Fit(bi, 12, card.width - 16, center, 10);
                 if (center.CalcSize(new GUIContent(bt)).x <= card.width - 16) Lbl(new Rect(card.x + 8, card.yMax - 30, card.width - 16, 26), bt, center);
-                else { var bw = new GUIStyle(center) { wordWrap = true }; Lbl(new Rect(card.x + 8, card.yMax - 31, card.width - 16, 28), "<size=10>" + bi + "</size>", bw); }
+                else { var bw = new GUIStyle(center) { wordWrap = true, fontSize = 10 }; Lbl(new Rect(card.x + 8, card.yMax - 31, card.width - 16, 28), "<size=10>" + bi + "</size>", bw); }
             }
             float gap = 10, gx = card.x + 18, gy = card.y + 38, cw = (464 - gap * 2) / 3, ch = (290 - gap * 2) / 3;
             int nRev = 0, stars = 0; var revCnt = new int[SweepSim.ScratchSym.Length]; var rev = new bool[ScCells];

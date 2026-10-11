@@ -102,9 +102,10 @@ namespace SalvageRun.Orbit
             Lbl(new Rect(I.x, I.y, I.width, 30), Fit("<b><color=#" + ah + ">" + sd.name + "</color></b>", 22, SweepSim.ShipFam[hangarPick] >= 0 ? I.width - 118 : I.width, label, 14), label);   // 10-10 영어 「Missile Ship」이 계열 딱지와 겹침 — 딱지 앞까지
             if (SweepSim.ShipFam[hangarPick] >= 0) FamChip(new Rect(I.xMax - 110, I.y + 6, 110, 20), SweepSim.ShipFam[hangarPick], "+" + Pts(2));   // 🧬 배 = 계열 2점
             Lbl(new Rect(I.x, I.y + 34, I.width, 20), Fit(Loc.T("<size=12><color=#e7ecf8>기본 무기 · ").Replace("<size=12>", "") + sd.weapon + "</color>   <color=#8d99b8>" + sd.trait + "</color>", 12, I.width - 4, label), label);   // 🌐 영어는 길다 — 줄여서 한 줄에
-            var dsty = new GUIStyle(label) { wordWrap = true };
+            var dsty = new GUIStyle(label) { wordWrap = true, fontSize = Loc.En ? 11 : 12 };   // 10-11 줄 높이를 글자 크기로 (설명 줄 사이가 넓었다)
             int dfs = Loc.En ? 11 : 12;   // 🌐 영어 설명은 길다 — 한 치수 작게
             while (dfs > 9 && KWrap(sd.desc, dfs, I.width - 6).Split('\n').Length > 3) dfs--;   // 10-10 영어 미사일선 넉 줄이 「Damage」 막대에 닿음 — 석 줄에 들 때까지
+            dsty.fontSize = dfs;
             Lbl(new Rect(I.x, I.y + 62, I.width, 70), "<size=" + dfs + "><color=#c4cce2>" + KWrap(sd.desc, dfs, I.width - 6) + "</color></size>", dsty);
             string[] lab = { Loc.T("피해"), Loc.T("넓이"), Loc.T("연쇄") };
             for (int k = 0; k < 3; k++)
@@ -123,6 +124,7 @@ namespace SalvageRun.Orbit
                 if (Bt(bb, can ? Fit(Loc.T("구매 · 신용 ") + sd.price, 15, bb.width - 12, btnC, 10) : Fit("<color=#5a6475>" + Loc.T("신용 ") + sd.price + Loc.T(" 필요 (지금 ") + M.credit.ToString("0") + ")</color>", 13, bb.width - 12, btnC, 9), btnC) && sim.BuyShip(hangarPick)) { OrbitSfx.Play("buy", 1f); OrbitSfx.Play("unit", 0.8f); }
                 GUI.enabled = true;
             }
+            dsty.fontSize = 10;
             Lbl(new Rect(I.x, I.y + 256, I.width, 130), HangarHintWrap(Loc.T("<size=10><color=#5a6475>트리의 빔 칸 셋은 배의 무기에 맞게 바뀜.\n무기고의 보조 무기는 어느 배든 그대로.") + (hangarPick == 5 ? Loc.T("\n<color=#8fd8ff>무기고 냉동 빔 줄(강화 · 각성 · 특화 · 3단계)이 이 배의 서리 포도 강화.</color>") : hangarPick == 6 ? Loc.T("\n<color=#ffa040>무기고 분열탄 줄(강화 · 각성 · 특화 · 3단계)이 이 배의 포탄도 강화.</color>") : "") + "</color></size>", I.width - 4), dsty);
         }
 
