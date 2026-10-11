@@ -1900,3 +1900,4 @@ go|청구서 두 장 낼 때마다 *떠돌이 상인*이 물건을 풀고 가. �
 열쇠 필요	Needs a key
 무기 하나 이상 필요	Needs a weapon first
 오늘 납부일	Due today
+</color> <color=#9fdcff>· 방어막</color>	</color> <color=#9fdcff>· Shield</color>
